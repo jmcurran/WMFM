@@ -222,6 +222,8 @@ lm_explanation = function(model, chat) {
 
 ui = fluidPage(
   
+  withMathJax(), 
+  
   titlePanel("Model Builder"),
   
   # CSS to shrink the rank lists to ~4–5 lines
