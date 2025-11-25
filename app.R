@@ -18,7 +18,8 @@ get_chat_provider = function() {
   # }
   
   # For now: always use Ollama
-  chat_ollama(model = "gpt-oss")
+  chat_ollama(base_url = "http://corrin.stat.auckland.ac.nz:11434",
+              model = "gpt-oss")
 }
 
 #----------------------------------------
@@ -295,6 +296,11 @@ ui = fluidPage(
   
   hr(),
   
+  hr(),
+  
+  h4("Model formula"),
+  uiOutput("model_formula"),
+  
   h4("Model explanation"),
   uiOutput("model_explanation")
 )
@@ -326,6 +332,85 @@ server = function(input, output, session) {
   
   
   model_fit = reactiveVal(NULL)
+  
+  # ---- Symbolic model formula (LaTeX via MathJax) ----
+  output$model_formula = renderUI({
+    m = model_fit()
+    if (is.null(m)) {
+      return(helpText("Fit a model to see the model formula."))
+    }
+    
+    mf = model.frame(m)
+    response = names(mf)[1]
+    predictors = names(mf)[-1]
+    
+    # Build RHS: beta_0 + beta_1 * ... + ...
+    terms = c("\\beta_0")
+    beta_idx = 1L
+    
+    for (v in predictors) {
+      x = mf[[v]]
+      
+      if (is.factor(x)) {
+        lvls = levels(x)
+        
+        if (length(lvls) >= 2) {
+          # One indicator per non-reference level
+          for (lvl in lvls[-1]) {
+            terms = c(
+              terms,
+              glue("\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}")
+            )
+            beta_idx = beta_idx + 1L
+          }
+        }
+        
+      } else {
+        # Numeric predictor
+        terms = c(
+          terms,
+          glue("\\beta_{beta_idx} \\times {v}_i")
+        )
+        beta_idx = beta_idx + 1L
+      }
+    }
+    
+    rhs = paste(terms, collapse = " + ")
+    
+    # LHS: depends on model type
+    if (inherits(m, "glm")) {
+      fam  = m$family$family
+      link = m$family$link
+      
+      if (fam == "binomial" && link == "logit") {
+        lhs = "\\operatorname{logit}(p_i)"
+      } else if (fam == "poisson" && link == "log") {
+        lhs = "\\log(\\mu_i)"
+      } else {
+        if (length(predictors) > 0) {
+          cond = paste0(predictors, "_i", collapse = ", ")
+          lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+        } else {
+          lhs = glue("\\mathrm{{E}}[{response}_i]")
+        }
+      }
+      
+    } else {
+      # Ordinary linear model
+      if (length(predictors) > 0) {
+        cond = paste0(predictors, "_i", collapse = ", ")
+        lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+      } else {
+        lhs = glue("\\mathrm{{E}}[{response}_i]")
+      }
+    }
+    
+    formula_tex = glue("$$
+{lhs} = {rhs}
+$$")
+    
+    withMathJax(HTML(formula_tex))
+  })
   
   # ------- Helper: formula checker -------
   check_formula = function() {
