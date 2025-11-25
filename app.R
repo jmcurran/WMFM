@@ -76,36 +76,94 @@ lm_to_prompt = function(model) {
     USE.NAMES = FALSE
   )
   
+  # --- Detect interactions from the terms object ---
+  tm = terms(model)
+  term_labels = attr(tm, "term.labels")
+  has_interactions = any(grepl(":", term_labels, fixed = TRUE))
+  
+  if (has_interactions) {
+    # ----- Interaction models -----
+    interaction_rules = "
+- The model includes interaction terms (see coefficient names containing ':').
+- Use the coefficient table to express how BOTH the intercept and slopes change across
+  levels of the factor involved in the interaction.
+
+- When there is a single factor-by-numeric interaction such as Attend * Test:
+  * Let the coefficients be (symbolically): (Intercept) = a, AttendYes = b,
+    Test = c, AttendYes:Test = d.
+  * First write the equation for the reference level of the factor, e.g.
+      Exam = a + c * Test    (when Attend = \"No\")
+  * Then, for the non-reference level (e.g. Attend = \"Yes\"), show BOTH the intercept
+    and slope as sums BEFORE simplifying, for example:
+      Exam = (a + b) + (c + d) * Test = 14.63 + 4.75 * Test    (when Attend = \"Yes\")
+    where you plug in the actual numeric values for a, b, c, d from the coefficient table.
+
+- In general, for each non-reference level L of a factor F that interacts with Test:
+  * The intercept for level L is (Intercept + coefficient of F=L).
+  * The slope for Test at level L is (coefficient of Test + coefficient of F=L:Test).
+  * Show these arithmetic sums explicitly in brackets, THEN simplify them in the same line.
+
+- If there are more complicated interactions (e.g. multiple factors or higher-order
+  interactions), you may give either:
+  * a set of equations by factor level using the same intercept/slope-decomposition idea, or
+  * a single general equation with indicator functions, if that is clearer.
+"
+  } else {
+    # ----- Additive models (no interactions) -----
+    interaction_rules = "
+- There are no interaction terms.
+- For each factor predictor:
+  * Use the reference level implied by the intercept.
+  * Give one equation per factor level.
+
+- For binary factors such as Attend with levels \"No\" (reference) and \"Yes\":
+  * First show the baseline equation for the reference level, for example
+      Exam = 6.62 + 3.52 × Test    (when Attend = \"No\")
+  * Then, for the non-reference level, explicitly show how the intercept is obtained
+    by adding the factor coefficient to the intercept, for example
+      Exam = (6.62 + 8.01) + 3.52 × Test = 14.63 + 3.52 × Test    (when Attend = \"Yes\")
+    (numbers here are just an illustration; use the actual coefficients from the table).
+
+- Use this same pattern for any factor: show the baseline equation, then for each
+  non-reference level show (intercept + factor coefficient) before simplifying.
+"
+  }
+  
   glue("
 You are given output from an R regression model.
 {model_desc}
 
-Your task is to write fitted-model equations.
+Your task is to write fitted-model equations for teaching.
 
 Response: {response}
 
 Predictors:
 {paste(pred_info, collapse = '\\n')}
 
-Coefficient table:
+Coefficient table (rounded for display):
 {coef_txt}
 
-Rules:
-- Round coefficients to 2 decimals.
+General rules:
+- Round numeric quantities you write in equations to 2 decimal places.
 - For linear regression (Gaussian, identity link):
-  * Write an equation like: {response} = b0 + b1 * X1 + ...
+  * Write equations like: {response} = b0 + b1 * X1 + ...
 - For binomial GLMs with logit link:
-  * Write the equation on the log-odds (logit) scale, e.g. logit(p) = ...
-  * Optionally also give p = exp(eta) / (1 + exp(eta)).
+  * Write equations on the log-odds (logit) scale, e.g. logit(p) = ...
+  * You may optionally also give p = exp(eta) / (1 + exp(eta)).
 - For Poisson GLMs with log link:
-  * Write the equation on the log scale, e.g. log(mu) = ...
-  * Optionally also give mu = exp(eta).
-- For factor predictors, give one equation per relevant factor level by adjusting the intercept.
-- If there are interactions, reflect how effects depend on the interacting variables.
+  * Write equations on the log scale, e.g. log(mu) = ...
+  * You may optionally also give mu = exp(eta).
+
+{interaction_rules}
+
+Formatting:
+- Write the equations in plain text, one per line.
+- Label each equation with the relevant condition in brackets, like (when Attend = \"Yes\").
 - Do not mention standard errors, t-values, z-values, or p-values.
 - Return only the equations, no extra commentary.
 ")
 }
+
 
 #----------------------------------------
 # Prompt builder for explanation
@@ -344,40 +402,211 @@ server = function(input, output, session) {
     response = names(mf)[1]
     predictors = names(mf)[-1]
     
-    # Build RHS: beta_0 + beta_1 * ... + ...
-    terms = c("\\beta_0")
+    # Start with intercept
+    terms_tex = c("\\beta_0")
     beta_idx = 1L
     
+    # ----- Main effects -----
     for (v in predictors) {
       x = mf[[v]]
       
       if (is.factor(x)) {
         lvls = levels(x)
-        
         if (length(lvls) >= 2) {
-          # One indicator per non-reference level
           for (lvl in lvls[-1]) {
-            terms = c(
-              terms,
+            terms_tex = c(
+              terms_tex,
               glue("\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}")
             )
             beta_idx = beta_idx + 1L
           }
         }
-        
       } else {
         # Numeric predictor
-        terms = c(
-          terms,
+        terms_tex = c(
+          terms_tex,
           glue("\\beta_{beta_idx} \\times {v}_i")
         )
         beta_idx = beta_idx + 1L
       }
     }
     
-    rhs = paste(terms, collapse = " + ")
+    # ----- Interaction terms -----
+    tm = terms(m)
+    term_labels = attr(tm, "term.labels")
+    interaction_labels = term_labels[grepl(":", term_labels, fixed = TRUE)]
     
-    # LHS: depends on model type
+    for (lab in interaction_labels) {
+      vars = strsplit(lab, ":", fixed = TRUE)[[1]]
+      
+      # Only handle up to 2-way interactions cleanly
+      if (length(vars) != 2) {
+        next
+      }
+      
+      v1 = vars[1]
+      v2 = vars[2]
+      
+      x1 = mf[[v1]]
+      x2 = mf[[v2]]
+      
+      # numeric : numeric
+      if (!is.factor(x1) && !is.factor(x2)) {
+        terms_tex = c(
+          terms_tex,
+          glue("\\beta_{beta_idx} \\times {v1}_i \\times {v2}_i")
+        )
+        beta_idx = beta_idx + 1L
+        next
+      }
+      
+      # factor : numeric
+      if (is.factor(x1) && !is.factor(x2)) {
+        fac_var = v1
+        num_var = v2
+        lvls = levels(mf[[fac_var]])
+        
+        if (length(lvls) >= 2) {
+          for (lvl in lvls[-1]) {
+            terms_tex = c(
+              terms_tex,
+              glue("\\beta_{beta_idx} \\times {num_var}_i \\times \\mathbf{{1}}\\{{ {fac_var}_i = \\text{{\"{lvl}\"}} \\}}")
+            )
+            beta_idx = beta_idx + 1L
+          }
+        }
+        next
+      }
+      
+      if (!is.factor(x1) && is.factor(x2)) {
+        fac_var = v2
+        num_var = v1
+        lvls = levels(mf[[fac_var]])
+        
+        if (length(lvls) >= 2) {
+          for (lvl in lvls[-1]) {
+            terms_tex = c(
+              terms_tex,
+              glue("\\beta_{beta_idx} \\times {num_var}_i \\times \\mathbf{{1}}\\{{ {fac_var}_i = \\text{{\"{lvl}\"}} \\}}")
+            )
+            beta_idx = beta_idx + 1L
+          }
+        }
+        next
+      }
+      
+      # factor : factor
+      if (is.factor(x1) && is.factor(x2)) {
+        lvls1 = levels(x1)
+        lvls2 = levels(x2)
+        
+        if (length(lvls1) >= 2 && length(lvls2) >= 2) {
+          for (lvl1 in lvls1[-1]) {
+            for (lvl2 in lvls2[-1]) {
+              terms_tex = c(
+                terms_tex,
+                glue(
+                  "\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}} \\}} \\times \\mathbf{{1}}\\{{ {v2}_i = \\text{{\"{lvl2}\"}} \\}}"
+                )
+              )
+              beta_idx = beta_idx + 1L
+            }
+          }
+        }
+      }
+    }
+    
+    rhs = paste(terms_tex, collapse = " + ")
+    
+    # ----- LHS: depends on model type -----
+    if (inherits(m, "glm")) {
+      fam  = m$family$family
+      link = m$family$link
+      
+      if (fam == "binomial" && link == "logit") {
+        lhs = "\\operatorname{logit}(p_i)"
+      } else if (fam == "poisson" && link == "log") {
+        lhs = "\\log(\\mu_i)"
+      } else {
+        if (length(predictors) > 0) {
+          cond = paste0(predictors, "_i", collapse = ", ")
+          lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+        } else {
+          lhs = glue("\\mathrm{{E}}[{response}_i]")
+        }
+      }
+      
+    } else {
+      # Ordinary linear model
+      if (length(predictors) > 0) {
+        cond = paste0(predictors, "_i", collapse = ", ")
+        lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+      } else {
+        lhs = glue("\\mathrm{{E}}[{response}_i]")
+      }
+    }
+    
+    formula_tex = glue("$$
+{lhs} = {rhs}
+$$")
+    
+    withMathJax(HTML(formula_tex))
+  })
+  # ---- Symbolic model formula (LaTeX via MathJax) ----
+  output$model_formula = renderUI({
+    m = model_fit()
+    if (is.null(m)) {
+      return(helpText("Fit a model to see the model formula."))
+    }
+    
+    mf = model.frame(m)
+    response = names(mf)[1]
+    predictors = names(mf)[-1]
+    
+    # Use R's view of the data classes in the model
+    data_classes = attr(terms(m), "dataClasses")
+    
+    # Start with intercept
+    terms_tex = c("\\beta_0")
+    beta_idx = 1L
+    
+    # ----- Main effects: numeric vs categorical -----
+    for (v in predictors) {
+      cls = data_classes[[v]]
+      x   = mf[[v]]
+      
+      is_cat = !is.null(cls) && cls %in% c("factor", "ordered", "character", "logical")
+      
+      if (is_cat) {
+        # Treat as categorical: one indicator per non-reference level
+        if (!is.factor(x)) {
+          x = as.factor(x)
+        }
+        lvls = levels(x)
+        if (length(lvls) >= 2) {
+          for (lvl in lvls[-1]) {
+            terms_tex = c(
+              terms_tex,
+              glue("\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}")
+            )
+            beta_idx = beta_idx + 1L
+          }
+        }
+      } else {
+        # Numeric predictor
+        terms_tex = c(
+          terms_tex,
+          glue("\\beta_{beta_idx} \\times {v}_i")
+        )
+        beta_idx = beta_idx + 1L
+      }
+    }
+    
+    # (You can keep or omit your interaction-handling block here if you’ve already added it.)
+    
+    rhs = paste(terms_tex, collapse = " + ")
+    
+    # ----- LHS: depends on model type -----
     if (inherits(m, "glm")) {
       fam  = m$family$family
       link = m$family$link
@@ -741,29 +970,44 @@ $$")
     })
   })
   
-  # ---- Nicely formatted equations ----
   output$model_equations = renderUI({
     eq = rv$model_equations
     if (is.null(eq)) {
       return(helpText("Fit a model to see the equations."))
     }
     
-    # Structured tibble: condition + equation
+    scroll_style <- "
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  "
+    
+    content <- NULL
+    
     if (is.data.frame(eq) && all(c("condition", "equation") %in% names(eq))) {
       items = lapply(seq_len(nrow(eq)), function(i) {
         div(
           tags$p(tags$strong(eq$condition[i])),
-          tags$code(eq$equation[i])
+          tags$pre(
+            style = "white-space: pre-wrap; margin-top: -10px;",
+            eq$equation[i]
+          ),
+          tags$hr()
         )
       })
-      tagList(items)
+      content <- tagList(items)
     } else if (is.character(eq)) {
-      # Plain text from Ollama
-      tags$pre(eq)
+      content <- tags$pre(
+        style = "white-space: pre-wrap;",
+        eq
+      )
     } else {
-      # Fallback
-      tags$pre(capture.output(str(eq)))
+      content <- tags$pre(capture.output(str(eq)))
     }
+    
+    div(style = scroll_style, content)
   })
   
   # ---- Model explanation ----
