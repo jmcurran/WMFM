@@ -6,6 +6,7 @@ library(sortable)
 library(ellmer)
 library(glue)
 library(tibble)
+library(ggplot2)
 
 #----------------------------------------
 # LLM provider
@@ -313,55 +314,76 @@ ui = fluidPage(
   
   hr(),
   
-  # ---- Model type + Response + formula ----
-  h4("Model type"),
-  radioButtons(
-    "model_type",
-    label = NULL,
-    choices = c(
-      "Linear regression" = "lm",
-      "Logistic regression (binomial, logit)" = "logistic",
-      "Poisson regression (log link)" = "poisson"
+  # ---- Tabs for model vs plot ----
+  tabsetPanel(
+    id = "main_tabs",
+    
+    # ---- Tab 1: Model ----
+    tabPanel(
+      "Model",
+      
+      h4("Model type"),
+      radioButtons(
+        "model_type",
+        label = NULL,
+        choices = c(
+          "Linear regression" = "lm",
+          "Logistic regression (binomial, logit)" = "logistic",
+          "Poisson regression (log link)" = "poisson"
+        ),
+        selected = "lm"
+      ),
+      
+      h4("Response"),
+      uiOutput("response_picker"),
+      
+      h4("Model formula"),
+      textInput("formula_text", label = NULL, value = "", width = "100%"),
+      verbatimTextOutput("formula_status"),
+      
+      br(),
+      actionButton("fit_btn", "Fit model"),
+      actionButton("reset_btn", "Reset model"),
+      
+      hr(),
+      
+      # ---- Equations + summary ----
+      fluidRow(
+        column(
+          6,
+          h4("Fitted equations"),
+          uiOutput("model_equations")
+        ),
+        column(
+          6,
+          h4("Model summary"),
+          verbatimTextOutput("model_output")
+        )
+      ),
+      
+      hr(),
+      hr(),
+      
+      h4("Model formula"),
+      uiOutput("model_formula"),
+      
+      h4("Model explanation"),
+      uiOutput("model_explanation")
     ),
-    selected = "lm"
-  ),
-  
-  h4("Response"),
-  uiOutput("response_picker"),
-  
-  h4("Model formula"),
-  textInput("formula_text", label = NULL, value = "", width = "100%"),
-  verbatimTextOutput("formula_status"),
-  
-  br(),
-  actionButton("fit_btn", "Fit model"),
-  
-  hr(),
-  
-  # ---- Equations + summary ----
-  fluidRow(
-    column(
-      6,
-      h4("Fitted equations"),
-      uiOutput("model_equations")
-    ),
-    column(
-      6,
-      h4("Model summary"),
-      verbatimTextOutput("model_output")
+    
+    # ---- Tab 2: Plot ----
+    tabPanel(
+      "Plot",
+      h4("Data and fitted model"),
+      plotOutput("model_plot"),
+      helpText(
+        "The plot shows the observed data and the fitted model ",
+        "against one numeric predictor (x-axis), optionally separated by a factor."
+      )
     )
-  ),
-  
-  hr(),
-  
-  hr(),
-  
-  h4("Model formula"),
-  uiOutput("model_formula"),
-  
-  h4("Model explanation"),
-  uiOutput("model_explanation")
+  )
 )
+
 
 #----------------------------------------
 # Server
@@ -384,14 +406,101 @@ server = function(input, output, session) {
     all_vars = character(0),
     auto_formula = "",
     model_equations = NULL,
-    model_explanation = NULL
+    model_explanation = NULL,
+    bucket_group_id = 0 
     # last_response = NULL  # optional now
   )
   
   
   model_fit = reactiveVal(NULL)
   
-  # ---- Symbolic model formula (LaTeX via MathJax) ----
+  output$model_plot = renderPlot({
+    m = model_fit()
+    req(m)  # need a fitted model
+    
+    mf = model.frame(m)
+    response  = names(mf)[1]
+    predictors = names(mf)[-1]
+    
+    # Pick one numeric predictor for x
+    num_preds = predictors[sapply(mf[predictors], is.numeric)]
+    if (length(num_preds) == 0) {
+      plot.new()
+      text(0.5, 0.5, "No numeric predictors to plot.", cex = 1.2)
+      return(invisible())
+    }
+    xvar = num_preds[1]
+    
+    # Optionally pick one factor for grouping
+    fac_preds = predictors[sapply(mf[predictors], is.factor)]
+    fvar = if (length(fac_preds) > 0) fac_preds[1] else NULL
+    
+    # Build grid for fitted lines
+    x_seq = seq(min(mf[[xvar]], na.rm = TRUE),
+                max(mf[[xvar]], na.rm = TRUE),
+                length.out = 100)
+    
+    grid_list = list()
+    grid_list[[xvar]] = x_seq
+    
+    if (!is.null(fvar)) {
+      grid_list[[fvar]] = levels(mf[[fvar]])
+    }
+    
+    # For any other predictors, hold them at a typical value
+    other_preds = setdiff(predictors, c(xvar, fvar))
+    for (v in other_preds) {
+      x = mf[[v]]
+      if (is.numeric(x)) {
+        grid_list[[v]] = mean(x, na.rm = TRUE)
+      } else if (is.factor(x)) {
+        grid_list[[v]] = levels(x)[1]
+      } else {
+        # leave out weird types
+      }
+    }
+    
+    newdata = expand.grid(grid_list, stringsAsFactors = FALSE)
+    
+    # Predictions on response scale
+    if (inherits(m, "glm")) {
+      fit_vals = predict(m, newdata = newdata, type = "response")
+    } else {
+      fit_vals = predict(m, newdata = newdata)
+    }
+    newdata$fit = fit_vals
+    
+    # Build plot
+    if (is.null(fvar)) {
+      ggplot() +
+        geom_point(
+          data = mf,
+          aes_string(x = xvar, y = response),
+          alpha = 0.6
+        ) +
+        geom_line(
+          data = newdata,
+          aes_string(x = xvar, y = "fit"),
+          linewidth = 1
+        ) +
+        labs(x = xvar, y = response)
+    } else {
+      ggplot() +
+        geom_point(
+          data = mf,
+          aes_string(x = xvar, y = response, colour = fvar),
+          alpha = 0.6
+        ) +
+        geom_line(
+          data = newdata,
+          aes_string(x = xvar, y = "fit", colour = fvar),
+          linewidth = 1
+        ) +
+        labs(x = xvar, y = response, colour = fvar)
+    }
+  })
+  
+  
   output$model_formula = renderUI({
     m = model_fit()
     if (is.null(m)) {
@@ -402,183 +511,21 @@ server = function(input, output, session) {
     response = names(mf)[1]
     predictors = names(mf)[-1]
     
-    # Start with intercept
+    terms_obj   = terms(m)
+    term_labels = attr(terms_obj, "term.labels")
+    data_classes = attr(terms_obj, "dataClasses")
+    
     terms_tex = c("\\beta_0")
-    beta_idx = 1L
+    beta_idx  = 1L
     
     # ----- Main effects -----
-    for (v in predictors) {
-      x = mf[[v]]
-      
-      if (is.factor(x)) {
-        lvls = levels(x)
-        if (length(lvls) >= 2) {
-          for (lvl in lvls[-1]) {
-            terms_tex = c(
-              terms_tex,
-              glue("\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}")
-            )
-            beta_idx = beta_idx + 1L
-          }
-        }
-      } else {
-        # Numeric predictor
-        terms_tex = c(
-          terms_tex,
-          glue("\\beta_{beta_idx} \\times {v}_i")
-        )
-        beta_idx = beta_idx + 1L
-      }
-    }
-    
-    # ----- Interaction terms -----
-    tm = terms(m)
-    term_labels = attr(tm, "term.labels")
-    interaction_labels = term_labels[grepl(":", term_labels, fixed = TRUE)]
-    
-    for (lab in interaction_labels) {
-      vars = strsplit(lab, ":", fixed = TRUE)[[1]]
-      
-      # Only handle up to 2-way interactions cleanly
-      if (length(vars) != 2) {
-        next
-      }
-      
-      v1 = vars[1]
-      v2 = vars[2]
-      
-      x1 = mf[[v1]]
-      x2 = mf[[v2]]
-      
-      # numeric : numeric
-      if (!is.factor(x1) && !is.factor(x2)) {
-        terms_tex = c(
-          terms_tex,
-          glue("\\beta_{beta_idx} \\times {v1}_i \\times {v2}_i")
-        )
-        beta_idx = beta_idx + 1L
-        next
-      }
-      
-      # factor : numeric
-      if (is.factor(x1) && !is.factor(x2)) {
-        fac_var = v1
-        num_var = v2
-        lvls = levels(mf[[fac_var]])
-        
-        if (length(lvls) >= 2) {
-          for (lvl in lvls[-1]) {
-            terms_tex = c(
-              terms_tex,
-              glue("\\beta_{beta_idx} \\times {num_var}_i \\times \\mathbf{{1}}\\{{ {fac_var}_i = \\text{{\"{lvl}\"}} \\}}")
-            )
-            beta_idx = beta_idx + 1L
-          }
-        }
-        next
-      }
-      
-      if (!is.factor(x1) && is.factor(x2)) {
-        fac_var = v2
-        num_var = v1
-        lvls = levels(mf[[fac_var]])
-        
-        if (length(lvls) >= 2) {
-          for (lvl in lvls[-1]) {
-            terms_tex = c(
-              terms_tex,
-              glue("\\beta_{beta_idx} \\times {num_var}_i \\times \\mathbf{{1}}\\{{ {fac_var}_i = \\text{{\"{lvl}\"}} \\}}")
-            )
-            beta_idx = beta_idx + 1L
-          }
-        }
-        next
-      }
-      
-      # factor : factor
-      if (is.factor(x1) && is.factor(x2)) {
-        lvls1 = levels(x1)
-        lvls2 = levels(x2)
-        
-        if (length(lvls1) >= 2 && length(lvls2) >= 2) {
-          for (lvl1 in lvls1[-1]) {
-            for (lvl2 in lvls2[-1]) {
-              terms_tex = c(
-                terms_tex,
-                glue(
-                  "\\beta_{beta_idx} \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}} \\}} \\times \\mathbf{{1}}\\{{ {v2}_i = \\text{{\"{lvl2}\"}} \\}}"
-                )
-              )
-              beta_idx = beta_idx + 1L
-            }
-          }
-        }
-      }
-    }
-    
-    rhs = paste(terms_tex, collapse = " + ")
-    
-    # ----- LHS: depends on model type -----
-    if (inherits(m, "glm")) {
-      fam  = m$family$family
-      link = m$family$link
-      
-      if (fam == "binomial" && link == "logit") {
-        lhs = "\\operatorname{logit}(p_i)"
-      } else if (fam == "poisson" && link == "log") {
-        lhs = "\\log(\\mu_i)"
-      } else {
-        if (length(predictors) > 0) {
-          cond = paste0(predictors, "_i", collapse = ", ")
-          lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
-        } else {
-          lhs = glue("\\mathrm{{E}}[{response}_i]")
-        }
-      }
-      
-    } else {
-      # Ordinary linear model
-      if (length(predictors) > 0) {
-        cond = paste0(predictors, "_i", collapse = ", ")
-        lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
-      } else {
-        lhs = glue("\\mathrm{{E}}[{response}_i]")
-      }
-    }
-    
-    formula_tex = glue("$$
-{lhs} = {rhs}
-$$")
-    
-    withMathJax(HTML(formula_tex))
-  })
-  # ---- Symbolic model formula (LaTeX via MathJax) ----
-  output$model_formula = renderUI({
-    m = model_fit()
-    if (is.null(m)) {
-      return(helpText("Fit a model to see the model formula."))
-    }
-    
-    mf = model.frame(m)
-    response = names(mf)[1]
-    predictors = names(mf)[-1]
-    
-    # Use R's view of the data classes in the model
-    data_classes = attr(terms(m), "dataClasses")
-    
-    # Start with intercept
-    terms_tex = c("\\beta_0")
-    beta_idx = 1L
-    
-    # ----- Main effects: numeric vs categorical -----
-    for (v in predictors) {
+    for (lab in term_labels[!grepl(":", term_labels, fixed = TRUE)]) {
+      v = lab
       cls = data_classes[[v]]
       x   = mf[[v]]
-      
       is_cat = !is.null(cls) && cls %in% c("factor", "ordered", "character", "logical")
       
       if (is_cat) {
-        # Treat as categorical: one indicator per non-reference level
         if (!is.factor(x)) {
           x = as.factor(x)
         }
@@ -593,7 +540,6 @@ $$")
           }
         }
       } else {
-        # Numeric predictor
         terms_tex = c(
           terms_tex,
           glue("\\beta_{beta_idx} \\times {v}_i")
@@ -602,11 +548,65 @@ $$")
       }
     }
     
-    # (You can keep or omit your interaction-handling block here if you’ve already added it.)
+    # ----- Interaction terms (2-way only) -----
+    interaction_labels = term_labels[grepl(":", term_labels, fixed = TRUE)]
+    
+    for (lab in interaction_labels) {
+      vars = strsplit(lab, ":", fixed = TRUE)[[1]]
+      if (length(vars) != 2) {
+        next
+      }
+      
+      v1 = vars[1]
+      v2 = vars[2]
+      x1 = mf[[v1]]
+      x2 = mf[[v2]]
+      cls1 = data_classes[[v1]]
+      cls2 = data_classes[[v2]]
+      is_cat1 = !is.null(cls1) && cls1 %in% c("factor", "ordered", "character", "logical")
+      is_cat2 = !is.null(cls2) && cls2 %in% c("factor", "ordered", "character", "logical")
+      
+      # numeric:numeric
+      if (!is_cat1 && !is_cat2) {
+        terms_tex = c(
+          terms_tex,
+          glue("\\beta_{beta_idx} \\times {v1}_i \\times {v2}_i")
+        )
+        beta_idx = beta_idx + 1L
+        next
+      }
+      
+      # factor:numeric
+      if (is_cat1 && !is_cat2) {
+        fac_var = v1
+        num_var = v2
+        fac_x   = if (is.factor(x1)) x1 else as.factor(x1)
+      } else if (!is_cat1 && is_cat2) {
+        fac_var = v2
+        num_var = v1
+        fac_x   = if (is.factor(x2)) x2 else as.factor(x2)
+      } else {
+        # factor:factor (skip or handle similarly if you want)
+        next
+      }
+      
+      lvls = levels(fac_x)
+      if (length(lvls) >= 2) {
+        for (lvl in lvls[-1]) {
+          terms_tex = c(
+            terms_tex,
+            glue(
+              "\\beta_{beta_idx} \\times {num_var}_i \\times \\mathbf{{1}}\\{{ {fac_var}_i = \\text{{\"{lvl}\"}} \\}}"
+            )
+          )
+          beta_idx = beta_idx + 1L
+        }
+      }
+    }
     
     rhs = paste(terms_tex, collapse = " + ")
     
-    # ----- LHS: depends on model type -----
+    # ----- LHS -----
     if (inherits(m, "glm")) {
       fam  = m$family$family
       link = m$family$link
@@ -623,9 +623,7 @@ $$")
           lhs = glue("\\mathrm{{E}}[{response}_i]")
         }
       }
-      
     } else {
-      # Ordinary linear model
       if (length(predictors) > 0) {
         cond = paste0(predictors, "_i", collapse = ", ")
         lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
@@ -823,7 +821,7 @@ $$")
     
     bucket_list(
       header = NULL,
-      group_name = "vars_group",
+      group_name = paste0("vars_group_", rv$bucket_group_id),  # <- changed
       orientation = "horizontal",
       add_rank_list(
         text = "Variables",
@@ -842,6 +840,7 @@ $$")
       )
     )
   })
+  
 
   
   
@@ -927,20 +926,31 @@ $$")
     
     f = as.formula(input$formula_text)
     resp_name = all.vars(f)[1]
-    y = rv$data[[resp_name]]
+    
+    # Work on a copy of the data so we can safely coerce factors
+    df_mod = rv$data
+    
+    # Anything in the Factors bucket should be treated as a factor
+    factor_vars = input$factors %||% character(0)
+    for (v in factor_vars) {
+      if (!is.null(df_mod[[v]]) && !is.factor(df_mod[[v]])) {
+        df_mod[[v]] = factor(df_mod[[v]])
+      }
+    }
+    
+    y = df_mod[[resp_name]]
     
     # Fit the chosen model type
     if (input$model_type == "lm") {
-      m = lm(f, data = rv$data)
+      m = lm(f, data = df_mod)
     } else if (input$model_type == "logistic") {
-      # quick sanity warning
       if (!all(na.omit(y) %in% c(0, 1))) {
         showNotification(
           "Warning: response is not 0/1. Logistic regression expects a binary outcome.",
           type = "warning"
         )
       }
-      m = glm(f, data = rv$data, family = binomial(link = "logit"))
+      m = glm(f, data = df_mod, family = binomial(link = "logit"))
     } else if (input$model_type == "poisson") {
       if (any(na.omit(y) < 0) || any(na.omit(y) %% 1 != 0)) {
         showNotification(
@@ -948,7 +958,7 @@ $$")
           type = "warning"
         )
       }
-      m = glm(f, data = rv$data, family = poisson(link = "log"))
+      m = glm(f, data = df_mod, family = poisson(link = "log"))
     } else {
       showNotification("Unknown model type.", type = "error")
       return(NULL)
@@ -956,7 +966,6 @@ $$")
     
     model_fit(m)
     
-    # Show a progress bar while talking to the LLM
     withProgress(message = "Talking to the language model...", value = 0, {
       incProgress(0.3, detail = "Deriving equations...")
       eq = lm_equations(m, chat_provider)
@@ -964,11 +973,46 @@ $$")
       incProgress(0.7, detail = "Writing explanation...")
       expl = lm_explanation(m, chat_provider)
       
-      rv$model_equations = eq
+      rv$model_equations   = eq
       rv$model_explanation = expl
       incProgress(1)
     })
   })
+  
+  
+  observeEvent(input$reset_btn, {
+    # Clear fitted model
+    model_fit(NULL)
+    
+    # Clear stored equations / explanation
+    rv$model_equations   = NULL
+    rv$model_explanation = NULL
+    
+    # Reset auto-formula tracking
+    rv$auto_formula = ""
+    
+    # Reset model type
+    updateRadioButtons(session, "model_type", selected = "lm")
+    
+    # Reset formula input
+    updateTextInput(session, "formula_text", value = "")
+    
+    # Reset the response selector to the first variable (like on initial load)
+    if (!is.null(rv$data) && length(rv$all_vars) > 0) {
+      updateSelectInput(
+        session,
+        "response_var",
+        label   = NULL,
+        choices = rv$all_vars,
+        selected = rv$all_vars[1]   # <- use first variable as response
+      )
+    }
+    
+    rv$last_response   = NULL
+    rv$bucket_group_id = rv$bucket_group_id + 1L  # force new buckets
+  })
+  
+  
   
   output$model_equations = renderUI({
     eq = rv$model_equations
@@ -979,36 +1023,40 @@ $$")
     scroll_style <- "
     max-height: 300px;
     overflow-y: auto;
-    padding-right: 8px;
+    overflow-x: auto;
+    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    background-color: #f9f9f9;
   "
     
-    content <- NULL
-    
+    # Build inner content
     if (is.data.frame(eq) && all(c("condition", "equation") %in% names(eq))) {
       items = lapply(seq_len(nrow(eq)), function(i) {
         div(
           tags$p(tags$strong(eq$condition[i])),
           tags$pre(
-            style = "white-space: pre-wrap; margin-top: -10px;",
+            style = "white-space: pre; margin-top: -6px; margin-bottom: 8px;",
             eq$equation[i]
-          ),
-          tags$hr()
+          )
         )
       })
       content <- tagList(items)
     } else if (is.character(eq)) {
       content <- tags$pre(
-        style = "white-space: pre-wrap;",
+        style = "white-space: pre; margin: 0;",
         eq
       )
     } else {
-      content <- tags$pre(capture.output(str(eq)))
+      content <- tags$pre(
+        style = "white-space: pre; margin: 0;",
+        paste(capture.output(str(eq)), collapse = "\n")
+      )
     }
     
     div(style = scroll_style, content)
   })
+  
   
   # ---- Model explanation ----
   output$model_explanation = renderUI({
