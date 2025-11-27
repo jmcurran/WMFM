@@ -1,7 +1,7 @@
 #' Run the Model Builder app
 #'
 #' @export
-runApp = function() {
+runWMFMApp = function() {
   shiny::shinyApp(
     ui = appUI(),
     server = appServer

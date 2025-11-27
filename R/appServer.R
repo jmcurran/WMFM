@@ -14,17 +14,19 @@
 #' @keywords internal
 #'
 #' @importFrom shiny reactiveValues reactiveVal renderPlot renderUI renderText
-#' @importFrom shiny renderPrint observeEvent req showNotification withProgress
+#' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
 #' @importFrom shiny radioButtons textInput modalButton actionButton
-#' @importFrom shiny updateTabsetPanel tagList selectInput div
+#' @importFrom shiny updateTabsetPanel tagList selectInput div tags
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
 #' @importFrom stats as.formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit
-#' @importFrom utils read.table capture.output str
+#' @importFrom utils data read.table capture.output str
 #' @importFrom graphics plot.new text
+#' @importFrom ggplot2 ggplot geom_point geom_line labs aes
+#' @importFrom rlang .data
 appServer = function(input, output, session) {
   `%||%` = function(x, y) {
     if (is.null(x)) y else x
@@ -45,6 +47,25 @@ appServer = function(input, output, session) {
   modelFit = reactiveVal(NULL)
 
   # -------------------------------------------------------------------
+  # Populate the s20x dataset chooser (if s20x is available)
+  # -------------------------------------------------------------------
+  observe({
+    if (requireNamespace("s20x", quietly = TRUE)) {
+      dsInfo  = utils::data(package = "s20x")
+      dsNames = dsInfo$results[, "Item"]
+    } else {
+      dsNames = character(0)
+    }
+
+    updateSelectInput(
+      session,
+      "s20x_dataset",
+      choices  = dsNames,
+      selected = if (length(dsNames) > 0) dsNames[1] else NULL
+    )
+  })
+
+  # -------------------------------------------------------------------
   # Plot of data + fitted model
   # -------------------------------------------------------------------
   output$model_plot = renderPlot({
@@ -52,11 +73,11 @@ appServer = function(input, output, session) {
     req(m)  # need a fitted model
 
     modelFrame = model.frame(m)
-    response = names(modelFrame)[1]
+    response   = names(modelFrame)[1]
     predictors = names(modelFrame)[-1]
 
     # Identify numeric predictors
-    numericMask = sapply(modelFrame[predictors], is.numeric)
+    numericMask  = sapply(modelFrame[predictors], is.numeric)
     numericPreds = predictors[numericMask]
 
     # If zero numeric predictors: nothing to plot
@@ -84,9 +105,9 @@ appServer = function(input, output, session) {
     xVar = numericPreds[1]
 
     # Optionally pick one factor for grouping
-    factorMask = sapply(modelFrame[predictors], is.factor)
+    factorMask  = sapply(modelFrame[predictors], is.factor)
     factorPreds = predictors[factorMask]
-    fVar = if (length(factorPreds) > 0) factorPreds[1] else NULL
+    fVar        = if (length(factorPreds) > 0) factorPreds[1] else NULL
 
     # Build grid for fitted lines
     xSeq = seq(
@@ -125,31 +146,43 @@ appServer = function(input, output, session) {
 
     # Build plot
     if (is.null(fVar)) {
-      ggplot2::ggplot() +
-        ggplot2::geom_point(
-          data = modelFrame,
-          ggplot2::aes_string(x = xVar, y = response),
-          alpha = 0.6
-        ) +
-        ggplot2::geom_line(
-          data = newData,
-          ggplot2::aes_string(x = xVar, y = "fit"),
+      ggplot(
+        data    = modelFrame,
+        mapping = aes(
+          x = .data[[xVar]],
+          y = .data[[response]]
+        )
+      ) +
+        geom_point(alpha = 0.6) +
+        geom_line(
+          data    = newData,
+          mapping = aes(
+            x = .data[[xVar]],
+            y = .data[["fit"]]
+          ),
           linewidth = 1
         ) +
-        ggplot2::labs(x = xVar, y = response)
+        labs(x = xVar, y = response)
     } else {
-      ggplot2::ggplot() +
-        ggplot2::geom_point(
-          data = modelFrame,
-          ggplot2::aes_string(x = xVar, y = response, colour = fVar),
-          alpha = 0.6
-        ) +
-        ggplot2::geom_line(
-          data = newData,
-          ggplot2::aes_string(x = xVar, y = "fit", colour = fVar),
+      ggplot(
+        data    = modelFrame,
+        mapping = aes(
+          x      = .data[[xVar]],
+          y      = .data[[response]],
+          colour = .data[[fVar]]
+        )
+      ) +
+        geom_point(alpha = 0.6) +
+        geom_line(
+          data    = newData,
+          mapping = aes(
+            x      = .data[[xVar]],
+            y      = .data[["fit"]],
+            colour = .data[[fVar]]
+          ),
           linewidth = 1
         ) +
-        ggplot2::labs(x = xVar, y = response, colour = fVar)
+        labs(x = xVar, y = response, colour = fVar)
     }
   })
 
@@ -163,22 +196,22 @@ appServer = function(input, output, session) {
     }
 
     modelFrame = model.frame(m)
-    response = names(modelFrame)[1]
+    response   = names(modelFrame)[1]
     predictors = names(modelFrame)[-1]
 
-    termsObj = terms(m)
-    termLabels = attr(termsObj, "term.labels")
+    termsObj    = terms(m)
+    termLabels  = attr(termsObj, "term.labels")
     dataClasses = attr(termsObj, "dataClasses")
 
-    termsTex = c("\\beta_0")
+    termsTex  = c("\\beta_0")
     betaIndex = 1L
 
     # Main effects
     mainLabels = termLabels[!grepl(":", termLabels, fixed = TRUE)]
     for (lab in mainLabels) {
-      v = lab
+      v   = lab
       cls = dataClasses[[v]]
-      x = modelFrame[[v]]
+      x   = modelFrame[[v]]
       isCat = !is.null(cls) && cls %in% c("factor", "ordered", "character", "logical")
 
       if (isCat) {
@@ -215,12 +248,13 @@ appServer = function(input, output, session) {
         next
       }
 
-      v1 = vars[1]
-      v2 = vars[2]
-      x1 = modelFrame[[v1]]
-      x2 = modelFrame[[v2]]
+      v1   = vars[1]
+      v2   = vars[2]
+      x1   = modelFrame[[v1]]
+      x2   = modelFrame[[v2]]
       cls1 = dataClasses[[v1]]
       cls2 = dataClasses[[v2]]
+
       isCat1 = !is.null(cls1) && cls1 %in% c("factor", "ordered", "character", "logical")
       isCat2 = !is.null(cls2) && cls2 %in% c("factor", "ordered", "character", "logical")
 
@@ -238,11 +272,11 @@ appServer = function(input, output, session) {
       if (isCat1 && !isCat2) {
         facVar = v1
         numVar = v2
-        facX = if (is.factor(x1)) x1 else as.factor(x1)
+        facX   = if (is.factor(x1)) x1 else as.factor(x1)
       } else if (!isCat1 && isCat2) {
         facVar = v2
         numVar = v1
-        facX = if (is.factor(x2)) x2 else as.factor(x2)
+        facX   = if (is.factor(x2)) x2 else as.factor(x2)
       } else {
         # factor:factor omitted for now
         next
@@ -266,7 +300,7 @@ appServer = function(input, output, session) {
 
     # LHS
     if (inherits(m, "glm")) {
-      fam = m$family$family
+      fam  = m$family$family
       link = m$family$link
 
       if (fam == "binomial" && link == "logit") {
@@ -276,17 +310,17 @@ appServer = function(input, output, session) {
       } else {
         if (length(predictors) > 0) {
           cond = paste0(predictors, "_i", collapse = ", ")
-          lhs = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+          lhs  = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
         } else {
-          lhs = glue::glue("\\mathrm{{E}}[{response}_i]")
+          lhs  = glue::glue("\\mathrm{{E}}[{response}_i]")
         }
       }
     } else {
       if (length(predictors) > 0) {
         cond = paste0(predictors, "_i", collapse = ", ")
-        lhs = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+        lhs  = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
       } else {
-        lhs = glue::glue("\\mathrm{{E}}[{response}_i]")
+        lhs  = glue::glue("\\mathrm{{E}}[{response}_i]")
       }
     }
 
@@ -309,7 +343,7 @@ $$")
 
     if (txt == "") {
       return(list(
-        ok = FALSE,
+        ok  = FALSE,
         msg = "Enter a model formula, e.g.  y ~ x1 + x2"
       ))
     }
@@ -331,12 +365,12 @@ $$")
     }
 
     # check variables exist in data
-    vars = all.vars(f)
+    vars    = all.vars(f)
     missing = setdiff(vars, names(rv$data))
 
     if (length(missing) > 0) {
       return(list(
-        ok = FALSE,
+        ok  = FALSE,
         msg = paste("Unknown variable(s):", paste(missing, collapse = ", "))
       ))
     }
@@ -351,11 +385,11 @@ $$")
     df = tryCatch({
       read.table(
         input$file$datapath,
-        sep = sep,
-        header = TRUE,
+        sep           = sep,
+        header        = TRUE,
         stringsAsFactors = FALSE,
-        check.names = TRUE,
-        fill = TRUE
+        check.names   = TRUE,
+        fill          = TRUE
       )
     }, error = function(e) {
       NULL
@@ -366,11 +400,11 @@ $$")
       return(NULL)
     }
 
-    rv$data = df
-    rv$allVars = names(df)
-    rv$autoFormula = ""
+    rv$data           = df
+    rv$allVars        = names(df)
+    rv$autoFormula    = ""
     modelFit(NULL)
-    rv$modelEquations = NULL
+    rv$modelEquations   = NULL
     rv$modelExplanation = NULL
     updateTextInput(session, "formula_text", value = "")
   }
@@ -379,14 +413,15 @@ $$")
   # Load dataset when file is chosen
   # -------------------------------------------------------------------
   observeEvent(input$file, {
+    req(input$data_source == "upload")
     req(input$file)
 
     ext = tolower(file_ext(input$file$name))
 
     # RDA/RData
     if (ext %in% c("rda", "rdata")) {
-      e = new.env()
-      loaded = load(input$file$datapath, envir = e)
+      e       = new.env()
+      loaded  = load(input$file$datapath, envir = e)
       dfNames = loaded[sapply(loaded, function(x) {
         is.data.frame(e[[x]])
       })]
@@ -398,11 +433,11 @@ $$")
 
       df = e[[dfNames[1]]]
 
-      rv$data = df
-      rv$allVars = names(df)
-      rv$autoFormula = ""
+      rv$data            = df
+      rv$allVars         = names(df)
+      rv$autoFormula     = ""
       modelFit(NULL)
-      rv$modelEquations = NULL
+      rv$modelEquations  = NULL
       rv$modelExplanation = NULL
       updateTextInput(session, "formula_text", value = "")
       return(NULL)
@@ -426,10 +461,10 @@ $$")
               "sep_input",
               "Separator:",
               choices = c(
-                "Comma (,)" = ",",
-                "Tab (\\t)" = "\t",
+                "Comma (,)"   = ",",
+                "Tab (\\t)"   = "\t",
                 "Semicolon (;)" = ";",
-                "Space ( )" = " ",
+                "Space ( )"   = " ",
                 "Other (type below)" = "OTHER"
               )
             ),
@@ -469,6 +504,43 @@ $$")
   })
 
   # -------------------------------------------------------------------
+  # Load s20x dataset when selected
+  # -------------------------------------------------------------------
+  observeEvent(input$s20x_dataset, {
+    req(input$data_source == "s20x")
+
+    if (!requireNamespace("s20x", quietly = TRUE)) {
+      showNotification(
+        "The s20x package is not installed. Please install it to use the example data sets.",
+        type = "error"
+      )
+      return(NULL)
+    }
+
+    dsName = input$s20x_dataset
+    if (is.null(dsName) || dsName == "") {
+      return(NULL)
+    }
+
+    env = new.env()
+    utils::data(list = dsName, package = "s20x", envir = env)
+    df  = env[[dsName]]
+
+    if (!is.data.frame(df)) {
+      showNotification("Selected object is not a data frame.", type = "error")
+      return(NULL)
+    }
+
+    rv$data            = df
+    rv$allVars         = names(df)
+    rv$autoFormula     = ""
+    modelFit(NULL)
+    rv$modelEquations   = NULL
+    rv$modelExplanation = NULL
+    updateTextInput(session, "formula_text", value = "")
+  })
+
+  # -------------------------------------------------------------------
   # Drag-and-drop buckets UI
   # -------------------------------------------------------------------
   output$var_buckets = renderUI({
@@ -478,28 +550,28 @@ $$")
 
     # Remove the chosen response from the Variables list
     currentResp = input$response_var
-    vars = rv$allVars
+    vars        = rv$allVars
 
     if (!is.null(currentResp) && nzchar(currentResp)) {
       vars = setdiff(vars, currentResp)
     }
 
     bucket_list(
-      header = NULL,
+      header     = NULL,
       group_name = paste0("vars_group_", rv$bucketGroupId),
       orientation = "horizontal",
       add_rank_list(
-        text = "Variables",
+        text   = "Variables",
         labels = vars,
         input_id = "variables"
       ),
       add_rank_list(
-        text = "Factors",
+        text   = "Factors",
         labels = character(0),
         input_id = "factors"
       ),
       add_rank_list(
-        text = "Continuous",
+        text   = "Continuous",
         labels = character(0),
         input_id = "continuous"
       )
@@ -532,7 +604,7 @@ $$")
       }
 
       factors = input$factors %||% character(0)
-      cont = input$continuous %||% character(0)
+      cont    = input$continuous %||% character(0)
 
       preds = c(factors, cont)
       preds = unique(setdiff(preds, resp))
@@ -560,11 +632,7 @@ $$")
   # Keep 'Variables' bucket in sync with chosen response (if needed)
   # -------------------------------------------------------------------
   observeEvent(input$response_var, {
-    newResp = input$response_var
-    oldResp = rv$lastResponse
-
-    # We don't currently store separate varsBucket/factorsBucket/contBucket
-    # in rv, so this block is effectively just tracking lastResponse.
+    newResp        = input$response_var
     rv$lastResponse = newResp
   })
 
@@ -586,7 +654,7 @@ $$")
       return(NULL)
     }
 
-    f = as.formula(input$formula_text)
+    f        = as.formula(input$formula_text)
     respName = all.vars(f)[1]
 
     # Work on a copy of the data so we can safely coerce factors
@@ -636,7 +704,7 @@ $$")
       incProgress(0.7, detail = "Writing explanation...")
       expl = lmExplanation(m, chatProvider)
 
-      rv$modelEquations = eq
+      rv$modelEquations   = eq
       rv$modelExplanation = expl
       incProgress(1)
     })
@@ -653,7 +721,7 @@ $$")
     modelFit(NULL)
 
     # Clear stored equations / explanation
-    rv$modelEquations = NULL
+    rv$modelEquations   = NULL
     rv$modelExplanation = NULL
 
     # Reset auto-formula tracking
@@ -670,13 +738,13 @@ $$")
       updateSelectInput(
         session,
         "response_var",
-        label = NULL,
+        label   = NULL,
         choices = rv$allVars,
         selected = rv$allVars[1]
       )
     }
 
-    rv$lastResponse = NULL
+    rv$lastResponse  = NULL
     rv$bucketGroupId = rv$bucketGroupId + 1L  # force new buckets
   })
 
