@@ -1,11 +1,20 @@
 Package: WMFM
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Allows the Exploration of Fitted (Generalised) Linear Models with R Shiny
+Version: 0.0.1.0000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("James", "Curran", , "j.curran@auckland.ac.nz", role = c("aut", "cre"))
+Description: This package allows users to construct and fit (generalised) linear 
+models and get the fitted model. We have observed that for many learners of 
+statistics, there is a disconnect between the regression table and the fitted 
+model used to compute the fitted values. This is further compounded by the 
+presence of factors in the model formula. This application allows the user to 
+construct an (additive) (generalised) linear model using dropdown boxes and 
+drag and drop. The model fit can then be obtained. The regression table, along
+with a detailed prompt, is sent to a Large Language Model (LLM), which provides
+the fitted equation(s), and a description of the fitted model. The app also
+provides a nice plot of the fitted model in situations where there is only one 
+continuous covariate.
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.0
