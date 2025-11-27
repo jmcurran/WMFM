@@ -15,6 +15,8 @@
 #' @return Either a tibble with columns \code{condition} and \code{equation},
 #'   or a character vector with raw text from the language model.
 #' @keywords internal
+#'
+#' @importFrom stats formula
 lmEquations = function(model, chat) {
   key = paste(
     "eq",

@@ -72,7 +72,7 @@ Guidelines:
 - For factor predictors, explain differences between groups.
 - If there are interactions, briefly describe how one effect depends on another variable.
 - Do not mention standard errors, t-values, z-values, or p-values explicitly.
-- Keep it to 1–3 short paragraphs.
+- Keep it to 1-3 short paragraphs.
 
 Now provide the explanation.
 ")

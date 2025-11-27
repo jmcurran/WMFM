@@ -69,10 +69,10 @@ lmToPrompt = function(model) {
   * Let the coefficients be (symbolically): (Intercept) = a, AttendYes = b,
     Test = c, AttendYes:Test = d.
   * First write the equation for the reference level of the factor, e.g.
-      Exam = a + c × Test    (when Attend = \"No\")
+      Exam = a + c \u00D7 Test    (when Attend = \"No\")
   * Then, for the non-reference level (e.g. Attend = \"Yes\"), show BOTH the intercept
     and slope as sums BEFORE simplifying, for example:
-      Exam = (a + b) + (c + d) × Test = 14.63 + 4.75 × Test    (when Attend = \"Yes\")
+      Exam = (a + b) + (c + d) \u00D7 Test = 14.63 + 4.75 \u00D7 Test    (when Attend = \"Yes\")
     where you plug in the actual numeric values for a, b, c, d from the coefficient table.
 
 - In general, for each non-reference level L of a factor F that interacts with Test:
@@ -95,10 +95,10 @@ lmToPrompt = function(model) {
 
 - For binary factors such as Attend with levels \"No\" (reference) and \"Yes\":
   * First show the baseline equation for the reference level, for example
-      Exam = 6.62 + 3.52 × Test    (when Attend = \"No\")
+      Exam = 6.62 + 3.52 \u00D7 Test    (when Attend = \"No\")
   * Then, for the non-reference level, explicitly show how the intercept is obtained
     by adding the factor coefficient to the intercept, for example
-      Exam = (6.62 + 8.01) + 3.52 × Test = 14.63 + 3.52 × Test    (when Attend = \"Yes\")
+      Exam = (6.62 + 8.01) + 3.52 \u00D7 Test = 14.63 + 3.52 \u00D7 Test    (when Attend = \"Yes\")
     (numbers here are just an illustration; use the actual coefficients from the table).
 
 - Use this same pattern for any factor: show the baseline equation, then for each
@@ -123,7 +123,7 @@ Coefficient table (rounded for display):
 General rules:
 - Round numeric quantities you write in equations to 2 decimal places.
 - For linear regression (Gaussian, identity link):
-  * Write equations like: {response} = b0 + b1 × X1 + ...
+  * Write equations like: {response} = b0 + b1 \u00D7 X1 + ...
 - For binomial GLMs with logit link:
   * Write equations on the log-odds (logit) scale, e.g. logit(p) = ...
   * You may optionally also give p = exp(eta) / (1 + exp(eta)).
