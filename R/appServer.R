@@ -697,6 +697,16 @@ $$")
       return(NULL)
     }
 
+    # If this data came from s20x, attach its documentation to the model
+    if (identical(input$data_source, "s20x")) {
+      dsName = input$s20x_dataset
+      docText = getS20xDocText(dsName)
+      if (!is.null(docText)) {
+        attr(m, "wmfm_dataset_doc") = docText
+        attr(m, "wmfm_dataset_name") = dsName
+      }
+    }
+
     modelFit(m)
 
     # Talk to the LLM with a progress bar

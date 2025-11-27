@@ -48,12 +48,39 @@ lmToExplanationPrompt = function(model) {
     "The outcome is continuous, so the model describes how the mean response changes."
   }
 
+  # Optional: extra context from dataset documentation (e.g. s20x)
+  dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
+  dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
+
+  if (!is.null(dsDoc)) {
+    # Truncate to something reasonable so we do not blow the context window
+    dsLines = strsplit(dsDoc, "\n", fixed = TRUE)[[1]]
+    dsLines = dsLines[seq_len(min(length(dsLines), 40L))]  # first ~40 lines
+    dsDocShort = paste(dsLines, collapse = "\n")
+
+    dataset_block = glue::glue("
+Additional information about the data set (from its R documentation):
+
+Data set name: {dsName}
+
+{dsDocShort}
+
+Use this information when explaining what the variables represent.
+Do not repeat the documentation verbatim; instead, summarise it briefly
+and connect it to the model results.
+")
+  } else {
+    dataset_block = ""
+  }
+
+
   glue("
 You are a friendly statistics tutor.
 Explain the results of this regression model in clear, non-technical language.
 
 {modelDesc}
 {outcomeDesc}
+{dataset_block}
 
 Response variable: {response}
 Number of observations: {n}
