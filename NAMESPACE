@@ -3,6 +3,7 @@
 export(runWMFMApp)
 importFrom(bslib,accordion)
 importFrom(bslib,accordion_panel)
+importFrom(bslib,bs_theme)
 importFrom(ellmer,chat_ollama)
 importFrom(ellmer,type_array)
 importFrom(ellmer,type_object)

@@ -1,112 +1,106 @@
-#' Build a prompt asking for fitted-model equations
+#' Build an LLM prompt for fitted-model equations
 #'
-#' Given a fitted linear or generalised linear model, construct a detailed
-#' prompt that asks a language model to write down the fitted-model
-#' equations. The prompt includes a description of the model, the response
-#' and predictors, and the coefficient table.
+#' @param model A fitted \code{lm} or \code{glm} object.
 #'
-#' The rules in the prompt are tailored for teaching: for additive models
-#' with factors, equations are requested separately for each factor level,
-#' and for interaction models, the arithmetic behind changes in intercept
-#' and slope is emphasised.
-#'
-#' @param model A fitted model object, typically of class \code{"lm"} or
-#'   \code{"glm"}.
-#'
-#' @return A character scalar containing the prompt text to send to the
-#'   language model.
+#' @return A single character string to be sent to the chat model.
 #' @keywords internal
 lmToPrompt = function(model) {
-  modelFrame = model.frame(model)
-  response = names(modelFrame)[1]
+  mf = stats::model.frame(model)
+  response = names(mf)[1]
   coefTable = coef(summary(model))
-  coefText = paste(capture.output(print(round(coefTable, 4))), collapse = "\n")
+  coefText = paste(
+    utils::capture.output(print(round(coefTable, 4))),
+    collapse = "\n"
+  )
 
   # Model type description
   if (inherits(model, "glm")) {
     fam = model$family$family
     link = model$family$link
-    modelDesc = glue(
+    modelDesc = glue::glue(
       "This is a generalised linear model with {fam} family and {link} link."
     )
   } else {
     modelDesc = "This is a linear regression model with Gaussian errors and identity link."
   }
 
-  predictors = setdiff(names(modelFrame), response)
-  predictorInfo = sapply(
+  predictors = setdiff(names(mf), response)
+  predInfo = vapply(
     predictors,
-    function(varName) {
-      x = modelFrame[[varName]]
+    function(v) {
+      x = mf[[v]]
       if (is.factor(x)) {
-        levelsX = levels(x)
+        lvls = levels(x)
         sprintf(
           "- %s: factor; levels = [%s]; reference = %s",
-          varName,
-          paste(levelsX, collapse = ", "),
-          levelsX[1]
+          v,
+          paste(lvls, collapse = ", "),
+          lvls[1]
         )
       } else {
-        sprintf("- %s: numeric", varName)
+        sprintf("- %s: numeric", v)
       }
     },
-    USE.NAMES = FALSE
+    character(1L)
   )
 
-  # Detect interactions from the terms object
-  termsObj = terms(model)
-  termLabels = attr(termsObj, "term.labels")
+  # --- Detect interactions from the terms object ---
+  tm = terms(model)
+  termLabels = attr(tm, "term.labels")
   hasInteractions = any(grepl(":", termLabels, fixed = TRUE))
 
   if (hasInteractions) {
-    # Interaction models
-    interactionRules = "
-- The model includes interaction terms (see coefficient names containing ':').
-- Use the coefficient table to express how BOTH the intercept and slopes change across
-  levels of the factor involved in the interaction.
+    # ---------------------- Interaction models ----------------------
+    extraRules = "
+The model includes interaction terms (coefficient names contain ':').
 
-- When there is a single factor-by-numeric interaction such as Attend * Test:
-  * Let the coefficients be (symbolically): (Intercept) = a, AttendYes = b,
-    Test = c, AttendYes:Test = d.
-  * First write the equation for the reference level of the factor, e.g.
-      Exam = a + c \u00D7 Test    (when Attend = \"No\")
-  * Then, for the non-reference level (e.g. Attend = \"Yes\"), show BOTH the intercept
-    and slope as sums BEFORE simplifying, for example:
-      Exam = (a + b) + (c + d) \u00D7 Test = 14.63 + 4.75 \u00D7 Test    (when Attend = \"Yes\")
-    where you plug in the actual numeric values for a, b, c, d from the coefficient table.
+For interactions between a factor F and a numeric variable X:
 
-- In general, for each non-reference level L of a factor F that interacts with Test:
-  * The intercept for level L is (Intercept + coefficient of F=L).
-  * The slope for Test at level L is (coefficient of Test + coefficient of F=L:Test).
-  * Show these arithmetic sums explicitly in brackets, THEN simplify them in the same line.
+- Let the coefficients be, symbolically:
+    (Intercept) = a,   F[level] = b,   X = c,   F[level]:X = d.
+- Write an equation for the reference level of F (where all F[level] = 0), e.g.
+    Response = a + c * X    (when F = reference level)
+- For a non-reference level L of F, show BOTH the intercept and the slope
+  as sums BEFORE simplifying, for example
+    Response = (a + b) + (c + d) * X = 14.63 + 4.75 * X   (when F = L)
 
-- If there are more complicated interactions (e.g. multiple factors or higher-order
-  interactions), you may give either:
-  * a set of equations by factor level using the same intercept/slope-decomposition idea, or
-  * a single general equation with indicator functions, if that is clearer.
+General rules for interactions:
+- For each relevant combination of factor levels, give a separate equation.
+- Each equation must be labelled with its condition in brackets, e.g.
+    (when Attend = \"Yes\" and Gender = \"Female\").
 "
   } else {
-    # Additive models (no interactions)
-    interactionRules = "
-- There are no interaction terms.
-- For each factor predictor:
-  * Use the reference level implied by the intercept.
-  * Give one equation per factor level.
+    # ---------------------- Additive models -------------------------
+    extraRules = "
+The model has NO interaction terms (only main effects).
 
-- For binary factors such as Attend with levels \"No\" (reference) and \"Yes\":
-  * First show the baseline equation for the reference level, for example
-      Exam = 6.62 + 3.52 \u00D7 Test    (when Attend = \"No\")
-  * Then, for the non-reference level, explicitly show how the intercept is obtained
-    by adding the factor coefficient to the intercept, for example
-      Exam = (6.62 + 8.01) + 3.52 \u00D7 Test = 14.63 + 3.52 \u00D7 Test    (when Attend = \"Yes\")
-    (numbers here are just an illustration; use the actual coefficients from the table).
+VERY IMPORTANT: For every factor predictor, you MUST output one equation
+for the reference level and one equation for EACH non-reference level.
 
-- Use this same pattern for any factor: show the baseline equation, then for each
-  non-reference level show (intercept + factor coefficient) before simplifying.
+Example: suppose the model is Exam ~ Attend + Test with coefficients
+  (Intercept) = a,  AttendYes = b,  Test = c.
+Then you MUST output BOTH of the following equations:
+
+- For the reference level (Attend = \"No\"):
+    Exam = a + c * Test    (when Attend = \"No\")
+
+- For the non-reference level (Attend = \"Yes\"):
+    Exam = (a + b) + c * Test = 14.63 + 3.52 * Test    (when Attend = \"Yes\")
+
+Apply this idea to every factor in the actual model:
+- First write the baseline equation for the reference level.
+- Then, for each non-reference level L of the factor F, write an equation where
+  the intercept is (baseline intercept + coefficient for F=L).
+- If there are several factors, you may either:
+  * list equations for each factor separately (holding others at reference), or
+  * list equations for important combinations of factor levels.
+
+Do NOT return only a single equation when a factor is present.
+There must be at least as many equations as there are levels you describe.
 "
   }
 
-  glue("
+  glue::glue("
 You are given output from an R regression model.
 {modelDesc}
 
@@ -115,7 +109,7 @@ Your task is to write fitted-model equations for teaching.
 Response: {response}
 
 Predictors:
-{paste(predictorInfo, collapse = '\\n')}
+{paste(predInfo, collapse = '\\n')}
 
 Coefficient table (rounded for display):
 {coefText}
@@ -123,7 +117,7 @@ Coefficient table (rounded for display):
 General rules:
 - Round numeric quantities you write in equations to 2 decimal places.
 - For linear regression (Gaussian, identity link):
-  * Write equations like: {response} = b0 + b1 \u00D7 X1 + ...
+  * Write equations like: {response} = b0 + b1 * X1 + ...
 - For binomial GLMs with logit link:
   * Write equations on the log-odds (logit) scale, e.g. logit(p) = ...
   * You may optionally also give p = exp(eta) / (1 + exp(eta)).
@@ -131,12 +125,13 @@ General rules:
   * Write equations on the log scale, e.g. log(mu) = ...
   * You may optionally also give mu = exp(eta).
 
-{interactionRules}
+{extraRules}
 
 Formatting:
-- Write the equations in plain text, one per line.
-- Label each equation with the relevant condition in brackets, like (when Attend = \"Yes\").
+- Write the equations in plain text, one equation per line.
+- Label each equation with the relevant condition in brackets, like
+  (when Attend = \"Yes\") or (when Colour = \"Blue\").
 - Do not mention standard errors, t-values, z-values, or p-values.
-- Return only the equations, no extra commentary.
+- Return ONLY the equations, with no extra commentary.
 ")
 }

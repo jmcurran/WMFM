@@ -24,18 +24,23 @@
 #' @importFrom shiny h4 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
-#' @importFrom shiny conditionalPanel selectInput
-#' @importFrom bslib accordion accordion_panel
+#' @importFrom shiny conditionalPanel selectInput div
+#' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
   fluidPage(
+    theme = bs_theme(),  # enable bslib components (Bootstrap 5)
     withMathJax(),
-    titlePanel("Model Builder"),
+    titlePanel("What's My Fitted Model?"),
 
     tags$style(HTML("
       .bucket-list .rank-list {
         max-height: 8em;
         overflow-y: auto;
       }
+      body { font-size: 90%; }
+      .shiny-input-container { font-size: 90%; }
+      .nav-tabs > li > a { font-size: 90%; }
+      pre, code { font-size: 90%; }
     ")),
 
     tabsetPanel(
@@ -103,11 +108,20 @@ appUI = function() {
 
         hr(),
 
-        # Model type + Fit/Reset buttons side by side
+        # Row: Response | Type radios | Fit / Reset buttons
+        h4("Response, model type, and fitting"),
         fluidRow(
+          ## Response dropdown (left)
           column(
-            width = 8,
-            h4("Model type"),
+            width = 4,
+            h5("Response"),
+            uiOutput("response_picker")
+          ),
+
+          ## Model type radios (middle)
+          column(
+            width = 4,
+            h5("Type"),
             radioButtons(
               "model_type",
               label = NULL,
@@ -119,32 +133,36 @@ appUI = function() {
               selected = "lm"
             )
           ),
+
+          ## Fit / Reset buttons (right)
           column(
             width = 4,
-            br(),  # space above buttons
-            actionButton(
-              "fit_btn",
-              "Fit model",
-              width = "100%"
-            ),
-            br(),
-            actionButton(
-              "reset_btn",
-              "Reset model",
-              width = "100%"
+            h5(""),
+            div(
+              style = "margin-top: 6px;",
+              actionButton(
+                "fit_btn",
+                "Fit model",
+                class = "btn-primary btn-sm"
+              ),
+              tags$br(), tags$br(),
+              actionButton(
+                "reset_btn",
+                "Reset model",
+                class = "btn-secondary btn-sm"
+              )
             )
           )
         ),
 
         hr(),
 
-        h4("Response"),
-        uiOutput("response_picker"),
-
+        # Model formula underneath the whole row
         h4("Model formula"),
         textInput("formula_text", label = NULL, value = "", width = "100%"),
         verbatimTextOutput("formula_status")
       ),
+
 
       # ---- Tab 3: Fitted model outputs ----
       tabPanel(
@@ -162,6 +180,8 @@ appUI = function() {
         h4("Model outputs"),
         accordion(
           id = "model_outputs",
+          multiple = TRUE,   # allow both open at once
+          open = NULL,       # start with all panels closed
           accordion_panel(
             "Regression table",
             value = "reg_table",

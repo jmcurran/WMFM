@@ -524,20 +524,23 @@ $$")
 
     env = new.env()
     utils::data(list = dsName, package = "s20x", envir = env)
-    df  = env[[dsName]]
+    df = env[[dsName]]
 
     if (!is.data.frame(df)) {
       showNotification("Selected object is not a data frame.", type = "error")
       return(NULL)
     }
 
-    rv$data            = df
-    rv$allVars         = names(df)
-    rv$autoFormula     = ""
+    rv$data = df
+    rv$allVars = names(df)
+    rv$autoFormula = ""
     modelFit(NULL)
-    rv$modelEquations   = NULL
+    rv$modelEquations = NULL
     rv$modelExplanation = NULL
     updateTextInput(session, "formula_text", value = "")
+
+    # >>> NEW: switch to the Model tab after loading an s20x data set
+    updateTabsetPanel(session, "main_tabs", selected = "Model")
   })
 
   # -------------------------------------------------------------------
@@ -814,8 +817,17 @@ $$")
     m = modelFit()
     if (is.null(m)) {
       cat("No model fitted yet.")
-    } else {
-      summary(m)
+      return()
     }
+
+    out = capture.output(summary(m))
+
+    # Find first occurrence of "Coefficients:"
+    idx = grep("^Coefficients:", out)
+
+    # Keep that line and everything after it
+    out = out[idx:length(out)]
+
+    cat(out, sep = "\n")
   })
 }

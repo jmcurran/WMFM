@@ -2,28 +2,17 @@
 % Please edit documentation in R/lmToPrompt.R
 \name{lmToPrompt}
 \alias{lmToPrompt}
-\title{Build a prompt asking for fitted-model equations}
+\title{Build an LLM prompt for fitted-model equations}
 \usage{
 lmToPrompt(model)
 }
 \arguments{
-\item{model}{A fitted model object, typically of class \code{"lm"} or
-\code{"glm"}.}
+\item{model}{A fitted \code{lm} or \code{glm} object.}
 }
 \value{
-A character scalar containing the prompt text to send to the
-language model.
+A single character string to be sent to the chat model.
 }
 \description{
-Given a fitted linear or generalised linear model, construct a detailed
-prompt that asks a language model to write down the fitted-model
-equations. The prompt includes a description of the model, the response
-and predictors, and the coefficient table.
-}
-\details{
-The rules in the prompt are tailored for teaching: for additive models
-with factors, equations are requested separately for each factor level,
-and for interaction models, the arithmetic behind changes in intercept
-and slope is emphasised.
+Build an LLM prompt for fitted-model equations
 }
 \keyword{internal}
