@@ -68,6 +68,9 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   # Plot of data + fitted model
   # -------------------------------------------------------------------
+  # -------------------------------------------------------------------
+  # Plot of data + fitted model
+  # -------------------------------------------------------------------
   output$model_plot = renderPlot({
     m = modelFit()
     req(m)  # need a fitted model
@@ -109,6 +112,55 @@ appServer = function(input, output, session) {
     factorPreds = predictors[factorMask]
     fVar        = if (length(factorPreds) > 0) factorPreds[1] else NULL
 
+    # --- Set up y for plotting (special handling for binomial glm) ---
+    y         = modelFrame[[response]]
+    isGlm     = inherits(m, "glm")
+    isBinom   = isGlm && identical(m$family$family, "binomial")
+    yPlot     = y
+    yBreaks   = NULL
+    yLabels   = NULL
+
+    if (isBinom) {
+      # We want a 0/1 numeric y for plotting, regardless of how the response is stored
+      if (is.factor(y)) {
+        levs = levels(y)
+        if (length(levs) == 2) {
+          eventLevel = levs[2]  # glm's default "success"
+          yPlot      = as.numeric(y == eventLevel)
+          yBreaks    = c(0, 1)
+          yLabels    = levs
+        } else {
+          # Fallback: use underlying codes
+          yPlot = as.numeric(y)
+        }
+      } else if (is.logical(y)) {
+        yPlot   = as.numeric(y)
+        yBreaks = c(0, 1)
+        yLabels = c("FALSE", "TRUE")
+      } else if (is.numeric(y)) {
+        yPlot = y
+        uy    = sort(unique(stats::na.omit(yPlot)))
+        if (identical(uy, c(0, 1))) {
+          yBreaks = c(0, 1)
+          yLabels = c("0", "1")
+        }
+      } else {
+        # character etc: coerce to factor and treat as 2-level factor if possible
+        fac = factor(y)
+        levs = levels(fac)
+        if (length(levs) == 2) {
+          eventLevel = levs[2]
+          yPlot      = as.numeric(fac == eventLevel)
+          yBreaks    = c(0, 1)
+          yLabels    = levs
+        } else {
+          yPlot = as.numeric(fac)
+        }
+      }
+
+      modelFrame$.yPlot = yPlot
+    }
+
     # Build grid for fitted lines
     xSeq = seq(
       min(modelFrame[[xVar]], na.rm = TRUE),
@@ -137,7 +189,7 @@ appServer = function(input, output, session) {
     newData = expand.grid(gridList, stringsAsFactors = FALSE)
 
     # Predictions on response scale
-    if (inherits(m, "glm")) {
+    if (isGlm) {
       fitVals = predict(m, newdata = newData, type = "response")
     } else {
       fitVals = predict(m, newdata = newData)
@@ -146,11 +198,11 @@ appServer = function(input, output, session) {
 
     # Build plot
     if (is.null(fVar)) {
-      ggplot(
+      p = ggplot(
         data    = modelFrame,
         mapping = aes(
           x = .data[[xVar]],
-          y = .data[[response]]
+          y = if (isBinom) .data[[".yPlot"]] else .data[[response]]
         )
       ) +
         geom_point(alpha = 0.6) +
@@ -164,11 +216,11 @@ appServer = function(input, output, session) {
         ) +
         labs(x = xVar, y = response)
     } else {
-      ggplot(
+      p = ggplot(
         data    = modelFrame,
         mapping = aes(
           x      = .data[[xVar]],
-          y      = .data[[response]],
+          y      = if (isBinom) .data[[".yPlot"]] else .data[[response]],
           colour = .data[[fVar]]
         )
       ) +
@@ -184,12 +236,23 @@ appServer = function(input, output, session) {
         ) +
         labs(x = xVar, y = response, colour = fVar)
     }
+
+    # For binomial models, force y-scale to 0–1 with nice labels
+    if (isBinom && !is.null(yBreaks) && !is.null(yLabels)) {
+      p = p + ggplot2::scale_y_continuous(
+        breaks = yBreaks,
+        labels = yLabels,
+        limits = c(0, 1)
+      )
+    }
+
+    p
   })
+
 
   # -------------------------------------------------------------------
   # Symbolic model formula (LaTeX via MathJax)
   # -------------------------------------------------------------------
-  # ---- Symbolic model formula (LaTeX via MathJax), with interactions ----
   output$model_formula = renderUI({
     m = modelFit()
     if (is.null(m)) {
