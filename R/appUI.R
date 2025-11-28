@@ -21,7 +21,7 @@
 #'
 #' @importFrom shiny fluidPage withMathJax titlePanel
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
-#' @importFrom shiny h4 uiOutput tabsetPanel tabPanel
+#' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div

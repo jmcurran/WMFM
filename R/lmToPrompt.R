@@ -60,9 +60,16 @@ For interactions between a factor F and a numeric variable X:
     (Intercept) = a,   F[level] = b,   X = c,   F[level]:X = d.
 - Write an equation for the reference level of F (where all F[level] = 0), e.g.
     Response = a + c * X    (when F = reference level)
-- For a non-reference level L of F, show BOTH the intercept and the slope
-  as sums BEFORE simplifying, for example
+- For a non-reference level L of F, you MUST show BOTH:
+    * the intercept as a sum (a + b) BEFORE simplification, and
+    * the slope as a sum (c + d) BEFORE simplification,
+  and then show the simplified numeric version on the same line or the next line, e.g.
     Response = (a + b) + (c + d) * X = 14.63 + 4.75 * X   (when F = L)
+
+This rule applies to ALL model types:
+- If the model is binomial with logit link, simply replace 'Response' by logit(p)
+  or logit(Pass), but still show the sums (a + b), (c + d) before simplifying.
+- If the model is Poisson with log link, use log(mu) similarly.
 
 General rules for interactions:
 - For each relevant combination of factor levels, give a separate equation.
@@ -77,7 +84,7 @@ The model has NO interaction terms (only main effects).
 VERY IMPORTANT: For every factor predictor, you MUST output one equation
 for the reference level and one equation for EACH non-reference level.
 
-Example: suppose the model is Exam ~ Attend + Test with coefficients
+Example (linear model): suppose the model is Exam ~ Attend + Test with coefficients
   (Intercept) = a,  AttendYes = b,  Test = c.
 Then you MUST output BOTH of the following equations:
 
@@ -87,10 +94,17 @@ Then you MUST output BOTH of the following equations:
 - For the non-reference level (Attend = \"Yes\"):
     Exam = (a + b) + c * Test = 14.63 + 3.52 * Test    (when Attend = \"Yes\")
 
+Exactly the SAME pattern must be followed for generalised linear models:
+- For a binomial logit model, you might write, for a non-reference level L,
+    logit(Pass) = (a + b) + c * Test = -5.56 + 0.70 * Test    (when Attend = L)
+- For a Poisson log-link model, you might write
+    log(mu) = (a + b) + c * X = 2.31 + 0.45 * X    (when F = L)
+
 Apply this idea to every factor in the actual model:
 - First write the baseline equation for the reference level.
 - Then, for each non-reference level L of the factor F, write an equation where
-  the intercept is (baseline intercept + coefficient for F=L).
+  the intercept is written as a sum (baseline intercept + coefficient for F = L)
+  BEFORE simplifying, and then show the numeric simplified intercept.
 - If there are several factors, you may either:
   * list equations for each factor separately (holding others at reference), or
   * list equations for important combinations of factor levels.
@@ -124,11 +138,15 @@ General rules:
 - For Poisson GLMs with log link:
   * Write equations on the log scale, e.g. log(mu) = ...
   * You may optionally also give mu = exp(eta).
+- For factor predictors in ANY model (linear or GLM):
+  * Always give separate equations for the reference level and each non-reference level.
+  * When you adjust the intercept (and slopes, in interaction models), first show the
+    symbolic sum (e.g. (a + b) or (c + d)), and then show the simplified numeric value.
 
 {extraRules}
 
 Formatting:
-- Write the equations in plain text, one equation per line.
+- Write the equations in plain text, one equation per line (or with simple wrapped lines).
 - Label each equation with the relevant condition in brackets, like
   (when Attend = \"Yes\") or (when Colour = \"Blue\").
 - Do not mention standard errors, t-values, z-values, or p-values.

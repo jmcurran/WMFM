@@ -189,116 +189,115 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   # Symbolic model formula (LaTeX via MathJax)
   # -------------------------------------------------------------------
+  # ---- Symbolic model formula (LaTeX via MathJax), with interactions ----
   output$model_formula = renderUI({
     m = modelFit()
     if (is.null(m)) {
       return(helpText("Fit a model to see the model formula."))
     }
 
-    modelFrame = model.frame(m)
-    response   = names(modelFrame)[1]
-    predictors = names(modelFrame)[-1]
+    mf = model.frame(m)
+    response = names(mf)[1]
 
-    termsObj    = terms(m)
-    termLabels  = attr(termsObj, "term.labels")
-    dataClasses = attr(termsObj, "dataClasses")
+    # Terms object gives us main effects + interactions
+    tt = terms(m)
+    termLabels = attr(tt, "term.labels")
+    mainLabels = termLabels[!grepl(":", termLabels)]
+    intLabels  = termLabels[grepl(":", termLabels)]
 
-    termsTex  = c("\\beta_0")
-    betaIndex = 1L
+    # ----- Build RHS: main effects first -----
+    termsTex = c("\\beta_0")
+    betaIdx = 1L
 
-    # Main effects
-    mainLabels = termLabels[!grepl(":", termLabels, fixed = TRUE)]
-    for (lab in mainLabels) {
-      v   = lab
-      cls = dataClasses[[v]]
-      x   = modelFrame[[v]]
-      isCat = !is.null(cls) && cls %in% c("factor", "ordered", "character", "logical")
+    for (lbl in mainLabels) {
+      v = lbl
+      x = mf[[v]]
 
-      if (isCat) {
-        if (!is.factor(x)) {
-          x = as.factor(x)
-        }
-        levelsX = levels(x)
-        if (length(levelsX) >= 2) {
-          for (lvl in levelsX[-1]) {
+      if (is.factor(x)) {
+        lvls = levels(x)
+        if (length(lvls) >= 2) {
+          # One indicator per non-reference level
+          for (lvl in lvls[-1]) {
             termsTex = c(
               termsTex,
-              glue::glue(
-                "\\beta_{betaIndex} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}"
-              )
+              glue("\\beta_{betaIdx} \\times \\mathbf{{1}}\\{{ {v}_i = \\text{{\"{lvl}\"}} \\}}")
             )
-            betaIndex = betaIndex + 1L
+            betaIdx = betaIdx + 1L
           }
         }
       } else {
+        # Numeric predictor
         termsTex = c(
           termsTex,
-          glue::glue("\\beta_{betaIndex} \\times {v}_i")
+          glue("\\beta_{betaIdx} \\times {v}_i")
         )
-        betaIndex = betaIndex + 1L
+        betaIdx = betaIdx + 1L
       }
     }
 
-    # Interaction terms (2-way only)
-    interactionLabels = termLabels[grepl(":", termLabels, fixed = TRUE)]
-
-    for (lab in interactionLabels) {
-      vars = strsplit(lab, ":", fixed = TRUE)[[1]]
+    # ----- Add interaction terms -----
+    for (lbl in intLabels) {
+      vars = strsplit(lbl, ":", fixed = TRUE)[[1]]
       if (length(vars) != 2) {
+        # For now, skip higher-order interactions
         next
       }
+      v1 = vars[1]
+      v2 = vars[2]
+      x1 = mf[[v1]]
+      x2 = mf[[v2]]
 
-      v1   = vars[1]
-      v2   = vars[2]
-      x1   = modelFrame[[v1]]
-      x2   = modelFrame[[v2]]
-      cls1 = dataClasses[[v1]]
-      cls2 = dataClasses[[v2]]
+      isFac1 = is.factor(x1)
+      isFac2 = is.factor(x2)
 
-      isCat1 = !is.null(cls1) && cls1 %in% c("factor", "ordered", "character", "logical")
-      isCat2 = !is.null(cls2) && cls2 %in% c("factor", "ordered", "character", "logical")
-
-      # numeric:numeric
-      if (!isCat1 && !isCat2) {
+      # numeric × numeric
+      if (!isFac1 && !isFac2) {
         termsTex = c(
           termsTex,
-          glue::glue("\\beta_{betaIndex} \\times {v1}_i \\times {v2}_i")
+          glue("\\beta_{betaIdx} \\times {v1}_i \\times {v2}_i")
         )
-        betaIndex = betaIndex + 1L
-        next
-      }
+        betaIdx = betaIdx + 1L
 
-      # factor:numeric
-      if (isCat1 && !isCat2) {
-        facVar = v1
-        numVar = v2
-        facX   = if (is.factor(x1)) x1 else as.factor(x1)
-      } else if (!isCat1 && isCat2) {
-        facVar = v2
-        numVar = v1
-        facX   = if (is.factor(x2)) x2 else as.factor(x2)
-      } else {
-        # factor:factor omitted for now
-        next
-      }
-
-      levelsX = levels(facX)
-      if (length(levelsX) >= 2) {
-        for (lvl in levelsX[-1]) {
+        # factor × numeric
+      } else if (isFac1 && !isFac2) {
+        lvls1 = levels(x1)
+        for (lvl1 in lvls1[-1]) {
           termsTex = c(
             termsTex,
-            glue::glue(
-              "\\beta_{betaIndex} \\times {numVar}_i \\times \\mathbf{{1}}\\{{ {facVar}_i = \\text{{\"{lvl}\"}} \\}}"
-            )
+            glue("\\beta_{betaIdx} \\times {v2}_i \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}} \\}}")
           )
-          betaIndex = betaIndex + 1L
+          betaIdx = betaIdx + 1L
+        }
+
+        # numeric × factor
+      } else if (!isFac1 && isFac2) {
+        lvls2 = levels(x2)
+        for (lvl2 in lvls2[-1]) {
+          termsTex = c(
+            termsTex,
+            glue("\\beta_{betaIdx} \\times {v1}_i \\times \\mathbf{{1}}\\{{ {v2}_i = \\text{{\"{lvl2}\"}} \\}}")
+          )
+          betaIdx = betaIdx + 1L
+        }
+
+        # factor × factor
+      } else {
+        lvls1 = levels(x1)
+        lvls2 = levels(x2)
+        for (lvl1 in lvls1[-1]) {
+          for (lvl2 in lvls2[-1]) {
+            termsTex = c(
+              termsTex,
+              glue("\\beta_{betaIdx} \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}}, {v2}_i = \\text{{\"{lvl2}\"}} \\}}")
+            )
+            betaIdx = betaIdx + 1L
+          }
         }
       }
     }
 
-    rhs = paste(termsTex, collapse = " + ")
-
-    # LHS
+    # ----- LHS: depends on model type -----
+    predictors = mainLabels       # for conditioning in E[· | ·]
     if (inherits(m, "glm")) {
       fam  = m$family$family
       link = m$family$link
@@ -310,23 +309,40 @@ appServer = function(input, output, session) {
       } else {
         if (length(predictors) > 0) {
           cond = paste0(predictors, "_i", collapse = ", ")
-          lhs  = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+          lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
         } else {
-          lhs  = glue::glue("\\mathrm{{E}}[{response}_i]")
+          lhs = glue("\\mathrm{{E}}[{response}_i]")
         }
       }
     } else {
       if (length(predictors) > 0) {
         cond = paste0(predictors, "_i", collapse = ", ")
-        lhs  = glue::glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
+        lhs = glue("\\mathrm{{E}}[{response}_i \\mid {cond}]")
       } else {
-        lhs  = glue::glue("\\mathrm{{E}}[{response}_i]")
+        lhs = glue("\\mathrm{{E}}[{response}_i]")
       }
     }
 
-    formulaTex = glue::glue("$$
-{lhs} = {rhs}
+    # ----- Layout: single line vs align* for long formulas -----
+    if (length(termsTex) <= 3) {
+      rhsTex = paste(termsTex, collapse = " + ")
+      formulaTex = glue("$$
+{lhs} = {rhsTex}
 $$")
+    } else {
+      firstLine = glue("{lhs} &= {termsTex[1]}")
+      if (length(termsTex) > 1) {
+        otherLines = paste0(" &+ ", termsTex[-1], collapse = " \\\\\n")
+        body = paste0(firstLine, " \\\\\n", otherLines)
+      } else {
+        body = firstLine
+      }
+      formulaTex = glue("$$
+\\begin{{align*}}
+{body}
+\\end{{align*}}
+$$")
+    }
 
     withMathJax(HTML(formulaTex))
   })
@@ -677,13 +693,71 @@ $$")
     if (input$model_type == "lm") {
       m = lm(f, data = dfMod)
     } else if (input$model_type == "logistic") {
-      if (!all(na.omit(y) %in% c(0, 1))) {
-        showNotification(
-          "Warning: response is not 0/1. Logistic regression expects a binary outcome.",
-          type = "warning"
-        )
+
+      # Extract response
+      respName = all.vars(f)[1]
+      y = rv$data[[respName]]
+
+      # ---- Case 1: Character with exactly 2 values → silently convert to factor ----
+      if (is.character(y)) {
+        u = unique(na.omit(y))
+        if (length(u) == 2) {
+          rv$data[[respName]] = factor(y)   # silent conversion
+          y = rv$data[[respName]]           # refresh local copy
+        } else {
+          showNotification(
+            paste0(
+              "Logistic regression requires a binary response. ",
+              respName, " is a character vector with ", length(u), " distinct values."
+            ),
+            type = "error"
+          )
+          return(NULL)
+        }
       }
-      m = glm(f, data = dfMod, family = binomial(link = "logit"))
+
+      # ---- Case 2: Factor with exactly 2 levels ----
+      if (is.factor(y)) {
+        levs = levels(y)
+        if (length(levs) != 2) {
+          showNotification(
+            paste0(
+              "Logistic regression requires a factor with 2 levels. ",
+              respName, " has ", length(levs), " levels."
+            ),
+            type = "error"
+          )
+          return(NULL)
+        }
+      }
+
+      # ---- Case 3: Numeric 0/1 ----
+      else if (is.numeric(y)) {
+        uy = unique(na.omit(y))
+        if (!all(uy %in% c(0, 1))) {
+          showNotification(
+            paste0(
+              "Numeric logistic responses must be 0/1. ",
+              respName, " has values: ",
+              paste(head(sort(uy), 5), collapse = ", "), " ..."
+            ),
+            type = "error"
+          )
+          return(NULL)
+        }
+      }
+
+      # ---- Case 4: Anything else → reject ----
+      else {
+        showNotification(
+          "Logistic regression requires either a binary factor, numeric 0/1, or a 2-level character vector.",
+          type = "error"
+        )
+        return(NULL)
+      }
+
+      # ---- If we reach here: response is valid ----
+      m = glm(f, data = rv$data, family = binomial(link = "logit"))
     } else if (input$model_type == "poisson") {
       if (any(na.omit(y) < 0) || any(na.omit(y) %% 1 != 0)) {
         showNotification(
