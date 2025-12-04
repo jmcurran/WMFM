@@ -11,7 +11,7 @@
 #' @return A \code{shiny.appobj}, invisibly.
 #'
 #' @export
-runApp = function(ollamaBaseUrl = NULL) {
+runWMFMApp = function(ollamaBaseUrl = NULL) {
   if (!is.null(ollamaBaseUrl)) {
     options(wmfm.ollama_base_url = ollamaBaseUrl)
   }

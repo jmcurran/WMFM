@@ -4,8 +4,18 @@
 \alias{runWMFMApp}
 \title{Run the Model Builder app}
 \usage{
-runWMFMApp()
+runWMFMApp(ollamaBaseUrl = NULL)
+}
+\arguments{
+\item{ollamaBaseUrl}{Optional character string giving the base URL of
+the Ollama server, for example \code{"http://localhost:11434"}.
+If \code{NULL}, the function uses the current value of the option
+\code{"wmfm.ollama_base_url"} if set, otherwise a built-in default.}
+}
+\value{
+A \code{shiny.appobj}, invisibly.
 }
 \description{
-Run the Model Builder app
+Launches the WMFM Shiny application. The Ollama base URL used for
+language-model calls can be configured here.
 }

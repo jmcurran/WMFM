@@ -2,17 +2,16 @@
 % Please edit documentation in R/getChatProvider.R
 \name{getChatProvider}
 \alias{getChatProvider}
-\title{Get the chat provider used by the app}
+\title{Get the chat provider used by WMFM}
 \usage{
 getChatProvider()
 }
 \value{
-An object representing a chat provider, suitable for use with
-\code{ellmer}.
+A chat provider object from the \pkg{ellmer} package.
 }
 \description{
-Returns a chat provider object configured to talk to a local Ollama
-server. The function is written so that switching to another provider
-(e.g. OpenAI) later is straightforward.
+Chooses between OpenAI (if configured) and Ollama. The Ollama base URL
+can be configured via the \code{wmfm.ollama_base_url} option, which is
+set by \code{runApp(ollamaBaseUrl = ...)}.
 }
 \keyword{internal}
