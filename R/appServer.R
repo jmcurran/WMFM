@@ -738,19 +738,26 @@ $$")
       FUN.VALUE = character(1)
     )
 
-    # Pretty labels with (F)/(C) and × signs
+    # Pretty labels with (F)/(C) and : signs
     labels = vapply(
       combos,
       function(x) {
         paste(
           sprintf("%s %s", x, varType[x]),
-          collapse = " \u00d7 "
+          collapse = " : "
         )
       },
       FUN.VALUE = character(1)
     )
 
-    choices = setNames(values, labels)
+    # Add a special "all interactions" option at the top
+    allValue = "__ALL_INTERACTIONS__"
+    allLabel = "All possible 2-way and 3-way interactions"
+
+    choiceValues = c(allValue, values)
+    choiceLabels = c(allLabel, labels)
+
+    choices = setNames(choiceValues, choiceLabels)
 
     infoText = NULL
     if (length(predsAll) > 3) {
@@ -780,6 +787,80 @@ $$")
     )
   })
 
+  # -------------------------------------------------------------------
+  # When user selects "All possible interactions", expand to all codes
+  # -------------------------------------------------------------------
+  observeEvent(
+    input$interactions,
+    {
+      ints = input$interactions %||% character(0)
+
+      if (!"__ALL_INTERACTIONS__" %in% ints) {
+        return(NULL)
+      }
+
+      # Recompute the allowed predictors (same logic as interaction_ui)
+      factors = input$factors %||% character(0)
+      cont    = input$continuous %||% character(0)
+      resp    = input$response_var
+
+      predsAll = unique(setdiff(c(factors, cont), resp))
+
+      # Respect the 3-covariate limit
+      predsLimited = predsAll
+      if (length(predsLimited) > 3) {
+        predsLimited = predsLimited[1:3]
+      }
+
+      if (length(predsLimited) < 2) {
+        # Nothing meaningful to select
+        updateSelectInput(
+          session,
+          "interactions",
+          selected = character(0)
+        )
+        return(NULL)
+      }
+
+      # Build all 2-way and 3-way combinations among predsLimited
+      combos2 = list()
+      combos3 = list()
+
+      if (length(predsLimited) >= 2) {
+        combos2 = asplit(combn(predsLimited, 2), 2)
+      }
+      if (length(predsLimited) >= 3) {
+        combos3 = asplit(combn(predsLimited, 3), 2)
+      }
+
+      combos = c(combos2, combos3)
+
+      if (length(combos) == 0) {
+        updateSelectInput(
+          session,
+          "interactions",
+          selected = character(0)
+        )
+        return(NULL)
+      }
+
+      allInts = vapply(
+        combos,
+        function(x) {
+          paste(x, collapse = ":")
+        },
+        FUN.VALUE = character(1)
+      )
+
+      # Update the selectInput to select all actual interactions (no special value)
+      updateSelectInput(
+        session,
+        "interactions",
+        selected = allInts
+      )
+    },
+    ignoreInit = TRUE
+  )
 
   # -------------------------------------------------------------------
   # Response picker
@@ -888,7 +969,7 @@ $$")
         }
       }
 
-      # ---------------- Default explicit RHS ----------------
+      # ---------------- Default explicit RHS (always colon notation) ----------------
       if (!is.null(expertRhs)) {
         rhs = expertRhs
       } else {
@@ -898,16 +979,10 @@ $$")
         mainPart = paste(preds, collapse = " + ")
         rhsPieces = c(rhsPieces, mainPart)
 
-        # Convert "A:B" or "A:B:C" -> "A * B" or "A * B * C"
+        # Interactions: keep ":" notation to preserve exact semantics
         if (length(ints) > 0) {
-          starTerms = vapply(
-            strsplit(ints, ":", fixed = TRUE),
-            FUN = function(x) {
-              paste(x, collapse = " * ")
-            },
-            FUN.VALUE = character(1)
-          )
-          rhsPieces = c(rhsPieces, starTerms)
+          intPart = paste(ints, collapse = " + ")
+          rhsPieces = c(rhsPieces, intPart)
         }
 
         rhs = paste(rhsPieces, collapse = " + ")

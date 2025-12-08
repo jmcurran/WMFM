@@ -13,11 +13,11 @@
 #'   the language model.
 #' @keywords internal
 lmExplanation = function(model, chat) {
-  key = paste(
-    "exp",
-    deparse(formula(model)),
-    paste(coef(model), collapse = ";")
-  )
+  formulaStr = paste(deparse(formula(model)), collapse = " ")
+  coefStr    = paste(coef(model), collapse = ";")
+
+  key = paste("expl", formulaStr, coefStr)
+
 
   if (!is.null(.env_cache[[key]])) {
     return(.env_cache[[key]])

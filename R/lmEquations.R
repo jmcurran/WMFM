@@ -18,10 +18,13 @@
 #'
 #' @importFrom stats formula
 lmEquations = function(model, chat) {
+  formulaStr = paste(deparse(formula(model)), collapse = " ")
+  coefStr    = paste(coef(model), collapse = ";")
+
   key = paste(
     "eq",
-    deparse(formula(model)),
-    paste(coef(model), collapse = ";")
+    formulaStr,
+    coefStr
   )
 
   if (!is.null(.env_cache[[key]])) {
