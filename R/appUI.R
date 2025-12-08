@@ -106,6 +106,9 @@ appUI = function() {
         h4("Assign variables"),
         uiOutput("var_buckets"),
 
+        # Optional interactions UI, driven by the buckets
+        uiOutput("interaction_ui"),
+
         hr(),
 
         # Row: Response | Type radios | Fit / Reset buttons
@@ -159,6 +162,11 @@ appUI = function() {
 
         # Model formula underneath the whole row
         h4("Model formula"),
+        checkboxInput(
+          "expert_mode",
+          "Use compact (expert) formula notation where possible",
+          value = FALSE
+        ),
         textInput("formula_text", label = NULL, value = "", width = "100%"),
         verbatimTextOutput("formula_status")
       ),

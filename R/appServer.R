@@ -301,63 +301,84 @@ appServer = function(input, output, session) {
     # ----- Add interaction terms -----
     for (lbl in intLabels) {
       vars = strsplit(lbl, ":", fixed = TRUE)[[1]]
-      if (length(vars) != 2) {
-        # For now, skip higher-order interactions
-        next
-      }
-      v1 = vars[1]
-      v2 = vars[2]
-      x1 = mf[[v1]]
-      x2 = mf[[v2]]
 
-      isFac1 = is.factor(x1)
-      isFac2 = is.factor(x2)
+      # ---------------- Two-way interactions: keep detailed expansion ----------------
+      if (length(vars) == 2) {
+        v1 = vars[1]
+        v2 = vars[2]
+        x1 = mf[[v1]]
+        x2 = mf[[v2]]
 
-      # numeric × numeric
-      if (!isFac1 && !isFac2) {
-        termsTex = c(
-          termsTex,
-          glue("\\beta_{betaIdx} \\times {v1}_i \\times {v2}_i")
-        )
-        betaIdx = betaIdx + 1L
+        isFac1 = is.factor(x1)
+        isFac2 = is.factor(x2)
 
-        # factor × numeric
-      } else if (isFac1 && !isFac2) {
-        lvls1 = levels(x1)
-        for (lvl1 in lvls1[-1]) {
+        # numeric × numeric
+        if (!isFac1 && !isFac2) {
           termsTex = c(
             termsTex,
-            glue("\\beta_{betaIdx} \\times {v2}_i \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}} \\}}")
+            glue("\\beta_{betaIdx} \\times {v1}_i \\times {v2}_i")
           )
           betaIdx = betaIdx + 1L
-        }
 
-        # numeric × factor
-      } else if (!isFac1 && isFac2) {
-        lvls2 = levels(x2)
-        for (lvl2 in lvls2[-1]) {
-          termsTex = c(
-            termsTex,
-            glue("\\beta_{betaIdx} \\times {v1}_i \\times \\mathbf{{1}}\\{{ {v2}_i = \\text{{\"{lvl2}\"}} \\}}")
-          )
-          betaIdx = betaIdx + 1L
-        }
-
-        # factor × factor
-      } else {
-        lvls1 = levels(x1)
-        lvls2 = levels(x2)
-        for (lvl1 in lvls1[-1]) {
-          for (lvl2 in lvls2[-1]) {
+          # factor × numeric
+        } else if (isFac1 && !isFac2) {
+          lvls1 = levels(x1)
+          for (lvl1 in lvls1[-1]) {
             termsTex = c(
               termsTex,
-              glue("\\beta_{betaIdx} \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}}, {v2}_i = \\text{{\"{lvl2}\"}} \\}}")
+              glue("\\beta_{betaIdx} \\times {v2}_i \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}} \\}}")
             )
             betaIdx = betaIdx + 1L
           }
+
+          # numeric × factor
+        } else if (!isFac1 && isFac2) {
+          lvls2 = levels(x2)
+          for (lvl2 in lvls2[-1]) {
+            termsTex = c(
+              termsTex,
+              glue("\\beta_{betaIdx} \\times {v1}_i \\times \\mathbf{{1}}\\{{ {v2}_i = \\text{{\"{lvl2}\"}} \\}}")
+            )
+            betaIdx = betaIdx + 1L
+          }
+
+          # factor × factor
+        } else {
+          lvls1 = levels(x1)
+          lvls2 = levels(x2)
+          for (lvl1 in lvls1[-1]) {
+            for (lvl2 in lvls2[-1]) {
+              termsTex = c(
+                termsTex,
+                glue(
+                  "\\beta_{betaIdx} \\times \\mathbf{{1}}\\{{ {v1}_i = \\text{{\"{lvl1}\"}}, {v2}_i = \\text{{\"{lvl2}\"}} \\}}"
+                )
+              )
+              betaIdx = betaIdx + 1L
+            }
+          }
         }
+
+        # ---------------- Three-way interactions: generic product term ----------------
+      } else if (length(vars) == 3) {
+        v1 = vars[1]
+        v2 = vars[2]
+        v3 = vars[3]
+
+        # For readability, we show a compact generic interaction term,
+        # regardless of whether the variables are factors or numeric.
+        termsTex = c(
+          termsTex,
+          glue("\\beta_{betaIdx} \\times {v1}_i \\times {v2}_i \\times {v3}_i")
+        )
+        betaIdx = betaIdx + 1L
+
+        # Skip higher-order (4-way+) interactions if present
+      } else {
+        next
       }
     }
+
 
     # ----- LHS: depends on model type -----
     predictors = mainLabels       # for conditioning in E[· | ·]
@@ -661,6 +682,106 @@ $$")
   })
 
   # -------------------------------------------------------------------
+  # Interactions UI (2-way and 3-way) built from Factor + Continuous buckets
+  # -------------------------------------------------------------------
+  output$interaction_ui = renderUI({
+    if (is.null(rv$data)) {
+      return(NULL)
+    }
+
+    factors = input$factors %||% character(0)
+    cont    = input$continuous %||% character(0)
+    resp    = input$response_var
+
+    # Exclude the response from predictors
+    predsAll = unique(setdiff(c(factors, cont), resp))
+
+    # Hard limit: only first 3 predictors are allowed in the model
+    predsLimited = predsAll
+    if (length(predsLimited) > 3) {
+      predsLimited = predsLimited[1:3]
+    }
+
+    if (length(predsLimited) < 2) {
+      return(NULL)
+    }
+
+    # We'll label types using the full bucket info, but only build
+    # interactions from predsLimited
+    varType = c(
+      setNames(rep("(F)", length(factors)), factors),
+      setNames(rep("(C)", length(cont)),    cont)
+    )
+
+    # ---- Build 2-way and 3-way combinations ----
+    combos2 = list()
+    combos3 = list()
+
+    if (length(predsLimited) >= 2) {
+      combos2 = asplit(combn(predsLimited, 2), 2)
+    }
+    if (length(predsLimited) >= 3) {
+      combos3 = asplit(combn(predsLimited, 3), 2)
+    }
+
+    combos = c(combos2, combos3)
+    if (length(combos) == 0) {
+      return(NULL)
+    }
+
+    # Internal values: "var1:var2" or "var1:var2:var3"
+    values = vapply(
+      combos,
+      function(x) {
+        paste(x, collapse = ":")
+      },
+      FUN.VALUE = character(1)
+    )
+
+    # Pretty labels with (F)/(C) and × signs
+    labels = vapply(
+      combos,
+      function(x) {
+        paste(
+          sprintf("%s %s", x, varType[x]),
+          collapse = " \u00d7 "
+        )
+      },
+      FUN.VALUE = character(1)
+    )
+
+    choices = setNames(values, labels)
+
+    infoText = NULL
+    if (length(predsAll) > 3) {
+      infoText = helpText(
+        sprintf(
+          "You have placed %d variables into the Factors/Continuous buckets. ",
+          length(predsAll)
+        ),
+        "Only the first 3 (",
+        paste(predsLimited, collapse = ", "),
+        ") are used in the model and for interactions."
+      )
+    }
+
+    tagList(
+      h5("Interactions (optional)"),
+      infoText,
+      helpText("Select 2-way or 3-way interaction terms to include in the model formula."),
+      selectInput(
+        inputId  = "interactions",
+        label    = NULL,
+        choices  = choices,
+        selected = character(0),
+        multiple = TRUE,
+        width    = "100%"
+      )
+    )
+  })
+
+
+  # -------------------------------------------------------------------
   # Response picker
   # -------------------------------------------------------------------
   output$response_picker = renderUI({
@@ -671,10 +792,17 @@ $$")
   })
 
   # -------------------------------------------------------------------
-  # Auto-populate formula from buckets (additive model)
+  # Auto-populate formula from buckets + optional interactions
+  # (limit to 3 predictors; expert mode for compact notation)
   # -------------------------------------------------------------------
   observeEvent(
-    list(input$response_var, input$factors, input$continuous),
+    list(
+      input$response_var,
+      input$factors,
+      input$continuous,
+      input$interactions,
+      input$expert_mode
+    ),
     {
       if (is.null(rv$data)) {
         return(NULL)
@@ -687,14 +815,102 @@ $$")
 
       factors = input$factors %||% character(0)
       cont    = input$continuous %||% character(0)
+      ints    = input$interactions %||% character(0)
 
-      preds = c(factors, cont)
-      preds = unique(setdiff(preds, resp))
+      # Main effects: all predictors from both buckets, excluding response
+      predsAll = unique(setdiff(c(factors, cont), resp))
 
-      rhs = if (length(preds) == 0) {
-        "1"
+      # Hard limit: only first 3 predictors
+      preds = predsAll
+      if (length(preds) > 3) {
+        preds = preds[1:3]
+      }
+
+      # If nothing selected: intercept-only model
+      if (length(preds) == 0) {
+        newAuto = paste(resp, "~ 1")
+        current = trimws(input$formula_text)
+
+        if (current == "" || current == rv$autoFormula) {
+          rv$autoFormula = newAuto
+          updateTextInput(session, "formula_text", value = newAuto)
+        } else {
+          rv$autoFormula = newAuto
+        }
+        return(NULL)
+      }
+
+      # Restrict interactions to those only involving the allowed predictors
+      ints = Filter(
+        function(z) {
+          all(strsplit(z, ":", fixed = TRUE)[[1]] %in% preds)
+        },
+        ints
+      )
+
+      # ---------------- Expert mode shorthand (optional) ----------------
+      expertRhs = NULL
+      expertOn  = isTRUE(input$expert_mode)
+
+      if (expertOn) {
+        # Case 1: exactly two predictors with a single 2-way interaction -> "A * B"
+        if (length(preds) == 2 && length(ints) == 1) {
+          varsInt = strsplit(ints[1], ":", fixed = TRUE)[[1]]
+          if (length(varsInt) == 2 && setequal(varsInt, preds)) {
+            expertRhs = paste(preds, collapse = " * ")
+          }
+        }
+
+        # Case 2: k >= 2 predictors, all pairwise interactions selected (no 3-way)
+        if (is.null(expertRhs) && length(preds) >= 2 && length(ints) > 0) {
+          lenInts = vapply(
+            strsplit(ints, ":", fixed = TRUE),
+            length,
+            FUN.VALUE = integer(1)
+          )
+          pairInts   = ints[lenInts == 2]
+          higherInts = ints[lenInts > 2]
+
+          # Only consider compact "(A + B + C)^2" when there are no higher-order terms
+          if (length(higherInts) == 0) {
+            # All possible 2-way pairs among 'preds'
+            allPairs = apply(
+              combn(preds, 2),
+              2,
+              function(x) {
+                paste(x, collapse = ":")
+              }
+            )
+            if (length(pairInts) == length(allPairs) && setequal(pairInts, allPairs)) {
+              expertRhs = paste0("(", paste(preds, collapse = " + "), ")^2")
+            }
+          }
+        }
+      }
+
+      # ---------------- Default explicit RHS ----------------
+      if (!is.null(expertRhs)) {
+        rhs = expertRhs
       } else {
-        paste(preds, collapse = " + ")
+        rhsPieces = character(0)
+
+        # Main effects explicitly
+        mainPart = paste(preds, collapse = " + ")
+        rhsPieces = c(rhsPieces, mainPart)
+
+        # Convert "A:B" or "A:B:C" -> "A * B" or "A * B * C"
+        if (length(ints) > 0) {
+          starTerms = vapply(
+            strsplit(ints, ":", fixed = TRUE),
+            FUN = function(x) {
+              paste(x, collapse = " * ")
+            },
+            FUN.VALUE = character(1)
+          )
+          rhsPieces = c(rhsPieces, starTerms)
+        }
+
+        rhs = paste(rhsPieces, collapse = " + ")
       }
 
       newAuto = paste(resp, "~", rhs)
@@ -738,6 +954,24 @@ $$")
 
     f        = as.formula(input$formula_text)
     respName = all.vars(f)[1]
+
+    # Enforce at most 3 distinct predictor variables in the model
+    allVarsInFormula = all.vars(f)
+    predNames = setdiff(allVarsInFormula, respName)
+    predNames = unique(predNames)
+
+    if (length(predNames) > 3) {
+      showNotification(
+        paste0(
+          "This app only allows models with at most 3 covariates. ",
+          "Your formula currently uses ", length(predNames), " predictors: ",
+          paste(predNames, collapse = ", "), "."
+        ),
+        type = "error"
+      )
+      return(NULL)
+    }
+
 
     # Work on a copy of the data so we can safely coerce factors
     dfMod = rv$data
