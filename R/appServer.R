@@ -32,7 +32,24 @@ appServer = function(input, output, session) {
     if (is.null(x)) y else x
   }
 
-  chatProvider = getChatProvider()
+  chatProvider = NULL
+  tryCatch(
+    {
+      chatProvider = getChatProvider()
+    },
+    error = function(e) {
+      showNotification(
+        paste(
+          "Could not connect to the language model server when the app started.",
+          "LLM-based features will be unavailable until this is fixed.",
+          "\nDetails:", conditionMessage(e)
+        ),
+        type     = "error",
+        duration = NULL  # stick around
+      )
+    }
+  )
+
 
   rv = reactiveValues(
     data = NULL,
@@ -1021,6 +1038,15 @@ $$")
   # Fit model when button clicked
   # -------------------------------------------------------------------
   observeEvent(input$fit_btn, {
+
+    if (is.null(chatProvider)) {
+      showNotification(
+        "No language model is available at the moment. The model is still fitted, but no equations/explanation can be generated.",
+        type = "error",
+        duration = 10
+      )
+    }
+
     res = checkFormula()
     if (!res$ok) {
       showNotification(res$msg, type = "error")
@@ -1158,11 +1184,49 @@ $$")
     # Talk to the LLM with a progress bar
     withProgress(message = "Talking to the language model...", value = 0, {
       incProgress(0.3, detail = "Deriving equations...")
-      eq = lmEquations(m, chatProvider)
+
+      eq = tryCatch(
+        lmEquations(m, chatProvider),
+        error = function(e) {
+          showNotification(
+            paste(
+              "The language model request for equations failed.",
+              "You can still use the fitted model and plots.",
+              "\nDetails:", conditionMessage(e)
+            ),
+            type     = "error",
+            duration = 10
+          )
+          return(NULL)
+        }
+      )
+
+      # If equation generation failed, don't try for an explanation
+      if (is.null(eq)) {
+        rv$modelEquations   = NULL
+        rv$modelExplanation = NULL
+        return(NULL)
+      }
 
       incProgress(0.7, detail = "Writing explanation...")
-      expl = lmExplanation(m, chatProvider)
 
+      expl = tryCatch(
+        lmExplanation(m, chatProvider),
+        error = function(e) {
+          showNotification(
+            paste(
+              "The language model request for the explanation failed.",
+              "Equations are available; explanation is omitted.",
+              "\nDetails:", conditionMessage(e)
+            ),
+            type     = "error",
+            duration = 10
+          )
+          return(NULL)
+        }
+      )
+
+      # It's fine if expl is NULL — we just skip showing an explanation
       rv$modelEquations   = eq
       rv$modelExplanation = expl
       incProgress(1)
