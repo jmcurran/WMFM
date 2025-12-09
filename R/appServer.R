@@ -1089,6 +1089,33 @@ $$")
 
     # Fit the chosen model type
     if (input$model_type == "lm") {
+
+      # Extract response from dfMod
+      resp = dfMod[[respName]]
+
+      # If response is a 2-level factor, convert to numeric 0/1
+      if (is.factor(resp) && nlevels(resp) == 2) {
+
+        levs = levels(resp)
+
+        # Map: first level -> 0, second level -> 1
+        newY = as.numeric(resp == levs[2])
+
+        showNotification(
+          paste0(
+            "The response variable '", respName, "' is a 2-level factor.\n",
+            "For linear regression, it has been recoded to numeric.\n",
+            "Coding used:  ", levs[1], " → 0,   ", levs[2], " → 1"
+          ),
+          type = "warning",
+          duration = 10
+        )
+
+        dfMod[[respName]] = newY
+        resp = newY
+      }
+
+      # Fit normal lm() model
       m = lm(f, data = dfMod)
     } else if (input$model_type == "logistic") {
 
