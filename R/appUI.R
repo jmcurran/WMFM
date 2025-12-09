@@ -97,7 +97,13 @@ appUI = function() {
         helpText(
           "After loading data, go to the Model tab to assign variables ",
           "and specify the regression model."
+        ),
+
+        tags$div(
+          style = "font-size: 0.8em; color: #666; margin-top: 20px;",
+          paste("WMFM version", as.character(utils::packageVersion("WMFM")))
         )
+
       ),
 
       # ---- Tab 2: Model specification / variable assignment ----
