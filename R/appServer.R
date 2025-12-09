@@ -119,7 +119,7 @@ appServer = function(input, output, session) {
 
     xVar = numericPreds[1]
 
-    # Factor predictors: used for colour / faceting
+    # Factor predictors: used for colour / faceting (for non-binomial)
     factorMask  = sapply(modelFrame[predictors], is.factor)
     factorPreds = predictors[factorMask]
 
@@ -127,11 +127,11 @@ appServer = function(input, output, session) {
     colourVar = NULL
 
     if (length(factorPreds) == 1) {
-      # Single factor: colour by it, no facets
+      # Single factor: use as grouping/shape/faceting helper
       colourVar = factorPreds[1]
     } else if (length(factorPreds) == 2) {
       # Two factors: facet by the one with fewer levels (ties -> second),
-      # colour by the other factor
+      # and use the other as grouping/shape
       levCounts = vapply(
         factorPreds,
         function(v) {
@@ -161,8 +161,12 @@ appServer = function(input, output, session) {
     yBreaks = NULL
     yLabels = NULL
 
+    # For binomial models, we build:
+    #  - .yPlot      : numeric 0/1 on the y-axis
+    #  - .respFactor : factor used for point colours
     if (isBinom) {
-      # We want a 0/1 numeric y for plotting, regardless of how the response is stored
+      respFactor = NULL
+
       if (is.factor(y)) {
         levs = levels(y)
         if (length(levs) == 2) {
@@ -170,20 +174,26 @@ appServer = function(input, output, session) {
           yPlot      = as.numeric(y == eventLevel)
           yBreaks    = c(0, 1)
           yLabels    = levs
+          respFactor = y
         } else {
           # Fallback: use underlying codes
-          yPlot = as.numeric(y)
+          yPlot      = as.numeric(y)
+          respFactor = factor(y)
         }
       } else if (is.logical(y)) {
-        yPlot   = as.numeric(y)
-        yBreaks = c(0, 1)
-        yLabels = c("FALSE", "TRUE")
+        yPlot      = as.numeric(y)
+        yBreaks    = c(0, 1)
+        yLabels    = c("FALSE", "TRUE")
+        respFactor = factor(y, levels = c(FALSE, TRUE))
       } else if (is.numeric(y)) {
         yPlot = y
         uy    = sort(unique(stats::na.omit(yPlot)))
         if (identical(uy, c(0, 1))) {
-          yBreaks = c(0, 1)
-          yLabels = c("0", "1")
+          yBreaks    = c(0, 1)
+          yLabels    = c("0", "1")
+          respFactor = factor(yPlot, levels = c(0, 1), labels = yLabels)
+        } else {
+          respFactor = factor(yPlot)
         }
       } else {
         # character etc: coerce to factor and treat as 2-level factor if possible
@@ -194,12 +204,15 @@ appServer = function(input, output, session) {
           yPlot      = as.numeric(fac == eventLevel)
           yBreaks    = c(0, 1)
           yLabels    = levs
+          respFactor = fac
         } else {
-          yPlot = as.numeric(fac)
+          yPlot      = as.numeric(fac)
+          respFactor = fac
         }
       }
 
-      modelFrame$.yPlot = yPlot
+      modelFrame$.yPlot      = yPlot
+      modelFrame$.respFactor = respFactor
     }
 
     # Build grid for fitted lines
@@ -241,55 +254,121 @@ appServer = function(input, output, session) {
     newData$fit = fitVals
 
     # ----- Build plot -----
-    if (is.null(colourVar)) {
-      # No factor predictors: no colour / facets
-      p = ggplot(
-        data    = modelFrame,
-        mapping = aes(
-          x = .data[[xVar]],
-          y = if (isBinom) .data[[".yPlot"]] else .data[[response]]
-        )
-      ) +
-        geom_point(alpha = 0.6) +
-        geom_line(
-          data    = newData,
-          mapping = aes(
-            x = .data[[xVar]],
-            y = .data[["fit"]]
-          ),
-          linewidth = 1
-        ) +
-        labs(x = xVar, y = response)
-    } else {
-      # Colour by chosen factor
-      p = ggplot(
-        data    = modelFrame,
-        mapping = aes(
-          x      = .data[[xVar]],
-          y      = if (isBinom) .data[[".yPlot"]] else .data[[response]],
-          colour = .data[[colourVar]]
-        )
-      ) +
-        geom_point(alpha = 0.6) +
-        geom_line(
-          data    = newData,
+
+    if (isBinom) {
+      # -------- Binomial GLM: colour points by response --------
+      if (is.null(colourVar)) {
+        # No factor predictors: colours = response only
+        p = ggplot(
+          data    = modelFrame,
           mapping = aes(
             x      = .data[[xVar]],
-            y      = .data[["fit"]],
-            colour = .data[[colourVar]]
-          ),
-          linewidth = 1
+            y      = .data[[".yPlot"]],
+            colour = .data[[".respFactor"]]
+          )
         ) +
-        labs(
-          x      = xVar,
-          y      = response,
-          colour = colourVar
-        )
-    }
+          geom_point(alpha = 0.6) +
+          geom_line(
+            data    = newData,
+            mapping = aes(
+              x = .data[[xVar]],
+              y = .data[["fit"]]
+            ),
+            linewidth = 1
+          ) +
+          labs(
+            x      = xVar,
+            y      = response,
+            colour = response
+          )
+      } else {
+        # One (effective) factor predictor:
+        #   - colour = response
+        #   - shape  = factor
+        #   - lines grouped by factor
+        p = ggplot(
+          data    = modelFrame,
+          mapping = aes(
+            x      = .data[[xVar]],
+            y      = .data[[".yPlot"]],
+            colour = .data[[".respFactor"]],
+            shape  = .data[[colourVar]]
+          )
+        ) +
+          geom_point(alpha = 0.6) +
+          geom_line(
+            data    = newData,
+            mapping = aes(
+              x     = .data[[xVar]],
+              y     = .data[["fit"]],
+              group = .data[[colourVar]]
+            ),
+            linewidth = 1
+          ) +
+          labs(
+            x      = xVar,
+            y      = response,
+            colour = response,
+            shape  = colourVar
+          )
+      }
 
-    # Add faceting if requested
-    if (!is.null(facetVar)) {
-      p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
+      # Add faceting if we chose a facetVar
+      if (!is.null(facetVar)) {
+        p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
+      }
+
+    } else {
+      # -------- Non-binomial models: previous behaviour --------
+      if (is.null(colourVar)) {
+        # No factor predictors: no colour / facets
+        p = ggplot(
+          data    = modelFrame,
+          mapping = aes(
+            x = .data[[xVar]],
+            y = .data[[response]]
+          )
+        ) +
+          geom_point(alpha = 0.6) +
+          geom_line(
+            data    = newData,
+            mapping = aes(
+              x = .data[[xVar]],
+              y = .data[["fit"]]
+            ),
+            linewidth = 1
+          ) +
+          labs(x = xVar, y = response)
+      } else {
+        # Colour by chosen factor
+        p = ggplot(
+          data    = modelFrame,
+          mapping = aes(
+            x      = .data[[xVar]],
+            y      = .data[[response]],
+            colour = .data[[colourVar]]
+          )
+        ) +
+          geom_point(alpha = 0.6) +
+          geom_line(
+            data    = newData,
+            mapping = aes(
+              x      = .data[[xVar]],
+              y      = .data[["fit"]],
+              colour = .data[[colourVar]]
+            ),
+            linewidth = 1
+          ) +
+          labs(
+            x      = xVar,
+            y      = response,
+            colour = colourVar
+          )
+
+        if (!is.null(facetVar)) {
+          p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
+        }
+      }
     }
 
     # For binomial models, force y-scale to 0–1 with nice labels
