@@ -25,31 +25,46 @@
 #' @importFrom stats predict na.omit
 #' @importFrom utils data read.table capture.output str
 #' @importFrom graphics plot.new text
-#' @importFrom ggplot2 ggplot geom_point geom_line labs aes
+#' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars
 #' @importFrom rlang .data
 appServer = function(input, output, session) {
+
   `%||%` = function(x, y) {
     if (is.null(x)) y else x
   }
 
-  chatProvider = NULL
-  tryCatch(
-    {
-      chatProvider = getChatProvider()
-    },
-    error = function(e) {
-      showNotification(
-        paste(
-          "Could not connect to the language model server when the app started.",
-          "LLM-based features will be unavailable until this is fixed.",
-          "\nDetails:", conditionMessage(e)
-        ),
-        type     = "error",
-        duration = NULL  # stick around
-      )
-    }
-  )
+  # -------------------------------------------------------------------
+  # Cache s20x dataset names once per session
+  # -------------------------------------------------------------------
+  s20xNames = character(0)
+  if (requireNamespace("s20x", quietly = TRUE)) {
+    dsInfo    = utils::data(package = "s20x")
+    s20xNames = dsInfo$results[, "Item"]
+  }
 
+  # Pre-populate s20x dataset dropdown once per session
+  observe({
+    if (length(s20xNames) == 0) {
+      # s20x not installed or no datasets
+      updateSelectInput(
+        session,
+        "s20x_dataset",
+        choices  = character(0),
+        selected = NULL
+      )
+      return(NULL)
+    }
+
+    # Add placeholder to avoid auto-selecting the first real dataset
+    choices = c("Choose a data set..." = "", s20xNames)
+
+    updateSelectInput(
+      session,
+      "s20x_dataset",
+      choices  = choices,
+      selected = ""
+    )
+  })
 
   rv = reactiveValues(
     data = NULL,
@@ -63,28 +78,7 @@ appServer = function(input, output, session) {
     pendingFactorVar = NULL
   )
 
-
-
   modelFit = reactiveVal(NULL)
-
-  # -------------------------------------------------------------------
-  # Populate the s20x dataset chooser (if s20x is available)
-  # -------------------------------------------------------------------
-  observe({
-    if (requireNamespace("s20x", quietly = TRUE)) {
-      dsInfo  = utils::data(package = "s20x")
-      dsNames = dsInfo$results[, "Item"]
-    } else {
-      dsNames = character(0)
-    }
-
-    updateSelectInput(
-      session,
-      "s20x_dataset",
-      choices  = dsNames,
-      selected = if (length(dsNames) > 0) dsNames[1] else NULL
-    )
-  })
 
   # -------------------------------------------------------------------
   # Plot of data + fitted model
@@ -310,7 +304,6 @@ appServer = function(input, output, session) {
     p
   })
 
-
   # -------------------------------------------------------------------
   # Symbolic model formula (LaTeX via MathJax)
   # -------------------------------------------------------------------
@@ -440,7 +433,6 @@ appServer = function(input, output, session) {
       }
     }
 
-
     # ----- LHS: depends on model type -----
     predictors = mainLabels       # for conditioning in E[· | ·]
     if (inherits(m, "glm")) {
@@ -546,11 +538,11 @@ $$")
     df = tryCatch({
       read.table(
         input$file$datapath,
-        sep           = sep,
-        header        = TRUE,
+        sep              = sep,
+        header           = TRUE,
         stringsAsFactors = FALSE,
-        check.names   = TRUE,
-        fill          = TRUE
+        check.names      = TRUE,
+        fill             = TRUE
       )
     }, error = function(e) {
       NULL
@@ -561,9 +553,9 @@ $$")
       return(NULL)
     }
 
-    rv$data           = df
-    rv$allVars        = names(df)
-    rv$autoFormula    = ""
+    rv$data             = df
+    rv$allVars          = names(df)
+    rv$autoFormula      = ""
     modelFit(NULL)
     rv$modelEquations   = NULL
     rv$modelExplanation = NULL
@@ -594,11 +586,11 @@ $$")
 
       df = e[[dfNames[1]]]
 
-      rv$data            = df
-      rv$allVars         = names(df)
-      rv$autoFormula     = ""
+      rv$data             = df
+      rv$allVars          = names(df)
+      rv$autoFormula      = ""
       modelFit(NULL)
-      rv$modelEquations  = NULL
+      rv$modelEquations   = NULL
       rv$modelExplanation = NULL
       updateTextInput(session, "formula_text", value = "")
       return(NULL)
@@ -622,10 +614,10 @@ $$")
               "sep_input",
               "Separator:",
               choices = c(
-                "Comma (,)"   = ",",
-                "Tab (\\t)"   = "\t",
-                "Semicolon (;)" = ";",
-                "Space ( )"   = " ",
+                "Comma (,)"          = ",",
+                "Tab (\\t)"          = "\t",
+                "Semicolon (;)"      = ";",
+                "Space ( )"          = " ",
                 "Other (type below)" = "OTHER"
               )
             ),
@@ -670,16 +662,17 @@ $$")
   observeEvent(input$s20x_dataset, {
     req(input$data_source == "s20x")
 
-    if (!requireNamespace("s20x", quietly = TRUE)) {
+    # Ignore the dummy "Choose a data set..." entry
+    dsName = input$s20x_dataset
+    if (is.null(dsName) || dsName == "") {
+      return(NULL)
+    }
+
+    if (length(s20xNames) == 0) {
       showNotification(
         "The s20x package is not installed. Please install it to use the example data sets.",
         type = "error"
       )
-      return(NULL)
-    }
-
-    dsName = input$s20x_dataset
-    if (is.null(dsName) || dsName == "") {
       return(NULL)
     }
 
@@ -692,15 +685,15 @@ $$")
       return(NULL)
     }
 
-    rv$data = df
-    rv$allVars = names(df)
-    rv$autoFormula = ""
+    rv$data             = df
+    rv$allVars          = names(df)
+    rv$autoFormula      = ""
     modelFit(NULL)
-    rv$modelEquations = NULL
+    rv$modelEquations   = NULL
     rv$modelExplanation = NULL
     updateTextInput(session, "formula_text", value = "")
 
-    # >>> NEW: switch to the Model tab after loading an s20x data set
+    # Switch to the Model tab after loading an s20x data set
     updateTabsetPanel(session, "main_tabs", selected = "Model")
   })
 
@@ -721,22 +714,22 @@ $$")
     }
 
     bucket_list(
-      header     = NULL,
-      group_name = paste0("vars_group_", rv$bucketGroupId),
+      header      = NULL,
+      group_name  = paste0("vars_group_", rv$bucketGroupId),
       orientation = "horizontal",
       add_rank_list(
-        text   = "Variables",
-        labels = vars,
+        text     = "Variables",
+        labels   = vars,
         input_id = "variables"
       ),
       add_rank_list(
-        text   = "Factors",
-        labels = character(0),
+        text     = "Factors",
+        labels   = character(0),
         input_id = "factors"
       ),
       add_rank_list(
-        text   = "Continuous",
-        labels = character(0),
+        text     = "Continuous",
+        labels   = character(0),
         input_id = "continuous"
       )
     )
@@ -974,8 +967,6 @@ $$")
     rv$lastFactors = currentFactors
   })
 
-
-
   # -------------------------------------------------------------------
   # Response picker
   # -------------------------------------------------------------------
@@ -1114,25 +1105,28 @@ $$")
       }
     }
   )
-  # User confirms treating numeric as factor: accept Factors as-is
+
+  # -------------------------------------------------------------------
+  # User response to numeric-as-factor confirmation
+  # -------------------------------------------------------------------
   observeEvent(input$confirm_factor_numeric, {
     req(rv$pendingFactorVar)
     removeModal()
 
-    rv$lastFactors = input$factors %||% character(0)
+    rv$lastFactors      = input$factors %||% character(0)
+    v                   = rv$pendingFactorVar
     rv$pendingFactorVar = NULL
 
     showNotification(
       paste0(
-        "Variable '", input$pendingFactorVar,
+        "Variable '", v,
         "' will be treated as a factor when fitting the model."
       ),
-      type = "message",
+      type     = "message",
       duration = 6
     )
   }, ignoreInit = TRUE)
 
-  # User cancels: keep current state but remind them to move it back
   observeEvent(input$cancel_factor_numeric, {
     req(rv$pendingFactorVar)
     removeModal()
@@ -1144,7 +1138,7 @@ $$")
         "If you do not want '", rv$pendingFactorVar,
         "' treated as a factor, drag it back to the Continuous bucket."
       ),
-      type = "warning",
+      type     = "warning",
       duration = 10
     )
 
@@ -1155,7 +1149,7 @@ $$")
   # Keep 'Variables' bucket in sync with chosen response (if needed)
   # -------------------------------------------------------------------
   observeEvent(input$response_var, {
-    newResp        = input$response_var
+    newResp         = input$response_var
     rv$lastResponse = newResp
   })
 
@@ -1168,14 +1162,32 @@ $$")
   })
 
   # -------------------------------------------------------------------
-  # Fit model when button clicked
+  # Fit model when button clicked (lazy LLM connection)
   # -------------------------------------------------------------------
   observeEvent(input$fit_btn, {
+
+    # Try to obtain a chat provider *now*, instead of at app startup
+    chatProvider = tryCatch(
+      getChatProvider(),
+      error = function(e) {
+        showNotification(
+          paste(
+            "Could not connect to the language model server.",
+            "The model will still be fitted, but equations/explanation\n",
+            "from the language model will be unavailable.\n\nDetails: ",
+            conditionMessage(e)
+          ),
+          type     = "error",
+          duration = 10
+        )
+        NULL
+      }
+    )
 
     if (is.null(chatProvider)) {
       showNotification(
         "No language model is available at the moment. The model is still fitted, but no equations/explanation can be generated.",
-        type = "error",
+        type     = "error",
         duration = 10
       )
     }
@@ -1205,7 +1217,6 @@ $$")
       )
       return(NULL)
     }
-
 
     # Work on a copy of the data so we can safely coerce factors
     dfMod = rv$data
@@ -1240,7 +1251,7 @@ $$")
             "For linear regression, it has been recoded to numeric.\n",
             "Coding used:  ", levs[1], " → 0,   ", levs[2], " → 1"
           ),
-          type = "warning",
+          type     = "warning",
           duration = 10
         )
 
@@ -1250,6 +1261,7 @@ $$")
 
       # Fit normal lm() model
       m = lm(f, data = dfMod)
+
     } else if (input$model_type == "logistic") {
 
       # Extract response
@@ -1316,6 +1328,7 @@ $$")
 
       # ---- If we reach here: response is valid ----
       m = glm(f, data = rv$data, family = binomial(link = "logit"))
+
     } else if (input$model_type == "poisson") {
       if (any(na.omit(y) < 0) || any(na.omit(y) %% 1 != 0)) {
         showNotification(
@@ -1324,6 +1337,7 @@ $$")
         )
       }
       m = glm(f, data = dfMod, family = poisson(link = "log"))
+
     } else {
       showNotification("Unknown model type.", type = "error")
       return(NULL)
@@ -1331,15 +1345,25 @@ $$")
 
     # If this data came from s20x, attach its documentation to the model
     if (identical(input$data_source, "s20x")) {
-      dsName = input$s20x_dataset
+      dsName  = input$s20x_dataset
       docText = getS20xDocText(dsName)
       if (!is.null(docText)) {
-        attr(m, "wmfm_dataset_doc") = docText
+        attr(m, "wmfm_dataset_doc")  = docText
         attr(m, "wmfm_dataset_name") = dsName
       }
     }
 
     modelFit(m)
+
+    # If there is no chat provider, skip the LLM bits entirely
+    if (is.null(chatProvider)) {
+      rv$modelEquations   = NULL
+      rv$modelExplanation = NULL
+
+      # Still switch to the fitted model tab to show summary/plot
+      updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
+      return(NULL)
+    }
 
     # Talk to the LLM with a progress bar
     withProgress(message = "Talking to the language model...", value = 0, {
@@ -1421,8 +1445,8 @@ $$")
       updateSelectInput(
         session,
         "response_var",
-        label   = NULL,
-        choices = rv$allVars,
+        label    = NULL,
+        choices  = rv$allVars,
         selected = rv$allVars[1]
       )
     }
