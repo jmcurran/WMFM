@@ -58,8 +58,12 @@ appServer = function(input, output, session) {
     modelEquations = NULL,
     modelExplanation = NULL,
     bucketGroupId = 0,
-    lastResponse = NULL
+    lastResponse = NULL,
+    lastFactors = character(0),
+    pendingFactorVar = NULL
   )
+
+
 
   modelFit = reactiveVal(NULL)
 
@@ -82,9 +86,6 @@ appServer = function(input, output, session) {
     )
   })
 
-  # -------------------------------------------------------------------
-  # Plot of data + fitted model
-  # -------------------------------------------------------------------
   # -------------------------------------------------------------------
   # Plot of data + fitted model
   # -------------------------------------------------------------------
@@ -124,18 +125,47 @@ appServer = function(input, output, session) {
 
     xVar = numericPreds[1]
 
-    # Optionally pick one factor for grouping
+    # Factor predictors: used for colour / faceting
     factorMask  = sapply(modelFrame[predictors], is.factor)
     factorPreds = predictors[factorMask]
-    fVar        = if (length(factorPreds) > 0) factorPreds[1] else NULL
+
+    facetVar  = NULL
+    colourVar = NULL
+
+    if (length(factorPreds) == 1) {
+      # Single factor: colour by it, no facets
+      colourVar = factorPreds[1]
+    } else if (length(factorPreds) == 2) {
+      # Two factors: facet by the one with fewer levels (ties -> second),
+      # colour by the other factor
+      levCounts = vapply(
+        factorPreds,
+        function(v) {
+          nlevels(modelFrame[[v]])
+        },
+        FUN.VALUE = integer(1)
+      )
+
+      if (levCounts[1] < levCounts[2]) {
+        facetVar  = factorPreds[1]
+        colourVar = factorPreds[2]
+      } else if (levCounts[2] < levCounts[1]) {
+        facetVar  = factorPreds[2]
+        colourVar = factorPreds[1]
+      } else {
+        # Same number of levels: facet on the second factor added
+        facetVar  = factorPreds[2]
+        colourVar = factorPreds[1]
+      }
+    }
 
     # --- Set up y for plotting (special handling for binomial glm) ---
-    y         = modelFrame[[response]]
-    isGlm     = inherits(m, "glm")
-    isBinom   = isGlm && identical(m$family$family, "binomial")
-    yPlot     = y
-    yBreaks   = NULL
-    yLabels   = NULL
+    y       = modelFrame[[response]]
+    isGlm   = inherits(m, "glm")
+    isBinom = isGlm && identical(m$family$family, "binomial")
+    yPlot   = y
+    yBreaks = NULL
+    yLabels = NULL
 
     if (isBinom) {
       # We want a 0/1 numeric y for plotting, regardless of how the response is stored
@@ -163,7 +193,7 @@ appServer = function(input, output, session) {
         }
       } else {
         # character etc: coerce to factor and treat as 2-level factor if possible
-        fac = factor(y)
+        fac  = factor(y)
         levs = levels(fac)
         if (length(levs) == 2) {
           eventLevel = levs[2]
@@ -188,12 +218,15 @@ appServer = function(input, output, session) {
     gridList = list()
     gridList[[xVar]] = xSeq
 
-    if (!is.null(fVar)) {
-      gridList[[fVar]] = levels(modelFrame[[fVar]])
+    # Use all factor predictors in the grid (if any)
+    if (length(factorPreds) > 0) {
+      for (v in factorPreds) {
+        gridList[[v]] = levels(modelFrame[[v]])
+      }
     }
 
     # For any other predictors, hold them at a typical value
-    otherPreds = setdiff(predictors, c(xVar, fVar))
+    otherPreds = setdiff(predictors, c(xVar, factorPreds))
     for (v in otherPreds) {
       x = modelFrame[[v]]
       if (is.numeric(x)) {
@@ -213,8 +246,9 @@ appServer = function(input, output, session) {
     }
     newData$fit = fitVals
 
-    # Build plot
-    if (is.null(fVar)) {
+    # ----- Build plot -----
+    if (is.null(colourVar)) {
+      # No factor predictors: no colour / facets
       p = ggplot(
         data    = modelFrame,
         mapping = aes(
@@ -233,12 +267,13 @@ appServer = function(input, output, session) {
         ) +
         labs(x = xVar, y = response)
     } else {
+      # Colour by chosen factor
       p = ggplot(
         data    = modelFrame,
         mapping = aes(
           x      = .data[[xVar]],
           y      = if (isBinom) .data[[".yPlot"]] else .data[[response]],
-          colour = .data[[fVar]]
+          colour = .data[[colourVar]]
         )
       ) +
         geom_point(alpha = 0.6) +
@@ -247,11 +282,20 @@ appServer = function(input, output, session) {
           mapping = aes(
             x      = .data[[xVar]],
             y      = .data[["fit"]],
-            colour = .data[[fVar]]
+            colour = .data[[colourVar]]
           ),
           linewidth = 1
         ) +
-        labs(x = xVar, y = response, colour = fVar)
+        labs(
+          x      = xVar,
+          y      = response,
+          colour = colourVar
+        )
+    }
+
+    # Add faceting if requested
+    if (!is.null(facetVar)) {
+      p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
     }
 
     # For binomial models, force y-scale to 0–1 with nice labels
@@ -880,6 +924,59 @@ $$")
   )
 
   # -------------------------------------------------------------------
+  # Warn + confirm when a numeric variable is moved into the Factors bucket
+  # -------------------------------------------------------------------
+  observeEvent(input$factors, {
+    if (is.null(rv$data)) {
+      rv$lastFactors = input$factors %||% character(0)
+      return(NULL)
+    }
+
+    currentFactors  = input$factors %||% character(0)
+    previousFactors = rv$lastFactors %||% character(0)
+
+    # New additions to the Factors bucket
+    newVars = setdiff(currentFactors, previousFactors)
+
+    # If nothing new, just update the record and exit
+    if (length(newVars) == 0) {
+      rv$lastFactors = currentFactors
+      return(NULL)
+    }
+
+    v = newVars[1]  # usually just one at a time
+    col = rv$data[[v]]
+
+    # Only warn for numeric columns that aren't already factors
+    if (is.numeric(col) && !is.factor(col)) {
+      rv$pendingFactorVar = v
+
+      showModal(
+        modalDialog(
+          title = "Treat numeric variable as factor?",
+          paste0(
+            "You moved '", v, "' into the Factors bucket, ",
+            "but in the data it is numeric.\n\n",
+            "Do you want to treat this variable as a factor in the model?"
+          ),
+          footer = tagList(
+            actionButton("cancel_factor_numeric", "No, I'll move it back"),
+            actionButton("confirm_factor_numeric", "Yes, treat as factor")
+          )
+        )
+      )
+
+      # Don't update lastFactors yet; wait for user choice
+      return(NULL)
+    }
+
+    # Non-numeric or already a factor: accept silently
+    rv$lastFactors = currentFactors
+  })
+
+
+
+  # -------------------------------------------------------------------
   # Response picker
   # -------------------------------------------------------------------
   output$response_picker = renderUI({
@@ -1017,6 +1114,42 @@ $$")
       }
     }
   )
+  # User confirms treating numeric as factor: accept Factors as-is
+  observeEvent(input$confirm_factor_numeric, {
+    req(rv$pendingFactorVar)
+    removeModal()
+
+    rv$lastFactors = input$factors %||% character(0)
+    rv$pendingFactorVar = NULL
+
+    showNotification(
+      paste0(
+        "Variable '", input$pendingFactorVar,
+        "' will be treated as a factor when fitting the model."
+      ),
+      type = "message",
+      duration = 6
+    )
+  }, ignoreInit = TRUE)
+
+  # User cancels: keep current state but remind them to move it back
+  observeEvent(input$cancel_factor_numeric, {
+    req(rv$pendingFactorVar)
+    removeModal()
+
+    rv$lastFactors = input$factors %||% character(0)
+
+    showNotification(
+      paste0(
+        "If you do not want '", rv$pendingFactorVar,
+        "' treated as a factor, drag it back to the Continuous bucket."
+      ),
+      type = "warning",
+      duration = 10
+    )
+
+    rv$pendingFactorVar = NULL
+  }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
   # Keep 'Variables' bucket in sync with chosen response (if needed)
