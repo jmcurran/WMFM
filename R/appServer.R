@@ -80,6 +80,41 @@ appServer = function(input, output, session) {
 
   modelFit = reactiveVal(NULL)
 
+  resetModelPage = function(resetResponse = TRUE) {
+
+    # Clear fitted model + LLM outputs
+    modelFit(NULL)
+    rv$modelEquations   = NULL
+    rv$modelExplanation = NULL
+
+    # Reset tracking + factor prompt state
+    rv$autoFormula       = ""
+    rv$lastResponse      = NULL
+    rv$lastFactors       = character(0)
+    rv$pendingFactorVar  = NULL
+
+    # Force buckets to re-render empty (Variables/Factors/Continuous)
+    rv$bucketGroupId = rv$bucketGroupId + 1L
+
+    # Reset model UI inputs
+    updateRadioButtons(session, "model_type", selected = "lm")
+    updateTextInput(session, "formula_text", value = "")
+
+    # Clear any selected interactions (selectInput is created in renderUI)
+    updateSelectInput(session, "interactions", selected = character(0))
+
+    # Reset response var to first column of new data (optional)
+    if (resetResponse && !is.null(rv$data) && length(rv$allVars) > 0) {
+      updateSelectInput(
+        session,
+        "response_var",
+        choices  = rv$allVars,
+        selected = rv$allVars[1]
+      )
+    }
+  }
+
+
   # -------------------------------------------------------------------
   # Plot of data + fitted model
   # -------------------------------------------------------------------
@@ -634,11 +669,7 @@ $$")
 
     rv$data             = df
     rv$allVars          = names(df)
-    rv$autoFormula      = ""
-    modelFit(NULL)
-    rv$modelEquations   = NULL
-    rv$modelExplanation = NULL
-    updateTextInput(session, "formula_text", value = "")
+    resetModelPage(resetResponse = TRUE)
   }
 
   # -------------------------------------------------------------------
@@ -667,11 +698,8 @@ $$")
 
       rv$data             = df
       rv$allVars          = names(df)
-      rv$autoFormula      = ""
-      modelFit(NULL)
-      rv$modelEquations   = NULL
-      rv$modelExplanation = NULL
-      updateTextInput(session, "formula_text", value = "")
+      resetModelPage(resetResponse = TRUE)
+
       return(NULL)
     }
 
@@ -766,11 +794,7 @@ $$")
 
     rv$data             = df
     rv$allVars          = names(df)
-    rv$autoFormula      = ""
-    modelFit(NULL)
-    rv$modelEquations   = NULL
-    rv$modelExplanation = NULL
-    updateTextInput(session, "formula_text", value = "")
+    resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading an s20x data set
     updateTabsetPanel(session, "main_tabs", selected = "Model")
@@ -1503,35 +1527,7 @@ $$")
   # Reset model
   # -------------------------------------------------------------------
   observeEvent(input$reset_btn, {
-    # Clear fitted model
-    modelFit(NULL)
-
-    # Clear stored equations / explanation
-    rv$modelEquations   = NULL
-    rv$modelExplanation = NULL
-
-    # Reset auto-formula tracking
-    rv$autoFormula = ""
-
-    # Reset model type
-    updateRadioButtons(session, "model_type", selected = "lm")
-
-    # Reset formula input
-    updateTextInput(session, "formula_text", value = "")
-
-    # Reset the response selector to the first variable (like on initial load)
-    if (!is.null(rv$data) && length(rv$allVars) > 0) {
-      updateSelectInput(
-        session,
-        "response_var",
-        label    = NULL,
-        choices  = rv$allVars,
-        selected = rv$allVars[1]
-      )
-    }
-
-    rv$lastResponse  = NULL
-    rv$bucketGroupId = rv$bucketGroupId + 1L  # force new buckets
+    resetModelPage(resetResponse = TRUE)
   })
 
   # -------------------------------------------------------------------
