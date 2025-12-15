@@ -24,7 +24,7 @@
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
-#' @importFrom shiny conditionalPanel selectInput div
+#' @importFrom shiny conditionalPanel selectInput div checkboxInput
 #' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
   fluidPage(
