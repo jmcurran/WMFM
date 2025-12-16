@@ -1657,7 +1657,11 @@ $$")
     m = modelFit()
 
     if (!is.null(m) && isFactorOnlyPredictorModel(m)) {
-      h4("Fitted means")
+      if (inherits(m, "glm") && identical(m$family$family, "binomial") && identical(m$family$link, "logit")) {
+        h4("Fitted probabilities")
+      } else {
+        h4("Fitted means")
+      }
     } else {
       h4("Fitted equations")
     }

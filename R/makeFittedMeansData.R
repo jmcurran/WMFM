@@ -32,16 +32,29 @@
 #'
 #' @export
 makeFittedMeansData = function(m) {
-  mf = stats::model.frame(m)
+  mf = model.frame(m)
   response = names(mf)[1]
   predictors = names(mf)[-1]
 
+  isGlm = inherits(m, "glm")
+  isBinom = isGlm && identical(m$family$family, "binomial") && identical(m$family$link, "logit")
+
   if (length(predictors) == 0) {
+    # Intercept-only: for binomial logit we can still provide both scales
+    eta0 = as.numeric(coef(m)[1])
+    prob0 = if (isBinom) plogis(eta0) else NA_real_
+
+    grid = data.frame(.pred = "(Intercept-only)", stringsAsFactors = FALSE)
+    grid$.eta = eta0
+    grid$.prob = prob0
+    grid$.fit = if (isBinom) prob0 else eta0
+
     return(list(
       response = response,
       predictors = character(0),
-      grid = data.frame(.pred = "(Intercept-only)", .fit = as.numeric(stats::coef(m)[1])),
-      mf = mf
+      grid = grid,
+      mf = mf,
+      scale = if (isBinom) "probability" else "mean"
     ))
   }
 
@@ -52,18 +65,33 @@ makeFittedMeansData = function(m) {
   )
   names(grid) = predictors
 
-  fit = if (inherits(m, "glm")) {
-    stats::predict(m, newdata = grid, type = "response")
-  } else {
-    stats::predict(m, newdata = grid)
-  }
+  if (isGlm) {
+    eta = predict(m, newdata = grid, type = "link")
+    grid$.eta = as.numeric(eta)
 
-  grid$.fit = as.numeric(fit)
+    if (isBinom) {
+      grid$.prob = as.numeric(plogis(grid$.eta))
+      grid$.fit = grid$.prob
+      scale = "probability"
+    } else {
+      # For other GLMs, keep response-scale fit, but still retain eta
+      grid$.prob = NA_real_
+      grid$.fit = as.numeric(predict(m, newdata = grid, type = "response"))
+      scale = "response"
+    }
+
+  } else {
+    grid$.eta = NA_real_
+    grid$.prob = NA_real_
+    grid$.fit = as.numeric(predict(m, newdata = grid))
+    scale = "mean"
+  }
 
   list(
     response = response,
     predictors = predictors,
     grid = grid,
-    mf = mf
+    mf = mf,
+    scale = scale
   )
 }

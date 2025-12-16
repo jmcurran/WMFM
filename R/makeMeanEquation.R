@@ -27,7 +27,6 @@ makeMeanEquation = function(m, oneRowDf, label) {
   X  = model.matrix(tt, data = oneRowDf)
   b  = coef(m)
 
-  # Align columns (just in case)
   common = intersect(colnames(X), names(b))
   X = X[, common, drop = FALSE]
   b = b[common]
@@ -38,19 +37,30 @@ makeMeanEquation = function(m, oneRowDf, label) {
   contrib = as.numeric(X[1, ]) * as.numeric(b)
   keep    = abs(contrib) > 1e-12
 
+  isGlm = inherits(m, "glm")
+  isBinom = isGlm && identical(m$family$family, "binomial") && identical(m$family$link, "logit")
+
   fmt3sf = function(x) format(signif(x, 3), trim = TRUE, scientific = FALSE)
   fmt2dp = function(x) format(round(x, 2), nsmall = 2, trim = TRUE, scientific = FALSE)
 
   pieces = paste0(
     "(", prettyNames[keep], " = ", vapply(contrib[keep], fmt3sf, character(1)), ")"
   )
-
   rhs = if (length(pieces) == 0) "0" else paste(pieces, collapse = " + ")
 
-  meanExact = sum(contrib)
+  eta = sum(contrib)
 
-  paste0(
-    label, " = ", rhs,
-    " = ", fmt2dp(meanExact), " (≈ ", fmt3sf(meanExact), ")"
-  )
+  if (isBinom) {
+    p = plogis(eta)
+    paste0(
+      label, " = ", rhs,
+      " = log-odds: ", fmt3sf(eta),
+      "  =>  p = ", fmt2dp(p), " (≈ ", fmt3sf(p), ")"
+    )
+  } else {
+    paste0(
+      label, " = ", rhs,
+      " = ", fmt2dp(eta), " (≈ ", fmt3sf(eta), ")"
+    )
+  }
 }
