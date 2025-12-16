@@ -186,7 +186,8 @@ appUI = function() {
 
         hr(),
 
-        h4("Fitted equations"),
+        uiOutput("model_equations_header"),
+        uiOutput("fitted_means"),
         uiOutput("model_equations"),
 
         hr(),

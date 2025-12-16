@@ -22,8 +22,8 @@
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
 #' @importFrom stats as.formula lm glm binomial poisson model.frame terms
-#' @importFrom stats predict na.omit
-#' @importFrom utils data read.table capture.output str
+#' @importFrom stats predict na.omit setNames
+#' @importFrom utils data read.table capture.output str combn getFromNamespace head
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars
 #' @importFrom rlang .data
@@ -406,7 +406,7 @@ appServer = function(input, output, session) {
       }
     }
 
-    # For binomial models, force y-scale to 0–1 with nice labels
+    # For binomial models, force y-scale to 0-1 with nice labels
     if (isBinom && !is.null(yBreaks) && !is.null(yLabels)) {
       p = p + ggplot2::scale_y_continuous(
         breaks = yBreaks,
@@ -480,7 +480,7 @@ appServer = function(input, output, session) {
         isFac1 = is.factor(x1)
         isFac2 = is.factor(x2)
 
-        # numeric × numeric
+        # numeric x numeric
         if (!isFac1 && !isFac2) {
           termsTex = c(
             termsTex,
@@ -488,7 +488,7 @@ appServer = function(input, output, session) {
           )
           betaIdx = betaIdx + 1L
 
-          # factor × numeric
+          # factor x numeric
         } else if (isFac1 && !isFac2) {
           lvls1 = levels(x1)
           for (lvl1 in lvls1[-1]) {
@@ -499,7 +499,7 @@ appServer = function(input, output, session) {
             betaIdx = betaIdx + 1L
           }
 
-          # numeric × factor
+          # numeric x factor
         } else if (!isFac1 && isFac2) {
           lvls2 = levels(x2)
           for (lvl2 in lvls2[-1]) {
@@ -510,7 +510,7 @@ appServer = function(input, output, session) {
             betaIdx = betaIdx + 1L
           }
 
-          # factor × factor
+          # factor x factor
         } else {
           lvls1 = levels(x1)
           lvls2 = levels(x2)
@@ -548,7 +548,7 @@ appServer = function(input, output, session) {
     }
 
     # ----- LHS: depends on model type -----
-    predictors = mainLabels       # for conditioning in E[· | ·]
+    predictors = mainLabels       # for conditioning in E[. | .]
     if (inherits(m, "glm")) {
       fam  = m$family$family
       link = m$family$link
@@ -1352,7 +1352,7 @@ $$")
           paste0(
             "The response variable '", respName, "' is a 2-level factor.\n",
             "For linear regression, it has been recoded to numeric.\n",
-            "Coding used:  ", levs[1], " → 0,   ", levs[2], " → 1"
+            "Coding used:  ", levs[1], " -> 0,   ", levs[2], " -> 1"
           ),
           type     = "warning",
           duration = 10
@@ -1371,7 +1371,7 @@ $$")
       respName = all.vars(f)[1]
       y = rv$data[[respName]]
 
-      # ---- Case 1: Character with exactly 2 values → silently convert to factor ----
+      # ---- Case 1: Character with exactly 2 values -> silently convert to factor ----
       if (is.character(y)) {
         u = unique(na.omit(y))
         if (length(u) == 2) {
@@ -1420,7 +1420,7 @@ $$")
         }
       }
 
-      # ---- Case 4: Anything else → reject ----
+      # ---- Case 4: Anything else -> reject ----
       else {
         showNotification(
           "Logistic regression requires either a binary factor, numeric 0/1, or a 2-level character vector.",
@@ -1513,7 +1513,7 @@ $$")
         }
       )
 
-      # It's fine if expl is NULL — we just skip showing an explanation
+      # It's fine if expl is NULL - we just skip showing an explanation
       rv$modelEquations   = eq
       rv$modelExplanation = expl
       incProgress(1)
@@ -1531,15 +1531,51 @@ $$")
   })
 
   # -------------------------------------------------------------------
-  # Fitted equations UI (scrollable box)
+  # Fitted equations / fitted means equations UI (scrollable box)
   # -------------------------------------------------------------------
   output$model_equations = renderUI({
-    eq = rv$modelEquations
-    if (is.null(eq)) {
-      return(helpText("Fit a model to see the equations."))
-    }
 
-    scrollStyle = "
+    m = modelFit()
+
+    # ---------------------------------------------------------------
+    # If predictors are all factors, show "fitted means" equations
+    # constructed from the regression coefficients
+    # ---------------------------------------------------------------
+    if (!is.null(m) && isFactorOnlyPredictorModel(m)) {
+
+      info       = makeFittedMeansData(m)
+      grid       = info$grid
+      predictors = info$predictors
+      mf         = info$mf
+
+      makeLabel = function(oneRow) {
+        if (length(predictors) == 0) {
+          return("Mean")
+        }
+        paste0(
+          "Mean(",
+          paste(
+            paste0(
+              predictors, "=", vapply(predictors, function(v) as.character(oneRow[[v]]), "")
+            ),
+            collapse = ", "
+          ),
+          ")"
+        )
+      }
+
+      eqLines = lapply(seq_len(nrow(grid)), function(i) {
+        oneRow = grid[i, predictors, drop = FALSE]
+
+        # Ensure factor columns carry the model's levels (important for model.matrix)
+        for (v in predictors) {
+          oneRow[[v]] = factor(oneRow[[v]], levels = levels(mf[[v]]))
+        }
+
+        makeMeanEquation(m, oneRowDf = oneRow, label = makeLabel(oneRow))
+      })
+
+      scrollStyle = "
       max-height: 300px;
       overflow-y: auto;
       overflow-x: auto;
@@ -1548,6 +1584,45 @@ $$")
       border-radius: 6px;
       background-color: #f9f9f9;
     "
+
+      return(div(
+        style = scrollStyle,
+        tagList(
+          tags$p(
+            tags$strong("How are the means constructed from the regression table?")
+          ),
+          tags$pre(
+            style = "white-space: pre; margin: 0;",
+            paste(
+              c(
+                "Rounded to three significant figures for clarity",
+                "",
+                unlist(eqLines)
+              ),
+              collapse = "\n\n"
+            )
+          )
+        )
+      ))
+    }
+
+    # ---------------------------------------------------------------
+    # Otherwise, show the existing LLM-derived fitted equations
+    # ---------------------------------------------------------------
+    eq = rv$modelEquations
+    if (is.null(eq)) {
+      return(helpText("Fit a model to see the equations."))
+    }
+
+    scrollStyle = "
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+  "
 
     if (is.data.frame(eq) && all(c("condition", "equation") %in% names(eq))) {
       items = lapply(seq_len(nrow(eq)), function(i) {
@@ -1574,6 +1649,75 @@ $$")
 
     div(style = scrollStyle, content)
   })
+
+  # -------------------------------------------------------------------
+  # Dynamic header for fitted equations / fitted means
+  # -------------------------------------------------------------------
+  output$model_equations_header = renderUI({
+    m = modelFit()
+
+    if (!is.null(m) && isFactorOnlyPredictorModel(m)) {
+      h4("Fitted means")
+    } else {
+      h4("Fitted equations")
+    }
+  })
+
+  # -------------------------------------------------------------------
+  # Fitted means UI (scrollable box)
+  # -------------------------------------------------------------------
+  output$fitted_means = renderUI({
+    m = modelFit()
+    if (is.null(m)) {
+      return(helpText("Fit a model to see fitted means."))
+    }
+
+    if (!isFactorOnlyPredictorModel(m)) {
+      return(helpText("Fitted means are shown when all predictors are factors."))
+    }
+
+    info = makeFittedMeansData(m)
+    predictors = info$predictors
+    mf = info$mf
+    grid = info$grid
+
+    layout = chooseFactorLayout(mf, predictors)
+
+    if (layout$type == "oneWay") {
+      df = grid[order(grid[[layout$rowVar]]), , drop = FALSE]
+      return(tagList(
+        renderOneWayTable(df, layout$rowVar, ".fit")
+      ))
+    }
+
+    if (layout$type == "twoWay") {
+      df = grid
+      return(tagList(
+        renderTwoWayTable(df, layout$rowVar, layout$colVar, ".fit")
+      ))
+    }
+
+    if (layout$type == "threeWay") {
+      splitVar = layout$splitVar
+      splitLevels = unique(grid[[splitVar]])
+
+      tables = lapply(splitLevels, function(s) {
+        df = grid[grid[[splitVar]] == s, , drop = FALSE]
+        tagList(
+          tags$h5(paste0(splitVar, " = ", s)),
+          renderTwoWayTable(df, layout$rowVar, layout$colVar, ".fit")
+        )
+      })
+
+      return(tagList(
+        tables
+      ))
+    }
+
+
+    helpText("Fitted means table layout is only implemented for 1-3 factor predictors.")
+  })
+
 
   # -------------------------------------------------------------------
   # Model explanation

@@ -143,7 +143,7 @@ Coefficient table (rounded for display):
 General rules:
 - Round numeric quantities you write in equations to 2 decimal places.
 - Use the ASCII '*' character for multiplication (e.g. b1 * X1). Do NOT use any
-  Unicode multiplication symbols such as '×' or '·'.
+  Unicode multiplication symbols such as '\\u00D7' or '\\u00B7'.
 - For linear regression (Gaussian, identity link):
   * Write equations like: {response} = b0 + b1 * X1 + ...
 - For binomial GLMs with logit link:
