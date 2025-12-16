@@ -81,13 +81,13 @@ getChatProvider = function() {
 
     if (inherits(safeProvider, "try-error")) {
       msg = paste(
-        "\\u274C WMFM cannot contact the Google Gemini backend.",
+        "\u274C WMFM cannot contact the Google Gemini backend.",
         "",
         "Backend: gemini",
         "",
         "This usually means either:",
-        "  \\u2022 The Gemini configuration (e.g. API key or credentials) is missing or invalid, or",
-        "  \\u2022 The server cannot reach the Gemini API endpoint.",
+        "  \u2022 The Gemini configuration (e.g. API key or credentials) is missing or invalid, or",
+        "  \u2022 The server cannot reach the Gemini API endpoint.",
         "",
         "You can either fix the Gemini configuration or switch back to Ollama, e.g.:",
         '  options(wmfm.chat_backend = "ollama")',
@@ -117,14 +117,14 @@ getChatProvider = function() {
 
   if (inherits(safeProvider, "try-error")) {
     msg = paste(
-      "\\u274CWMFM cannot contact the Ollama backend.",
+      "\u274CWMFM cannot contact the Ollama backend.",
       "",
       "Backend: ollama",
       paste0("Server: ", baseUrl),
       "",
       "This usually means either:",
-      "  \\u2022 The Ollama server is not running or unreachable, or",
-      "  \\u2022 The wmfm.ollama_base_url option is incorrect.",
+      "  \u2022 The Ollama server is not running or unreachable, or",
+      "  \u2022 The wmfm.ollama_base_url option is incorrect.",
       "",
       "You can either fix the Ollama server/URL or switch to Gemini, e.g.:",
       '  options(wmfm.chat_backend = "gemini")',
