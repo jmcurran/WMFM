@@ -24,7 +24,7 @@
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
-#' @importFrom shiny conditionalPanel selectInput div checkboxInput
+#' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput
 #' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
   fluidPage(
@@ -41,6 +41,22 @@ appUI = function() {
       .shiny-input-container { font-size: 90%; }
       .nav-tabs > li > a { font-size: 90%; }
       pre, code { font-size: 90%; }
+      /* Derived-variable row: align nicely */
+      .wmfmDerivedVar .shiny-input-container {
+        margin-bottom: 0 !important;
+      }
+
+      .wmfmDerivedVarRow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Keep the input to a sensible width so the button sits just after it */
+      .wmfmDerivedVarRow .wmfmDerivedVarInput {
+        flex: 0 1 620px;   /* change 620px if you want longer/shorter */
+      }
+
     ")),
 
     tabsetPanel(
@@ -114,6 +130,34 @@ appUI = function() {
 
         # Optional interactions UI, driven by the buckets
         uiOutput("interaction_ui"),
+
+        hr(),
+
+        div(
+          class = "wmfmDerivedVar",
+          tags$h4("Create a derived variable"),
+
+          div(
+            class = "wmfmDerivedVarRow",
+            div(
+              class = "wmfmDerivedVarInput",
+              textInput(
+                inputId = "derivedVarText",
+                label = NULL,
+                placeholder = "e.g. t = 1:nrow(data)    or    month = factor(rep(1:12, 12))",
+                value = ""
+              )
+            ),
+            actionButton(
+              "addDerivedVarBtn",
+              "Add variable",
+              class = "btn btn-success"
+            )
+          ),
+
+          div(style = "margin-top: 6px;"),
+          textOutput("derivedVarMsg")
+        ),
 
         hr(),
 

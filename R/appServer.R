@@ -611,13 +611,8 @@ $$")
     if (txt == "") {
       return(list(
         ok  = FALSE,
-        msg = "Enter a model formula, e.g.  y ~ x1 + x2"
+        msg = "Enter a model formula, e.g. y ~ x1 + x2"
       ))
-    }
-
-    # basic character whitelist (allows interactions via * and :)
-    if (!grepl("^[~+*:0-9A-Za-z_(). -]+$", txt)) {
-      return(list(ok = FALSE, msg = "Formula contains illegal characters."))
     }
 
     # parse as formula
@@ -808,13 +803,15 @@ $$")
       return(helpText("Load a data set to see variables."))
     }
 
-    # Remove the chosen response from the Variables list
+    # Preserve current bucket contents across re-renders
+    factors = input$factors %||% character(0)
+    cont    = input$continuous %||% character(0)
+
+    # Remove the chosen response AND anything already placed into buckets
     currentResp = input$response_var
     vars        = rv$allVars
 
-    if (!is.null(currentResp) && nzchar(currentResp)) {
-      vars = setdiff(vars, currentResp)
-    }
+    vars = setdiff(vars, c(currentResp, factors, cont))
 
     bucket_list(
       header      = NULL,
@@ -827,12 +824,12 @@ $$")
       ),
       add_rank_list(
         text     = "Factors",
-        labels   = character(0),
+        labels   = factors,
         input_id = "factors"
       ),
       add_rank_list(
         text     = "Continuous",
-        labels   = character(0),
+        labels   = cont,
         input_id = "continuous"
       )
     )
@@ -1068,6 +1065,46 @@ $$")
 
     # Non-numeric or already a factor: accept silently
     rv$lastFactors = currentFactors
+  })
+
+  # -------------------------------------------------------------------
+  # Add derived variable to the data + refresh buckets
+  # -------------------------------------------------------------------
+  observeEvent(input$addDerivedVarBtn, {
+    if (is.null(rv$data)) {
+      output$derivedVarMsg = renderText("Load a data set first.")
+      return()
+    }
+
+    res = addDerivedVariableToData(rv$data, input$derivedVarText)
+    output$derivedVarMsg = renderText(res$msg)
+
+    if (isTRUE(res$ok)) {
+      rv$data = res$data
+
+      # Refresh variable list used by the buckets + response picker
+      rv$allVars = names(rv$data)
+
+      # Force buckets to re-render (without losing current placements)
+      rv$bucketGroupId = rv$bucketGroupId + 1L
+
+      # Keep the current response if possible, otherwise fall back to first column
+      currentResp = input$response_var
+      selectedResp = if (!is.null(currentResp) && nzchar(currentResp) && currentResp %in% rv$allVars) {
+        currentResp
+      } else {
+        rv$allVars[1]
+      }
+
+      updateSelectInput(
+        session,
+        "response_var",
+        choices  = rv$allVars,
+        selected = selectedResp
+      )
+
+      updateTextInput(session, "derivedVarText", value = "")
+    }
   })
 
   # -------------------------------------------------------------------
