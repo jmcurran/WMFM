@@ -15,13 +15,19 @@ to construct the equation. Column names must match the model terms.}
 \item{label}{A character label to place on the left-hand side of the equation.}
 }
 \value{
-A length-1 character string containing the equation.
+A length-1 character string containing the equation (may include
+newline characters for multi-step GLM working).
 }
 \description{
 Builds an explicit equation for a single fitted mean using the model's
 coefficient vector and the corresponding design row from
 \code{model.matrix()}. This is designed to show how each fitted mean is
 constructed from the regression table coefficients.
+}
+\details{
+For GLMs, the regression coefficients combine to form the linear predictor
+(often written \eqn{\eta}). This function shows that linear predictor and
+then shows the back-transformation to the mean on the response scale.
 }
 \examples{
 df = data.frame(y = rnorm(8), A = factor(rep(c("a","b"), each = 4)))

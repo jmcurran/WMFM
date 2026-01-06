@@ -1643,14 +1643,22 @@ $$")
           ),
           tags$pre(
             style = "white-space: pre; margin: 0;",
-            paste(
-              c(
-                "Rounded to three significant figures for clarity",
-                "",
-                unlist(eqLines)
-              ),
-              collapse = "\n\n"
-            )
+            local({
+              headingText = "Rounded to three significant figures for clarity"
+              underline = paste(rep("-", nchar(headingText)), collapse = "")
+              headingBlock = paste0(headingText, "
+", underline)
+
+              paste(
+                c(
+                  headingBlock,
+                  unlist(eqLines)
+                ),
+                collapse = "
+
+"
+              )
+            })
           )
         )
       ))
