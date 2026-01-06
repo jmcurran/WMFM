@@ -19,5 +19,7 @@ UI controls to select the confidence interval type (standard vs robust) and,
 for robust intervals, the sandwich HC estimator (HC0 vs HC3).
 }
 \details{
+Includes small hover tooltips to explain the choices.
+
 Designed to be placed in the Plot tab sidebar / controls area.
 }
