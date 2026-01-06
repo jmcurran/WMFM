@@ -258,6 +258,9 @@ appUI = function() {
       tabPanel(
         "Plot",
         h4("Data and fitted model"),
+
+        plotCiControlsUi(),
+
         plotOutput("model_plot"),
         helpText(
           "The plot shows the observed data and the fitted model ",

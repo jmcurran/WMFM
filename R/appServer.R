@@ -26,6 +26,8 @@
 #' @importFrom utils data read.table capture.output str combn getFromNamespace head
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars
+#' @importFrom ggplot2 geom_boxplot position_jitter scale_y_continuous
+#' @importFrom ggplot2 theme_minimal theme element_text
 #' @importFrom rlang .data
 appServer = function(input, output, session) {
 
@@ -130,8 +132,19 @@ appServer = function(input, output, session) {
     numericMask  = sapply(modelFrame[predictors], is.numeric)
     numericPreds = predictors[numericMask]
 
-    # If zero numeric predictors: nothing to plot
+    # If zero numeric predictors:
+    # - If predictors are factors, show grouped plot (boxplot or jitter)
+    # - Otherwise, show a message
     if (length(numericPreds) == 0) {
+      if (isFactorOnlyModel(m, modelFrame)) {
+        return(makeFactorOnlyPlot(
+          model = m,
+          data = modelFrame,
+          ciType = input$plotCiType %||% "standard",
+          hcType = input$plotHcType %||% "HC0"
+        ))
+      }
+
       plot.new()
       text(
         0.5, 0.5,
