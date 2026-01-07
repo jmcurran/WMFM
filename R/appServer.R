@@ -82,6 +82,9 @@ appServer = function(input, output, session) {
 
   modelFit = reactiveVal(NULL)
 
+  contrastPairs = reactiveVal(character(0))
+  contrastResultText = reactiveVal("")
+
 
   # -------------------------------------------------------------------
   # Main tabs UI (conditionally includes a Contrasts tab for factor-only models)
@@ -282,8 +285,8 @@ appServer = function(input, output, session) {
           "Contrasts",
           h4("Contrasts (factor-only models)"),
           helpText(
-            "Use contrasts to answer a specific comparison question. ",
-            "Avoid computing all possible contrasts."
+            "Build a small set of meaningful comparisons. ",
+            "Avoid computing lots of contrasts without a clear question."
           ),
 
           hr(),
@@ -307,7 +310,9 @@ appServer = function(input, output, session) {
               choices = c("HC0", "HC3"),
               selected = "HC0"
             ),
-            helpText("HC3 is more conservative in small samples; HC0 is the basic robust option.")
+            helpText(
+              "HC3 is more conservative in small samples; HC0 is the basic robust option."
+            )
           ),
 
           hr(),
@@ -316,7 +321,7 @@ appServer = function(input, output, session) {
             inputId = "contrastType",
             label = "Contrast type",
             choices = c(
-              "Compare two levels" = "pairwise",
+              "Compare pairs of levels" = "pairwise",
               "Level vs average of others" = "vsAverage",
               "Custom contrast (advanced)" = "custom"
             ),
@@ -324,7 +329,6 @@ appServer = function(input, output, session) {
           ),
 
           uiOutput("contrastUi"),
-          actionButton("computeContrastBtn", "Compute contrast", class = "btn-primary btn-sm"),
 
           hr(),
           verbatimTextOutput("contrastResult")
@@ -697,6 +701,607 @@ appServer = function(input, output, session) {
 
     p
   })
+
+  # ---- Contrasts UI + computation (factor-only models) ----
+
+  getFactorOnlyPredictors = function(m, mf) {
+    responseVar = all.vars(formula(m))[1]
+    predictors = setdiff(names(mf), responseVar)
+    predictors[sapply(mf[predictors], is.factor)]
+  }
+
+  buildContrastNewData = function(mf, factorPreds, targetFactor, condValues) {
+    targetLevels = levels(mf[[targetFactor]])
+
+    newData = as.data.frame(
+      lapply(factorPreds, function(v) {
+        factor(rep(NA, length(targetLevels)), levels = levels(mf[[v]]))
+      }),
+      stringsAsFactors = FALSE
+    )
+    names(newData) = factorPreds
+
+    for (v in setdiff(factorPreds, targetFactor)) {
+      newData[[v]] = factor(rep(condValues[[v]], length(targetLevels)), levels = levels(mf[[v]]))
+    }
+
+    newData[[targetFactor]] = factor(targetLevels, levels = levels(mf[[targetFactor]]))
+
+    list(newData = newData, targetLevels = targetLevels)
+  }
+
+  output$contrastUi = renderUI({
+
+    m = modelFit()
+    req(m)
+
+    mf = model.frame(m)
+    factorPreds = getFactorOnlyPredictors(m, mf)
+    req(length(factorPreds) >= 1)
+
+    # Choose the factor to contrast
+    targetFactorChoices = factorPreds
+
+    targetFactor = isolate(input$contrastFactor)
+    if (is.null(targetFactor) || !(targetFactor %in% targetFactorChoices)) {
+      targetFactor = targetFactorChoices[1]
+    }
+
+    # Conditioning factors (other factors held fixed)
+    condFactors = setdiff(factorPreds, targetFactor)
+
+    condUi = lapply(condFactors, function(v) {
+      selectInput(
+        inputId = paste0("contrastCond_", v),
+        label = paste0("Hold ", v, " at:"),
+        choices = levels(mf[[v]]),
+        selected = levels(mf[[v]])[1]
+      )
+    })
+
+    # Levels for the target factor
+    levs = levels(mf[[targetFactor]])
+    levA = levs[1]
+    levB = if (length(levs) >= 2) levs[2] else levs[1]
+
+    tagList(
+      if (length(targetFactorChoices) > 1) {
+        selectInput(
+          inputId = "contrastFactor",
+          label = "Factor to compare:",
+          choices = targetFactorChoices,
+          selected = targetFactor
+        )
+      } else {
+        selectInput(
+          inputId = "contrastFactor",
+          label = "Factor to compare:",
+          choices = targetFactorChoices,
+          selected = targetFactor
+        )
+      },
+
+      if (length(condUi) > 0) {
+        tagList(
+          h5("Condition on other factors"),
+          helpText("These factors are held fixed while comparing levels of the chosen factor."),
+          condUi,
+          hr()
+        )
+      },
+
+      conditionalPanel(
+        condition = "input.contrastType == 'pairwise'",
+
+        fluidRow(
+          column(
+            width = 4,
+            selectInput(
+              inputId = "contrastLevel1",
+              label = "Compare level:",
+              choices = levs,
+              selected = levA
+            )
+          ),
+          column(
+            width = 4,
+            selectInput(
+              inputId = "contrastLevel2",
+              label = "Against level:",
+              choices = levs,
+              selected = levB
+            )
+          ),
+          column(
+            width = 4,
+            div(style = "margin-top: 24px;"),
+            actionButton(
+              "addContrastBtn",
+              "Add contrast",
+              class = "btn btn-primary"
+            )
+          )
+        ),
+
+        div(style = "margin-top: 10px;"),
+        h5("Contrasts"),
+        helpText("Select one or more contrasts in the list below to remove them."),
+
+        fluidRow(
+          column(
+            width = 8,
+            selectInput(
+              inputId = "contrastList",
+              label = NULL,
+              choices = contrastPairs(),
+              selected = character(0),
+              multiple = TRUE,
+              selectize = FALSE,
+              size = 6
+            )
+          ),
+          column(
+            width = 4,
+            div(style = "margin-top: 6px;"),
+            actionButton(
+              "removeContrastBtn",
+              "Remove selected",
+              class = "btn btn-warning"
+            ),
+            div(style = "margin-top: 10px;"),
+            actionButton(
+              "computeContrastsBtn",
+              "Compute contrasts",
+              class = "btn btn-success"
+            )
+          )
+        )
+      ),
+
+      conditionalPanel(
+        condition = "input.contrastType == 'vsAverage'",
+
+        h5("Compare averages of levels"),
+        helpText("Drag levels into the boxes below. The contrast is Average(left) minus Average(right)."),
+
+        bucket_list(
+          header = NULL,
+          group_name = "avgContrastLevels",
+          orientation = "horizontal",
+          add_rank_list(
+            text = "Levels",
+            input_id = "avgLevelsPool",
+            labels = levs
+          ),
+          add_rank_list(
+            text = "Average of:",
+            input_id = "avgLeft",
+            labels = character(0)
+          ),
+          add_rank_list(
+            text = "To average of:",
+            input_id = "avgRight",
+            labels = character(0)
+          )
+        )
+      ),
+
+      conditionalPanel(
+        condition = "input.contrastType == 'custom'",
+        h5("Custom contrast weights (advanced)"),
+        helpText("Enter weights for each level. The weights should sum to 0."),
+        uiOutput("contrastWeightsUi"),
+        uiOutput("customWeightsStatus")
+      ),
+      conditionalPanel(
+        condition = "input.contrastType != 'pairwise'",
+        actionButton(
+          "computeContrastBtn",
+          "Compute contrast",
+          class = "btn btn-success"
+        )
+      )
+
+    )
+  })
+
+  output$contrastWeightsUi = renderUI({
+
+    m = modelFit()
+    req(m)
+
+    mf = model.frame(m)
+    factorPreds = getFactorOnlyPredictors(m, mf)
+    req(length(factorPreds) >= 1)
+
+    targetFactor = input$contrastFactor
+    if (is.null(targetFactor) || !(targetFactor %in% factorPreds)) {
+      targetFactor = factorPreds[1]
+    }
+
+    levs = levels(mf[[targetFactor]])
+    n = length(levs)
+
+    # Default: a simple A vs B contrast if possible
+    defaults = rep(0, n)
+    if (n >= 2) {
+      defaults[1] = 1
+      defaults[2] = -1
+    } else if (n == 1) {
+      defaults[1] = 0
+    }
+
+    tagList(
+      lapply(seq_along(levs), function(i) {
+        textInput(
+          inputId = paste0("contrastW_", i),
+          label = levs[i],
+          value = as.character(defaults[i]),
+          placeholder = "e.g. 1, -1, 1/2"
+        )
+      })
+    )
+  })
+
+  output$customWeightsStatus = renderUI({
+    m = modelFit()
+    req(m)
+
+    if (!isTRUE(input$contrastType == "custom")) {
+      return(NULL)
+    }
+
+    mf = model.frame(m)
+    factorPreds = getFactorOnlyPredictors(m, mf)
+    req(length(factorPreds) >= 1)
+
+    targetFactor = input$contrastFactor
+    if (is.null(targetFactor) || !(targetFactor %in% factorPreds)) {
+      targetFactor = factorPreds[1]
+    }
+
+    levs = levels(mf[[targetFactor]])
+    n = length(levs)
+
+    parseWeightText = function(x) {
+      x = trimws(x %||% "0")
+      if (x == "") {
+        return(0)
+      }
+      if (grepl("^[-+]?[0-9]*\\.?[0-9]+$", x)) {
+        return(as.numeric(x))
+      }
+      if (grepl("^[-+]?[0-9]+[[:space:]]*/[[:space:]]*[0-9]+$", x)) {
+        parts = strsplit(gsub("\\s+", "", x), "/", fixed = TRUE)[[1]]
+        num = as.numeric(parts[1])
+        den = as.numeric(parts[2])
+        if (is.finite(num) && is.finite(den) && den != 0) {
+          return(num / den)
+        }
+      }
+      return(NA_real_)
+    }
+
+    w = sapply(seq_len(n), function(i) parseWeightText(input[[paste0("contrastW_", i)]]))
+    if (any(is.na(w))) {
+      return(tags$div(
+        style = "margin-top: 8px; padding: 8px; border: 1px solid #f0ad4e; background: #fcf8e3;",
+        "Weights must be numbers (decimals) or simple fractions like 1/2."
+      ))
+    }
+
+    s = sum(w)
+    if (abs(s) > 1e-8) {
+      return(tags$div(
+        style = "margin-top: 8px; padding: 8px; border: 1px solid #d9534f; background: #f2dede;",
+        paste0("Weights must sum to 0. Current sum: ", formatC(s, digits = 6, format = "fg"), ".")
+      ))
+    }
+
+    tags$div(
+      style = "margin-top: 8px; padding: 8px; border: 1px solid #5cb85c; background: #dff0d8;",
+      "Weights sum to 0."
+    )
+  })
+
+
+
+
+  # ---- Pairwise contrast list management ----
+
+  observeEvent(input$addContrastBtn, {
+    m = modelFit()
+    req(m)
+    req(isTRUE(input$contrastType == "pairwise"))
+
+    a = input$contrastLevel1
+    b = input$contrastLevel2
+    req(!is.null(a), !is.null(b))
+
+    if (identical(a, b)) {
+      showNotification("Please choose two different levels.", type = "warning")
+      return(NULL)
+    }
+
+    mf = model.frame(m)
+    targetFactor = input$contrastFactor
+    if (is.null(targetFactor) || !(targetFactor %in% names(mf))) {
+      targetFactor = names(mf)[2]
+    }
+
+    levs = levels(mf[[targetFactor]])
+    idxA = match(a, levs)
+    idxB = match(b, levs)
+
+    if (is.na(idxA) || is.na(idxB)) {
+      # Fallback to alphabetical ordering
+      canonical = sort(c(a, b))
+      newLabel = paste0(canonical[1], " - ", canonical[2])
+      revLabel = paste0(canonical[2], " - ", canonical[1])
+    } else if (idxA <= idxB) {
+      newLabel = paste0(a, " - ", b)
+      revLabel = paste0(b, " - ", a)
+    } else {
+      newLabel = paste0(b, " - ", a)
+      revLabel = paste0(a, " - ", b)
+    }
+
+    current = contrastPairs()
+    if (newLabel %in% current || revLabel %in% current) {
+      showNotification("That contrast is already in the list (possibly reversed).", type = "message")
+      return(NULL)
+    }
+
+    contrastPairs(c(current, newLabel))
+  })
+
+  observeEvent(input$removeContrastBtn, {
+    current = contrastPairs()
+    sel = input$contrastList %||% character(0)
+
+    if (length(sel) == 0) {
+      showNotification("Select one or more contrasts to remove.", type = "message")
+      return(NULL)
+    }
+
+    contrastPairs(setdiff(current, sel))
+  })
+
+  # Reset contrasts when the model is reset/refit
+  observeEvent(modelFit(), {
+    contrastPairs(character(0))
+    contrastResultText("")
+  })
+
+  # ---- Contrast computation ----
+
+  computeOneContrastText = function(m, mf, targetFactor, factorPreds, condValues, weights, label) {
+
+    built = buildContrastNewData(mf, factorPreds, targetFactor, condValues)
+    newData = built$newData
+    targetLevels = built$targetLevels
+
+    if (length(weights) != length(targetLevels)) {
+      stop("weights length does not match the number of target levels.")
+    }
+
+    ciType = input$contrastCiType %||% "standard"
+    hcType = input$contrastHcType %||% "HC0"
+
+    res = computeFactorOnlyContrast(
+      model = m,
+      newData = newData,
+      weights = weights,
+      ciType = ciType,
+      hcType = hcType,
+      level = 0.95
+    )
+
+    fmt3 = function(x) format(signif(x, 3), trim = TRUE, scientific = FALSE)
+
+    isGlm = inherits(m, "glm")
+    link = if (isGlm) stats::family(m)$link else NULL
+
+    # If the link is identity, the contrast on the link scale *is* already the
+    # contrast on the mean/response scale, so showing an extra “eta contrast”
+    # line is redundant.
+    lines = c(paste0(label))
+    if (!(isGlm && identical(link, "identity"))) {
+      lines = c(
+        lines,
+        paste0(
+          "  eta contrast: ", fmt3(res$estEta),
+          "  (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
+        )
+      )
+    }
+
+    if (!is.null(res$interpreted)) {
+      lines = c(
+        lines,
+        paste0("  ", res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
+               "  (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")")
+      )
+    }
+
+    paste(lines, collapse = "\n")
+  }
+
+  observeEvent(input$computeContrastsBtn, {
+
+    m = modelFit()
+    req(m)
+    req(isTRUE(input$contrastType == "pairwise"))
+
+    mf = model.frame(m)
+    factorPreds = getFactorOnlyPredictors(m, mf)
+    validate(need(length(factorPreds) >= 1, "No factor predictors available for contrasts."))
+
+    targetFactor = input$contrastFactor
+    if (is.null(targetFactor) || !(targetFactor %in% factorPreds)) {
+      targetFactor = factorPreds[1]
+    }
+
+    # Conditioning values for other factors
+    condFactors = setdiff(factorPreds, targetFactor)
+    condValues = list()
+    for (v in condFactors) {
+      inp = input[[paste0("contrastCond_", v)]]
+      if (is.null(inp)) {
+        inp = levels(mf[[v]])[1]
+      }
+      condValues[[v]] = inp
+    }
+
+    pairs = contrastPairs()
+    if (length(pairs) == 0) {
+      showNotification("Add at least one contrast first.", type = "warning")
+      return(NULL)
+    }
+
+    levs = levels(mf[[targetFactor]])
+
+    blocks = lapply(pairs, function(lbl) {
+      parts = strsplit(lbl, " - ", fixed = TRUE)[[1]]
+      a = parts[1]
+      b = parts[2]
+
+      w = rep(0, length(levs))
+      w[match(a, levs)] = 1
+      w[match(b, levs)] = -1
+
+      computeOneContrastText(
+        m = m,
+        mf = mf,
+        targetFactor = targetFactor,
+        factorPreds = factorPreds,
+        condValues = condValues,
+        weights = w,
+        label = paste0(targetFactor, ": ", a, " - ", b)
+      )
+    })
+
+    contrastResultText(paste(blocks, collapse = "\n\n"))
+  })
+
+  observeEvent(input$computeContrastBtn, {
+
+    m = modelFit()
+    req(m)
+    req(!isTRUE(input$contrastType == "pairwise"))
+
+    mf = model.frame(m)
+    factorPreds = getFactorOnlyPredictors(m, mf)
+    validate(need(length(factorPreds) >= 1, "No factor predictors available for contrasts."))
+
+    targetFactor = input$contrastFactor
+    if (is.null(targetFactor) || !(targetFactor %in% factorPreds)) {
+      targetFactor = factorPreds[1]
+    }
+
+    condFactors = setdiff(factorPreds, targetFactor)
+    condValues = list()
+    for (v in condFactors) {
+      inp = input[[paste0("contrastCond_", v)]]
+      if (is.null(inp)) {
+        inp = levels(mf[[v]])[1]
+      }
+      condValues[[v]] = inp
+    }
+
+    levs = levels(mf[[targetFactor]])
+    n = length(levs)
+
+    if (isTRUE(input$contrastType == "vsAverage")) {
+
+      leftLevels = input$avgLeft %||% character(0)
+      rightLevels = input$avgRight %||% character(0)
+
+      if (length(leftLevels) == 0 || length(rightLevels) == 0) {
+        showNotification("Drag at least one level into each average box.", type = "warning")
+        return(NULL)
+      }
+
+      if (any(!(leftLevels %in% levs)) || any(!(rightLevels %in% levs))) {
+        showNotification("One or more selected levels are not valid for this factor.", type = "warning")
+        return(NULL)
+      }
+
+      if (length(intersect(leftLevels, rightLevels)) > 0) {
+        showNotification("A level cannot appear in both average boxes.", type = "warning")
+        return(NULL)
+      }
+
+      w = rep(0, n)
+      w[match(leftLevels, levs)] = 1 / length(leftLevels)
+      w[match(rightLevels, levs)] = -1 / length(rightLevels)
+
+      label = paste0(
+        targetFactor,
+        ": avg(",
+        paste(leftLevels, collapse = ", "),
+        ") - avg(",
+        paste(rightLevels, collapse = ", "),
+        ")"
+      )
+
+    } else {
+
+      # custom weights (allow fractions like 1/2)
+      parseWeightText = function(x) {
+        x = trimws(x %||% "0")
+        if (x == "") {
+          return(0)
+        }
+        if (grepl("^[-+]?[0-9]*\\.?[0-9]+$", x)) {
+          return(as.numeric(x))
+        }
+        if (grepl("^[-+]?[0-9]+[[:space:]]*/[[:space:]]*[0-9]+$", x)) {
+          parts = strsplit(gsub("\\s+", "", x), "/", fixed = TRUE)[[1]]
+          num = as.numeric(parts[1])
+          den = as.numeric(parts[2])
+          if (is.finite(num) && is.finite(den) && den != 0) {
+            return(num / den)
+          }
+        }
+        return(NA_real_)
+      }
+
+      w = sapply(seq_len(n), function(i) parseWeightText(input[[paste0("contrastW_", i)]]))
+      label = paste0(targetFactor, ": custom weights")
+
+      if (any(is.na(w))) {
+        showNotification("Custom weights must be numeric (decimals) or simple fractions like 1/2.", type = "warning")
+        return(NULL)
+      }
+
+      if (abs(sum(w)) > 1e-8) {
+        showNotification("Custom weights must sum to 0.", type = "warning")
+        return(NULL)
+      }
+      if (sum(w != 0) < 2) {
+        showNotification("Use at least two non-zero weights.", type = "warning")
+        return(NULL)
+      }
+    }
+
+    txt = computeOneContrastText(
+      m = m,
+      mf = mf,
+      targetFactor = targetFactor,
+      factorPreds = factorPreds,
+      condValues = condValues,
+      weights = w,
+      label = label
+    )
+
+    contrastResultText(txt)
+  })
+
+  output$contrastResult = renderText({
+    contrastResultText()
+  })
+
 
   # -------------------------------------------------------------------
   # Symbolic model formula (LaTeX via MathJax)
@@ -1910,14 +2515,19 @@ $$")
           ),
           tags$pre(
             style = "white-space: pre; margin: 0;",
-            paste(
-              c(
-                "Rounded to three significant figures for clarity",
-                "",
-                unlist(eqLines)
-              ),
-              collapse = "\n\n"
-            )
+            local({
+              headingText = "Rounded to three significant figures for clarity"
+              underline = paste(rep("-", nchar(headingText)), collapse = "")
+              headingBlock = paste0(headingText, "\n", underline)
+
+              paste(
+                c(
+                  headingBlock,
+                  unlist(eqLines)
+                ),
+                collapse = "\n\n"
+              )
+            })
           )
         )
       ))
