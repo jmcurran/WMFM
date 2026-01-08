@@ -21,7 +21,7 @@
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
-#' @importFrom stats as.formula lm glm binomial poisson model.frame terms
+#' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit setNames
 #' @importFrom utils data read.table capture.output str combn getFromNamespace head
 #' @importFrom graphics plot.new text
@@ -1102,7 +1102,30 @@ appServer = function(input, output, session) {
     fmt3 = function(x) format(signif(x, 3), trim = TRUE, scientific = FALSE)
 
     isGlm = inherits(m, "glm")
-    link = if (isGlm) stats::family(m)$link else "identity"
+    link = if (isGlm) family(m)$link else "identity"
+    # ---- Step 1: detect common response transformations (lm only) ----
+    respExpr = tryCatch(deparse(formula(m)[[2]]), error = function(e) "")
+    respExpr = paste(respExpr, collapse = "")
+
+    detectRespTransform = function(expr) {
+      expr = gsub("[[:space:]]+", "", expr)
+
+      if (identical(expr, "") || identical(expr, "NULL")) return("unknown")
+      if (!grepl("\\(", expr)) return("none")
+
+      if (grepl("^log\\(", expr)) return("log")
+      if (grepl("^log10\\(", expr)) return("log10")
+      if (grepl("^log1p\\(", expr)) return("log1p")
+      if (grepl("^sqrt\\(", expr)) return("sqrt")
+
+      # common inverse patterns: I(1/y), 1/y, I(1/(y)), etc.
+      if (grepl("^I\\(1/", expr) || grepl("^1/", expr)) return("inverse")
+
+      "unknown"
+    }
+
+    respTransform = if (isGlm) "none" else detectRespTransform(respExpr)
+
 
     # Only show eta contrast when it is genuinely a different scale
     showEtaLine = isGlm && !identical(link, "identity")
@@ -1113,9 +1136,11 @@ appServer = function(input, output, session) {
     if (showEtaLine) {
       detailLines = c(
         detailLines,
-        paste0(
-          "eta contrast: ", fmt3(res$estEta),
-          " (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
+        htmltools::htmlEscape(
+          paste0(
+            "eta contrast: ", fmt3(res$estEta),
+            " (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
+          )
         )
       )
     }
@@ -1123,9 +1148,11 @@ appServer = function(input, output, session) {
     if (!is.null(res$interpreted)) {
       detailLines = c(
         detailLines,
-        paste0(
-          res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
-          " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
+        htmltools::htmlEscape(
+          paste0(
+            res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
+            " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
+          )
         )
       )
     }
@@ -1195,7 +1222,7 @@ appServer = function(input, output, session) {
           }
 
         if (!is.null(llmText) && nzchar(llmText)) {
-          detailLines = c(detailLines, paste0("Interpretation: ", llmText))
+          detailLines = c(detailLines, htmltools::htmlEscape(paste0("Interpretation: ", llmText)))
         }
 
       incProgress(1, detail = "Done")
@@ -1219,8 +1246,14 @@ appServer = function(input, output, session) {
         detailLines = c(
           detailLines,
           paste0(
-            "Note: Because the 95% CI includes ", nullLabel,
-            ", the data are also consistent with there being little or no true difference."
+            "<span style='font-style: italic;'>",
+            htmltools::htmlEscape(
+              paste0(
+                "Note: Because the 95% CI includes ", nullLabel,
+                ", the data are also consistent with there being little or no true difference."
+              )
+            ),
+            "</span>"
           )
         )
       }
@@ -1240,7 +1273,7 @@ appServer = function(input, output, session) {
     } else {
       bodyHtml = paste0(
         "<div style='margin-left: 1em;'>",
-        paste0(htmltools::htmlEscape(detailLines), collapse = "<br>"),
+        paste0(detailLines, collapse = "<br>"),
         "</div>"
       )
     }
