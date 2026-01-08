@@ -1144,10 +1144,13 @@ appServer = function(input, output, session) {
     lines = c(lines, paste0("  ", llmStatus))
 
 
+    hasResp = !is.null(res$interpreted) &&
+      all(c("label", "estimate", "lower", "upper") %in% names(res$interpreted))
+
     if (!is.null(rv$chatProvider) &&
         is.environment(rv$contrastLlmCache) &&
-        !is.null(res$interpreted) &&
-        requireNamespace("ellmer", quietly = TRUE)) {
+        requireNamespace("ellmer", quietly = TRUE) &&
+        hasResp) {
 
       ciType = input$contrastCiType %||% "standard"
       hcType = input$contrastHcType %||% "HC0"
@@ -1166,17 +1169,38 @@ appServer = function(input, output, session) {
         sep = "\n"
       )
 
-      key = paste(ciType, hcType, label, sep = "|")
+      key = paste(
+        ciType, hcType, label,
+        fmt3(res$interpreted$estimate),
+        fmt3(res$interpreted$lower),
+        fmt3(res$interpreted$upper),
+        sep = "|"
+      )
+
 
       llmText = NULL
       if (exists(key, envir = rv$contrastLlmCache, inherits = FALSE)) {
         llmText = get(key, envir = rv$contrastLlmCache, inherits = FALSE)
       } else {
-        llmText = tryCatch(ellmer::chat(rv$chatProvider, prompt), error = function(e) NULL)
+        # optional but helpful UX signal
+        showNotification("Requesting LLM interpretation…", type = "message", duration = 2)
+
+        llmText = tryCatch(
+          rv$chatProvider$chat(prompt),
+          error = function(e) paste("LLM error:", conditionMessage(e))
+        )
+
+        # optional success signal
+        if (!is.null(llmText) && !startsWith(llmText, "LLM error:")) {
+          showNotification("LLM interpretation received.", type = "message", duration = 2)
+        }
+
         if (!is.null(llmText) && nzchar(llmText)) {
           llmText = trimws(gsub("[[:space:]]+", " ", llmText))
           assign(key, llmText, envir = rv$contrastLlmCache)
+          lines = c(lines, paste0("  LLM interpretation: ", llmText))
         }
+
       }
 
       if (!is.null(llmText) && nzchar(llmText)) {
