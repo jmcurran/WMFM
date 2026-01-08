@@ -56,7 +56,6 @@ appUI = function() {
       .wmfmDerivedVarRow .wmfmDerivedVarInput {
         flex: 0 1 620px;   /* change 620px if you want longer/shorter */
       }
-
     ")),
 
     uiOutput("main_tabs_ui")

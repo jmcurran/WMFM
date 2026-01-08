@@ -333,7 +333,7 @@ appServer = function(input, output, session) {
           uiOutput("contrastUi"),
 
           hr(),
-          verbatimTextOutput("contrastResult")
+          htmlOutput("contrastResult")
         )
       } else {
         NULL
@@ -1107,65 +1107,60 @@ appServer = function(input, output, session) {
     # Only show eta contrast when it is genuinely a different scale
     showEtaLine = isGlm && !identical(link, "identity")
 
-    lines = c(paste0(label))
+    # Collect the detail lines (not including the heading label)
+    detailLines = character(0)
 
     if (showEtaLine) {
-      lines = c(
-        lines,
+      detailLines = c(
+        detailLines,
         paste0(
-          "  eta contrast: ", fmt3(res$estEta),
-          "  (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
+          "eta contrast: ", fmt3(res$estEta),
+          " (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
         )
       )
     }
 
     if (!is.null(res$interpreted)) {
-      lines = c(
-        lines,
+      detailLines = c(
+        detailLines,
         paste0(
-          "  ", res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
-          "  (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
+          res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
+          " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
         )
       )
     }
 
     # ---- LLM interpretation (optional) ----
-
-    llmStatus = NULL
-    if (is.null(rv$chatProvider)) {
-      llmStatus = "LLM: not available (chatProvider is NULL)"
-    } else if (!requireNamespace("ellmer", quietly = TRUE)) {
-      llmStatus = "LLM: not available (package 'ellmer' not installed)"
-    } else if (!is.environment(rv$contrastLlmCache)) {
-      llmStatus = "LLM: not available (contrastLlmCache not initialised)"
-    } else {
-      llmStatus = "LLM: ready"
-    }
-    lines = c(lines, paste0("  ", llmStatus))
-
-
-    hasResp = !is.null(res$interpreted) &&
-      all(c("label", "estimate", "lower", "upper") %in% names(res$interpreted))
-
     if (!is.null(rv$chatProvider) &&
         is.environment(rv$contrastLlmCache) &&
         requireNamespace("ellmer", quietly = TRUE) &&
-        hasResp) {
+        !is.null(res$interpreted) &&
+        all(c("label", "estimate", "lower", "upper") %in% names(res$interpreted))) {
 
       ciType = input$contrastCiType %||% "standard"
       hcType = input$contrastHcType %||% "HC0"
 
-      ciLabel = if (identical(ciType, "sandwich")) paste0("robust ", hcType) else "standard"
+      ciText =
+        if (identical(ciType, "sandwich")) {
+          paste0("robust (", hcType, ")")
+        } else {
+          "standard (model-based)"
+        }
 
       prompt = paste(
-        "Write ONE short sentence (max ~25 words) interpreting this contrast for an introductory statistics student.",
-        "Avoid symbols/jargon. Do not mention p-values. Keep direction consistent with the contrast label.",
+        "Write ONE clear sentence interpreting the following contrast for a statistics student.",
+        "You MUST mention the point estimate, the 95% confidence interval, and whether the interval is robust or standard.",
+        "Avoid symbols and avoid technical jargon.",
         "",
         paste0("Contrast: ", label),
-        paste0("Quantity: ", res$interpreted$label),
-        paste0("Estimate: ", fmt3(res$interpreted$estimate)),
-        paste0("95% CI: ", fmt3(res$interpreted$lower), " to ", fmt3(res$interpreted$upper)),
-        paste0("CI method: ", ciLabel),
+        paste0(
+          res$interpreted$label, ": ",
+          fmt3(res$interpreted$estimate),
+          " (95% CI: ",
+          fmt3(res$interpreted$lower), " to ",
+          fmt3(res$interpreted$upper), ")"
+        ),
+        paste0("Confidence interval type: ", ciText),
         sep = "\n"
       )
 
@@ -1177,38 +1172,53 @@ appServer = function(input, output, session) {
         sep = "|"
       )
 
-
-      llmText = NULL
-      if (exists(key, envir = rv$contrastLlmCache, inherits = FALSE)) {
-        llmText = get(key, envir = rv$contrastLlmCache, inherits = FALSE)
-      } else {
-        # optional but helpful UX signal
-        showNotification("Requesting LLM interpretation…", type = "message", duration = 2)
-
-        llmText = tryCatch(
-          rv$chatProvider$chat(prompt),
-          error = function(e) paste("LLM error:", conditionMessage(e))
-        )
-
-        # optional success signal
-        if (!is.null(llmText) && !startsWith(llmText, "LLM error:")) {
-          showNotification("LLM interpretation received.", type = "message", duration = 2)
+      llmText =
+        if (exists(key, envir = rv$contrastLlmCache, inherits = FALSE)) {
+          get(key, envir = rv$contrastLlmCache, inherits = FALSE)
+        } else {
+          tmp = tryCatch(
+            rv$chatProvider$chat(prompt),
+            error = function(e) paste("LLM error:", conditionMessage(e))
+          )
+          if (!is.null(tmp) && nzchar(tmp)) {
+            tmp = trimws(gsub("[[:space:]]+", " ", tmp))
+            assign(key, tmp, envir = rv$contrastLlmCache)
+          }
+          tmp
         }
-
-        if (!is.null(llmText) && nzchar(llmText)) {
-          llmText = trimws(gsub("[[:space:]]+", " ", llmText))
-          assign(key, llmText, envir = rv$contrastLlmCache)
-          lines = c(lines, paste0("  LLM interpretation: ", llmText))
-        }
-
-      }
 
       if (!is.null(llmText) && nzchar(llmText)) {
-        lines = c(lines, paste0("  LLM interpretation: ", llmText))
+        detailLines = c(detailLines, paste0("Interpretation: ", llmText))
       }
     }
 
-    paste(lines, collapse = "\n")
+    # ---- Build nice HTML block ----
+    # Heading (bold label)
+    headingHtml = paste0(
+      "<strong>",
+      htmltools::htmlEscape(label),
+      "</strong>"
+    )
+
+    # Body lines, indented
+    if (length(detailLines) == 0) {
+      bodyHtml = ""
+    } else {
+      bodyHtml = paste0(
+        "<div style='margin-left: 1em;'>",
+        paste0(htmltools::htmlEscape(detailLines), collapse = "<br>"),
+        "</div>"
+      )
+    }
+
+    htmlBlock = paste0(
+      "<div style='margin-bottom: 1em;'>",
+      headingHtml, "<br>",
+      bodyHtml,
+      "</div>"
+    )
+
+    htmlBlock
   }
 
   observeEvent(input$computeContrastsBtn, {
@@ -1245,7 +1255,7 @@ appServer = function(input, output, session) {
 
     levs = levels(mf[[targetFactor]])
 
-    blocks = lapply(pairs, function(lbl) {
+    htmlBlocks = lapply(pairs, function(lbl) {
       parts = strsplit(lbl, " - ", fixed = TRUE)[[1]]
       a = parts[1]
       b = parts[2]
@@ -1265,7 +1275,7 @@ appServer = function(input, output, session) {
       )
     })
 
-    contrastResultText(paste(blocks, collapse = "\n\n"))
+    contrastResultText(paste(unlist(htmlBlocks), collapse = "<hr style='margin: 0.8em 0;'>"))
   })
 
   observeEvent(input$computeContrastBtn, {
@@ -1382,8 +1392,8 @@ appServer = function(input, output, session) {
     contrastResultText(txt)
   })
 
-  output$contrastResult = renderText({
-    contrastResultText()
+  output$contrastResult = renderUI({
+    HTML(contrastResultText())
   })
 
 
