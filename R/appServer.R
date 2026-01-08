@@ -1150,6 +1150,7 @@ appServer = function(input, output, session) {
       prompt = paste(
         "Write ONE clear sentence interpreting the following contrast for a statistics student.",
         "You MUST mention the point estimate, the 95% confidence interval, and whether the interval is robust or standard.",
+        "Do NOT say 'minus' or 'negative'; use 'higher/lower' (or 'more/fewer') wording instead.",
         "Avoid symbols and avoid technical jargon.",
         "",
         paste0("Contrast: ", label),
@@ -1189,6 +1190,29 @@ appServer = function(input, output, session) {
 
       if (!is.null(llmText) && nzchar(llmText)) {
         detailLines = c(detailLines, paste0("Interpretation: ", llmText))
+      }
+    }
+    # ---- Add a simple note when the CI includes the null value ----
+    if (!is.null(res$interpreted) &&
+        all(c("estimate", "lower", "upper") %in% names(res$interpreted))) {
+
+      nullValue = if (isGlm && identical(link, "identity")) 0 else if (!isGlm) 0 else 1
+
+      ciCrossesNull =
+        is.finite(res$interpreted$lower) &&
+        is.finite(res$interpreted$upper) &&
+        (res$interpreted$lower <= nullValue) &&
+        (res$interpreted$upper >= nullValue)
+
+      if (ciCrossesNull) {
+        nullLabel = if (identical(nullValue, 0)) "0" else "1"
+        detailLines = c(
+          detailLines,
+          paste0(
+            "<em>Note: Because the 95% CI includes ", nullLabel,
+            ", the data are also consistent with there being little or no true difference.</em>"
+          )
+        )
       }
     }
 
