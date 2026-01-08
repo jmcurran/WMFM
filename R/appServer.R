@@ -1126,12 +1126,53 @@ appServer = function(input, output, session) {
 
     respTransform = if (isGlm) "none" else detectRespTransform(respExpr)
 
+    # ---- Step 2: choose the effective interpretation scale ----
+    # This tells the app what kind of language to use for contrasts.
+    effectiveScale =
+      if (isGlm) {
+        link  # "identity", "log", "logit", ...
+      } else if (identical(respTransform, "none")) {
+        "identity"
+      } else if (respTransform %in% c("log", "log10")) {
+        "log"
+      } else {
+        "other"
+      }
 
     # Only show eta contrast when it is genuinely a different scale
     showEtaLine = isGlm && !identical(link, "identity")
 
     # Collect the detail lines (not including the heading label)
     detailLines = character(0)
+
+    # Note for common lm() transforms
+    if (!isGlm && respTransform %in% c("log", "log10")) {
+      detailLines = c(
+        detailLines,
+        htmltools::htmlEscape(
+          paste0(
+            "Note: The response was modelled on the ", respTransform,
+            " scale; ratios of typical means are shown on the original scale."
+          )
+        )
+      )
+    } else if (!isGlm && identical(respTransform, "log1p")) {
+      detailLines = c(
+        detailLines,
+        htmltools::htmlEscape(
+          "Note: The response was modelled on the log(1 + y) scale; differences are on that transformed scale."
+        )
+      )
+    } else if (!isGlm && respTransform %in% c("sqrt", "inverse", "unknown")) {
+      # keep this minimal for now; Step 3 will handle nicer language
+      detailLines = c(
+        detailLines,
+        htmltools::htmlEscape(
+          "Note: The response was modelled on a transformed scale; interpret contrasts on that scale unless a back-transformation is explicitly shown."
+        )
+      )
+    }
+
 
     if (showEtaLine) {
       detailLines = c(
