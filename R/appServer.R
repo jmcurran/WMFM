@@ -1173,24 +1173,34 @@ appServer = function(input, output, session) {
         sep = "|"
       )
 
-      llmText =
-        if (exists(key, envir = rv$contrastLlmCache, inherits = FALSE)) {
-          get(key, envir = rv$contrastLlmCache, inherits = FALSE)
-        } else {
-          tmp = tryCatch(
-            rv$chatProvider$chat(prompt),
-            error = function(e) paste("LLM error:", conditionMessage(e))
-          )
-          if (!is.null(tmp) && nzchar(tmp)) {
-            tmp = trimws(gsub("[[:space:]]+", " ", tmp))
-            assign(key, tmp, envir = rv$contrastLlmCache)
+      llmText = NULL
+
+      withProgress(message = "Generating interpretation…", value = 0, {
+
+        incProgress(0.3, detail = "Sending request")
+
+        llmText =
+          if (exists(key, envir = rv$contrastLlmCache, inherits = FALSE)) {
+            get(key, envir = rv$contrastLlmCache, inherits = FALSE)
+          } else {
+            tmp = tryCatch(
+              rv$chatProvider$chat(prompt),
+              error = function(e) paste("LLM error:", conditionMessage(e))
+            )
+            if (!is.null(tmp) && nzchar(tmp)) {
+              tmp = trimws(gsub("[[:space:]]+", " ", tmp))
+              assign(key, tmp, envir = rv$contrastLlmCache)
+            }
+            tmp
           }
-          tmp
+
+        if (!is.null(llmText) && nzchar(llmText)) {
+          detailLines = c(detailLines, paste0("Interpretation: ", llmText))
         }
 
-      if (!is.null(llmText) && nzchar(llmText)) {
-        detailLines = c(detailLines, paste0("Interpretation: ", llmText))
-      }
+      incProgress(1, detail = "Done")
+
+      })
     }
     # ---- Add a simple note when the CI includes the null value ----
     if (!is.null(res$interpreted) &&
@@ -1209,8 +1219,8 @@ appServer = function(input, output, session) {
         detailLines = c(
           detailLines,
           paste0(
-            "<em>Note: Because the 95% CI includes ", nullLabel,
-            ", the data are also consistent with there being little or no true difference.</em>"
+            "Note: Because the 95% CI includes ", nullLabel,
+            ", the data are also consistent with there being little or no true difference."
           )
         )
       }
