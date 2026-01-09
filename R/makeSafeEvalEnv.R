@@ -33,10 +33,16 @@ makeSafeEvalEnv = function(data) {
   env[["data"]] = data
 
   # allowlisted functions (whatever you already add)
+  env[["asin"]]    = base::asin
+  env[["arcsin"]]    = base::asin
   env[["factor"]] = base::factor
+  env[["I"]]    = base::I
+  env[["log"]]    = base::log
+  env[["log1p"]]    = base::log1p
   env[["nrow"]] = base::nrow
   env[["rep"]]    = base::rep
   env[["seq_len"]] = base::seq_len
+  env[["sqrt"]] = base::sqrt
   # etc.
 
   # IMPORTANT: allow ":" for sequences like 1:144

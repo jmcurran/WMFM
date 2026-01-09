@@ -18,17 +18,19 @@
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
 #' @importFrom shiny radioButtons textInput modalButton actionButton
-#' @importFrom shiny updateTabsetPanel tagList selectInput div tags
+#' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
+#' @importFrom shiny isolate validate need
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
 #' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit setNames
-#' @importFrom utils data read.table capture.output str combn getFromNamespace head
+#' @importFrom utils data read.table capture.output str combn getFromNamespace head packageVersion
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars
 #' @importFrom ggplot2 geom_boxplot position_jitter scale_y_continuous
-#' @importFrom ggplot2 theme_minimal theme element_text
+#' @importFrom ggplot2 theme_minimal theme element_text facet_wrap
 #' @importFrom rlang .data
+#' @importFrom htmltools htmlEscape
 appServer = function(input, output, session) {
 
   `%||%` = function(x, y) {
@@ -40,7 +42,7 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   s20xNames = character(0)
   if (requireNamespace("s20x", quietly = TRUE)) {
-    dsInfo    = utils::data(package = "s20x")
+    dsInfo    = data(package = "s20x")
     s20xNames = dsInfo$results[, "Item"]
   }
 
@@ -79,7 +81,8 @@ appServer = function(input, output, session) {
     lastFactors = character(0),
     pendingFactorVar = NULL,
     chatProvider = NULL,
-    contrastLlmCache = new.env(parent = emptyenv())
+    contrastLlmCache = new.env(parent = emptyenv()),
+    modelContext = NULL
   )
 
   modelFit = reactiveVal(NULL)
@@ -152,7 +155,7 @@ appServer = function(input, output, session) {
 
         tags$div(
           style = "font-size: 0.8em; color: #666; margin-top: 20px;",
-          paste("WMFM version", as.character(utils::packageVersion("WMFM")))
+          paste("WMFM version", as.character(packageVersion("WMFM")))
         )
 
       ),
@@ -361,6 +364,7 @@ appServer = function(input, output, session) {
     modelFit(NULL)
     rv$modelEquations   = NULL
     rv$modelExplanation = NULL
+    rv$modelContext = NULL
 
     # Reset tracking + factor prompt state
     rv$autoFormula       = ""
@@ -508,7 +512,7 @@ appServer = function(input, output, session) {
         respFactor = factor(y, levels = c(FALSE, TRUE))
       } else if (is.numeric(y)) {
         yPlot = y
-        uy    = sort(unique(stats::na.omit(yPlot)))
+        uy    = sort(unique(na.omit(yPlot)))
         if (identical(uy, c(0, 1))) {
           yBreaks    = c(0, 1)
           yLabels    = c("0", "1")
@@ -636,7 +640,7 @@ appServer = function(input, output, session) {
 
       # Add faceting if we chose a facetVar
       if (!is.null(facetVar)) {
-        p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
+        p = p + facet_wrap(vars(.data[[facetVar]]))
       }
 
     } else {
@@ -687,14 +691,14 @@ appServer = function(input, output, session) {
           )
 
         if (!is.null(facetVar)) {
-          p = p + ggplot2::facet_wrap(vars(.data[[facetVar]]))
+          p = p + facet_wrap(vars(.data[[facetVar]]))
         }
       }
     }
 
     # For binomial models, force y-scale to 0-1 with nice labels
     if (isBinom && !is.null(yBreaks) && !is.null(yLabels)) {
-      p = p + ggplot2::scale_y_continuous(
+      p = p + scale_y_continuous(
         breaks = yBreaks,
         labels = yLabels,
         limits = c(0, 1)
@@ -1139,6 +1143,13 @@ appServer = function(input, output, session) {
         "other"
       }
 
+    nounPhrase =
+      attr(m, "wmfm_response_noun_phrase", exact = TRUE) %||%
+      all.vars(formula(m)[[2]])[1] %||%
+      "the outcome"
+
+    languageRules = makeLanguageRules(isGlm, effectiveScale, respTransform, nounPhrase)
+
     # Only show eta contrast when it is genuinely a different scale
     showEtaLine = isGlm && !identical(link, "identity")
 
@@ -1149,7 +1160,7 @@ appServer = function(input, output, session) {
     if (!isGlm && respTransform %in% c("log", "log10")) {
       detailLines = c(
         detailLines,
-        htmltools::htmlEscape(
+        htmlEscape(
           paste0(
             "Note: The response was modelled on the ", respTransform,
             " scale; ratios of typical means are shown on the original scale."
@@ -1159,7 +1170,7 @@ appServer = function(input, output, session) {
     } else if (!isGlm && identical(respTransform, "log1p")) {
       detailLines = c(
         detailLines,
-        htmltools::htmlEscape(
+        htmlEscape(
           "Note: The response was modelled on the log(1 + y) scale; differences are on that transformed scale."
         )
       )
@@ -1167,7 +1178,7 @@ appServer = function(input, output, session) {
       # keep this minimal for now; Step 3 will handle nicer language
       detailLines = c(
         detailLines,
-        htmltools::htmlEscape(
+        htmlEscape(
           "Note: The response was modelled on a transformed scale; interpret contrasts on that scale unless a back-transformation is explicitly shown."
         )
       )
@@ -1177,7 +1188,7 @@ appServer = function(input, output, session) {
     if (showEtaLine) {
       detailLines = c(
         detailLines,
-        htmltools::htmlEscape(
+        htmlEscape(
           paste0(
             "eta contrast: ", fmt3(res$estEta),
             " (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
@@ -1187,16 +1198,41 @@ appServer = function(input, output, session) {
     }
 
     if (!is.null(res$interpreted)) {
-      detailLines = c(
-        detailLines,
-        htmltools::htmlEscape(
-          paste0(
-            res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
-            " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
-          )
-        )
+
+      # Default: show what computeFactorOnlyContrast gave us
+      baseLine = paste0(
+        res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
+        " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
       )
+
+      # Step 2 enhancement: if lm() with log/log10 response, also show ratio on original scale
+      if (!isGlm && respTransform %in% c("log", "log10")) {
+
+        # back-transform difference on log/log10 scale into a ratio
+        backFun = if (identical(respTransform, "log10")) function(x) 10^x else exp
+
+        ratioEst = backFun(res$interpreted$estimate)
+        ratioLo  = backFun(res$interpreted$lower)
+        ratioHi  = backFun(res$interpreted$upper)
+
+        ratioLine = paste0(
+          "Ratio of typical means (original scale): ",
+          fmt3(ratioEst),
+          " (95% CI: ", fmt3(ratioLo), ", ", fmt3(ratioHi), ")"
+        )
+
+        # Show the ratio line (and optionally keep the transformed-scale difference line)
+        detailLines = c(
+          detailLines,
+          htmlEscape(ratioLine),
+          htmlEscape(paste0("On the ", respTransform, " scale: ", baseLine))
+        )
+
+      } else {
+        detailLines = c(detailLines, htmlEscape(baseLine))
+      }
     }
+
 
     # ---- LLM interpretation (optional) ----
     if (!is.null(rv$chatProvider) &&
@@ -1221,6 +1257,8 @@ appServer = function(input, output, session) {
         "Do NOT say 'minus' or 'negative'; use 'higher/lower' (or 'more/fewer') wording instead.",
         "Avoid symbols and avoid technical jargon.",
         "",
+        languageRules,
+        "",
         paste0("Contrast: ", label),
         paste0(
           res$interpreted$label, ": ",
@@ -1243,7 +1281,7 @@ appServer = function(input, output, session) {
 
       llmText = NULL
 
-      withProgress(message = "Generating interpretation…", value = 0, {
+      withProgress(message = "Generating interpretation...", value = 0, {
 
         incProgress(0.3, detail = "Sending request")
 
@@ -1263,7 +1301,7 @@ appServer = function(input, output, session) {
           }
 
         if (!is.null(llmText) && nzchar(llmText)) {
-          detailLines = c(detailLines, htmltools::htmlEscape(paste0("Interpretation: ", llmText)))
+          detailLines = c(detailLines, htmlEscape(paste0("Interpretation: ", llmText)))
         }
 
       incProgress(1, detail = "Done")
@@ -1274,7 +1312,7 @@ appServer = function(input, output, session) {
     if (!is.null(res$interpreted) &&
         all(c("estimate", "lower", "upper") %in% names(res$interpreted))) {
 
-      nullValue = if (isGlm && identical(link, "identity")) 0 else if (!isGlm) 0 else 1
+      nullValue = if (identical(effectiveScale, "identity")) 0 else 1
 
       ciCrossesNull =
         is.finite(res$interpreted$lower) &&
@@ -1288,7 +1326,7 @@ appServer = function(input, output, session) {
           detailLines,
           paste0(
             "<span style='font-style: italic;'>",
-            htmltools::htmlEscape(
+            htmlEscape(
               paste0(
                 "Note: Because the 95% CI includes ", nullLabel,
                 ", the data are also consistent with there being little or no true difference."
@@ -1304,7 +1342,7 @@ appServer = function(input, output, session) {
     # Heading (bold label)
     headingHtml = paste0(
       "<strong>",
-      htmltools::htmlEscape(label),
+      htmlEscape(label),
       "</strong>"
     )
 
@@ -1866,7 +1904,7 @@ $$")
     }
 
     env = new.env()
-    utils::data(list = dsName, package = "s20x", envir = env)
+    data(list = dsName, package = "s20x", envir = env)
     df = env[[dsName]]
 
     if (!is.data.frame(df)) {
@@ -2584,6 +2622,16 @@ $$")
       if (!is.null(docText)) {
         attr(m, "wmfm_dataset_doc")  = docText
         attr(m, "wmfm_dataset_name") = dsName
+
+        nounPhrase = resolveResponseNounPhrase(m, respName)
+
+        attr(m, "wmfm_response_noun_phrase") = nounPhrase
+
+        rv$modelContext = list(
+          responseVar = respName,
+          nounPhrase  = nounPhrase,
+          datasetName = attr(m, "wmfm_dataset_name", exact = TRUE)
+        )
       }
     }
 

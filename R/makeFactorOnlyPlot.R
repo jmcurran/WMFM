@@ -29,6 +29,7 @@
 #' @importFrom ggplot2 geom_boxplot stat_boxplot geom_point geom_errorbar
 #' @importFrom ggplot2 position_jitter position_nudge
 #' @importFrom ggplot2 scale_y_continuous scale_x_discrete expansion
+#' @importFrom rlang .data
 #'
 #' @export
 makeFactorOnlyPlot = function(
@@ -130,7 +131,7 @@ makeFactorOnlyPlot = function(
   )
 
   # --- plot ---
-  p = ggplot(plotDf, aes(x = group, y = y)) +
+  p = ggplot(plotDf, aes(x = .data$group, y = .data$y)) +
     labs(x = xLabel, y = responseVar) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 30, hjust = 1)) +

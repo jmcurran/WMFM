@@ -58,7 +58,7 @@ makeMeanEquation = function(m, oneRowDf, label) {
     return(
       paste0(
         label, " = ", rhs,
-        " = ", fmt2dp(eta), " (≈ ", fmt3sf(eta), ")"
+        " = ", fmt2dp(eta), " (\u2248 ", fmt3sf(eta), ")"
       )
     )
   }
@@ -70,25 +70,25 @@ makeMeanEquation = function(m, oneRowDf, label) {
   # Line 1: always show the linear predictor
   line1 = paste0(
     label, ": linear predictor (eta) = ", rhs,
-    " = ", fmt2dp(eta), " (≈ ", fmt3sf(eta), ")"
+    " = ", fmt2dp(eta), " (\u2248 ", fmt3sf(eta), ")"
   )
 
   # Line 2: interpret eta + back-transform
   if (fam == "binomial" && link == "logit") {
     p = plogis(eta)
     line2 = paste0(
-      "eta = logit(p)  =>  p = 1 / (1 + exp(-eta)) = ", fmt2dp(p), " (≈ ", fmt3sf(p), ")"
+      "eta = logit(p)  =>  p = 1 / (1 + exp(-eta)) = ", fmt2dp(p), " (\u2248 ", fmt3sf(p), ")"
     )
   } else if (fam == "poisson" && link == "log") {
     mu = invLink(eta)  # exp(eta)
     line2 = paste0(
-      "eta = log(mean)  =>  mean = exp(eta) = ", fmt2dp(mu), " (≈ ", fmt3sf(mu), ")"
+      "eta = log(mean)  =>  mean = exp(eta) = ", fmt2dp(mu), " (\u2248 ", fmt3sf(mu), ")"
     )
   } else {
     mu = invLink(eta)
     line2 = paste0(
       "eta = ", link, "(mean)  =>  mean = ", link, "^{-1}(eta) = ",
-      fmt2dp(mu), " (≈ ", fmt3sf(mu), ")"
+      fmt2dp(mu), " (\u2248 ", fmt3sf(mu), ")"
     )
   }
 
