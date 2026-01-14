@@ -210,7 +210,38 @@ appUI = function() {
           verbatimTextOutput("formula_status")
         )
       ),
-      tabPanel("Fitted Model", uiOutput("tab_fitted_model")),
+
+      tabPanel(
+        "Fitted Model",
+        h4("Model equation"),
+        uiOutput("model_formula"),
+
+        hr(),
+
+        uiOutput("model_equations_header"),
+        uiOutput("fitted_means"),
+        uiOutput("model_equations"),
+
+        hr(),
+
+        h4("Model outputs"),
+        accordion(
+          id = "model_outputs",
+          multiple = TRUE,
+          open = NULL,
+          accordion_panel(
+            "Regression table",
+            value = "reg_table",
+            verbatimTextOutput("model_output")
+          ),
+          accordion_panel(
+            "Model explanation",
+            value = "model_expl",
+            uiOutput("model_explanation")
+          )
+        )
+      ),
+
       tabPanel("Contrasts", uiOutput("tab_contrasts")),
       tabPanel("Plot", uiOutput("tab_plot"))
     )

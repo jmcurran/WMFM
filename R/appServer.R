@@ -98,38 +98,6 @@ appServer = function(input, output, session) {
   # Main tabs UI (tabset skeleton lives in UI; each tab is rendered here)
   # -------------------------------------------------------------------
 
-  output$tab_fitted_model = renderUI({
-    tagList(
-        h4("Model equation"),
-        uiOutput("model_formula"),
-
-        hr(),
-
-        uiOutput("model_equations_header"),
-        uiOutput("fitted_means"),
-        uiOutput("model_equations"),
-
-        hr(),
-
-        h4("Model outputs"),
-        accordion(
-          id = "model_outputs",
-          multiple = TRUE,
-          open = NULL,
-          accordion_panel(
-            "Regression table",
-            value = "reg_table",
-            verbatimTextOutput("model_output")
-          ),
-          accordion_panel(
-            "Model explanation",
-            value = "model_expl",
-            uiOutput("model_explanation")
-          )
-        )
-      )
-  })
-
   output$tab_contrasts = renderUI({
     m = modelFit()
     showContrasts = !is.null(m) && isFactorOnlyPredictorModel(m)
