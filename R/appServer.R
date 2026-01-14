@@ -98,64 +98,6 @@ appServer = function(input, output, session) {
   # Main tabs UI (tabset skeleton lives in UI; each tab is rendered here)
   # -------------------------------------------------------------------
 
-  output$tab_load_data = renderUI({
-    tagList(
-        h4("Load a data set"),
-
-        radioButtons(
-          "data_source",
-          label = "Data source:",
-          choices = c(
-            "Upload file"               = "upload",
-            "Example from s20x package" = "s20x"
-          ),
-          selected = "upload"
-        ),
-
-        conditionalPanel(
-          condition = "input.data_source == 'upload'",
-          fluidRow(
-            column(
-              12,
-              fileInput(
-                "file",
-                "Choose CSV, TXT, or RDA",
-                accept = c(".csv", ".txt", ".rda", ".RData")
-              )
-            )
-          ),
-          helpText(
-            "Upload a CSV, TXT, or RDA file containing a single data frame."
-          )
-        ),
-
-        conditionalPanel(
-          condition = "input.data_source == 's20x'",
-          selectInput(
-            "s20x_dataset",
-            "Choose an s20x example data set:",
-            choices = character(0)
-          ),
-          helpText(
-            "These data sets are shipped with the s20x package and are useful ",
-            "for examples and teaching."
-          )
-        ),
-
-        hr(),
-        helpText(
-          "After loading data, go to the Model tab to assign variables ",
-          "and specify the regression model."
-        ),
-
-        tags$div(
-          style = "font-size: 0.8em; color: #666; margin-top: 20px;",
-          paste("WMFM version", as.character(packageVersion("WMFM")))
-        )
-
-      )
-  })
-
   output$tab_fitted_model = renderUI({
     tagList(
         h4("Model equation"),
