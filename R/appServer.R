@@ -174,20 +174,6 @@ appServer = function(input, output, session) {
       }
   })
 
-  output$tab_plot = renderUI({
-    tagList(
-        h4("Data and fitted model"),
-
-        plotCiControlsUi(),
-
-        plotOutput("model_plot"),
-        helpText(
-          "The plot shows the observed data and the fitted model ",
-          "against one numeric predictor (x-axis), optionally separated by a factor."
-        )
-      )
-  })
-
   resetModelPage = function(resetResponse = TRUE) {
 
     # Clear fitted model + LLM outputs
@@ -537,6 +523,11 @@ appServer = function(input, output, session) {
 
     p
   })
+
+  output$plot_ci_controls_ui = renderUI({
+    plotCiControlsUi()
+  })
+
 
   # ---- Contrasts UI + computation (factor-only models) ----
 

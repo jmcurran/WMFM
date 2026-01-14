@@ -243,7 +243,17 @@ appUI = function() {
       ),
 
       tabPanel("Contrasts", uiOutput("tab_contrasts")),
-      tabPanel("Plot", uiOutput("tab_plot"))
+      tabPanel(
+        "Plot",
+        h4("Data and fitted model"),
+        uiOutput("plot_ci_controls_ui"),
+        plotOutput("model_plot"),
+        helpText(
+          "The plot shows the observed data and the fitted model ",
+          "against one numeric predictor (x-axis), optionally separated by a factor."
+        )
+      )
+
     )
 
   )
