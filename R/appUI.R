@@ -61,7 +61,98 @@ appUI = function() {
     tabsetPanel(
       id = "main_tabs",
       tabPanel("Load Data", uiOutput("tab_load_data")),
-      tabPanel("Model", uiOutput("tab_model")),
+      tabPanel(
+        "Model",
+        tagList(
+          h4("Assign variables"),
+          uiOutput("var_buckets"),
+          uiOutput("interaction_ui"),
+
+          hr(),
+
+          div(
+            class = "wmfmDerivedVar",
+            tags$h4("Create a derived variable"),
+
+            div(
+              class = "wmfmDerivedVarRow",
+              div(
+                class = "wmfmDerivedVarInput",
+                textInput(
+                  inputId = "derivedVarText",
+                  label = NULL,
+                  placeholder = "e.g. t = 1:nrow(data)    or    month = factor(rep(1:12, 12))",
+                  value = ""
+                )
+              ),
+              actionButton(
+                "addDerivedVarBtn",
+                "Add variable",
+                class = "btn btn-success"
+              )
+            ),
+
+            div(style = "margin-top: 6px;"),
+            textOutput("derivedVarMsg")
+          ),
+
+          hr(),
+
+          h4("Response, model type, and fitting"),
+          fluidRow(
+            column(
+              width = 4,
+              h5("Response"),
+              uiOutput("response_picker")
+            ),
+
+            column(
+              width = 4,
+              h5("Type"),
+              radioButtons(
+                "model_type",
+                label = NULL,
+                choices = c(
+                  "Linear regression" = "lm",
+                  "Logistic regression (binomial, logit)" = "logistic",
+                  "Poisson regression (log link)" = "poisson"
+                ),
+                selected = "lm"
+              )
+            ),
+
+            column(
+              width = 4,
+              h5(""),
+              div(
+                style = "margin-top: 6px;",
+                actionButton(
+                  "fit_btn",
+                  "Fit model",
+                  class = "btn-primary btn-sm"
+                ),
+                tags$br(), tags$br(),
+                actionButton(
+                  "reset_btn",
+                  "Reset model",
+                  class = "btn-secondary btn-sm"
+                )
+              )
+            )
+          ),
+
+          hr(),
+
+          h4("Model formula"),
+          checkboxInput(
+            "expert_mode",
+            "Use compact (expert) formula notation where possible",
+            value = FALSE
+          ),
+          textInput("formula_text", label = NULL, value = "", width = "100%"),
+          verbatimTextOutput("formula_status")
+        )
+      ),
       tabPanel("Fitted Model", uiOutput("tab_fitted_model")),
       tabPanel("Contrasts", uiOutput("tab_contrasts")),
       tabPanel("Plot", uiOutput("tab_plot"))
