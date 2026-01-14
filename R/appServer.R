@@ -337,7 +337,22 @@ appServer = function(input, output, session) {
           htmlOutput("contrastResult")
         )
       } else {
-        NULL
+        # Keep the tab visible, but show a helpful message when contrasts
+        # are not applicable.
+        msg = if (is.null(m)) {
+          "Fit a model first to enable contrasts."
+        } else {
+          "Contrasts are only available when the fitted model has factor predictors only (no numeric predictors)."
+        }
+
+        tagList(
+          h4("Contrasts"),
+          helpText(msg),
+          tags$ul(
+            tags$li("Go to the Model tab and fit a factor-only model."),
+            tags$li("If you need comparisons for models with numeric predictors, use predicted values or marginal effects instead.")
+          )
+        )
       }
   })
 
