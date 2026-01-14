@@ -94,17 +94,12 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   # Main tabs UI (conditionally includes a Contrasts tab for factor-only models)
   # -------------------------------------------------------------------
-  output$main_tabs_ui = renderUI({
+  # -------------------------------------------------------------------
+  # Main tabs UI (tabset skeleton lives in UI; each tab is rendered here)
+  # -------------------------------------------------------------------
 
-    m = modelFit()
-    showContrasts = !is.null(m) && isFactorOnlyPredictorModel(m)
-
-    tabsetPanel(
-      id = "main_tabs",
-
-      # ---- Tab 1: Load Data ----
-      tabPanel(
-        "Load Data",
+  output$tab_load_data = renderUI({
+    tagList(
         h4("Load a data set"),
 
         radioButtons(
@@ -158,11 +153,11 @@ appServer = function(input, output, session) {
           paste("WMFM version", as.character(packageVersion("WMFM")))
         )
 
-      ),
+      )
+  })
 
-      # ---- Tab 2: Model specification / variable assignment ----
-      tabPanel(
-        "Model",
+  output$tab_model = renderUI({
+    tagList(
         h4("Assign variables"),
         uiOutput("var_buckets"),
         uiOutput("interaction_ui"),
@@ -250,11 +245,11 @@ appServer = function(input, output, session) {
         ),
         textInput("formula_text", label = NULL, value = "", width = "100%"),
         verbatimTextOutput("formula_status")
-      ),
+      )
+  })
 
-      # ---- Tab 3: Fitted model outputs ----
-      tabPanel(
-        "Fitted Model",
+  output$tab_fitted_model = renderUI({
+    tagList(
         h4("Model equation"),
         uiOutput("model_formula"),
 
@@ -282,12 +277,15 @@ appServer = function(input, output, session) {
             uiOutput("model_explanation")
           )
         )
-      ),
+      )
+  })
 
-      # ---- Optional Tab: Contrasts (factor-only models) ----
-      if (showContrasts) {
-        tabPanel(
-          "Contrasts",
+  output$tab_contrasts = renderUI({
+    m = modelFit()
+    showContrasts = !is.null(m) && isFactorOnlyPredictorModel(m)
+
+    if (showContrasts) {
+        tagList(
           h4("Contrasts (factor-only models)"),
           helpText(
             "Build a small set of meaningful comparisons. ",
@@ -340,11 +338,11 @@ appServer = function(input, output, session) {
         )
       } else {
         NULL
-      },
+      }
+  })
 
-      # ---- Tab 4: Plot ----
-      tabPanel(
-        "Plot",
+  output$tab_plot = renderUI({
+    tagList(
         h4("Data and fitted model"),
 
         plotCiControlsUi(),
@@ -355,7 +353,6 @@ appServer = function(input, output, session) {
           "against one numeric predictor (x-axis), optionally separated by a factor."
         )
       )
-    )
   })
 
   resetModelPage = function(resetResponse = TRUE) {

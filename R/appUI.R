@@ -58,7 +58,14 @@ appUI = function() {
       }
     ")),
 
-    uiOutput("main_tabs_ui")
+    tabsetPanel(
+      id = "main_tabs",
+      tabPanel("Load Data", uiOutput("tab_load_data")),
+      tabPanel("Model", uiOutput("tab_model")),
+      tabPanel("Fitted Model", uiOutput("tab_fitted_model")),
+      tabPanel("Contrasts", uiOutput("tab_contrasts")),
+      tabPanel("Plot", uiOutput("tab_plot"))
+    )
 
   )
 }
