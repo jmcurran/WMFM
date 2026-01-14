@@ -98,81 +98,85 @@ appServer = function(input, output, session) {
   # Main tabs UI (tabset skeleton lives in UI; each tab is rendered here)
   # -------------------------------------------------------------------
 
-  output$tab_contrasts = renderUI({
+  output$contrasts_content_ui = renderUI({
+
     m = modelFit()
     showContrasts = !is.null(m) && isFactorOnlyPredictorModel(m)
 
     if (showContrasts) {
-        tagList(
-          h4("Contrasts (factor-only models)"),
+
+      tagList(
+        h4("Contrasts (factor-only models)"),
+        helpText(
+          "Build a small set of meaningful comparisons. ",
+          "Avoid computing lots of contrasts without a clear question."
+        ),
+
+        hr(),
+
+        radioButtons(
+          inputId = "contrastCiType",
+          label = "Confidence intervals",
+          choices = c(
+            "Standard (model-based)" = "standard",
+            "Robust (sandwich)"      = "sandwich"
+          ),
+          selected = "standard",
+          inline = TRUE
+        ),
+
+        conditionalPanel(
+          condition = "input.contrastCiType == 'sandwich'",
+          selectInput(
+            inputId = "contrastHcType",
+            label = "Robust (sandwich) type",
+            choices = c("HC0", "HC3"),
+            selected = "HC0"
+          ),
           helpText(
-            "Build a small set of meaningful comparisons. ",
-            "Avoid computing lots of contrasts without a clear question."
-          ),
-
-          hr(),
-
-          radioButtons(
-            inputId = "contrastCiType",
-            label = "Confidence intervals",
-            choices = c(
-              "Standard (model-based)" = "standard",
-              "Robust (sandwich)"      = "sandwich"
-            ),
-            selected = "standard",
-            inline = TRUE
-          ),
-
-          conditionalPanel(
-            condition = "input.contrastCiType == 'sandwich'",
-            selectInput(
-              inputId = "contrastHcType",
-              label = "Robust (sandwich) type",
-              choices = c("HC0", "HC3"),
-              selected = "HC0"
-            ),
-            helpText(
-              "HC3 is more conservative in small samples; HC0 is the basic robust option."
-            )
-          ),
-
-          hr(),
-
-          radioButtons(
-            inputId = "contrastType",
-            label = "Contrast type",
-            choices = c(
-              "Compare pairs of levels" = "pairwise",
-              "Level vs average of others" = "vsAverage",
-              "Custom contrast (advanced)" = "custom"
-            ),
-            selected = "pairwise"
-          ),
-
-          uiOutput("contrastUi"),
-
-          hr(),
-          htmlOutput("contrastResult")
-        )
-      } else {
-        # Keep the tab visible, but show a helpful message when contrasts
-        # are not applicable.
-        msg = if (is.null(m)) {
-          "Fit a model first to enable contrasts."
-        } else {
-          "Contrasts are only available when the fitted model has factor predictors only (no numeric predictors)."
-        }
-
-        tagList(
-          h4("Contrasts"),
-          helpText(msg),
-          tags$ul(
-            tags$li("Go to the Model tab and fit a factor-only model."),
-            tags$li("If you need comparisons for models with numeric predictors, use predicted values or marginal effects instead.")
+            "HC3 is more conservative in small samples; HC0 is the basic robust option."
           )
-        )
+        ),
+
+        hr(),
+
+        radioButtons(
+          inputId = "contrastType",
+          label = "Contrast type",
+          choices = c(
+            "Compare pairs of levels"        = "pairwise",
+            "Level vs average of others"     = "vsAverage",
+            "Custom contrast (advanced)"     = "custom"
+          ),
+          selected = "pairwise"
+        ),
+
+        uiOutput("contrastUi"),
+
+        hr(),
+        htmlOutput("contrastResult")
+      )
+
+    } else {
+
+      msg = if (is.null(m)) {
+        "Fit a model first to enable contrasts."
+      } else {
+        "Contrasts are only available when the fitted model has factor predictors only (no numeric predictors)."
       }
+
+      tagList(
+        h4("Contrasts"),
+        helpText(msg),
+        tags$ul(
+          tags$li("Go to the Model tab and fit a factor-only model."),
+          tags$li("If you need comparisons for models with numeric predictors, use predicted values or marginal effects instead.")
+        )
+      )
+    }
+
   })
+
 
   resetModelPage = function(resetResponse = TRUE) {
 

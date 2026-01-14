@@ -242,7 +242,11 @@ appUI = function() {
         )
       ),
 
-      tabPanel("Contrasts", uiOutput("tab_contrasts")),
+      tabPanel(
+        "Contrasts",
+        uiOutput("contrasts_content_ui")
+      ),
+
       tabPanel(
         "Plot",
         h4("Data and fitted model"),
