@@ -124,6 +124,8 @@ appUI = function() {
           h4("Assign variables"),
           uiOutput("var_buckets"),
           uiOutput("interaction_ui"),
+          uiOutput(outputId = "modelHelpBtnUi"),
+
 
           hr(),
 

@@ -1549,6 +1549,98 @@ $$")
   })
 
   # -------------------------------------------------------------------
+  # Help modal helpers: variable summary + UI renderer
+  # -------------------------------------------------------------------
+
+  buildVarSummary = function(df, maxLevels = 30, maxUnique = 12) {
+
+    stopifnot(is.data.frame(df))
+
+    vars = names(df)
+
+    rows = lapply(vars, function(v) {
+      x = df[[v]]
+
+      cls = paste(class(x), collapse = "/")
+      n = length(x)
+      nMissing = sum(is.na(x))
+
+      if (is.factor(x)) {
+        levs = levels(x)
+        levsShow = if (length(levs) > maxLevels) c(levs[1:maxLevels], "…") else levs
+
+        extra = paste0(
+          "levels (", length(levs), "): ",
+          paste(levsShow, collapse = ", ")
+        )
+
+      } else if (is.character(x)) {
+        ux = unique(na.omit(x))
+        uxShow = if (length(ux) > maxUnique) c(ux[1:maxUnique], "…") else ux
+        extra = paste0(
+          "example values (", min(length(ux), maxUnique), "): ",
+          paste(uxShow, collapse = ", ")
+        )
+
+      } else if (is.logical(x)) {
+        extra = paste0("values: ", paste(sort(unique(na.omit(x))), collapse = ", "))
+
+      } else if (is.numeric(x)) {
+        rng = range(x, na.rm = TRUE)
+        if (any(!is.finite(rng))) {
+          extra = "range: NA"
+        } else {
+          extra = paste0("range: ", signif(rng[1], 4), " to ", signif(rng[2], 4))
+        }
+
+      } else {
+        extra = ""
+      }
+
+      data.frame(
+        variable = v,
+        class = cls,
+        missing = nMissing,
+        details = extra,
+        stringsAsFactors = FALSE
+      )
+    })
+
+    do.call(rbind, rows)
+  }
+
+  renderVarSummaryUi = function(summaryDf) {
+
+    if (is.null(summaryDf) || nrow(summaryDf) == 0) {
+      return(helpText("No variables to summarise."))
+    }
+
+    # simple HTML table (keeps dependencies minimal)
+    tags$table(
+      class = "table table-sm",
+      tags$thead(
+        tags$tr(
+          tags$th("Variable"),
+          tags$th("Class"),
+          tags$th("Missing"),
+          tags$th("Details (esp. factor levels)")
+        )
+      ),
+      tags$tbody(
+        lapply(seq_len(nrow(summaryDf)), function(i) {
+          tags$tr(
+            tags$td(summaryDf$variable[i]),
+            tags$td(summaryDf$class[i]),
+            tags$td(summaryDf$missing[i]),
+            tags$td(summaryDf$details[i])
+          )
+        })
+      )
+    )
+  }
+
+
+  # -------------------------------------------------------------------
   # Helper: formula checker
   # -------------------------------------------------------------------
   checkFormula = function() {
@@ -1890,6 +1982,95 @@ $$")
       )
     )
   })
+
+  # -------------------------------------------------------------------
+  # Display the R help file if using s2ox data set
+  # -------------------------------------------------------------------
+  datasetLoaded = reactive({
+    is.data.frame(rv$data)
+  })
+
+  output$modelHelpBtnUi = renderUI({
+    isReady = datasetLoaded()
+
+    tags$button(
+      id    = "modelHelpBtn",
+      type  = "button",
+      class = "btn btn-outline-secondary action-button",
+      disabled = if (!isReady) "disabled" else NULL,
+      icon("circle-question"),
+      " Help"
+    )
+  })
+
+  output$modelHelpModalBody = renderUI({
+
+    req(is.data.frame(rv$data))
+
+    # Always: generated variable summary
+    summaryDf = buildVarSummary(rv$data)
+
+    # Optional: s20x help HTML
+    helpHtml = NULL
+    if (identical(input$data_source, "s20x")) {
+      helpHtml = getS20xDocHtml(input$s20x_dataset)
+    }
+
+    tagList(
+      if (identical(input$data_source, "s20x")) {
+        tagList(
+          h4("s20x help"),
+          if (!is.null(helpHtml) && nzchar(helpHtml)) {
+            tags$div(
+              style = "max-height: 280px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px;",
+              htmltools::HTML(helpHtml)
+            )
+          } else {
+            tags$div(class = "alert alert-warning", "No help page found for this dataset.")
+          },
+          hr()
+        )
+      },
+
+      h4("Variable summary"),
+      helpText("Includes factor levels and quick type/missing summaries."),
+      renderVarSummaryUi(summaryDf)
+    )
+  })
+
+
+  # -------------------------------------------------------------------
+  # Model tab: Help modal (Rd text if s20x + generated summary)
+  # -------------------------------------------------------------------
+  observeEvent(input$modelHelpBtn, {
+
+    if (is.null(rv$data)) {
+      showNotification("Load a data set first.", type = "message")
+      return(NULL)
+    }
+
+    titleText =
+      if (identical(input$data_source, "s20x") && !is.null(input$s20x_dataset) && nzchar(input$s20x_dataset)) {
+        paste0("Data help: ", input$s20x_dataset)
+      } else {
+        "Data help"
+      }
+
+    showModal(
+      modalDialog(
+        title = titleText,
+        size = "l",
+        easyClose = TRUE,
+        uiOutput("modelHelpModalBody"),
+        footer = tagList(
+          modalButton("Close")
+        )
+      )
+    )
+  }, ignoreInit = TRUE)
+
+
+
 
   # -------------------------------------------------------------------
   # When user selects "All possible interactions", expand to all codes
