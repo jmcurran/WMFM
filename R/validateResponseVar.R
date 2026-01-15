@@ -25,7 +25,7 @@
 #'   \item{reason}{Character string explaining the decision.}
 #' }
 #'
-#' @importFrom stats na.omit
+#' @importFrom stats na.omit setNames
 #'
 #' @keywords internal
 validateResponseVar = function(data, responseVar, modelType) {

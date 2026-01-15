@@ -162,7 +162,8 @@ appUI = function() {
             column(
               width = 4,
               h5("Response"),
-              uiOutput("response_picker")
+              uiOutput("response_picker"),
+              uiOutput("response_explain")
             ),
 
             column(

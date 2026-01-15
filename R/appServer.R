@@ -1946,21 +1946,53 @@ $$")
     req(is.data.frame(rv$data))
     req(input$model_type)
 
-    choices = validResponseVars(rv$data, input$model_type)
+    vars = names(rv$data)
 
-    # Defensive fallback (UI should never be empty)
-    if (length(choices) == 0) {
-      choices = names(rv$data)
-    }
+    labels = vapply(
+      vars,
+      function(v) {
+        chk = validateResponseVar(rv$data, v, input$model_type)
+        if (isTRUE(chk$ok)) {
+          v
+        } else {
+          paste0("\u274C ", v)
+        }
+      },
+      character(1)
+    )
 
-    current  = input$response_var %||% ""
-    selected = if (nzchar(current) && current %in% choices) current else choices[1]
+    choices = setNames(vars, labels)
+
+    current = input$response_var %||% ""
+    selected = if (nzchar(current) && current %in% vars) current else vars[1]
 
     selectInput(
       inputId  = "response_var",
       label    = "",
       choices  = choices,
       selected = selected
+    )
+  })
+
+  output$response_explain = renderUI({
+
+    req(is.data.frame(rv$data))
+    req(input$model_type)
+
+    resp = input$response_var %||% ""
+    if (!nzchar(resp) || !(resp %in% names(rv$data))) {
+      return(NULL)
+    }
+
+    chk = validateResponseVar(rv$data, resp, input$model_type)
+
+    if (isTRUE(chk$ok)) {
+      return(NULL)
+    }
+
+    tags$div(
+      style = "margin-top: 6px; color: #b00020;",
+      paste0("\u274C ", chk$reason)
     )
   })
 
@@ -2194,6 +2226,14 @@ $$")
 
     f        = as.formula(input$formula_text)
     respName = all.vars(f)[1]
+
+    ## Make sure the response is valid for the selected model
+    chk = validateResponseVar(rv$data, respName, input$model_type)
+    if (!isTRUE(chk$ok)) {
+      showNotification(chk$reason, type = "error", duration = 8)
+      return(NULL)
+    }
+
 
     # Enforce at most 3 distinct predictor variables in the model
     allVarsInFormula = all.vars(f)
