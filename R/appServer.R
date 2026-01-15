@@ -1942,10 +1942,26 @@ $$")
   # Response picker
   # -------------------------------------------------------------------
   output$response_picker = renderUI({
-    if (is.null(rv$data)) {
-      return(NULL)
+
+    req(is.data.frame(rv$data))
+    req(input$model_type)
+
+    choices = validResponseVars(rv$data, input$model_type)
+
+    # Defensive fallback (UI should never be empty)
+    if (length(choices) == 0) {
+      choices = names(rv$data)
     }
-    selectInput("response_var", "", choices = rv$allVars)
+
+    current  = input$response_var %||% ""
+    selected = if (nzchar(current) && current %in% choices) current else choices[1]
+
+    selectInput(
+      inputId  = "response_var",
+      label    = "",
+      choices  = choices,
+      selected = selected
+    )
   })
 
   # -------------------------------------------------------------------
