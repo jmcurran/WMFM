@@ -45,7 +45,7 @@ df = data.frame(
   stringsAsFactors = FALSE
 )
 
-buildVarSummary(df)
+WMFM:::buildVarSummary(df)
 
 }
 \keyword{internal}

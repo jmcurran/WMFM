@@ -33,7 +33,7 @@ returns either:
 \details{
 This function expects the helper functions \code{isFactorOnlyModel()} and
 \code{makeFactorOnlyPlot()} to exist in your app codebase (as they do in your
-current server implementation). :contentReference[oaicite:0]{index=0}
+current server implementation).
 }
 \examples{
 \dontrun{

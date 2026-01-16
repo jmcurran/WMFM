@@ -10,7 +10,7 @@
 #'
 #' This function expects the helper functions \code{isFactorOnlyModel()} and
 #' \code{makeFactorOnlyPlot()} to exist in your app codebase (as they do in your
-#' current server implementation). :contentReference[oaicite:0]{index=0}
+#' current server implementation).
 #'
 #' @param model A fitted \code{lm} or \code{glm} object.
 #' @param ciType Confidence interval type passed through to \code{makeFactorOnlyPlot()}

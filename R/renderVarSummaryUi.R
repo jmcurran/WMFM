@@ -19,7 +19,7 @@
 #'   stringsAsFactors = FALSE
 #' )
 #'
-#' ui = renderVarSummaryUi(summaryDf)
+#' ui = WMFM:::renderVarSummaryUi(summaryDf)
 #' ui
 #'
 #' @keywords internal

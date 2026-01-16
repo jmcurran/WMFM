@@ -26,7 +26,7 @@
 #' m = lm(y ~ f + x, data = df)
 #' mf = model.frame(m)
 #'
-#' getFactorOnlyPredictors(m, mf)
+#' WMFM:::getFactorOnlyPredictors(m, mf)
 #'
 #' @keywords internal
 getFactorOnlyPredictors = function(m, mf) {

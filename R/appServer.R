@@ -13,7 +13,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny reactiveValues reactiveVal renderPlot renderUI renderText
+#' @importFrom shiny reactive reactiveValues reactiveVal renderPlot renderUI renderText
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
@@ -463,25 +463,6 @@ appServer = function(input, output, session) {
     levs = levels(mf[[targetFactor]])
     n = length(levs)
 
-    parseWeightText = function(x) {
-      x = trimws(x %||% "0")
-      if (x == "") {
-        return(0)
-      }
-      if (grepl("^[-+]?[0-9]*\\.?[0-9]+$", x)) {
-        return(as.numeric(x))
-      }
-      if (grepl("^[-+]?[0-9]+[[:space:]]*/[[:space:]]*[0-9]+$", x)) {
-        parts = strsplit(gsub("\\s+", "", x), "/", fixed = TRUE)[[1]]
-        num = as.numeric(parts[1])
-        den = as.numeric(parts[2])
-        if (is.finite(num) && is.finite(den) && den != 0) {
-          return(num / den)
-        }
-      }
-      return(NA_real_)
-    }
-
     w = sapply(seq_len(n), function(i) parseWeightText(input[[paste0("contrastW_", i)]]))
     if (any(is.na(w))) {
       return(tags$div(
@@ -597,30 +578,11 @@ appServer = function(input, output, session) {
       level = 0.95
     )
 
-    fmt3 = function(x) format(signif(x, 3), trim = TRUE, scientific = FALSE)
-
     isGlm = inherits(m, "glm")
     link = if (isGlm) family(m)$link else "identity"
     # ---- Step 1: detect common response transformations (lm only) ----
     respExpr = tryCatch(deparse(formula(m)[[2]]), error = function(e) "")
     respExpr = paste(respExpr, collapse = "")
-
-    detectRespTransform = function(expr) {
-      expr = gsub("[[:space:]]+", "", expr)
-
-      if (identical(expr, "") || identical(expr, "NULL")) return("unknown")
-      if (!grepl("\\(", expr)) return("none")
-
-      if (grepl("^log\\(", expr)) return("log")
-      if (grepl("^log10\\(", expr)) return("log10")
-      if (grepl("^log1p\\(", expr)) return("log1p")
-      if (grepl("^sqrt\\(", expr)) return("sqrt")
-
-      # common inverse patterns: I(1/y), 1/y, I(1/(y)), etc.
-      if (grepl("^I\\(1/", expr) || grepl("^1/", expr)) return("inverse")
-
-      "unknown"
-    }
 
     respTransform = if (isGlm) "none" else detectRespTransform(respExpr)
 

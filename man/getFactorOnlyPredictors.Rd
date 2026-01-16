@@ -35,7 +35,7 @@ df = data.frame(
 m = lm(y ~ f + x, data = df)
 mf = model.frame(m)
 
-getFactorOnlyPredictors(m, mf)
+WMFM:::getFactorOnlyPredictors(m, mf)
 
 }
 \keyword{internal}

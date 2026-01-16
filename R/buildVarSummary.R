@@ -34,7 +34,7 @@
 #'   stringsAsFactors = FALSE
 #' )
 #'
-#' buildVarSummary(df)
+#' WMFM:::buildVarSummary(df)
 #'
 #' @keywords internal
 buildVarSummary = function(df, maxLevels = 30, maxUnique = 12) {
