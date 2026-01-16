@@ -32,11 +32,6 @@
 #' @importFrom rlang .data
 #' @importFrom htmltools htmlEscape
 appServer = function(input, output, session) {
-
-  `%||%` = function(x, y) {
-    if (is.null(x)) y else x
-  }
-
   # -------------------------------------------------------------------
   # Cache s20x dataset names once per session
   # -------------------------------------------------------------------
@@ -234,32 +229,6 @@ appServer = function(input, output, session) {
 
 
   # ---- Contrasts UI + computation (factor-only models) ----
-
-  getFactorOnlyPredictors = function(m, mf) {
-    responseVar = all.vars(formula(m))[1]
-    predictors = setdiff(names(mf), responseVar)
-    predictors[sapply(mf[predictors], is.factor)]
-  }
-
-  buildContrastNewData = function(mf, factorPreds, targetFactor, condValues) {
-    targetLevels = levels(mf[[targetFactor]])
-
-    newData = as.data.frame(
-      lapply(factorPreds, function(v) {
-        factor(rep(NA, length(targetLevels)), levels = levels(mf[[v]]))
-      }),
-      stringsAsFactors = FALSE
-    )
-    names(newData) = factorPreds
-
-    for (v in setdiff(factorPreds, targetFactor)) {
-      newData[[v]] = factor(rep(condValues[[v]], length(targetLevels)), levels = levels(mf[[v]]))
-    }
-
-    newData[[targetFactor]] = factor(targetLevels, levels = levels(mf[[targetFactor]]))
-
-    list(newData = newData, targetLevels = targetLevels)
-  }
 
   output$contrastUi = renderUI({
 
@@ -1247,98 +1216,6 @@ $$")
 
     withMathJax(HTML(formulaTex))
   })
-
-  # -------------------------------------------------------------------
-  # Help modal helpers: variable summary + UI renderer
-  # -------------------------------------------------------------------
-
-  buildVarSummary = function(df, maxLevels = 30, maxUnique = 12) {
-
-    stopifnot(is.data.frame(df))
-
-    vars = names(df)
-
-    rows = lapply(vars, function(v) {
-      x = df[[v]]
-
-      cls = paste(class(x), collapse = "/")
-      n = length(x)
-      nMissing = sum(is.na(x))
-
-      if (is.factor(x)) {
-        levs = levels(x)
-        levsShow = if (length(levs) > maxLevels) c(levs[1:maxLevels], "…") else levs
-
-        extra = paste0(
-          "levels (", length(levs), "): ",
-          paste(levsShow, collapse = ", ")
-        )
-
-      } else if (is.character(x)) {
-        ux = unique(na.omit(x))
-        uxShow = if (length(ux) > maxUnique) c(ux[1:maxUnique], "…") else ux
-        extra = paste0(
-          "example values (", min(length(ux), maxUnique), "): ",
-          paste(uxShow, collapse = ", ")
-        )
-
-      } else if (is.logical(x)) {
-        extra = paste0("values: ", paste(sort(unique(na.omit(x))), collapse = ", "))
-
-      } else if (is.numeric(x)) {
-        rng = range(x, na.rm = TRUE)
-        if (any(!is.finite(rng))) {
-          extra = "range: NA"
-        } else {
-          extra = paste0("range: ", signif(rng[1], 4), " to ", signif(rng[2], 4))
-        }
-
-      } else {
-        extra = ""
-      }
-
-      data.frame(
-        variable = v,
-        class = cls,
-        missing = nMissing,
-        details = extra,
-        stringsAsFactors = FALSE
-      )
-    })
-
-    do.call(rbind, rows)
-  }
-
-  renderVarSummaryUi = function(summaryDf) {
-
-    if (is.null(summaryDf) || nrow(summaryDf) == 0) {
-      return(helpText("No variables to summarise."))
-    }
-
-    # simple HTML table (keeps dependencies minimal)
-    tags$table(
-      class = "table table-sm",
-      tags$thead(
-        tags$tr(
-          tags$th("Variable"),
-          tags$th("Class"),
-          tags$th("Missing"),
-          tags$th("Details (esp. factor levels)")
-        )
-      ),
-      tags$tbody(
-        lapply(seq_len(nrow(summaryDf)), function(i) {
-          tags$tr(
-            tags$td(summaryDf$variable[i]),
-            tags$td(summaryDf$class[i]),
-            tags$td(summaryDf$missing[i]),
-            tags$td(summaryDf$details[i])
-          )
-        })
-      )
-    )
-  }
-
 
   # -------------------------------------------------------------------
   # Helper: formula checker
