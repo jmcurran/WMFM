@@ -17,6 +17,10 @@ lmToExplanationPrompt = function(model) {
   coefTable = coef(summary(model))
   coefText = paste(capture.output(print(round(coefTable, 4))), collapse = "\n")
 
+  ci = confint(model)
+  ci = round(ci, 4)
+  ciText = paste(capture.output(print(ci)), collapse = "\n")
+
   n = nrow(modelFrame)
   if (inherits(model, "glm")) {
     fam = model$family$family
@@ -89,6 +93,9 @@ Number of observations: {n}
 Coefficient table:
 {coefText}
 
+Confidence intervals (95%):
+{ciText}
+
 Guidelines:
 - Briefly explain what the response represents and what the predictors represent.
 - Describe the direction of each important effect (positive/negative).
@@ -99,6 +106,13 @@ Guidelines:
 - For factor predictors, explain differences between groups.
 - If there are interactions, briefly describe how one effect depends on another variable.
 - Do not mention standard errors, t-values, z-values, or p-values explicitly.
+- Use confidence intervals to describe uncertainty in the estimates when available.
+- Explain confidence intervals in plain language (e.g. 'the true effect is likely between ...'),
+  without using technical definitions.
+- When describing an effect, first give the estimated size, then describe the
+  range of plausible values using the confidence interval.
+- If a confidence interval includes zero, explain that the data are consistent
+  with little or no effect.
 - Keep it to 1-3 short paragraphs.
 
 Now provide the explanation.
