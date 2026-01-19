@@ -4,9 +4,21 @@
 \alias{plotCiControlsUi}
 \title{Plot CI controls for the Plot tab}
 \usage{
-plotCiControlsUi(ciTypeInputId = "plotCiType", hcTypeInputId = "plotHcType")
+plotCiControlsUi(
+  mode = c("factorOnly", "continuous"),
+  showCiInputId = "plotShowCi",
+  ciLevelInputId = "plotCiLevel",
+  ciTypeInputId = "plotCiType",
+  hcTypeInputId = "plotHcType"
+)
 }
 \arguments{
+\item{mode}{Either \code{"factorOnly"} or \code{"continuous"}.}
+
+\item{showCiInputId}{Input id for the "show confidence intervals" checkbox.}
+
+\item{ciLevelInputId}{Input id for the confidence level slider.}
+
 \item{ciTypeInputId}{Input id for CI type radio buttons.}
 
 \item{hcTypeInputId}{Input id for HC type dropdown.}
@@ -15,11 +27,13 @@ plotCiControlsUi(ciTypeInputId = "plotCiType", hcTypeInputId = "plotHcType")
 A Shiny tag list.
 }
 \description{
-UI controls to select the confidence interval type (standard vs robust) and,
-for robust intervals, the sandwich HC estimator (HC0 vs HC3).
+UI controls for confidence intervals. The UI adapts to the plot type:
+\itemize{
+\item \code{"factorOnly"}: show CI type (standard vs robust) and HC choice.
+\item \code{"continuous"}: show an optional "Show confidence intervals"
+checkbox; when enabled, show level, CI type, and HC choice.
+}
 }
 \details{
-Includes small hover tooltips to explain the choices.
-
 Designed to be placed in the Plot tab sidebar / controls area.
 }

@@ -4,16 +4,28 @@
 \alias{drawModelPlot}
 \title{Draw the fitted-model plot (data + fitted line / fitted means)}
 \usage{
-drawModelPlot(model, ciType = "standard", hcType = "HC0")
+drawModelPlot(
+  model,
+  ciType = "standard",
+  hcType = "HC0",
+  showCi = FALSE,
+  level = 0.95
+)
 }
 \arguments{
 \item{model}{A fitted \code{lm} or \code{glm} object.}
 
-\item{ciType}{Confidence interval type passed through to \code{makeFactorOnlyPlot()}
-for factor-only models. Typically \code{"standard"} or \code{"sandwich"}.}
+\item{ciType}{Confidence interval type. Typically \code{"standard"} or
+\code{"sandwich"}. For factor-only models, this is passed through to
+\code{makeFactorOnlyPlot()}.}
 
-\item{hcType}{Robust (sandwich) type passed through to \code{makeFactorOnlyPlot()}
-when \code{ciType = "sandwich"}. Typically \code{"HC0"} or \code{"HC3"}.}
+\item{hcType}{Robust (sandwich) type used when \code{ciType = "sandwich"}.
+Common values include \code{"HC0"} and \code{"HC3"}.}
+
+\item{showCi}{Logical; if \code{TRUE}, draw confidence bands around fitted
+line(s) when a numeric-predictor plot is available.}
+
+\item{level}{Confidence level for intervals. Default is \code{0.95}.}
 }
 \value{
 A \code{ggplot} object when a numeric-predictor plot is available, or
@@ -34,15 +46,20 @@ returns either:
 This function expects the helper functions \code{isFactorOnlyModel()} and
 \code{makeFactorOnlyPlot()} to exist in your app codebase (as they do in your
 current server implementation).
+
+If the model contains exactly one numeric predictor, the function draws the
+raw data and a fitted line. Optionally, it can add confidence bands around the
+fitted line(s). Bands can be computed using either the model-based standard
+errors or sandwich/robust standard errors.
 }
 \examples{
 \dontrun{
 m = lm(mpg ~ wt, data = mtcars)
-p = drawModelPlot(m)
+p = drawModelPlot(m, showCi = TRUE)
 print(p)
 
 m2 = glm(vs ~ wt, data = mtcars, family = binomial())
-p2 = drawModelPlot(m2)
+p2 = drawModelPlot(m2, showCi = TRUE, ciType = "sandwich", hcType = "HC3")
 print(p2)
 }
 

@@ -12,11 +12,20 @@
 #' \code{makeFactorOnlyPlot()} to exist in your app codebase (as they do in your
 #' current server implementation).
 #'
+#' If the model contains exactly one numeric predictor, the function draws the
+#' raw data and a fitted line. Optionally, it can add confidence bands around the
+#' fitted line(s). Bands can be computed using either the model-based standard
+#' errors or sandwich/robust standard errors.
+#'
 #' @param model A fitted \code{lm} or \code{glm} object.
-#' @param ciType Confidence interval type passed through to \code{makeFactorOnlyPlot()}
-#'   for factor-only models. Typically \code{"standard"} or \code{"sandwich"}.
-#' @param hcType Robust (sandwich) type passed through to \code{makeFactorOnlyPlot()}
-#'   when \code{ciType = "sandwich"}. Typically \code{"HC0"} or \code{"HC3"}.
+#' @param ciType Confidence interval type. Typically \code{"standard"} or
+#'   \code{"sandwich"}. For factor-only models, this is passed through to
+#'   \code{makeFactorOnlyPlot()}.
+#' @param hcType Robust (sandwich) type used when \code{ciType = "sandwich"}.
+#'   Common values include \code{"HC0"} and \code{"HC3"}.
+#' @param showCi Logical; if \code{TRUE}, draw confidence bands around fitted
+#'   line(s) when a numeric-predictor plot is available.
+#' @param level Confidence level for intervals. Default is \code{0.95}.
 #'
 #' @return A \code{ggplot} object when a numeric-predictor plot is available, or
 #'   whatever \code{makeFactorOnlyPlot()} returns for factor-only models. In cases
@@ -26,22 +35,22 @@
 #' @examples
 #' \dontrun{
 #' m = lm(mpg ~ wt, data = mtcars)
-#' p = drawModelPlot(m)
+#' p = drawModelPlot(m, showCi = TRUE)
 #' print(p)
 #'
 #' m2 = glm(vs ~ wt, data = mtcars, family = binomial())
-#' p2 = drawModelPlot(m2)
+#' p2 = drawModelPlot(m2, showCi = TRUE, ciType = "sandwich", hcType = "HC3")
 #' print(p2)
 #' }
 #'
-#' @importFrom stats model.frame predict
+#' @importFrom stats model.frame predict na.omit
 #' @importFrom graphics plot.new text
-#' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars facet_wrap
-#' @importFrom ggplot2 theme_minimal theme element_text scale_y_continuous
+#' @importFrom ggplot2 ggplot geom_point geom_line geom_ribbon labs aes vars facet_wrap
+#' @importFrom ggplot2 scale_y_continuous
 #' @importFrom rlang .data
 #'
 #' @keywords internal
-drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
+drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FALSE, level = 0.95) {
 
   stopifnot(!is.null(model))
 
@@ -61,8 +70,8 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
   if (length(numericPreds) == 0) {
     if (isFactorOnlyModel(m, modelFrame)) {
       return(makeFactorOnlyPlot(
-        model = m,
-        data  = modelFrame,
+        model  = m,
+        data   = modelFrame,
         ciType = ciType,
         hcType = hcType
       ))
@@ -151,7 +160,7 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
       respFactor = factor(y, levels = c(FALSE, TRUE))
     } else if (is.numeric(y)) {
       yPlot = y
-      uy    = sort(unique(stats::na.omit(yPlot)))
+      uy    = sort(unique(na.omit(yPlot)))
       if (identical(uy, c(0, 1))) {
         yBreaks    = c(0, 1)
         yLabels    = c("0", "1")
@@ -208,15 +217,54 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
 
   newData = expand.grid(gridList, stringsAsFactors = FALSE)
 
-  # Predictions on response scale
-  if (isGlm) {
-    fitVals = predict(m, newdata = newData, type = "response")
+  # Predictions (and optional confidence intervals)
+  if (isTRUE(showCi)) {
+    newData = computeMeanCi(
+      model   = m,
+      newData = newData,
+      ciType  = ciType,
+      hcType  = hcType,
+      level   = level
+    )
   } else {
-    fitVals = predict(m, newdata = newData)
+    if (isGlm) {
+      newData$fit = predict(m, newdata = newData, type = "response")
+    } else {
+      newData$fit = predict(m, newdata = newData)
+    }
   }
-  newData$fit = fitVals
 
   # ----- Build plot -----
+
+  addCiRibbon = function(p, hasGroups = FALSE) {
+    if (!isTRUE(showCi)) {
+      return(p)
+    }
+    if (hasGroups) {
+      return(p + geom_ribbon(
+        data = newData,
+        mapping = aes(
+          x = .data[[xVar]],
+          ymin = .data[["lower"]],
+          ymax = .data[["upper"]],
+          group = .data[[colourVar]]
+        ),
+        alpha = 0.2,
+        inherit.aes = FALSE
+      ))
+    }
+
+    p + geom_ribbon(
+      data = newData,
+      mapping = aes(
+        x = .data[[xVar]],
+        ymin = .data[["lower"]],
+        ymax = .data[["upper"]]
+      ),
+      alpha = 0.2,
+      inherit.aes = FALSE
+    )
+  }
 
   if (isBinom) {
     if (is.null(colourVar)) {
@@ -228,7 +276,11 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
           colour = .data[[".respFactor"]]
         )
       ) +
-        geom_point(alpha = 0.6) +
+        geom_point(alpha = 0.6)
+
+      p = addCiRibbon(p, hasGroups = FALSE)
+
+      p = p +
         geom_line(
           data    = newData,
           mapping = aes(
@@ -252,7 +304,11 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
           shape  = .data[[colourVar]]
         )
       ) +
-        geom_point(alpha = 0.6) +
+        geom_point(alpha = 0.6)
+
+      p = addCiRibbon(p, hasGroups = TRUE)
+
+      p = p +
         geom_line(
           data    = newData,
           mapping = aes(
@@ -284,7 +340,11 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
           y = .data[[response]]
         )
       ) +
-        geom_point(alpha = 0.6) +
+        geom_point(alpha = 0.6)
+
+      p = addCiRibbon(p, hasGroups = FALSE)
+
+      p = p +
         geom_line(
           data    = newData,
           mapping = aes(
@@ -304,7 +364,11 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0") {
           colour = .data[[colourVar]]
         )
       ) +
-        geom_point(alpha = 0.6) +
+        geom_point(alpha = 0.6)
+
+      p = addCiRibbon(p, hasGroups = TRUE)
+
+      p = p +
         geom_line(
           data    = newData,
           mapping = aes(

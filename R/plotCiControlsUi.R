@@ -1,24 +1,35 @@
 #' Plot CI controls for the Plot tab
 #'
-#' UI controls to select the confidence interval type (standard vs robust) and,
-#' for robust intervals, the sandwich HC estimator (HC0 vs HC3).
-#'
-#' Includes small hover tooltips to explain the choices.
+#' UI controls for confidence intervals. The UI adapts to the plot type:
+#' \itemize{
+#'   \item \code{"factorOnly"}: show CI type (standard vs robust) and HC choice.
+#'   \item \code{"continuous"}: show an optional "Show confidence intervals"
+#'   checkbox; when enabled, show level, CI type, and HC choice.
+#' }
 #'
 #' Designed to be placed in the Plot tab sidebar / controls area.
 #'
+#' @param mode Either \code{"factorOnly"} or \code{"continuous"}.
+#' @param showCiInputId Input id for the "show confidence intervals" checkbox.
+#' @param ciLevelInputId Input id for the confidence level slider.
 #' @param ciTypeInputId Input id for CI type radio buttons.
 #' @param hcTypeInputId Input id for HC type dropdown.
 #'
 #' @return A Shiny tag list.
 #'
-#' @importFrom shiny tagList radioButtons selectInput conditionalPanel tags icon
+#' @importFrom shiny tagList checkboxInput sliderInput radioButtons selectInput
+#' @importFrom shiny conditionalPanel tags icon
 #'
 #' @export
 plotCiControlsUi = function(
-    ciTypeInputId = "plotCiType",
-    hcTypeInputId = "plotHcType"
+    mode = c("factorOnly", "continuous"),
+    showCiInputId  = "plotShowCi",
+    ciLevelInputId = "plotCiLevel",
+    ciTypeInputId  = "plotCiType",
+    hcTypeInputId  = "plotHcType"
 ) {
+
+  mode = match.arg(mode)
 
   hcHelp = paste(
     "HC0 is the basic heteroskedasticity/unequal variance-robust (sandwich) estimator.",
@@ -28,15 +39,20 @@ plotCiControlsUi = function(
 
   ciHelp = paste(
     "Standard CIs use the model's usual variance assumptions.",
-    "Robust (sandwich) CIs allow for heteroskedasticity/unequal variance; HC0/HC3 choose the",
-    "robust variance estimator used for the interval."
+    "Robust (sandwich) CIs allow for heteroskedasticity/unequal variance;",
+    "HC0/HC3 choose the robust variance estimator used for the interval."
   )
 
-  tagList(
+  levelHelp = paste(
+    "The confidence level controls the width of the interval.",
+    "For example, 95% intervals will be wider than 90% intervals."
+  )
+
+  ciTypeBlock = tagList(
     radioButtons(
       inputId = ciTypeInputId,
       label = tagList(
-        "Confidence intervals for fitted means ",
+        "Confidence interval type ",
         tags$span(
           icon("circle-info"),
           title = ciHelp,
@@ -45,10 +61,10 @@ plotCiControlsUi = function(
       ),
       choices = c(
         "Standard (model-based)" = "standard",
-        "Robust (sandwich)" = "sandwich"
+        "Robust (sandwich)"      = "sandwich"
       ),
       selected = "standard",
-      inline = TRUE
+      inline   = TRUE
     ),
     conditionalPanel(
       condition = sprintf("input.%s == 'sandwich'", ciTypeInputId),
@@ -62,10 +78,42 @@ plotCiControlsUi = function(
             style = "cursor: help;"
           )
         ),
-        choices = c("HC0", "HC3"),
+        choices  = c("HC0", "HC3"),
         selected = "HC0",
-        width = "200px"
+        width    = "200px"
       )
+    )
+  )
+
+  if (identical(mode, "factorOnly")) {
+    return(tagList(ciTypeBlock))
+  }
+
+  # mode == "continuous"
+  tagList(
+    checkboxInput(
+      inputId = showCiInputId,
+      label   = "Show confidence intervals",
+      value   = FALSE
+    ),
+    conditionalPanel(
+      condition = sprintf("input.%s", showCiInputId),
+      sliderInput(
+        inputId = ciLevelInputId,
+        label = tagList(
+          "Confidence level ",
+          tags$span(
+            icon("circle-info"),
+            title = levelHelp,
+            style = "cursor: help;"
+          )
+        ),
+        min   = 0.80,
+        max   = 0.99,
+        value = 0.95,
+        step  = 0.01
+      ),
+      ciTypeBlock
     )
   )
 }
