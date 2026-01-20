@@ -67,9 +67,10 @@ makeLanguageRules = function(
     if (identical(effectiveScale, "logit")) {
       return(paste0(
         "Language rules:\n",
-        "- This contrast represents an odds ratio.\n",
-        "- Use ONLY wording of the form 'the odds are ... times ...'.\n",
-        "- Do NOT talk about probabilities or percentage points.\n"
+        "- This contrast describes a multiplicative change in the odds.\n",
+        "- Use ONLY wording of the form \"the odds are ... times ...\".\n",
+        "- Do NOT use the term \"odds ratio\".\n",
+        "- Do NOT talk about probabilities, percentages, or percentage points.\n"
       ))
     }
 
