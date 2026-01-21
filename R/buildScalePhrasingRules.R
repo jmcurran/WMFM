@@ -30,20 +30,20 @@
 #'   The text is suitable for direct inclusion in an LLM prompt.
 #'
 #' @examples
-#' makeLanguageRules(
+#' buildScalePhrasingRules(
 #'   isGlm = FALSE,
 #'   effectiveScale = "identity",
 #'   respTransform = "none"
 #' )
 #'
-#' makeLanguageRules(
+#' buildScalePhrasingRules(
 #'   isGlm = TRUE,
 #'   effectiveScale = "logit",
 #'   respTransform = "none",
 #'   nounPhrase = "disease status"
 #' )
 #' @export
-makeLanguageRules = function(
+buildScalePhrasingRules = function(
     isGlm,
     effectiveScale,
     respTransform,

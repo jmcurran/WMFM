@@ -632,7 +632,7 @@ appServer = function(input, output, session) {
       all.vars(formula(m)[[2]])[1] %||%
       "the outcome"
 
-    languageRules = makeLanguageRules(isGlm, effectiveScale, respTransform, nounPhrase)
+    scaleRules = buildScalePhrasingRules(isGlm, effectiveScale, respTransform, nounPhrase)
 
     # Only show eta contrast when it is genuinely a different scale
     showEtaLine = isGlm && !identical(link, "identity")
@@ -735,14 +735,7 @@ appServer = function(input, output, session) {
           "standard (model-based)"
         }
 
-      prompt = paste(
-        "Write ONE clear sentence interpreting the following contrast for a statistics student.",
-        "You MUST mention the point estimate, the 95% confidence interval, and whether the interval is robust or standard.",
-        "Do NOT say 'minus' or 'negative'; use 'higher/lower' (or 'more/fewer') wording instead.",
-        "Avoid symbols and avoid technical jargon.",
-        "",
-        languageRules,
-        "",
+      contrastPayload = paste(
         paste0("Contrast: ", label),
         paste0(
           res$interpreted$label, ": ",
@@ -753,6 +746,21 @@ appServer = function(input, output, session) {
         ),
         paste0("Confidence interval type: ", ciText),
         sep = "\n"
+      )
+
+      contrastOutputRules = paste(
+        "Contrast output rules:",
+        "- Write ONE clear sentence.",
+        "- You MUST mention the point estimate, the 95% confidence interval, and whether the interval is robust or standard.",
+        "- Do NOT say \\'minus\\' or \\'negative\\'; use \\'higher/lower\\' (or \\'more/fewer\\') wording instead.",
+        "- Avoid symbols and avoid technical jargon.",
+        sep = "\n"
+      )
+
+      prompt = composeWmfmPrompt(
+        context = "contrast",
+        contextPayload = contrastPayload,
+        scaleRules = paste(scaleRules, contrastOutputRules, sep = "\n\n")
       )
 
       key = paste(

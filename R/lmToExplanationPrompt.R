@@ -74,7 +74,7 @@ and connect it to the model results.
 
   languageContract = buildWmfmLanguageContractText()
 
-  glue("
+  contextPayload = glue("
 You are a friendly statistics tutor.
 Explain the model summary below (including the estimated effects and their uncertainty)
 in clear, non-technical language.
@@ -97,4 +97,11 @@ Confidence intervals (95%):
 
 {languageContract}
 ")
+
+  prompt = composeWmfmPrompt(
+    context = "summary",
+    contextPayload = contextPayload
+  )
+
+  prompt
 }
