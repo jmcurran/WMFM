@@ -77,8 +77,11 @@ appServer = function(input, output, session) {
     pendingFactorVar = NULL,
     chatProvider = NULL,
     contrastLlmCache = new.env(parent = emptyenv()),
-    modelContext = NULL
+    modelContext = NULL,
+    bucketFactors = character(0),
+    bucketContinuous = character(0)
   )
+
 
   modelFit = reactiveVal(NULL)
 
@@ -186,6 +189,10 @@ appServer = function(input, output, session) {
     rv$lastResponse      = NULL
     rv$lastFactors       = character(0)
     rv$pendingFactorVar  = NULL
+
+    # Clear bucket state
+    rv$bucketFactors = character(0)
+    rv$bucketContinuous = character(0)
 
     # Force buckets to re-render empty (Variables/Factors/Continuous)
     rv$bucketGroupId = rv$bucketGroupId + 1L
@@ -513,7 +520,17 @@ appServer = function(input, output, session) {
     )
   })
 
+  # --- Keep bucket states synced
 
+  observeEvent(input$factors, {
+    cur = input$factors %||% character(0)
+    rv$bucketFactors = intersect(cur, rv$allVars %||% character(0))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$continuous, {
+    cur = input$continuous %||% character(0)
+    rv$bucketContinuous = intersect(cur, rv$allVars %||% character(0))
+  }, ignoreInit = TRUE)
 
 
   # ---- Pairwise contrast list management ----
@@ -1420,13 +1437,15 @@ $$")
       return(helpText("Load a data set to see variables."))
     }
 
-    # Preserve current bucket contents across re-renders
-    factors = input$factors %||% character(0)
-    cont    = input$continuous %||% character(0)
+    vars = rv$allVars %||% character(0)
+
+    # Preserve current bucket contents across re-renders,
+    # but sanitize against current dataset vars
+    factors = intersect(rv$bucketFactors %||% character(0), vars)
+    cont    = intersect(rv$bucketContinuous %||% character(0), vars)
 
     # Remove the chosen response AND anything already placed into buckets
     currentResp = input$response_var
-    vars        = rv$allVars
 
     vars = setdiff(vars, c(currentResp, factors, cont))
 
@@ -1460,8 +1479,8 @@ $$")
       return(NULL)
     }
 
-    factors = input$factors %||% character(0)
-    cont    = input$continuous %||% character(0)
+    factors = rv$bucketFactors %||% character(0)
+    cont    = rv$bucketContinuous %||% character(0)
     resp    = input$response_var
 
     # Exclude the response from predictors
@@ -1663,6 +1682,10 @@ $$")
       factors = input$factors %||% character(0)
       cont    = input$continuous %||% character(0)
       resp    = input$response_var
+
+      # optional: keep rv in sync here too
+      rv$bucketFactors = factors
+      rv$bucketContinuous = cont
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -1896,6 +1919,10 @@ $$")
       factors = input$factors %||% character(0)
       cont    = input$continuous %||% character(0)
       ints    = input$interactions %||% character(0)
+
+      # Keep rv in sync *within the same reactive turn* to avoid race/timing issues
+      rv$bucketFactors = factors
+      rv$bucketContinuous = cont
 
       # Main effects: all predictors from both buckets, excluding response
       predsAll = unique(setdiff(c(factors, cont), resp))
@@ -2131,7 +2158,7 @@ $$")
     dfMod = rv$data
 
     # Anything in the Factors bucket should be treated as a factor
-    factorVars = input$factors %||% character(0)
+    factorVars = rv$bucketFactors %||% character(0)
     for (v in factorVars) {
       if (!is.null(dfMod[[v]]) && !is.factor(dfMod[[v]])) {
         dfMod[[v]] = factor(dfMod[[v]])
@@ -2175,14 +2202,14 @@ $$")
 
       # Extract response
       respName = all.vars(f)[1]
-      y = rv$data[[respName]]
+      y = dfMod[[respName]]
 
-      # ---- Case 1: Character with exactly 2 values -> silently convert to factor ----
+      # ---- Case 1: Character with exactly 2 values -> convert to factor ----
       if (is.character(y)) {
         u = unique(na.omit(y))
         if (length(u) == 2) {
-          rv$data[[respName]] = factor(y)   # silent conversion
-          y = rv$data[[respName]]           # refresh local copy
+          dfMod[[respName]] = factor(y)
+          y = dfMod[[respName]]
         } else {
           showNotification(
             paste0(
@@ -2236,7 +2263,7 @@ $$")
       }
 
       # ---- If we reach here: response is valid ----
-      m = glm(f, data = rv$data, family = binomial(link = "logit"))
+      m = glm(f, data = dfMod, family = binomial(link = "logit"))
 
     } else if (input$model_type == "poisson") {
       if (any(na.omit(y) < 0) || any(na.omit(y) %% 1 != 0)) {
