@@ -125,6 +125,7 @@ appUI = function() {
           uiOutput("var_buckets"),
           uiOutput("interaction_ui"),
           uiOutput(outputId = "modelHelpBtnUi"),
+          uiOutput("userDatasetContextUi"),
 
 
           hr(),

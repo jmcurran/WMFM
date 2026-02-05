@@ -752,6 +752,15 @@ appServer = function(input, output, session) {
           "standard (model-based)"
         }
 
+      userDoc = attr(m, "wmfm_dataset_doc", exact = TRUE) %||% ""
+      userDoc = trimws(userDoc)
+
+      userDocBlock = if (nzchar(userDoc)) {
+        paste0("User-provided dataset context:\n", userDoc)
+      } else {
+        NULL
+      }
+
       contrastPayload = paste(
         paste0("Contrast: ", label),
         paste0(
@@ -762,6 +771,7 @@ appServer = function(input, output, session) {
           fmt3(res$interpreted$upper), ")"
         ),
         paste0("Confidence interval type: ", ciText),
+        userDocBlock,
         sep = "\n"
       )
 
@@ -1597,6 +1607,34 @@ $$")
     )
   })
 
+  output$userDatasetContextUi = renderUI({
+
+    # Only show this UI when the user is uploading their own data
+    if (!identical(input$data_source %||% "", "upload")) {
+      return(NULL)
+    }
+
+    isReady = datasetLoaded()
+
+    tagList(
+      hr(),
+      h5("Add context for the language model"),
+      helpText(
+        "Because you uploaded your own data, there is no built-in help page. ",
+        "Optionally describe the dataset, variables, units, and the question you are trying to answer. ",
+        "This will be included when generating the model explanation and contrast interpretations."
+      ),
+      tags$textarea(
+        id = "userDatasetContext",
+        class = "form-control",
+        rows = 5,
+        placeholder = "Example: Each row is a student. pass is 0/1. test is a score out of 20. attendance is days attended. We want to understand how test and attendance relate to passing.",
+        disabled = if (!isReady) "disabled" else NULL
+      )
+    )
+  })
+
+
   output$modelHelpModalBody = renderUI({
 
     req(is.data.frame(rv$data))
@@ -2298,6 +2336,37 @@ $$")
         )
       }
     }
+
+    # -------------------------------------------------------------
+    # Attach user-provided dataset context when data are uploaded
+    # -------------------------------------------------------------
+    if (identical(input$data_source %||% "", "upload")) {
+
+      userCtxRaw = input$userDatasetContext %||% ""
+      userCtxRaw = trimws(userCtxRaw)
+
+      if (nzchar(userCtxRaw)) {
+
+        # Escape double quotes before placing into any prompt text.
+        userCtx = gsub("\"", "\\\\\"", userCtxRaw, fixed = TRUE)
+
+        # Reuse the same attribute name the app already uses for s20x docs
+        # so downstream LLM helpers can pick it up consistently.
+        attr(m, "wmfm_dataset_doc")  = userCtx
+        attr(m, "wmfm_dataset_name") = "Uploaded data"
+
+        # Try to maintain the same "nounPhrase" flow you already have
+        nounPhrase = resolveResponseNounPhrase(m, respName)
+        attr(m, "wmfm_response_noun_phrase") = nounPhrase
+
+        rv$modelContext = list(
+          responseVar = respName,
+          nounPhrase  = nounPhrase,
+          datasetName = "Uploaded data"
+        )
+      }
+    }
+
 
     modelFit(m)
 
