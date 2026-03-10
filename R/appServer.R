@@ -17,6 +17,7 @@
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
+#' @importFrom shiny renderTable
 #' @importFrom shiny radioButtons textInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
 #' @importFrom shiny isolate validate need
@@ -26,9 +27,9 @@
 #' @importFrom stats predict na.omit setNames
 #' @importFrom utils data read.table capture.output str combn getFromNamespace head packageVersion
 #' @importFrom graphics plot.new text
-#' @importFrom ggplot2 ggplot geom_point geom_line labs aes vars
+#' @importFrom ggplot2 ggplot geom_point geom_line geom_histogram geom_density after_stat labs aes vars
 #' @importFrom ggplot2 geom_boxplot position_jitter scale_y_continuous
-#' @importFrom ggplot2 theme_minimal theme element_text facet_wrap
+#' @importFrom ggplot2 theme_minimal theme element_text facet_wrap theme_bw
 #' @importFrom rlang .data
 #' @importFrom htmltools htmlEscape
 appServer = function(input, output, session) {
@@ -520,6 +521,209 @@ appServer = function(input, output, session) {
     )
   })
 
+  output$veSummaryUi = renderUI({
+    d = rv$data
+    req(d, input$veVar)
+
+    x = d[[input$veVar]]
+
+    if (is.numeric(x)) {
+      tagList(
+        h4("Numeric summary"),
+        tableOutput("veNumericTable")
+      )
+    } else if (is.factor(x) || is.character(x)) {
+      tagList(
+        h4("Categorical summary"),
+        uiOutput("veCatSummaryUi")
+      )
+    } else {
+      tagList(
+        h4("Summary"),
+        helpText("This variable type is not currently summarised.")
+      )
+    }
+  })
+
+  output$veNumericTable = renderTable({
+    d = rv$data
+    req(d, input$veVar)
+
+    x = d[[input$veVar]]
+    validate(need(is.numeric(x), "Selected variable is not numeric."))
+
+    nMissing = sum(is.na(x))
+    xNoNa = x[!is.na(x)]
+    nObs = length(xNoNa)
+
+    if (nObs == 0) {
+      return(
+        data.frame(
+          Metric = c("N", "N missing"),
+          Value = c("0", as.character(nMissing)),
+          stringsAsFactors = FALSE
+        )
+      )
+    }
+
+    qs = quantile(xNoNa, probs = c(0.25, 0.75), names = FALSE, type = 7)
+
+    metric = c(
+      "N",
+      "N missing",
+      "Min",
+      "Max",
+      "Mean",
+      "Median",
+      "SD",
+      "LQ (25%)",
+      "UQ (75%)"
+    )
+
+    rawValue = c(
+      nObs,
+      nMissing,
+      min(xNoNa),
+      max(xNoNa),
+      mean(xNoNa),
+      median(xNoNa),
+      sd(xNoNa),
+      qs[1],
+      qs[2]
+    )
+
+    value = c(
+      as.character(nObs),
+      as.character(nMissing),
+      vapply(rawValue[3:length(rawValue)], formatSummaryValue, character(1))
+    )
+
+    data.frame(
+      Metric = metric,
+      Value = value,
+      stringsAsFactors = FALSE
+    )
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$veCatSummaryUi = renderUI({
+    d = rv$data
+    req(d, input$veVar)
+
+    x = d[[input$veVar]]
+    validate(need(is.factor(x) || is.character(x), "Selected variable is not categorical."))
+
+    xChar = as.character(x)
+    xNoNa = xChar[!is.na(xChar)]
+
+    uniq = sort(unique(xNoNa))
+    nUniq = length(uniq)
+    nObs = length(xNoNa)
+    nMissing = sum(is.na(x))
+
+    tagList(
+      helpText(paste0("N (non-missing): ", nObs)),
+      helpText(paste0("N missing: ", nMissing)),
+      helpText(paste0("Unique values: ", nUniq)),
+      tableOutput("veCatTable")
+    )
+  })
+
+  output$veCatTable = renderTable({
+    d = rv$data
+    req(d, input$veVar)
+
+    x = d[[input$veVar]]
+    validate(need(is.factor(x) || is.character(x), "Selected variable is not categorical."))
+
+    nMissing = sum(is.na(x))
+
+    if (is.factor(x)) {
+      tab = table(x, useNA = "no")
+      freq = data.frame(
+        Value = names(tab),
+        Count = as.integer(tab),
+        stringsAsFactors = FALSE
+      )
+    } else {
+      xChar = as.character(x)
+      xNoNa = xChar[!is.na(xChar)]
+
+      if (length(xNoNa) == 0) {
+        return(NULL)
+      }
+
+      tab = table(xNoNa)
+      freq = data.frame(
+        Value = names(tab),
+        Count = as.integer(tab),
+        stringsAsFactors = FALSE
+      )
+
+      freq = freq[order(freq$Value), , drop = FALSE]
+    }
+
+    if (nrow(freq) < 10) {
+      return(freq)
+    }
+
+    top = freq[seq_len(10), , drop = FALSE]
+    otherCount = sum(freq$Count) - sum(top$Count)
+
+    if (otherCount > 0) {
+      top = rbind(
+        top,
+        data.frame(
+          Value = "Other",
+          Count = otherCount,
+          stringsAsFactors = FALSE
+        )
+      )
+    }
+
+    top
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+  output$vePlot = renderPlot({
+    d = rv$data
+    req(d, input$veVar)
+
+    x = d[[input$veVar]]
+
+    if (!is.numeric(x)) {
+      return(NULL)
+    }
+
+    xNoNa = x[!is.na(x)]
+
+    if (length(xNoNa) < 5) {
+      return(NULL)
+    }
+
+    if (length(unique(xNoNa)) < 2) {
+      return(NULL)
+    }
+
+    v = var(xNoNa)
+    if (is.na(v) || v == 0) {
+      return(NULL)
+    }
+
+    ggplot(data.frame(x = xNoNa), aes(x = x)) +
+      geom_histogram(
+        aes(y = after_stat(density)),
+        bins = 30,
+        fill = "lightblue",
+        colour = "black",
+        linewidth = 0.3
+      ) +
+      geom_density(linewidth = 0.8) +
+      labs(
+        title = paste0("Distribution of ", input$veVar),
+        x = input$veVar,
+        y = "Density"
+      ) +
+      theme_bw()
+  })
+
   # --- Keep bucket states synced
 
   observeEvent(input$factors, {
@@ -592,6 +796,29 @@ appServer = function(input, output, session) {
 
     contrastPairs(setdiff(current, sel))
   })
+
+  observeEvent(rv$data, {
+    d = rv$data
+
+    if (is.null(d)) {
+      updateSelectInput(
+        session = session,
+        inputId = "veVar",
+        choices = character(0),
+        selected = character(0)
+      )
+      return()
+    }
+
+    vars = names(d)
+
+    updateSelectInput(
+      session = session,
+      inputId = "veVar",
+      choices = vars,
+      selected = vars[1]
+    )
+  }, ignoreInit = TRUE)
 
   # Reset contrasts when the model is reset/refit
   observeEvent(modelFit(), {

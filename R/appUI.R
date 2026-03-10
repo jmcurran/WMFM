@@ -25,6 +25,7 @@
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput
+#' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
 #' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
   fluidPage(
@@ -249,6 +250,23 @@ appUI = function() {
       tabPanel(
         "Contrasts",
         uiOutput("contrasts_content_ui")
+      ),
+
+      tabPanel(
+        "Variable Explorer",
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(
+              inputId = "veVar",
+              label = "Select a variable",
+              choices = character(0)
+            )
+          ),
+          mainPanel(
+            uiOutput("veSummaryUi"),
+            plotOutput("vePlot", height = "320px")
+          )
+        )
       ),
 
       tabPanel(
