@@ -261,9 +261,6 @@ appServer = function(input, output, session) {
     invisible(NULL)
   })
 
-
-
-
   # ---- Contrasts UI + computation (factor-only models) ----
 
   output$contrastUi = renderUI({
