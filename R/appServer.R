@@ -20,7 +20,7 @@
 #' @importFrom shiny renderTable
 #' @importFrom shiny radioButtons textInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
-#' @importFrom shiny isolate validate need
+#' @importFrom shiny isolate validate need freezeReactiveValue
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
 #' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
@@ -80,7 +80,8 @@ appServer = function(input, output, session) {
     contrastLlmCache = new.env(parent = emptyenv()),
     modelContext = NULL,
     bucketFactors = character(0),
-    bucketContinuous = character(0)
+    bucketContinuous = character(0),
+    isResetting = FALSE
   )
 
 
@@ -179,17 +180,22 @@ appServer = function(input, output, session) {
 
   resetModelPage = function(resetResponse = TRUE) {
 
+    rv$isResetting = TRUE
+    on.exit({
+      rv$isResetting = FALSE
+    }, add = TRUE)
+
     # Clear fitted model + LLM outputs
     modelFit(NULL)
-    rv$modelEquations   = NULL
+    rv$modelEquations = NULL
     rv$modelExplanation = NULL
     rv$modelContext = NULL
 
     # Reset tracking + factor prompt state
-    rv$autoFormula       = ""
-    rv$lastResponse      = NULL
-    rv$lastFactors       = character(0)
-    rv$pendingFactorVar  = NULL
+    rv$autoFormula = ""
+    rv$lastResponse = NULL
+    rv$lastFactors = character(0)
+    rv$pendingFactorVar = NULL
 
     # Clear bucket state
     rv$bucketFactors = character(0)
@@ -200,9 +206,15 @@ appServer = function(input, output, session) {
 
     # Reset model UI inputs
     updateRadioButtons(session, "model_type", selected = "lm")
-    updateTextInput(session, "formula_text", value = "")
 
-    # Clear any selected interactions (selectInput is created in renderUI)
+    # Prevent stale widget values from fighting the reset
+    freezeReactiveValue(input, "factors")
+    freezeReactiveValue(input, "continuous")
+    freezeReactiveValue(input, "interactions")
+    freezeReactiveValue(input, "formula_text")
+    freezeReactiveValue(input, "response_var")
+
+    updateTextInput(session, "formula_text", value = "")
     updateSelectInput(session, "interactions", selected = character(0))
 
     # Reset response var to first column of new data (optional)
@@ -210,12 +222,11 @@ appServer = function(input, output, session) {
       updateSelectInput(
         session,
         "response_var",
-        choices  = rv$allVars,
+        choices = rv$allVars,
         selected = rv$allVars[1]
       )
     }
   }
-
 
   # -------------------------------------------------------------------
   # Plot of data + fitted model
@@ -724,11 +735,17 @@ appServer = function(input, output, session) {
   # --- Keep bucket states synced
 
   observeEvent(input$factors, {
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
     cur = input$factors %||% character(0)
     rv$bucketFactors = intersect(cur, rv$allVars %||% character(0))
   }, ignoreInit = TRUE)
 
   observeEvent(input$continuous, {
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
     cur = input$continuous %||% character(0)
     rv$bucketContinuous = intersect(cur, rv$allVars %||% character(0))
   }, ignoreInit = TRUE)
@@ -1047,7 +1064,7 @@ appServer = function(input, output, session) {
           detailLines = c(detailLines, htmlEscape(paste0("Interpretation: ", llmText)))
         }
 
-      incProgress(1, detail = "Done")
+        incProgress(1, detail = "Done")
 
       })
     }
@@ -1940,25 +1957,22 @@ $$")
         return(NULL)
       }
 
-      # Recompute the allowed predictors (same logic as interaction_ui)
-      factors = input$factors %||% character(0)
-      cont    = input$continuous %||% character(0)
-      resp    = input$response_var
+      buckets = getCurrentBuckets()
+      factors = buckets$factors
+      cont = buckets$continuous
+      resp = input$response_var
 
-      # optional: keep rv in sync here too
       rv$bucketFactors = factors
       rv$bucketContinuous = cont
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
-      # Respect the 3-covariate limit
       predsLimited = predsAll
       if (length(predsLimited) > 3) {
         predsLimited = predsLimited[1:3]
       }
 
       if (length(predsLimited) < 2) {
-        # Nothing meaningful to select
         updateSelectInput(
           session,
           "interactions",
@@ -1967,7 +1981,6 @@ $$")
         return(NULL)
       }
 
-      # Build all 2-way and 3-way combinations among predsLimited
       combos2 = list()
       combos3 = list()
 
@@ -1997,7 +2010,6 @@ $$")
         FUN.VALUE = character(1)
       )
 
-      # Update the selectInput to select all actual interactions (no special value)
       updateSelectInput(
         session,
         "interactions",
@@ -2011,27 +2023,28 @@ $$")
   # Warn + confirm when a numeric variable is moved into the Factors bucket
   # -------------------------------------------------------------------
   observeEvent(input$factors, {
-    if (is.null(rv$data)) {
-      rv$lastFactors = input$factors %||% character(0)
+    if (isTRUE(rv$isResetting)) {
       return(NULL)
     }
 
-    currentFactors  = input$factors %||% character(0)
-    previousFactors = rv$lastFactors %||% character(0)
+    if (is.null(rv$data)) {
+      rv$lastFactors = character(0)
+      return(NULL)
+    }
 
-    # New additions to the Factors bucket
+    currentFactors = intersect(input$factors %||% character(0), rv$allVars %||% character(0))
+    previousFactors = intersect(rv$lastFactors %||% character(0), rv$allVars %||% character(0))
+
     newVars = setdiff(currentFactors, previousFactors)
 
-    # If nothing new, just update the record and exit
     if (length(newVars) == 0) {
       rv$lastFactors = currentFactors
       return(NULL)
     }
 
-    v = newVars[1]  # usually just one at a time
+    v = newVars[1]
     col = rv$data[[v]]
 
-    # Only warn for numeric columns that aren't already factors
     if (is.numeric(col) && !is.factor(col)) {
       rv$pendingFactorVar = v
 
@@ -2050,11 +2063,9 @@ $$")
         )
       )
 
-      # Don't update lastFactors yet; wait for user choice
       return(NULL)
     }
 
-    # Non-numeric or already a factor: accept silently
     rv$lastFactors = currentFactors
   })
 
@@ -2156,6 +2167,22 @@ $$")
     )
   })
 
+
+  # -------------------------------------------------------------------
+  # Helper: current valid bucket contents for the active dataset
+  # -------------------------------------------------------------------
+  getCurrentBuckets = function() {
+    vars = rv$allVars %||% character(0)
+
+    factors = intersect(input$factors %||% character(0), vars)
+    cont = intersect(input$continuous %||% character(0), vars)
+
+    list(
+      factors = factors,
+      continuous = cont
+    )
+  }
+
   # -------------------------------------------------------------------
   # Auto-populate formula from buckets + optional interactions
   # (limit to 3 predictors; expert mode for compact notation)
@@ -2169,33 +2196,34 @@ $$")
       input$expert_mode
     ),
     {
+      if (isTRUE(rv$isResetting)) {
+        return(NULL)
+      }
+
       if (is.null(rv$data)) {
         return(NULL)
       }
 
       resp = input$response_var
-      if (is.null(resp) || resp == "") {
+      if (is.null(resp) || resp == "" || !(resp %in% rv$allVars)) {
         return(NULL)
       }
 
-      factors = input$factors %||% character(0)
-      cont    = input$continuous %||% character(0)
-      ints    = input$interactions %||% character(0)
+      buckets = getCurrentBuckets()
+      factors = buckets$factors
+      cont = buckets$continuous
+      ints = input$interactions %||% character(0)
 
-      # Keep rv in sync *within the same reactive turn* to avoid race/timing issues
       rv$bucketFactors = factors
       rv$bucketContinuous = cont
 
-      # Main effects: all predictors from both buckets, excluding response
       predsAll = unique(setdiff(c(factors, cont), resp))
 
-      # Hard limit: only first 3 predictors
       preds = predsAll
       if (length(preds) > 3) {
         preds = preds[1:3]
       }
 
-      # If nothing selected: intercept-only model
       if (length(preds) == 0) {
         newAuto = paste(resp, "~ 1")
         current = trimws(input$formula_text)
@@ -2209,7 +2237,6 @@ $$")
         return(NULL)
       }
 
-      # Restrict interactions to those only involving the allowed predictors
       ints = Filter(
         function(z) {
           all(strsplit(z, ":", fixed = TRUE)[[1]] %in% preds)
@@ -2217,12 +2244,10 @@ $$")
         ints
       )
 
-      # ---------------- Expert mode shorthand (optional) ----------------
       expertRhs = NULL
-      expertOn  = isTRUE(input$expert_mode)
+      expertOn = isTRUE(input$expert_mode)
 
       if (expertOn) {
-        # Case 1: exactly two predictors with a single 2-way interaction -> "A * B"
         if (length(preds) == 2 && length(ints) == 1) {
           varsInt = strsplit(ints[1], ":", fixed = TRUE)[[1]]
           if (length(varsInt) == 2 && setequal(varsInt, preds)) {
@@ -2230,19 +2255,16 @@ $$")
           }
         }
 
-        # Case 2: k >= 2 predictors, all pairwise interactions selected (no 3-way)
         if (is.null(expertRhs) && length(preds) >= 2 && length(ints) > 0) {
           lenInts = vapply(
             strsplit(ints, ":", fixed = TRUE),
             length,
             FUN.VALUE = integer(1)
           )
-          pairInts   = ints[lenInts == 2]
+          pairInts = ints[lenInts == 2]
           higherInts = ints[lenInts > 2]
 
-          # Only consider compact "(A + B + C)^2" when there are no higher-order terms
           if (length(higherInts) == 0) {
-            # All possible 2-way pairs among 'preds'
             allPairs = apply(
               combn(preds, 2),
               2,
@@ -2257,17 +2279,13 @@ $$")
         }
       }
 
-      # ---------------- Default explicit RHS (always colon notation) ----------------
       if (!is.null(expertRhs)) {
         rhs = expertRhs
       } else {
         rhsPieces = character(0)
-
-        # Main effects explicitly
         mainPart = paste(preds, collapse = " + ")
         rhsPieces = c(rhsPieces, mainPart)
 
-        # Interactions: keep ":" notation to preserve exact semantics
         if (length(ints) > 0) {
           intPart = paste(ints, collapse = " + ")
           rhsPieces = c(rhsPieces, intPart)
@@ -2279,7 +2297,6 @@ $$")
       newAuto = paste(resp, "~", rhs)
       current = trimws(input$formula_text)
 
-      # Only overwrite if user hasn't customised the formula
       if (current == "" || current == rv$autoFormula) {
         rv$autoFormula = newAuto
         updateTextInput(session, "formula_text", value = newAuto)
