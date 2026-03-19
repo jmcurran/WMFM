@@ -25,6 +25,8 @@
 #' @importFrom tools file_ext
 #' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit setNames
+#' @importFrom grDevices replayPlot
+#' @importFrom stats confint density median quantile sd var
 #' @importFrom utils data read.table capture.output str combn getFromNamespace head packageVersion
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line geom_histogram geom_density after_stat labs aes vars
