@@ -40,6 +40,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- Avoid unnecessary numerical precision; round and summarise numbers where possible.",
     "- Use words for numbers from zero to ten, and numerals for numbers above ten.",
     "- Prefer percentages when describing proportional changes.",
+    "- Always express percentages using numerals (e.g. \"62%\" or \"62 percent\"), even for values below ten.",
     "- Avoid fractions (e.g. \"one fifth\", \"three quarters\"); convert them to percentages instead (e.g. \"20%\", \"75%\").",
     "",
     "- Do not mention standard errors, t-values, z-values, or p-values explicitly.",

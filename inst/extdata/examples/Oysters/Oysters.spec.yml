@@ -1,0 +1,5 @@
+modelType: poisson
+formula: Oysters ~ Site
+dataSource: package
+dataPackage: s20x
+dataObject: oysters.df
