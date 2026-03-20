@@ -1,33 +1,57 @@
 #' Fit a WMFM model and generate console outputs without launching Shiny
 #'
-#' @param data A data.frame.
-#' @param formula A model formula, either as a formula object or a string.
-#' @param modelType One of "lm", "logistic", or "poisson".
-#' @param dataContext Optional character string describing the data, variables,
-#'   study aim, units, coding, etc. This is passed to the language-model
-#'   helpers in the same way as the app's uploaded-data context.
-#' @param ollamaBaseUrl Optional base URL for Ollama, e.g. "http://localhost:11434".
-#' @param printOutput Logical. If TRUE, print results to the console.
+#' Fits a model using a supplied dataset and formula, optionally attaches
+#' dataset context, and then attempts to generate fitted equations and a
+#' model explanation using the same helper functions used by the app.
 #'
-#' @return A list with components:
-#'   \item{model}{The fitted model object.}
-#'   \item{equations}{Output from lmEquations(), or NULL if unavailable.}
-#'   \item{explanation}{Output from lmExplanation(), or NULL if unavailable.}
-#'   \item{datasetContext}{The dataset context actually attached to the model.}
+#' Supported model types are linear regression, logistic regression, and
+#' Poisson regression.
+#'
+#' @param data A `data.frame` containing the variables used in the model.
+#' @param formula A model formula, either as a formula object or a character
+#'   string that can be converted to a formula.
+#' @param modelType A character string giving the model family. Must be one
+#'   of `"lm"`, `"logistic"`, or `"poisson"`.
+#' @param dataContext Optional character string giving additional context
+#'   about the dataset, study, variables, coding, or research aim.
+#' @param ollamaBaseUrl Optional character string giving the base URL for
+#'   the language model service.
+#' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
+#'   equations, and explanation to the console.
+#'
+#' @return Invisibly returns a list with components:
+#' \describe{
+#'   \item{`model`}{The fitted model object.}
+#'   \item{`equations`}{The result of `lmEquations()`, or `NULL` if equation
+#'   generation failed or no chat provider was available.}
+#'   \item{`explanation`}{The result of `lmExplanation()`, or `NULL` if
+#'   explanation generation failed or no chat provider was available.}
+#'   \item{`datasetContext`}{The dataset context attached to the model, or
+#'   `NULL` if none was supplied.}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' runWMFMModelDebug(
+#'   data = course.df,
+#'   formula = Exam ~ Attend + Test,
+#'   modelType = "lm"
+#' )
+#' }
 #'
 #' @export
 runWMFMModelDebug = function(
-    data,
-    formula,
-    modelType = c("lm", "logistic", "poisson"),
-    dataContext = NULL,
-    ollamaBaseUrl = NULL,
-    printOutput = TRUE
+  data,
+  formula,
+  modelType = c("lm", "logistic", "poisson"),
+  dataContext = NULL,
+  ollamaBaseUrl = NULL,
+  printOutput = TRUE
 ) {
   modelType = match.arg(modelType)
 
   if (!is.data.frame(data)) {
-    stop("`data` must be a data.frame.")
+    stop("`data` must be a data.frame.", call. = FALSE)
   }
 
   if (is.character(formula)) {
@@ -35,118 +59,138 @@ runWMFMModelDebug = function(
   }
 
   if (!inherits(formula, "formula")) {
-    stop("`formula` must be a formula or a character string that can be converted to one.")
+    stop(
+      "`formula` must be a formula or a character string that can be converted to one.",
+      call. = FALSE
+    )
   }
 
   allVars = all.vars(formula)
   missingVars = setdiff(allVars, names(data))
+
   if (length(missingVars) > 0) {
     stop(
       "Unknown variable(s) in formula: ",
-      paste(missingVars, collapse = ", ")
+      paste(missingVars, collapse = ", "),
+      call. = FALSE
     )
   }
 
-  respName = allVars[1]
-  predNames = unique(setdiff(allVars, respName))
+  responseName = allVars[1]
+  predictorNames = unique(setdiff(allVars, responseName))
 
-  if (length(predNames) > 3) {
+  if (length(predictorNames) > 3) {
     stop(
-      "This app only allows models with at most 3 covariates. ",
-      "Your formula uses ", length(predNames), ": ",
-      paste(predNames, collapse = ", ")
+      "This app only allows models with at most 3 covariates. Your formula uses ",
+      length(predictorNames),
+      ": ",
+      paste(predictorNames, collapse = ", "),
+      call. = FALSE
     )
   }
 
-  dfMod = data
+  dataModel = data
 
-  # Match the app's behaviour: character predictors become factors.
-  for (v in predNames) {
-    if (is.character(dfMod[[v]])) {
-      dfMod[[v]] = factor(dfMod[[v]])
+  for (varName in predictorNames) {
+    if (is.character(dataModel[[varName]])) {
+      dataModel[[varName]] = factor(dataModel[[varName]])
     }
   }
 
-  y = dfMod[[respName]]
+  response = dataModel[[responseName]]
 
   model = switch(
     modelType,
-    "lm" = {
-      if (is.factor(y) && nlevels(y) == 2) {
-        levs = levels(y)
-        dfMod[[respName]] = as.numeric(y == levs[2])
+    lm = {
+      if (is.factor(response) && nlevels(response) == 2) {
+        responseLevels = levels(response)
+        dataModel[[responseName]] = as.numeric(response == responseLevels[2])
       }
-      stats::lm(formula, data = dfMod)
+
+      stats::lm(formula, data = dataModel)
     },
-    "logistic" = {
-      if (is.character(y)) {
-        u = unique(stats::na.omit(y))
-        if (length(u) == 2) {
-          dfMod[[respName]] = factor(y)
-          y = dfMod[[respName]]
+    logistic = {
+      if (is.character(response)) {
+        distinctValues = unique(stats::na.omit(response))
+
+        if (length(distinctValues) == 2) {
+          dataModel[[responseName]] = factor(response)
+          response = dataModel[[responseName]]
         } else {
           stop(
             "Logistic regression requires a binary response. ",
-            respName, " has ", length(u), " distinct character values."
+            responseName,
+            " has ",
+            length(distinctValues),
+            " distinct character values.",
+            call. = FALSE
           )
         }
       }
 
-      if (is.factor(y)) {
-        if (nlevels(y) != 2) {
+      if (is.factor(response)) {
+        if (nlevels(response) != 2) {
           stop(
             "Logistic regression requires a 2-level factor response. ",
-            respName, " has ", nlevels(y), " levels."
+            responseName,
+            " has ",
+            nlevels(response),
+            " levels.",
+            call. = FALSE
           )
         }
-      } else if (is.numeric(y)) {
-        uy = unique(stats::na.omit(y))
-        if (!all(uy %in% c(0, 1))) {
+      } else if (is.numeric(response)) {
+        distinctValues = unique(stats::na.omit(response))
+
+        if (!all(distinctValues %in% c(0, 1))) {
           stop(
             "Numeric logistic responses must be coded 0/1. ",
-            respName, " has values outside {0, 1}."
+            responseName,
+            " has values outside {0, 1}.",
+            call. = FALSE
           )
         }
       } else {
         stop(
-          "Logistic regression requires a binary factor, numeric 0/1, ",
-          "or a 2-level character response."
+          "Logistic regression requires a binary factor, numeric 0/1, or a 2-level character response.",
+          call. = FALSE
         )
       }
 
       stats::glm(
         formula,
-        data = dfMod,
+        data = dataModel,
         family = stats::binomial(link = "logit")
       )
     },
-    "poisson" = {
-      if (any(stats::na.omit(y) < 0) || any(stats::na.omit(y) %% 1 != 0)) {
+    poisson = {
+      nonMissingResponse = stats::na.omit(response)
+
+      if (any(nonMissingResponse < 0) || any(nonMissingResponse %% 1 != 0)) {
         warning(
-          "Response has negative or non-integer values. ",
-          "Poisson regression expects non-negative counts."
+          "Response has negative or non-integer values. Poisson regression expects non-negative counts.",
+          call. = FALSE
         )
       }
 
       stats::glm(
         formula,
-        data = dfMod,
+        data = dataModel,
         family = stats::poisson(link = "log")
       )
     }
   )
 
-  # Attach optional context in the same style as the app
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
 
     if (nzchar(dataContext)) {
-      dataContextEscaped = gsub("\"", "\\\\\"", dataContext, fixed = TRUE)
+      dataContextEscaped = gsub('"', '\\\\"', dataContext, fixed = TRUE)
       attr(model, "wmfm_dataset_doc") = dataContextEscaped
       attr(model, "wmfm_dataset_name") = "Debug data"
 
       if (exists("resolveResponseNounPhrase", mode = "function")) {
-        nounPhrase = resolveResponseNounPhrase(model, respName)
+        nounPhrase = resolveResponseNounPhrase(model, responseName)
         attr(model, "wmfm_response_noun_phrase") = nounPhrase
       }
     }
@@ -160,9 +204,9 @@ runWMFMModelDebug = function(
     getChatProvider(),
     error = function(e) {
       warning(
-        "Could not connect to the language model server. ",
-        "Returning fitted model only. Details: ",
-        conditionMessage(e)
+        "Could not connect to the language model server. Returning fitted model only. Details: ",
+        conditionMessage(e),
+        call. = FALSE
       )
       NULL
     }
@@ -175,7 +219,7 @@ runWMFMModelDebug = function(
     equations = tryCatch(
       lmEquations(model, chatProvider),
       error = function(e) {
-        warning("Equation generation failed: ", conditionMessage(e))
+        warning("Equation generation failed: ", conditionMessage(e), call. = FALSE)
         NULL
       }
     )
@@ -183,13 +227,13 @@ runWMFMModelDebug = function(
     explanation = tryCatch(
       lmExplanation(model, chatProvider),
       error = function(e) {
-        warning("Explanation generation failed: ", conditionMessage(e))
+        warning("Explanation generation failed: ", conditionMessage(e), call. = FALSE)
         NULL
       }
     )
   }
 
-  out = list(
+  output = list(
     model = model,
     equations = equations,
     explanation = explanation,
@@ -205,6 +249,7 @@ runWMFMModelDebug = function(
     cat("\n====================\n")
     cat("Equations\n")
     cat("====================\n\n")
+
     if (is.null(equations)) {
       cat("No equations generated.\n")
     } else {
@@ -214,6 +259,7 @@ runWMFMModelDebug = function(
     cat("\n====================\n")
     cat("Explanation\n")
     cat("====================\n\n")
+
     if (is.null(explanation)) {
       cat("No explanation generated.\n")
     } else {
@@ -221,5 +267,5 @@ runWMFMModelDebug = function(
     }
   }
 
-  invisible(out)
+  invisible(output)
 }

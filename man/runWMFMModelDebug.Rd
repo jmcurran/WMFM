@@ -14,27 +14,51 @@ runWMFMModelDebug(
 )
 }
 \arguments{
-\item{data}{A data.frame.}
+\item{data}{A \code{data.frame} containing the variables used in the model.}
 
-\item{formula}{A model formula, either as a formula object or a string.}
+\item{formula}{A model formula, either as a formula object or a character
+string that can be converted to a formula.}
 
-\item{modelType}{One of "lm", "logistic", or "poisson".}
+\item{modelType}{A character string giving the model family. Must be one
+of \code{"lm"}, \code{"logistic"}, or \code{"poisson"}.}
 
-\item{dataContext}{Optional character string describing the data, variables,
-study aim, units, coding, etc. This is passed to the language-model
-helpers in the same way as the app's uploaded-data context.}
+\item{dataContext}{Optional character string giving additional context
+about the dataset, study, variables, coding, or research aim.}
 
-\item{ollamaBaseUrl}{Optional base URL for Ollama, e.g. "http://localhost:11434".}
+\item{ollamaBaseUrl}{Optional character string giving the base URL for
+the language model service.}
 
-\item{printOutput}{Logical. If TRUE, print results to the console.}
+\item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
+equations, and explanation to the console.}
 }
 \value{
-A list with components:
-\item{model}{The fitted model object.}
-\item{equations}{Output from lmEquations(), or NULL if unavailable.}
-\item{explanation}{Output from lmExplanation(), or NULL if unavailable.}
-\item{datasetContext}{The dataset context actually attached to the model.}
+Invisibly returns a list with components:
+\describe{
+\item{\code{model}}{The fitted model object.}
+\item{\code{equations}}{The result of \code{lmEquations()}, or \code{NULL} if equation
+generation failed or no chat provider was available.}
+\item{\code{explanation}}{The result of \code{lmExplanation()}, or \code{NULL} if
+explanation generation failed or no chat provider was available.}
+\item{\code{datasetContext}}{The dataset context attached to the model, or
+\code{NULL} if none was supplied.}
+}
 }
 \description{
-Fit a WMFM model and generate console outputs without launching Shiny
+Fits a model using a supplied dataset and formula, optionally attaches
+dataset context, and then attempts to generate fitted equations and a
+model explanation using the same helper functions used by the app.
+}
+\details{
+Supported model types are linear regression, logistic regression, and
+Poisson regression.
+}
+\examples{
+\dontrun{
+runWMFMModelDebug(
+  data = course.df,
+  formula = Exam ~ Attend + Test,
+  modelType = "lm"
+)
+}
+
 }

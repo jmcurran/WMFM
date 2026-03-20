@@ -1,6 +1,6 @@
 Package: WMFM
 Title: Explore Fitted Linear and Generalised Linear Models with Shiny
-Version: 0.1.1.9000
+Version: 0.1.2.2000
 Authors@R: 
     person(
         given = "James",
@@ -29,7 +29,8 @@ Imports:
     sandwich,
     shiny,
     sortable,
-    tibble
+    tibble,
+    yaml
 Suggests:
     s20x,
     testthat (>= 3.0.0)

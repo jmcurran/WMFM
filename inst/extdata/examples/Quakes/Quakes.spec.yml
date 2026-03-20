@@ -1,0 +1,5 @@
+name: earthquake
+modelType: poisson
+formula: Freq ~ Magnitude * Locn
+data: Quakes.df.rda
+context: Quakes.Rmd

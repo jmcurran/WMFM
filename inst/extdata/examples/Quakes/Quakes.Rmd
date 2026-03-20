@@ -1,0 +1,16 @@
+# Problem
+The Gutenberg-Richter law says that the expected frequency of earthquakes decreases multiplicatively with their magnitude. The formula is $$\log_{10} N = a - b M,$$
+where $N$ is the expected number of earthquakes of magnitude $M$ or more on the Richter scale. Here, $a$ and $b$ are unknown parameters. 
+
+After applying a healthy dash of calculus, this formula can be re-expressed in a form that is more familiar to us $$E[Y|x] = \exp(\beta_0 + \beta_1 x),$$
+where $Y$ is the number of number of earthquakes of magnitude between $x-\delta$ and $x+\delta$.\footnote{In the above formula, $\beta_0$ and $\beta_1$ depend on $a$, $b$ and $\delta$ in a complicated way that we are not going to concern ourselves with.}
+
+The variables of interest were:
+
+* `Magnitude`: The strength of a recorded earthquake.
+* `Locn`: A two-level factor which describe the location of the earthquakes. 
+    + It has two levels Southern California ("SC") and Washington ("WA").
+* `Freq`: The number of earthquakes recorded at `Locn` with magnitude `Magnitude`.
+
+## Question of Interest
+The research question is to quantify the rate of decrease in earthquake frequency (with increasing magnitude) in both California and Washington states, and to assess whether these rates are the same.

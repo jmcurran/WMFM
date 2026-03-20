@@ -1,0 +1,5 @@
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
