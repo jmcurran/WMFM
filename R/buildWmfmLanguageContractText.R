@@ -41,6 +41,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- Use words for numbers from zero to ten, and numerals for numbers above ten.",
     "- Prefer percentages when describing proportional changes.",
     "- Always express percentages using numerals (e.g. \"62%\" or \"62 percent\"), even for values below ten.",
+    "- Write percentages without a space before the percent sign (e.g. \"62%\", not \"62 %\").",
     "- Avoid fractions (e.g. \"one fifth\", \"three quarters\"); convert them to percentages instead (e.g. \"20%\", \"75%\").",
     "",
     "- Do not mention standard errors, t-values, z-values, or p-values explicitly.",
@@ -56,6 +57,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- For count models with a log link, convert coefficients and confidence intervals to expected-count multipliers before explaining them.",
     "- Do not leave transformed quantities as expressions such as exp(x); always evaluate them numerically.",
     "- Round interpreted effects to about two or three significant digits.",
+    "- When describing expected values, always include a clear noun such as \"expected number\", \"expected count\", or \"expected value\" (e.g. \"expected number of oysters\").",
     "",
     "- When confidence intervals are provided, include them for each key effect.",
     "- Present the point estimate first, then describe uncertainty using the confidence interval.",
@@ -89,6 +91,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "",
     "- Do not use section headings or bold labels.",
     "- Write as a single short paragraph (or at most two), not a bulleted list.",
+    "- Do not insert hyphens into ordinary noun phrases (e.g. write \"final exam\", \"summer school\", \"midterm test\" unless a hyphen is standard and necessary).",
     sep = "\n"
   )
 
