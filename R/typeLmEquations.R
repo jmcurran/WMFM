@@ -8,13 +8,13 @@
 #'   list of equations, each with a \code{condition} and \code{equation}
 #'   field.
 #' @keywords internal
-typeLmEquations = type_object(
+typeLmEquations = ellmer::type_object(
   "Equations describing a fitted regression model.",
-  equations = type_array(
-    type_object(
+  equations = ellmer::type_array(
+    ellmer::type_object(
       "One equation under a particular condition.",
-      condition = type_string("When the equation applies."),
-      equation  = type_string("The algebraic equation.")
+      condition = ellmer::type_string("When the equation applies."),
+      equation = ellmer::type_string("The algebraic equation.")
     )
   )
 )

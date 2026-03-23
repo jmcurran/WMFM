@@ -24,7 +24,7 @@
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny radioButtons textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
-#' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput
+#' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
 #' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
@@ -277,6 +277,38 @@ appUI = function() {
         helpText(
           "The plot shows the observed data and the fitted model ",
           "against one numeric predictor (x-axis), optionally separated by a factor."
+        )
+      ),
+
+      tabPanel(
+        "Settings",
+        h4("Chat provider"),
+        helpText(
+          "Choose which language model backend WMFM should use for equations and explanations."
+        ),
+        selectInput(
+          inputId = "chat_provider",
+          label = "Provider",
+          choices = c(
+            "Ollama" = "ollama",
+            "Claude" = "claude"
+          ),
+          selected = "ollama"
+        ),
+        passwordInput(
+          inputId = "providerSwitchPassword",
+          label = "Password required to switch to Claude",
+          placeholder = "Enter password only when switching to Claude"
+        ),
+        actionButton(
+          inputId = "applyChatProviderBtn",
+          label = "Apply provider",
+          class = "btn-primary btn-sm"
+        ),
+        tags$br(), tags$br(),
+        textOutput("chatProviderStatus"),
+        helpText(
+          "Ollama can be selected directly. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
         )
       )
 

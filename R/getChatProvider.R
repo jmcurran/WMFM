@@ -1,64 +1,30 @@
 #' Create a safe chat provider for WMFM
 #'
 #' Constructs a chat provider used by WMFM, choosing between an Ollama-based
-#' provider and a Google Gemini-based provider.
+#' provider and an Anthropic Claude-based provider.
 #'
-#' The backend is selected via the \code{wmfm.chat_backend} option:
-#' \itemize{
-#'   \item \code{"ollama"} (default): use \code{ellmer::chat_ollama()} with
-#'         the base URL taken from the \code{wmfm.ollama_base_url} option.
-#'   \item \code{"gemini"}: use \code{ellmer::chat_google_gemini()} to connect
-#'         to the latest default Gemini model exposed by \pkg{ellmer}.
-#' }
+#' The backend is selected via the `backend` argument, or if omitted, from the
+#' `wmfm.chat_backend` option.
 #'
-#' If the chosen backend cannot be constructed (e.g. Ollama server down,
-#' missing Gemini credentials, or network issues), the function returns a
-#' dummy provider whose \code{chat()} method always throws a clear,
-#' user-friendly error message. This prevents the Shiny app from crashing
-#' when the language model backend is unavailable.
-#'
-#' @details
-#' The Ollama base URL is read from:
-#' \preformatted{
-#'   getOption("wmfm.ollama_base_url",
-#'             default = "http://corrin.stat.auckland.ac.nz:11434")
-#' }
-#'
-#' Backend selection is controlled via:
-#' \preformatted{
-#'   options(wmfm.chat_backend = "ollama")  # default
-#'   options(wmfm.chat_backend = "gemini")  # use Google Gemini
-#' }
-#'
-#' Authentication and low-level configuration for Google Gemini are handled
-#' entirely by \code{ellmer::chat_google_gemini()}.
-#'
-#' The dummy provider returned on failure has class
-#' \code{"wmfm_dummy_chat_provider"} and a single method, \code{chat()},
-#' which always raises an informative error.
+#' @param backend Character scalar giving the backend to use. Supported values
+#'   are `"ollama"` and `"claude"`.
 #'
 #' @return
-#' A chat provider object created by \code{ellmer::chat_ollama()} or
-#' \code{ellmer::chat_google_gemini()}, depending on the configured backend,
-#' or a dummy provider object (class \code{"wmfm_dummy_chat_provider"}) that
-#' throws a user-friendly error on use.
+#' A chat provider object created by `ellmer::chat_ollama()` or
+#' `ellmer::chat_anthropic()`, or a dummy provider object (class
+#' `"wmfm_dummy_chat_provider"`) that throws a user-friendly error on use.
 #'
 #' @examples
 #' \dontrun{
-#'   ## Default: Ollama
-#'   provider <- getChatProvider()
-#'
-#'   ## Switch to Gemini
-#'   options(wmfm.chat_backend = "gemini")
-#'   provider_gemini <- getChatProvider()
+#'   provider <- getChatProvider("ollama")
+#'   providerClaude <- getChatProvider("claude")
 #' }
 #'
 #' @keywords internal
-getChatProvider = function() {
+getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama")) {
 
-  backend = getOption("wmfm.chat_backend", default = "ollama")
+  backend = tolower(trimws(backend %||% "ollama"))
 
-  # Helper: construct a dummy provider with a clear message
   makeDummyProvider = function(msg) {
     structure(
       list(
@@ -70,27 +36,63 @@ getChatProvider = function() {
     )
   }
 
-  # ------------------------
-  # Gemini backend
-  # ------------------------
-  if (identical(backend, "gemini")) {
+  if (!backend %in% c("ollama", "claude")) {
+    return(makeDummyProvider(
+      paste0(
+        "Unsupported chat backend: ", backend, ". Supported backends are 'ollama' and 'claude'."
+      )
+    ))
+  }
+
+  if (identical(backend, "claude")) {
+    claudeKey = Sys.getenv("ANTHROPIC_API_KEY", unset = "")
+
+    if (!nzchar(claudeKey)) {
+      return(makeDummyProvider(
+        paste(
+          "WMFM cannot contact the Claude backend.",
+          "",
+          "Backend: claude",
+          "",
+          "ANTHROPIC_API_KEY is not set on this machine.",
+          "Set it in the runtime environment before selecting Claude.",
+          sep = "\n"
+        )
+      ))
+    }
+
+    claudeModel = getOption("wmfm.claude_model", default = NULL)
+
+    providerArgs = list(
+      credentials = function() {
+        key = Sys.getenv("ANTHROPIC_API_KEY", unset = "")
+        if (!nzchar(key)) {
+          stop("ANTHROPIC_API_KEY is not set.")
+        }
+        key
+      }
+    )
+
+    if (!is.null(claudeModel) && nzchar(claudeModel)) {
+      providerArgs$model = claudeModel
+    }
+
     safeProvider = try(
-      ellmer::chat_google_gemini(),
+      do.call(ellmer::chat_anthropic, providerArgs),
       silent = TRUE
     )
 
     if (inherits(safeProvider, "try-error")) {
       msg = paste(
-        "\u274C WMFM cannot contact the Google Gemini backend.",
+        "WMFM cannot contact the Claude backend.",
         "",
-        "Backend: gemini",
+        "Backend: claude",
         "",
         "This usually means either:",
-        "  \u2022 The Gemini configuration (e.g. API key or credentials) is missing or invalid, or",
-        "  \u2022 The server cannot reach the Gemini API endpoint.",
+        "  - the Anthropic credentials are missing or invalid, or",
+        "  - the server cannot reach the Anthropic API.",
         "",
-        "You can either fix the Gemini configuration or switch back to Ollama, e.g.:",
-        '  options(wmfm.chat_backend = "ollama")',
+        "Check ANTHROPIC_API_KEY and network access, or switch back to Ollama.",
         sep = "\n"
       )
       return(makeDummyProvider(msg))
@@ -99,9 +101,6 @@ getChatProvider = function() {
     return(safeProvider)
   }
 
-  # ------------------------
-  # Ollama backend (default)
-  # ------------------------
   baseUrl = getOption(
     "wmfm.ollama_base_url",
     default = "http://corrin.stat.auckland.ac.nz:11434"
@@ -110,24 +109,23 @@ getChatProvider = function() {
   safeProvider = try(
     ellmer::chat_ollama(
       base_url = baseUrl,
-      model    = "gpt-oss"
+      model = "gpt-oss"
     ),
     silent = TRUE
   )
 
   if (inherits(safeProvider, "try-error")) {
     msg = paste(
-      "\u274CWMFM cannot contact the Ollama backend.",
+      "WMFM cannot contact the Ollama backend.",
       "",
       "Backend: ollama",
       paste0("Server: ", baseUrl),
       "",
       "This usually means either:",
-      "  \u2022 The Ollama server is not running or unreachable, or",
-      "  \u2022 The wmfm.ollama_base_url option is incorrect.",
+      "  - The Ollama server is not running or unreachable, or",
+      "  - The wmfm.ollama_base_url option is incorrect.",
       "",
-      "You can either fix the Ollama server/URL or switch to Gemini, e.g.:",
-      '  options(wmfm.chat_backend = "gemini")',
+      "You can either fix the Ollama server/URL or switch to Claude.",
       sep = "\n"
     )
     return(makeDummyProvider(msg))

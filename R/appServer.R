@@ -83,7 +83,8 @@ appServer = function(input, output, session) {
     modelContext = NULL,
     bucketFactors = character(0),
     bucketContinuous = character(0),
-    isResetting = FALSE
+    isResetting = FALSE,
+    activeChatBackend = "ollama"
   )
 
 
@@ -91,6 +92,41 @@ appServer = function(input, output, session) {
 
   contrastPairs = reactiveVal(character(0))
   contrastResultText = reactiveVal("")
+
+  output$chatProviderStatus = renderText({
+    backendLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama"
+    paste0("Current provider: ", backendLabel)
+  })
+
+  observeEvent(input$applyChatProviderBtn, {
+    requested = input$chat_provider %||% "ollama"
+
+    if (identical(requested, "claude")) {
+      passwordOk = tryCatch(
+        verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error", duration = 8)
+          FALSE
+        }
+      )
+
+      if (!isTRUE(passwordOk)) {
+        updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
+        session$sendInputMessage("providerSwitchPassword", list(value = ""))
+        showNotification("Incorrect password. Claude was not enabled.", type = "error", duration = 6)
+        return(NULL)
+      }
+    }
+
+    rv$activeChatBackend = requested
+    session$sendInputMessage("providerSwitchPassword", list(value = ""))
+
+    showNotification(
+      paste0("Chat provider set to ", if (identical(requested, "claude")) "Claude" else "Ollama", "."),
+      type = "message",
+      duration = 4
+    )
+  }, ignoreInit = TRUE)
 
 
   # -------------------------------------------------------------------
@@ -2370,7 +2406,7 @@ $$")
 
     # Try to obtain a chat provider *now*, instead of at app startup
     chatProvider = tryCatch(
-      getChatProvider(),
+      getChatProvider(backend = rv$activeChatBackend %||% "ollama"),
       error = function(e) {
         showNotification(
           paste(

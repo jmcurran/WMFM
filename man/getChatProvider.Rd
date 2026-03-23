@@ -4,60 +4,29 @@
 \alias{getChatProvider}
 \title{Create a safe chat provider for WMFM}
 \usage{
-getChatProvider()
+getChatProvider(backend = getOption("wmfm.chat_backend", default = "ollama"))
+}
+\arguments{
+\item{backend}{Character scalar giving the backend to use. Supported values
+are \code{"ollama"} and \code{"claude"}.}
 }
 \value{
 A chat provider object created by \code{ellmer::chat_ollama()} or
-\code{ellmer::chat_google_gemini()}, depending on the configured backend,
-or a dummy provider object (class \code{"wmfm_dummy_chat_provider"}) that
-throws a user-friendly error on use.
+\code{ellmer::chat_anthropic()}, or a dummy provider object (class
+\code{"wmfm_dummy_chat_provider"}) that throws a user-friendly error on use.
 }
 \description{
 Constructs a chat provider used by WMFM, choosing between an Ollama-based
-provider and a Google Gemini-based provider.
+provider and an Anthropic Claude-based provider.
 }
 \details{
-The backend is selected via the \code{wmfm.chat_backend} option:
-\itemize{
-\item \code{"ollama"} (default): use \code{ellmer::chat_ollama()} with
-the base URL taken from the \code{wmfm.ollama_base_url} option.
-\item \code{"gemini"}: use \code{ellmer::chat_google_gemini()} to connect
-to the latest default Gemini model exposed by \pkg{ellmer}.
-}
-
-If the chosen backend cannot be constructed (e.g. Ollama server down,
-missing Gemini credentials, or network issues), the function returns a
-dummy provider whose \code{chat()} method always throws a clear,
-user-friendly error message. This prevents the Shiny app from crashing
-when the language model backend is unavailable.
-
-The Ollama base URL is read from:
-\preformatted{
-  getOption("wmfm.ollama_base_url",
-            default = "http://corrin.stat.auckland.ac.nz:11434")
-}
-
-Backend selection is controlled via:
-\preformatted{
-  options(wmfm.chat_backend = "ollama")  # default
-  options(wmfm.chat_backend = "gemini")  # use Google Gemini
-}
-
-Authentication and low-level configuration for Google Gemini are handled
-entirely by \code{ellmer::chat_google_gemini()}.
-
-The dummy provider returned on failure has class
-\code{"wmfm_dummy_chat_provider"} and a single method, \code{chat()},
-which always raises an informative error.
+The backend is selected via the \code{backend} argument, or if omitted, from the
+\code{wmfm.chat_backend} option.
 }
 \examples{
 \dontrun{
-  ## Default: Ollama
-  provider <- getChatProvider()
-
-  ## Switch to Gemini
-  options(wmfm.chat_backend = "gemini")
-  provider_gemini <- getChatProvider()
+  provider <- getChatProvider("ollama")
+  providerClaude <- getChatProvider("claude")
 }
 
 }
