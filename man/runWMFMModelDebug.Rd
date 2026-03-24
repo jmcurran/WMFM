@@ -10,7 +10,8 @@ runWMFMModelDebug(
   modelType = c("lm", "logistic", "poisson"),
   dataContext = NULL,
   ollamaBaseUrl = NULL,
-  printOutput = TRUE
+  printOutput = TRUE,
+  useExplanationCache = TRUE
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ the language model service.}
 
 \item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
 equations, and explanation to the console.}
+
+\item{useExplanationCache}{Logical. Should cached explanation text be reused
+when the same fitted model is encountered? Defaults to \code{TRUE}.}
 }
 \value{
 Invisibly returns a list with components:
@@ -51,6 +55,11 @@ model explanation using the same helper functions used by the app.
 \details{
 Supported model types are linear regression, logistic regression, and
 Poisson regression.
+
+Explanation caching can be controlled via \code{useExplanationCache}. For normal
+usage this can remain \code{TRUE}, but when repeatedly querying the language
+model for the same fitted model it is often useful to set it to \code{FALSE}
+so that each run makes a fresh explanation request.
 }
 \examples{
 \dontrun{
@@ -58,6 +67,13 @@ runWMFMModelDebug(
   data = course.df,
   formula = Exam ~ Attend + Test,
   modelType = "lm"
+)
+
+runWMFMModelDebug(
+  data = course.df,
+  formula = Exam ~ Attend + Test,
+  modelType = "lm",
+  useExplanationCache = FALSE
 )
 }
 

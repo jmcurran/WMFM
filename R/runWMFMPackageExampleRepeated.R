@@ -13,6 +13,9 @@
 #' updates the estimated time remaining using the average elapsed time per
 #' completed run.
 #'
+#' By default, explanation caching is disabled in repeated-run mode so that
+#' each repetition makes a fresh explanation request to the language model.
+#'
 #' @param name Character. Name of the example folder.
 #' @param package Character. Package name.
 #' @param nRuns Integer. Number of repetitions.
@@ -20,6 +23,8 @@
 #' @param pauseSeconds Numeric. Optional delay between runs.
 #' @param showProgress Logical. Should a console progress bar and estimated
 #'   time remaining be shown?
+#' @param useExplanationCache Logical. Passed to `runWMFMModelDebug()`.
+#'   Defaults to `FALSE` so repeated runs query the language model each time.
 #' @param ... Additional arguments passed to `runWMFMModelDebug()`.
 #'
 #' @return A list with elements:
@@ -38,6 +43,7 @@ runWMFMPackageExampleRepeated = function(
     printOutput = FALSE,
     pauseSeconds = 0,
     showProgress = TRUE,
+    useExplanationCache = FALSE,
     ...
 ) {
 
@@ -53,6 +59,10 @@ runWMFMPackageExampleRepeated = function(
 
   if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
     stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(useExplanationCache) || length(useExplanationCache) != 1 || is.na(useExplanationCache)) {
+    stop("`useExplanationCache` must be TRUE or FALSE.", call. = FALSE)
   }
 
   basePath = system.file("extdata", "examples", name, package = package)
@@ -92,6 +102,7 @@ runWMFMPackageExampleRepeated = function(
         modelType = spec$modelType,
         dataContext = dataContext,
         printOutput = printOutput,
+        useExplanationCache = useExplanationCache,
         ...
       ),
       error = function(e) {

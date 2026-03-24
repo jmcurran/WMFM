@@ -11,11 +11,14 @@ scoreWmfmRepeatedRuns(
   requireCi = TRUE,
   preferPercent = TRUE,
   requireReference = FALSE,
-  requireInteraction = FALSE
+  requireInteraction = FALSE,
+  penaliseDuplicates = TRUE,
+  duplicatePenalty = -1L
 )
 }
 \arguments{
-\item{runsDf}{A data.frame produced by \code{runWMFMPackageExampleRepeated()}.}
+\item{runsDf}{A data.frame of repeated-run outputs, or a list containing
+a \code{runsDf} element.}
 
 \item{preferredMinWords}{Integer. Lower bound for preferred explanation
 length in words.}
@@ -24,63 +27,52 @@ length in words.}
 length in words.}
 
 \item{requireCi}{Logical. If \code{TRUE}, runs are rewarded for mentioning
-confidence intervals.}
+confidence intervals when the \code{mentionsCi} column is available.}
 
 \item{preferPercent}{Logical. If \code{TRUE}, runs are rewarded for using
-percentage language.}
+percentage language when the \code{usesPercentLanguage} column is available.}
 
 \item{requireReference}{Logical. If \code{TRUE}, runs are rewarded for using
-baseline or reference language.}
+reference or baseline language when the \code{mentionsReferenceGroup} column
+is available.}
 
 \item{requireInteraction}{Logical. If \code{TRUE}, runs are rewarded for using
-interaction language.}
+interaction language when the \code{mentionsInteraction} column is available.}
+
+\item{penaliseDuplicates}{Logical. Should exact duplicate explanations
+receive a penalty?}
+
+\item{duplicatePenalty}{Integer. Penalty applied to runs whose explanation
+appears more than once.}
 }
 \value{
-A data.frame equal to \code{runsDf} with additional scoring columns.
+A data.frame equal to the run records with additional scoring
+columns.
 }
 \description{
-Applies a simple rubric to the explanation outputs produced by
-\code{runWMFMPackageExampleRepeated()}. This is intended as a lightweight,
-rule-based quality check for repeated model explanations.
+Applies an explanation-focused scoring rubric to outputs produced by
+repeated WMFM runs.
 }
 \details{
-The scoring is deliberately simple and transparent. Each run is scored on:
-\describe{
-\item{hasExplanationScore}{Whether an explanation was returned}
-\item{hasEquationScore}{Whether equations were returned}
-\item{mentionsCiScore}{Whether confidence interval language is mentioned}
-\item{percentLanguageScore}{Whether percentage language is used}
-\item{referenceLanguageScore}{Whether baseline or reference language is used}
-\item{interactionLanguageScore}{Whether interaction language is used}
-\item{lengthScore}{Whether the explanation length falls in a preferred range}
-\item{errorPenalty}{Penalty applied if the run produced an error}
+This function is tolerant of different input shapes. \code{runsDf} may be either:
+\itemize{
+\item a data.frame of run records, or
+\item a list returned by \code{runWMFMPackageExampleRepeated()} containing a
+\code{runsDf} element.
 }
 
-The function then computes a \code{totalScore} by summing the component scores.
+If derived columns such as \code{wordCount} or \code{hasError} are not present, they
+are computed from available fields where possible.
 
-This function does not attempt to verify deep statistical correctness.
-Instead, it provides a quick first-pass screen for consistency and
-presence of important explanation features. It is most useful when
-comparing many repeated runs of the same model explanation.
-}
-\examples{
-\dontrun{
-repeated = runWMFMPackageExampleRepeated(
-  name = "Course",
-  package = "WMFM",
-  nRuns = 10
-)
-
-scored = scoreWmfmRepeatedRuns(repeated$runsDf)
-
-scored[, c(
-  "runId",
-  "totalScore",
-  "hasExplanationScore",
-  "mentionsCiScore",
-  "percentLanguageScore",
-  "errorPenalty"
-)]
+The score focuses on:
+\itemize{
+\item whether an explanation was returned
+\item whether the run completed without error
+\item whether the explanation length is within a preferred range
+\item whether optional explanation features are present
+\item whether the explanation is an exact duplicate of another run
 }
 
+Duplicate detection is based on \code{normalizedExplanation} when available,
+otherwise on trimmed explanation text.
 }

@@ -11,6 +11,7 @@ runWMFMPackageExampleRepeated(
   printOutput = FALSE,
   pauseSeconds = 0,
   showProgress = TRUE,
+  useExplanationCache = FALSE,
   ...
 )
 }
@@ -27,6 +28,9 @@ runWMFMPackageExampleRepeated(
 
 \item{showProgress}{Logical. Should a console progress bar and estimated
 time remaining be shown?}
+
+\item{useExplanationCache}{Logical. Passed to \code{runWMFMModelDebug()}.
+Defaults to \code{FALSE} so repeated runs query the language model each time.}
 
 \item{...}{Additional arguments passed to \code{runWMFMModelDebug()}.}
 }
@@ -53,4 +57,7 @@ features that help compare the explanations.
 A console progress bar is displayed by default. After each run, the function
 updates the estimated time remaining using the average elapsed time per
 completed run.
+
+By default, explanation caching is disabled in repeated-run mode so that
+each repetition makes a fresh explanation request to the language model.
 }

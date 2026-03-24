@@ -7,6 +7,11 @@
 #' Supported model types are linear regression, logistic regression, and
 #' Poisson regression.
 #'
+#' Explanation caching can be controlled via `useExplanationCache`. For normal
+#' usage this can remain `TRUE`, but when repeatedly querying the language
+#' model for the same fitted model it is often useful to set it to `FALSE`
+#' so that each run makes a fresh explanation request.
+#'
 #' @param data A `data.frame` containing the variables used in the model.
 #' @param formula A model formula, either as a formula object or a character
 #'   string that can be converted to a formula.
@@ -18,6 +23,8 @@
 #'   the language model service.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
 #'   equations, and explanation to the console.
+#' @param useExplanationCache Logical. Should cached explanation text be reused
+#'   when the same fitted model is encountered? Defaults to `TRUE`.
 #'
 #' @return Invisibly returns a list with components:
 #' \describe{
@@ -37,17 +44,26 @@
 #'   formula = Exam ~ Attend + Test,
 #'   modelType = "lm"
 #' )
+#'
+#' runWMFMModelDebug(
+#'   data = course.df,
+#'   formula = Exam ~ Attend + Test,
+#'   modelType = "lm",
+#'   useExplanationCache = FALSE
+#' )
 #' }
 #'
 #' @export
 runWMFMModelDebug = function(
-  data,
-  formula,
-  modelType = c("lm", "logistic", "poisson"),
-  dataContext = NULL,
-  ollamaBaseUrl = NULL,
-  printOutput = TRUE
+    data,
+    formula,
+    modelType = c("lm", "logistic", "poisson"),
+    dataContext = NULL,
+    ollamaBaseUrl = NULL,
+    printOutput = TRUE,
+    useExplanationCache = TRUE
 ) {
+
   modelType = match.arg(modelType)
 
   if (!is.data.frame(data)) {
@@ -63,6 +79,14 @@ runWMFMModelDebug = function(
       "`formula` must be a formula or a character string that can be converted to one.",
       call. = FALSE
     )
+  }
+
+  if (!is.logical(printOutput) || length(printOutput) != 1 || is.na(printOutput)) {
+    stop("`printOutput` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(useExplanationCache) || length(useExplanationCache) != 1 || is.na(useExplanationCache)) {
+    stop("`useExplanationCache` must be TRUE or FALSE.", call. = FALSE)
   }
 
   allVars = all.vars(formula)
@@ -185,7 +209,7 @@ runWMFMModelDebug = function(
     dataContext = trimws(dataContext)
 
     if (nzchar(dataContext)) {
-      dataContextEscaped = gsub('"', '\\\\"', dataContext, fixed = TRUE)
+      dataContextEscaped = gsub("\"", "\\\\\"", dataContext, fixed = TRUE)
       attr(model, "wmfm_dataset_doc") = dataContextEscaped
       attr(model, "wmfm_dataset_name") = "Debug data"
 
@@ -225,7 +249,11 @@ runWMFMModelDebug = function(
     )
 
     explanation = tryCatch(
-      lmExplanation(model, chatProvider),
+      lmExplanation(
+        model = model,
+        chat = chatProvider,
+        useCache = useExplanationCache
+      ),
       error = function(e) {
         warning("Explanation generation failed: ", conditionMessage(e), call. = FALSE)
         NULL

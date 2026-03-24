@@ -2,24 +2,32 @@
 % Please edit documentation in R/lmExplanation.R
 \name{lmExplanation}
 \alias{lmExplanation}
-\title{Get a plain-language explanation via the language model (with caching)}
+\title{Get a plain-language explanation via the language model}
 \usage{
-lmExplanation(model, chat)
+lmExplanation(model, chat, useCache = TRUE)
 }
 \arguments{
 \item{model}{A fitted model object, typically of class \code{"lm"} or
 \code{"glm"}.}
 
 \item{chat}{A chat provider object as returned by \code{getChatProvider()}.}
+
+\item{useCache}{Logical. Should explanation results be cached and reused for
+identical fitted models? Defaults to \code{TRUE}.}
 }
 \value{
-A character scalar containing the explanation text returned by
-the language model.
+A character scalar containing the explanation text returned by the
+language model.
 }
 \description{
 Calls the chat provider with a prompt constructed from a fitted model and
-returns a narrative explanation of the model. Results are cached based on
-the model formula and coefficients to avoid repeated calls for the same
-model.
+returns a narrative explanation of the model.
+}
+\details{
+By default, results are cached based on the model formula and coefficients
+so that repeated requests for the same fitted model do not repeatedly query
+the language model. This behaviour can be disabled by setting
+\code{useCache = FALSE}, which is useful when deliberately testing variation
+across repeated language model calls.
 }
 \keyword{internal}

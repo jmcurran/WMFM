@@ -2,16 +2,29 @@
 % Please edit documentation in R/summariseWmfmRepeatedRuns.R
 \name{summariseWmfmRepeatedRuns}
 \alias{summariseWmfmRepeatedRuns}
-\title{Summarise repeated runs}
+\title{Summarise repeated WMFM explanation runs}
 \usage{
 summariseWmfmRepeatedRuns(runsDf)
 }
 \arguments{
-\item{runsDf}{Data frame of runs.}
+\item{runsDf}{A data.frame of run records, or a list containing a \code{runsDf}
+element.}
 }
 \value{
-List summary.
+A named list summary.
 }
 \description{
-Summarise repeated runs
+Produces a set-level summary of repeated explanation runs, with emphasis on
+variability in explanation text rather than equation generation.
+}
+\details{
+This function is tolerant of different input shapes. \code{runsDf} may be either:
+\itemize{
+\item a data.frame of run records, or
+\item a list returned by \code{runWMFMPackageExampleRepeated()} containing a
+\code{runsDf} element.
+}
+
+Exact duplication is assessed using \code{normalizedExplanation} when available,
+otherwise using trimmed explanation text.
 }
