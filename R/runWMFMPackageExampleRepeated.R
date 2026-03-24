@@ -9,11 +9,17 @@
 #' equations and explanation outputs from each run and computes simple text
 #' features that help compare the explanations.
 #'
+#' A console progress bar is displayed by default. After each run, the function
+#' updates the estimated time remaining using the average elapsed time per
+#' completed run.
+#'
 #' @param name Character. Name of the example folder.
 #' @param package Character. Package name.
 #' @param nRuns Integer. Number of repetitions.
 #' @param printOutput Logical. Passed to `runWMFMModelDebug()`.
 #' @param pauseSeconds Numeric. Optional delay between runs.
+#' @param showProgress Logical. Should a console progress bar and estimated
+#'   time remaining be shown?
 #' @param ... Additional arguments passed to `runWMFMModelDebug()`.
 #'
 #' @return A list with elements:
@@ -31,10 +37,23 @@ runWMFMPackageExampleRepeated = function(
     nRuns = 10,
     printOutput = FALSE,
     pauseSeconds = 0,
+    showProgress = TRUE,
     ...
 ) {
 
   nRuns = as.integer(nRuns)
+
+  if (length(nRuns) != 1 || is.na(nRuns) || nRuns < 1) {
+    stop("`nRuns` must be a single positive integer.", call. = FALSE)
+  }
+
+  if (!is.numeric(pauseSeconds) || length(pauseSeconds) != 1 || is.na(pauseSeconds) || pauseSeconds < 0) {
+    stop("`pauseSeconds` must be a single non-negative number.", call. = FALSE)
+  }
+
+  if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
+    stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
+  }
 
   basePath = system.file("extdata", "examples", name, package = package)
 
@@ -49,6 +68,20 @@ runWMFMPackageExampleRepeated = function(
   dataContext = loadWMFMExampleContext(spec = spec, basePath = basePath)
 
   runResults = vector("list", nRuns)
+
+  progressBar = NULL
+  overallStartTime = Sys.time()
+
+  if (showProgress) {
+    progressBar = utils::txtProgressBar(
+      min = 0,
+      max = nRuns,
+      initial = 0,
+      style = 3
+    )
+    on.exit(close(progressBar), add = TRUE)
+    message("Starting repeated WMFM example run...")
+  }
 
   for (i in seq_len(nRuns)) {
 
@@ -80,12 +113,36 @@ runWMFMPackageExampleRepeated = function(
     if (pauseSeconds > 0) {
       Sys.sleep(pauseSeconds)
     }
+
+    if (showProgress) {
+      utils::setTxtProgressBar(progressBar, i)
+
+      elapsedSeconds = as.numeric(difftime(Sys.time(), overallStartTime, units = "secs"))
+      avgSecondsPerRun = elapsedSeconds / i
+      remainingRuns = nRuns - i
+      remainingSeconds = avgSecondsPerRun * remainingRuns
+
+      message(
+        sprintf(
+          " Completed %d/%d runs | Elapsed: %s | Estimated time remaining: %s",
+          i,
+          nRuns,
+          formatWmfmElapsedTime(elapsedSeconds),
+          formatWmfmElapsedTime(remainingSeconds)
+        )
+      )
+    }
   }
 
   runsDf = do.call(rbind, lapply(runResults, as.data.frame))
   rownames(runsDf) = NULL
 
   summary = summariseWmfmRepeatedRuns(runsDf)
+
+  if (showProgress) {
+    totalSeconds = as.numeric(difftime(Sys.time(), overallStartTime, units = "secs"))
+    message("Finished. Total elapsed time: ", formatWmfmElapsedTime(totalSeconds))
+  }
 
   list(
     runsDf = runsDf,

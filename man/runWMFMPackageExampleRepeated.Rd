@@ -10,6 +10,7 @@ runWMFMPackageExampleRepeated(
   nRuns = 10,
   printOutput = FALSE,
   pauseSeconds = 0,
+  showProgress = TRUE,
   ...
 )
 }
@@ -23,6 +24,9 @@ runWMFMPackageExampleRepeated(
 \item{printOutput}{Logical. Passed to \code{runWMFMModelDebug()}.}
 
 \item{pauseSeconds}{Numeric. Optional delay between runs.}
+
+\item{showProgress}{Logical. Should a console progress bar and estimated
+time remaining be shown?}
 
 \item{...}{Additional arguments passed to \code{runWMFMModelDebug()}.}
 }
@@ -45,4 +49,8 @@ This is useful for checking response stability across repeated calls to the
 language model for the same fitted model. The function collects the raw
 equations and explanation outputs from each run and computes simple text
 features that help compare the explanations.
+
+A console progress bar is displayed by default. After each run, the function
+updates the estimated time remaining using the average elapsed time per
+completed run.
 }
