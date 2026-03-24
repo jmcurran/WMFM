@@ -23,14 +23,11 @@ plotWmfmExplanationClaimHeatmap(
 \item{runsDf}{A data.frame of run records, or a list containing a
 data.frame named \code{runsDf}.}
 
-\item{claimColumns}{Optional character vector giving the columns to plot.
-If \code{NULL}, a default set of semantic claim columns is used when present.}
+\item{claimColumns}{Optional character vector giving the columns to plot.}
 
-\item{runIdColumn}{Character. Column to use for row labels. Defaults to
-\code{"runId"}. If not present, row numbers are used.}
+\item{runIdColumn}{Character. Column to use for row labels.}
 
-\item{sortRows}{Logical. Should rows be sorted by claim pattern before
-plotting? Defaults to \code{TRUE}.}
+\item{sortRows}{Logical. Should rows be sorted by claim pattern?}
 
 \item{naLabel}{Character. Label used for missing values.}
 
@@ -44,20 +41,12 @@ plotting? Defaults to \code{TRUE}.}
 
 \item{cexLegend}{Numeric. Legend text expansion factor.}
 
-\item{mar}{Numeric vector of length 4 giving plot margins, passed to
-\code{par(mar = ...)}.}
+\item{mar}{Numeric vector of length 4 giving plot margins.}
 
 \item{legendRightInset}{Numeric. Right-side inset used for the legend.}
 }
 \value{
-Invisibly returns a list with:
-\describe{
-\item{plotData}{Character matrix of plotted claim values}
-\item{colourMatrix}{Integer matrix used for colouring}
-\item{colourKey}{Named character vector mapping value labels to colours}
-\item{rowOrder}{Integer vector giving the plotted row order}
-\item{claimColumns}{Character vector of plotted columns}
-}
+Invisibly returns a list describing the plotted data.
 }
 \description{
 Draws a run-by-claim heatmap to help assess whether repeated model
@@ -66,9 +55,6 @@ explanations differ in substantive meaning rather than only word choice.
 \details{
 Rows represent runs and columns represent extracted semantic claim
 variables. Each unique value within a claim column is assigned a colour.
-This makes it easy to see whether explanations are semantically stable,
-whether they fall into a few distinct patterns, or whether some runs are
-clear outliers.
 
 The input may be either:
 \itemize{
@@ -77,11 +63,6 @@ The input may be either:
 \code{runsDf} element.
 }
 
-Claim columns should already exist in \code{runsDf}. These will usually be
-character, factor, logical, or numeric columns representing extracted
-explanation claims, such as effect direction, effect scale, interaction
-handling, uncertainty handling, or inferential style.
-
-If \code{claimColumns = NULL}, the function will try to use a sensible default
-subset of commonly useful semantic columns if they are present.
+If \code{claimColumns = NULL}, the function uses a default set of semantic claim
+columns when present.
 }

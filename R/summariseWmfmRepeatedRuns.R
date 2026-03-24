@@ -3,12 +3,8 @@
 #' Produces a set-level summary of repeated explanation runs, with emphasis on
 #' variability in explanation text rather than equation generation.
 #'
-#' This function is tolerant of different input shapes. `runsDf` may be either:
-#' \itemize{
-#'   \item a data.frame of run records, or
-#'   \item a list returned by `runWMFMPackageExampleRepeated()` containing a
-#'   `runsDf` element.
-#' }
+#' This function accepts either a data.frame of run records or a list returned
+#' by `runWMFMPackageExampleRepeated()` containing a `runsDf` element.
 #'
 #' Exact duplication is assessed using `normalizedExplanation` when available,
 #' otherwise using trimmed explanation text.
@@ -35,8 +31,6 @@ summariseWmfmRepeatedRuns = function(runsDf) {
     )
   }
 
-  runsDf = extractRunsDf(runsDf)
-
   getExplanationText = function(df) {
     if ("explanationText" %in% names(df)) {
       x = df$explanationText
@@ -54,15 +48,14 @@ summariseWmfmRepeatedRuns = function(runsDf) {
     x
   }
 
-  countWords = function(x) {
+  countWordsLocal = function(x) {
     x = trimws(x)
 
     if (!nzchar(x)) {
       return(0L)
     }
 
-    parts = strsplit(x, "[[:space:]]+")[[1]]
-    length(parts)
+    length(strsplit(x, "[[:space:]]+")[[1]])
   }
 
   getWordCount = function(df, explanationText) {
@@ -71,13 +64,13 @@ summariseWmfmRepeatedRuns = function(runsDf) {
       missingIdx = which(is.na(out))
 
       if (length(missingIdx) > 0) {
-        out[missingIdx] = vapply(explanationText[missingIdx], countWords, integer(1))
+        out[missingIdx] = vapply(explanationText[missingIdx], countWordsLocal, integer(1))
       }
 
       return(out)
     }
 
-    vapply(explanationText, countWords, integer(1))
+    vapply(explanationText, countWordsLocal, integer(1))
   }
 
   getExplanationKey = function(df, explanationText) {
@@ -90,6 +83,7 @@ summariseWmfmRepeatedRuns = function(runsDf) {
     trimws(explanationText)
   }
 
+  runsDf = extractRunsDf(runsDf)
   explanationText = getExplanationText(runsDf)
   explanationPresent = nzchar(trimws(explanationText))
   wordCount = getWordCount(runsDf, explanationText)
@@ -156,10 +150,14 @@ summariseWmfmRepeatedRuns = function(runsDf) {
   }
 
   featureNames = c(
-    "mentionsCi",
+    "mentionsConfidenceInterval",
     "usesPercentLanguage",
     "mentionsReferenceGroup",
-    "mentionsInteraction"
+    "mentionsInteraction",
+    "uncertaintyMentioned",
+    "usesInferentialLanguage",
+    "usesDescriptiveOnlyLanguage",
+    "overclaimDetected"
   )
 
   for (featureName in featureNames) {
@@ -169,6 +167,23 @@ summariseWmfmRepeatedRuns = function(runsDf) {
 
       out[[paste0(featureName, "Rate")]] = mean(featureValues)
       out[[paste0(featureName, "VariesAcrossRuns")]] = length(unique(featureValues)) > 1
+    }
+  }
+
+  categoryNames = c(
+    "effectDirection",
+    "effectScale",
+    "interactionDirection",
+    "inferentialStyle"
+  )
+
+  for (categoryName in categoryNames) {
+    if (categoryName %in% names(runsDf)) {
+      categoryValues = as.character(runsDf[[categoryName]][explanationPresent])
+      categoryValues[is.na(categoryValues)] = "missing"
+
+      out[[paste0(categoryName, "Values")]] = sort(table(categoryValues), decreasing = TRUE)
+      out[[paste0(categoryName, "VariesAcrossRuns")]] = length(unique(categoryValues)) > 1
     }
   }
 

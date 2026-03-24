@@ -5,9 +5,6 @@
 #'
 #' Rows represent runs and columns represent extracted semantic claim
 #' variables. Each unique value within a claim column is assigned a colour.
-#' This makes it easy to see whether explanations are semantically stable,
-#' whether they fall into a few distinct patterns, or whether some runs are
-#' clear outliers.
 #'
 #' The input may be either:
 #' \itemize{
@@ -16,40 +13,24 @@
 #'   `runsDf` element.
 #' }
 #'
-#' Claim columns should already exist in `runsDf`. These will usually be
-#' character, factor, logical, or numeric columns representing extracted
-#' explanation claims, such as effect direction, effect scale, interaction
-#' handling, uncertainty handling, or inferential style.
-#'
-#' If `claimColumns = NULL`, the function will try to use a sensible default
-#' subset of commonly useful semantic columns if they are present.
+#' If `claimColumns = NULL`, the function uses a default set of semantic claim
+#' columns when present.
 #'
 #' @param runsDf A data.frame of run records, or a list containing a
 #'   data.frame named `runsDf`.
 #' @param claimColumns Optional character vector giving the columns to plot.
-#'   If `NULL`, a default set of semantic claim columns is used when present.
-#' @param runIdColumn Character. Column to use for row labels. Defaults to
-#'   `"runId"`. If not present, row numbers are used.
-#' @param sortRows Logical. Should rows be sorted by claim pattern before
-#'   plotting? Defaults to `TRUE`.
+#' @param runIdColumn Character. Column to use for row labels.
+#' @param sortRows Logical. Should rows be sorted by claim pattern?
 #' @param naLabel Character. Label used for missing values.
 #' @param main Character. Plot title.
 #' @param xlab Character. X-axis label.
 #' @param ylab Character. Y-axis label.
 #' @param cexAxis Numeric. Axis text expansion factor.
 #' @param cexLegend Numeric. Legend text expansion factor.
-#' @param mar Numeric vector of length 4 giving plot margins, passed to
-#'   `par(mar = ...)`.
+#' @param mar Numeric vector of length 4 giving plot margins.
 #' @param legendRightInset Numeric. Right-side inset used for the legend.
 #'
-#' @return Invisibly returns a list with:
-#' \describe{
-#'   \item{plotData}{Character matrix of plotted claim values}
-#'   \item{colourMatrix}{Integer matrix used for colouring}
-#'   \item{colourKey}{Named character vector mapping value labels to colours}
-#'   \item{rowOrder}{Integer vector giving the plotted row order}
-#'   \item{claimColumns}{Character vector of plotted columns}
-#' }
+#' @return Invisibly returns a list describing the plotted data.
 #' @export
 plotWmfmExplanationClaimHeatmap = function(
     runsDf,
@@ -85,19 +66,16 @@ plotWmfmExplanationClaimHeatmap = function(
     preferred = c(
       "effectDirection",
       "effectScale",
-      "referenceGroupMentioned",
-      "referenceGroupCorrect",
-      "interactionMentioned",
+      "mentionsReferenceGroup",
+      "mentionsInteraction",
       "interactionDirection",
       "uncertaintyMentioned",
-      "inferentialStyle",
-      "usesDescriptiveOnlyLanguage",
       "usesInferentialLanguage",
+      "usesDescriptiveOnlyLanguage",
       "overclaimDetected",
-      "mentionsCi",
-      "usesPercentLanguage",
-      "mentionsReferenceGroup",
-      "mentionsInteraction"
+      "inferentialStyle",
+      "mentionsConfidenceInterval",
+      "usesPercentLanguage"
     )
 
     preferred[preferred %in% names(df)]
@@ -105,8 +83,7 @@ plotWmfmExplanationClaimHeatmap = function(
 
   coerceClaimColumn = function(x, naLabel) {
     if (is.logical(x)) {
-      out = ifelse(is.na(x), naLabel, ifelse(x, "TRUE", "FALSE"))
-      return(out)
+      return(ifelse(is.na(x), naLabel, ifelse(x, "TRUE", "FALSE")))
     }
 
     if (is.factor(x)) {
@@ -124,9 +101,7 @@ plotWmfmExplanationClaimHeatmap = function(
   }
 
   buildColourKey = function(values) {
-    uniqueValues = unique(as.vector(values))
-    uniqueValues = uniqueValues[order(uniqueValues)]
-
+    uniqueValues = sort(unique(as.vector(values)))
     nValues = length(uniqueValues)
 
     if (nValues <= 8) {
@@ -164,14 +139,6 @@ plotWmfmExplanationClaimHeatmap = function(
       paste(missingColumns, collapse = ", "),
       call. = FALSE
     )
-  }
-
-  if (!is.character(runIdColumn) || length(runIdColumn) != 1 || is.na(runIdColumn)) {
-    stop("`runIdColumn` must be a single character string.", call. = FALSE)
-  }
-
-  if (!is.logical(sortRows) || length(sortRows) != 1 || is.na(sortRows)) {
-    stop("`sortRows` must be TRUE or FALSE.", call. = FALSE)
   }
 
   plotDf = runsDf[, claimColumns, drop = FALSE]
@@ -243,14 +210,11 @@ plotWmfmExplanationClaimHeatmap = function(
 
   graphics::box()
 
-  legendLabels = names(colourKey)
-  legendColours = unname(colourKey)
-
   graphics::legend(
     "topright",
     inset = c(legendRightInset, 0),
-    legend = legendLabels,
-    fill = legendColours,
+    legend = names(colourKey),
+    fill = unname(colourKey),
     border = "grey30",
     bty = "n",
     cex = cexLegend,

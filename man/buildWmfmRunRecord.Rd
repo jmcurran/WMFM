@@ -36,6 +36,8 @@ buildWmfmRunRecord(
 Named list.
 }
 \description{
-Creates a structured record for one model run including
-derived text features.
+Creates a structured record for one repeated WMFM run, including raw text,
+simple text summaries, and heuristic semantic-claim fields intended to help
+assess whether repeated explanations differ in substantive meaning rather
+than only wording.
 }

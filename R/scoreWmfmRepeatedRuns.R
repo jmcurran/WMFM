@@ -1,17 +1,9 @@
 #' Score repeated WMFM explanation runs
 #'
-#' Applies an explanation-focused scoring rubric to outputs produced by
-#' repeated WMFM runs.
+#' Applies an explanation-focused scoring rubric to repeated WMFM runs.
 #'
-#' This function is tolerant of different input shapes. `runsDf` may be either:
-#' \itemize{
-#'   \item a data.frame of run records, or
-#'   \item a list returned by `runWMFMPackageExampleRepeated()` containing a
-#'   `runsDf` element.
-#' }
-#'
-#' If derived columns such as `wordCount` or `hasError` are not present, they
-#' are computed from available fields where possible.
+#' This function accepts either a data.frame of run records or a list returned
+#' by `runWMFMPackageExampleRepeated()`.
 #'
 #' The score focuses on:
 #' \itemize{
@@ -25,36 +17,34 @@
 #' Duplicate detection is based on `normalizedExplanation` when available,
 #' otherwise on trimmed explanation text.
 #'
-#' @param runsDf A data.frame of repeated-run outputs, or a list containing
-#'   a `runsDf` element.
+#' @param runsDf A data.frame of repeated-run outputs, or a list containing a
+#'   `runsDf` element.
 #' @param preferredMinWords Integer. Lower bound for preferred explanation
 #'   length in words.
 #' @param preferredMaxWords Integer. Upper bound for preferred explanation
 #'   length in words.
-#' @param requireCi Logical. If `TRUE`, runs are rewarded for mentioning
-#'   confidence intervals when the `mentionsCi` column is available.
-#' @param preferPercent Logical. If `TRUE`, runs are rewarded for using
-#'   percentage language when the `usesPercentLanguage` column is available.
-#' @param requireReference Logical. If `TRUE`, runs are rewarded for using
-#'   reference or baseline language when the `mentionsReferenceGroup` column
-#'   is available.
-#' @param requireInteraction Logical. If `TRUE`, runs are rewarded for using
-#'   interaction language when the `mentionsInteraction` column is available.
+#' @param requireConfidenceInterval Logical. If `TRUE`, runs are rewarded for
+#'   mentioning confidence intervals.
+#' @param preferPercentLanguage Logical. If `TRUE`, runs are rewarded for
+#'   using percentage language.
+#' @param requireReferenceGroup Logical. If `TRUE`, runs are rewarded for
+#'   reference-group language.
+#' @param requireInteraction Logical. If `TRUE`, runs are rewarded for
+#'   interaction language.
 #' @param penaliseDuplicates Logical. Should exact duplicate explanations
 #'   receive a penalty?
 #' @param duplicatePenalty Integer. Penalty applied to runs whose explanation
 #'   appears more than once.
 #'
-#' @return A data.frame equal to the run records with additional scoring
-#'   columns.
+#' @return A data.frame with additional scoring columns.
 #' @export
 scoreWmfmRepeatedRuns = function(
     runsDf,
     preferredMinWords = 80L,
     preferredMaxWords = 220L,
-    requireCi = TRUE,
-    preferPercent = TRUE,
-    requireReference = FALSE,
+    requireConfidenceInterval = TRUE,
+    preferPercentLanguage = TRUE,
+    requireReferenceGroup = FALSE,
     requireInteraction = FALSE,
     penaliseDuplicates = TRUE,
     duplicatePenalty = -1L
@@ -75,28 +65,6 @@ scoreWmfmRepeatedRuns = function(
     )
   }
 
-  runsDf = extractRunsDf(runsDf)
-
-  if (!is.numeric(preferredMinWords) || length(preferredMinWords) != 1 || is.na(preferredMinWords)) {
-    stop("`preferredMinWords` must be a single number.", call. = FALSE)
-  }
-
-  if (!is.numeric(preferredMaxWords) || length(preferredMaxWords) != 1 || is.na(preferredMaxWords)) {
-    stop("`preferredMaxWords` must be a single number.", call. = FALSE)
-  }
-
-  if (preferredMinWords > preferredMaxWords) {
-    stop("`preferredMinWords` must be less than or equal to `preferredMaxWords`.", call. = FALSE)
-  }
-
-  if (!is.logical(penaliseDuplicates) || length(penaliseDuplicates) != 1 || is.na(penaliseDuplicates)) {
-    stop("`penaliseDuplicates` must be TRUE or FALSE.", call. = FALSE)
-  }
-
-  if (!is.numeric(duplicatePenalty) || length(duplicatePenalty) != 1 || is.na(duplicatePenalty)) {
-    stop("`duplicatePenalty` must be a single number.", call. = FALSE)
-  }
-
   getExplanationText = function(df) {
     if ("explanationText" %in% names(df)) {
       x = df$explanationText
@@ -114,15 +82,14 @@ scoreWmfmRepeatedRuns = function(
     x
   }
 
-  countWords = function(x) {
+  countWordsLocal = function(x) {
     x = trimws(x)
 
     if (!nzchar(x)) {
       return(0L)
     }
 
-    parts = strsplit(x, "[[:space:]]+")[[1]]
-    length(parts)
+    length(strsplit(x, "[[:space:]]+")[[1]])
   }
 
   getWordCount = function(df, explanationText) {
@@ -131,13 +98,13 @@ scoreWmfmRepeatedRuns = function(
       missingIdx = which(is.na(out))
 
       if (length(missingIdx) > 0) {
-        out[missingIdx] = vapply(explanationText[missingIdx], countWords, integer(1))
+        out[missingIdx] = vapply(explanationText[missingIdx], countWordsLocal, integer(1))
       }
 
       return(out)
     }
 
-    vapply(explanationText, countWords, integer(1))
+    vapply(explanationText, countWordsLocal, integer(1))
   }
 
   getHasError = function(df) {
@@ -176,6 +143,7 @@ scoreWmfmRepeatedRuns = function(
     trimws(explanationText)
   }
 
+  runsDf = extractRunsDf(runsDf)
   explanationText = getExplanationText(runsDf)
   wordCount = getWordCount(runsDf, explanationText)
   hasError = getHasError(runsDf)
@@ -183,30 +151,34 @@ scoreWmfmRepeatedRuns = function(
   explanationPresent = nzchar(trimws(explanationText))
   hasExplanationScore = ifelse(explanationPresent, 1L, 0L)
 
-  mentionsCi = getLogicalColumn(runsDf, "mentionsCi")
+  mentionsConfidenceInterval = getLogicalColumn(runsDf, "mentionsConfidenceInterval")
   usesPercentLanguage = getLogicalColumn(runsDf, "usesPercentLanguage")
   mentionsReferenceGroup = getLogicalColumn(runsDf, "mentionsReferenceGroup")
   mentionsInteraction = getLogicalColumn(runsDf, "mentionsInteraction")
 
-  mentionsCiScore = if (isTRUE(requireCi) && "mentionsCi" %in% names(runsDf)) {
-    ifelse(mentionsCi, 1L, 0L)
+  mentionsConfidenceIntervalScore = if (isTRUE(requireConfidenceInterval) &&
+                                        "mentionsConfidenceInterval" %in% names(runsDf)) {
+    ifelse(mentionsConfidenceInterval, 1L, 0L)
   } else {
     rep(0L, nrow(runsDf))
   }
 
-  percentLanguageScore = if (isTRUE(preferPercent) && "usesPercentLanguage" %in% names(runsDf)) {
+  usesPercentLanguageScore = if (isTRUE(preferPercentLanguage) &&
+                                 "usesPercentLanguage" %in% names(runsDf)) {
     ifelse(usesPercentLanguage, 1L, 0L)
   } else {
     rep(0L, nrow(runsDf))
   }
 
-  referenceLanguageScore = if (isTRUE(requireReference) && "mentionsReferenceGroup" %in% names(runsDf)) {
+  mentionsReferenceGroupScore = if (isTRUE(requireReferenceGroup) &&
+                                    "mentionsReferenceGroup" %in% names(runsDf)) {
     ifelse(mentionsReferenceGroup, 1L, 0L)
   } else {
     rep(0L, nrow(runsDf))
   }
 
-  interactionLanguageScore = if (isTRUE(requireInteraction) && "mentionsInteraction" %in% names(runsDf)) {
+  mentionsInteractionScore = if (isTRUE(requireInteraction) &&
+                                 "mentionsInteraction" %in% names(runsDf)) {
     ifelse(mentionsInteraction, 1L, 0L)
   } else {
     rep(0L, nrow(runsDf))
@@ -235,10 +207,10 @@ scoreWmfmRepeatedRuns = function(
 
   totalScore =
     hasExplanationScore +
-    mentionsCiScore +
-    percentLanguageScore +
-    referenceLanguageScore +
-    interactionLanguageScore +
+    mentionsConfidenceIntervalScore +
+    usesPercentLanguageScore +
+    mentionsReferenceGroupScore +
+    mentionsInteractionScore +
     lengthScore +
     errorPenalty +
     duplicatePenaltyApplied
@@ -248,10 +220,10 @@ scoreWmfmRepeatedRuns = function(
   scoredDf$wordCountDerived = wordCount
   scoredDf$hasErrorDerived = hasError
   scoredDf$hasExplanationScore = hasExplanationScore
-  scoredDf$mentionsCiScore = mentionsCiScore
-  scoredDf$percentLanguageScore = percentLanguageScore
-  scoredDf$referenceLanguageScore = referenceLanguageScore
-  scoredDf$interactionLanguageScore = interactionLanguageScore
+  scoredDf$mentionsConfidenceIntervalScore = mentionsConfidenceIntervalScore
+  scoredDf$usesPercentLanguageScore = usesPercentLanguageScore
+  scoredDf$mentionsReferenceGroupScore = mentionsReferenceGroupScore
+  scoredDf$mentionsInteractionScore = mentionsInteractionScore
   scoredDf$lengthScore = lengthScore
   scoredDf$errorPenalty = errorPenalty
   scoredDf$duplicateCount = duplicateCount

@@ -8,17 +8,17 @@ scoreWmfmRepeatedRuns(
   runsDf,
   preferredMinWords = 80L,
   preferredMaxWords = 220L,
-  requireCi = TRUE,
-  preferPercent = TRUE,
-  requireReference = FALSE,
+  requireConfidenceInterval = TRUE,
+  preferPercentLanguage = TRUE,
+  requireReferenceGroup = FALSE,
   requireInteraction = FALSE,
   penaliseDuplicates = TRUE,
   duplicatePenalty = -1L
 )
 }
 \arguments{
-\item{runsDf}{A data.frame of repeated-run outputs, or a list containing
-a \code{runsDf} element.}
+\item{runsDf}{A data.frame of repeated-run outputs, or a list containing a
+\code{runsDf} element.}
 
 \item{preferredMinWords}{Integer. Lower bound for preferred explanation
 length in words.}
@@ -26,18 +26,17 @@ length in words.}
 \item{preferredMaxWords}{Integer. Upper bound for preferred explanation
 length in words.}
 
-\item{requireCi}{Logical. If \code{TRUE}, runs are rewarded for mentioning
-confidence intervals when the \code{mentionsCi} column is available.}
+\item{requireConfidenceInterval}{Logical. If \code{TRUE}, runs are rewarded for
+mentioning confidence intervals.}
 
-\item{preferPercent}{Logical. If \code{TRUE}, runs are rewarded for using
-percentage language when the \code{usesPercentLanguage} column is available.}
+\item{preferPercentLanguage}{Logical. If \code{TRUE}, runs are rewarded for
+using percentage language.}
 
-\item{requireReference}{Logical. If \code{TRUE}, runs are rewarded for using
-reference or baseline language when the \code{mentionsReferenceGroup} column
-is available.}
+\item{requireReferenceGroup}{Logical. If \code{TRUE}, runs are rewarded for
+reference-group language.}
 
-\item{requireInteraction}{Logical. If \code{TRUE}, runs are rewarded for using
-interaction language when the \code{mentionsInteraction} column is available.}
+\item{requireInteraction}{Logical. If \code{TRUE}, runs are rewarded for
+interaction language.}
 
 \item{penaliseDuplicates}{Logical. Should exact duplicate explanations
 receive a penalty?}
@@ -46,23 +45,14 @@ receive a penalty?}
 appears more than once.}
 }
 \value{
-A data.frame equal to the run records with additional scoring
-columns.
+A data.frame with additional scoring columns.
 }
 \description{
-Applies an explanation-focused scoring rubric to outputs produced by
-repeated WMFM runs.
+Applies an explanation-focused scoring rubric to repeated WMFM runs.
 }
 \details{
-This function is tolerant of different input shapes. \code{runsDf} may be either:
-\itemize{
-\item a data.frame of run records, or
-\item a list returned by \code{runWMFMPackageExampleRepeated()} containing a
-\code{runsDf} element.
-}
-
-If derived columns such as \code{wordCount} or \code{hasError} are not present, they
-are computed from available fields where possible.
+This function accepts either a data.frame of run records or a list returned
+by \code{runWMFMPackageExampleRepeated()}.
 
 The score focuses on:
 \itemize{
