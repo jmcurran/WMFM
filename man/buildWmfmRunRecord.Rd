@@ -12,7 +12,10 @@ buildWmfmRunRecord(
   formula,
   equationsText,
   explanationText,
-  errorMessage = NA_character_
+  errorMessage = NA_character_,
+  interactionTerms = character(),
+  interactionPValues = numeric(),
+  interactionAlpha = 0.05
 )
 }
 \arguments{
@@ -31,13 +34,28 @@ buildWmfmRunRecord(
 \item{explanationText}{Character.}
 
 \item{errorMessage}{Character.}
+
+\item{interactionTerms}{Character vector of fitted interaction-term names.}
+
+\item{interactionPValues}{Numeric vector of p-values for fitted interaction
+terms.}
+
+\item{interactionAlpha}{Numeric. Significance threshold used when assessing
+whether the interaction claim is too strong or too weak. Defaults to 0.05.}
 }
 \value{
 Named list.
 }
 \description{
 Creates a structured record for one repeated WMFM run, including raw text,
-simple text summaries, and heuristic semantic-claim fields intended to help
-assess whether repeated explanations differ in substantive meaning rather
-than only wording.
+simple text summaries, heuristic semantic-claim fields, and a model-aware
+interaction-inference assessment.
+}
+\details{
+The interaction-related fields are intended to distinguish between:
+\itemize{
+\item what the explanation says about the interaction
+\item whether that claim is appropriate given the interaction-term
+p-value(s)
+}
 }

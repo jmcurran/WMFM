@@ -45,6 +45,8 @@ generation failed or no chat provider was available.}
 explanation generation failed or no chat provider was available.}
 \item{\code{datasetContext}}{The dataset context attached to the model, or
 \code{NULL} if none was supplied.}
+\item{\code{interactionTerms}}{Character vector of interaction-term names.}
+\item{\code{interactionPValues}}{Numeric vector of interaction-term p-values.}
 }
 }
 \description{
@@ -60,6 +62,11 @@ Explanation caching can be controlled via \code{useExplanationCache}. For normal
 usage this can remain \code{TRUE}, but when repeatedly querying the language
 model for the same fitted model it is often useful to set it to \code{FALSE}
 so that each run makes a fresh explanation request.
+
+The returned object also includes interaction-term metadata extracted from
+the fitted model summary. These values are used by repeated-run evaluation
+helpers to assess whether the language-model explanation interprets the
+interaction evidence appropriately.
 }
 \examples{
 \dontrun{

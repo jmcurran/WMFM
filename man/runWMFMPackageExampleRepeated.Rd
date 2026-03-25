@@ -12,6 +12,7 @@ runWMFMPackageExampleRepeated(
   pauseSeconds = 0,
   showProgress = TRUE,
   useExplanationCache = FALSE,
+  interactionAlpha = 0.05,
   ...
 )
 }
@@ -32,6 +33,9 @@ time remaining be shown?}
 \item{useExplanationCache}{Logical. Passed to \code{runWMFMModelDebug()}.
 Defaults to \code{FALSE} so repeated runs query the language model each time.}
 
+\item{interactionAlpha}{Numeric. Significance threshold used when assessing
+whether an interaction claim is too strong or too weak. Defaults to 0.05.}
+
 \item{...}{Additional arguments passed to \code{runWMFMModelDebug()}.}
 }
 \value{
@@ -51,8 +55,8 @@ runs \code{runWMFMModelDebug()} repeatedly using those same inputs.
 \details{
 This is useful for checking response stability across repeated calls to the
 language model for the same fitted model. The function collects the raw
-equations and explanation outputs from each run and computes simple text
-features that help compare the explanations.
+equations and explanation outputs from each run and computes text and
+interaction-inference features that help compare the explanations.
 
 A console progress bar is displayed by default. After each run, the function
 updates the estimated time remaining using the average elapsed time per

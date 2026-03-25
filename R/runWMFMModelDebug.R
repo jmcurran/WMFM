@@ -12,6 +12,11 @@
 #' model for the same fitted model it is often useful to set it to `FALSE`
 #' so that each run makes a fresh explanation request.
 #'
+#' The returned object also includes interaction-term metadata extracted from
+#' the fitted model summary. These values are used by repeated-run evaluation
+#' helpers to assess whether the language-model explanation interprets the
+#' interaction evidence appropriately.
+#'
 #' @param data A `data.frame` containing the variables used in the model.
 #' @param formula A model formula, either as a formula object or a character
 #'   string that can be converted to a formula.
@@ -35,6 +40,8 @@
 #'   explanation generation failed or no chat provider was available.}
 #'   \item{`datasetContext`}{The dataset context attached to the model, or
 #'   `NULL` if none was supplied.}
+#'   \item{`interactionTerms`}{Character vector of interaction-term names.}
+#'   \item{`interactionPValues`}{Numeric vector of interaction-term p-values.}
 #' }
 #'
 #' @examples
@@ -63,6 +70,46 @@ runWMFMModelDebug = function(
     printOutput = TRUE,
     useExplanationCache = TRUE
 ) {
+
+  extractInteractionInfo = function(model) {
+    coefMatrix = tryCatch(
+      stats::coef(summary(model)),
+      error = function(e) {
+        NULL
+      }
+    )
+
+    if (is.null(coefMatrix) || nrow(coefMatrix) == 0) {
+      return(list(
+        interactionTerms = character(),
+        interactionPValues = numeric()
+      ))
+    }
+
+    coefNames = rownames(coefMatrix)
+    interactionIdx = grepl(":", coefNames, fixed = TRUE)
+
+    if (!any(interactionIdx)) {
+      return(list(
+        interactionTerms = character(),
+        interactionPValues = numeric()
+      ))
+    }
+
+    pValueColName = grep("pr\\(>.*\\)$", colnames(coefMatrix), ignore.case = TRUE, value = TRUE)
+
+    if (length(pValueColName) == 0) {
+      return(list(
+        interactionTerms = coefNames[interactionIdx],
+        interactionPValues = rep(NA_real_, sum(interactionIdx))
+      ))
+    }
+
+    list(
+      interactionTerms = coefNames[interactionIdx],
+      interactionPValues = as.numeric(coefMatrix[interactionIdx, pValueColName[1]])
+    )
+  }
 
   modelType = match.arg(modelType)
 
@@ -205,6 +252,8 @@ runWMFMModelDebug = function(
     }
   )
 
+  interactionInfo = extractInteractionInfo(model)
+
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
 
@@ -265,7 +314,9 @@ runWMFMModelDebug = function(
     model = model,
     equations = equations,
     explanation = explanation,
-    datasetContext = attr(model, "wmfm_dataset_doc", exact = TRUE)
+    datasetContext = attr(model, "wmfm_dataset_doc", exact = TRUE),
+    interactionTerms = interactionInfo$interactionTerms,
+    interactionPValues = interactionInfo$interactionPValues
   )
 
   if (isTRUE(printOutput)) {

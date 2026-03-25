@@ -6,8 +6,8 @@
 #'
 #' This is useful for checking response stability across repeated calls to the
 #' language model for the same fitted model. The function collects the raw
-#' equations and explanation outputs from each run and computes simple text
-#' features that help compare the explanations.
+#' equations and explanation outputs from each run and computes text and
+#' interaction-inference features that help compare the explanations.
 #'
 #' A console progress bar is displayed by default. After each run, the function
 #' updates the estimated time remaining using the average elapsed time per
@@ -25,6 +25,8 @@
 #'   time remaining be shown?
 #' @param useExplanationCache Logical. Passed to `runWMFMModelDebug()`.
 #'   Defaults to `FALSE` so repeated runs query the language model each time.
+#' @param interactionAlpha Numeric. Significance threshold used when assessing
+#'   whether an interaction claim is too strong or too weak. Defaults to 0.05.
 #' @param ... Additional arguments passed to `runWMFMModelDebug()`.
 #'
 #' @return A list with elements:
@@ -44,6 +46,7 @@ runWMFMPackageExampleRepeated = function(
     pauseSeconds = 0,
     showProgress = TRUE,
     useExplanationCache = FALSE,
+    interactionAlpha = 0.05,
     ...
 ) {
 
@@ -63,6 +66,10 @@ runWMFMPackageExampleRepeated = function(
 
   if (!is.logical(useExplanationCache) || length(useExplanationCache) != 1 || is.na(useExplanationCache)) {
     stop("`useExplanationCache` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.numeric(interactionAlpha) || length(interactionAlpha) != 1 || is.na(interactionAlpha) || interactionAlpha <= 0 || interactionAlpha >= 1) {
+    stop("`interactionAlpha` must be a single number between 0 and 1.", call. = FALSE)
   }
 
   basePath = system.file("extdata", "examples", name, package = package)
@@ -106,7 +113,13 @@ runWMFMPackageExampleRepeated = function(
         ...
       ),
       error = function(e) {
-        list(explanation = NULL, equations = NULL, .error = conditionMessage(e))
+        list(
+          explanation = NULL,
+          equations = NULL,
+          interactionTerms = character(),
+          interactionPValues = numeric(),
+          .error = conditionMessage(e)
+        )
       }
     )
 
@@ -118,7 +131,10 @@ runWMFMPackageExampleRepeated = function(
       formula = spec$formula,
       equationsText = extractWmfmText(result$equations),
       explanationText = extractWmfmText(result$explanation),
-      errorMessage = result$.error %||% NA_character_
+      errorMessage = result$.error %||% NA_character_,
+      interactionTerms = result$interactionTerms %||% character(),
+      interactionPValues = result$interactionPValues %||% numeric(),
+      interactionAlpha = interactionAlpha
     )
 
     if (pauseSeconds > 0) {
