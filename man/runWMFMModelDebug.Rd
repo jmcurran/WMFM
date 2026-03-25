@@ -26,8 +26,8 @@ of \code{"lm"}, \code{"logistic"}, or \code{"poisson"}.}
 \item{dataContext}{Optional character string giving additional context
 about the dataset, study, variables, coding, or research aim.}
 
-\item{ollamaBaseUrl}{Optional character string giving the base URL for
-the language model service.}
+\item{ollamaBaseUrl}{Optional character string giving the base URL for the
+language model service.}
 
 \item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
 equations, and explanation to the console.}
@@ -45,14 +45,16 @@ generation failed or no chat provider was available.}
 explanation generation failed or no chat provider was available.}
 \item{\code{datasetContext}}{The dataset context attached to the model, or
 \code{NULL} if none was supplied.}
-\item{\code{interactionTerms}}{Character vector of interaction-term names.}
-\item{\code{interactionPValues}}{Numeric vector of interaction-term p-values.}
+\item{\code{interactionTerms}}{Character vector of fitted interaction-term
+coefficient names.}
+\item{\code{interactionMinPValue}}{Minimum p-value across fitted interaction
+terms, or \code{NA} if unavailable.}
 }
 }
 \description{
 Fits a model using a supplied dataset and formula, optionally attaches
-dataset context, and then attempts to generate fitted equations and a
-model explanation using the same helper functions used by the app.
+dataset context, and then attempts to generate fitted equations and a model
+explanation using the same helper functions used by the app.
 }
 \details{
 Supported model types are linear regression, logistic regression, and
@@ -63,25 +65,7 @@ usage this can remain \code{TRUE}, but when repeatedly querying the language
 model for the same fitted model it is often useful to set it to \code{FALSE}
 so that each run makes a fresh explanation request.
 
-The returned object also includes interaction-term metadata extracted from
-the fitted model summary. These values are used by repeated-run evaluation
-helpers to assess whether the language-model explanation interprets the
-interaction evidence appropriately.
-}
-\examples{
-\dontrun{
-runWMFMModelDebug(
-  data = course.df,
-  formula = Exam ~ Attend + Test,
-  modelType = "lm"
-)
-
-runWMFMModelDebug(
-  data = course.df,
-  formula = Exam ~ Attend + Test,
-  modelType = "lm",
-  useExplanationCache = FALSE
-)
-}
-
+The returned object also includes interaction-term names and the minimum
+interaction-term p-value, which can be used later when evaluating whether
+the explanation interpreted interaction evidence appropriately.
 }

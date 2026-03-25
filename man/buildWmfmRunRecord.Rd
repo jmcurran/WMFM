@@ -13,8 +13,8 @@ buildWmfmRunRecord(
   equationsText,
   explanationText,
   errorMessage = NA_character_,
-  interactionTerms = character(),
-  interactionPValues = numeric(),
+  interactionTerms = character(0),
+  interactionMinPValue = NA_real_,
   interactionAlpha = 0.05
 )
 }
@@ -35,27 +35,29 @@ buildWmfmRunRecord(
 
 \item{errorMessage}{Character.}
 
-\item{interactionTerms}{Character vector of fitted interaction-term names.}
+\item{interactionTerms}{Character vector of interaction-term names from the
+fitted model.}
 
-\item{interactionPValues}{Numeric vector of p-values for fitted interaction
-terms.}
+\item{interactionMinPValue}{Numeric. Minimum p-value across fitted
+interaction terms, or \code{NA} if no interaction terms are present or no
+p-value could be extracted.}
 
-\item{interactionAlpha}{Numeric. Significance threshold used when assessing
-whether the interaction claim is too strong or too weak. Defaults to 0.05.}
+\item{interactionAlpha}{Numeric. Threshold used to judge whether the
+explanation's interaction interpretation is appropriate.}
 }
 \value{
 Named list.
 }
 \description{
 Creates a structured record for one repeated WMFM run, including raw text,
-simple text summaries, heuristic semantic-claim fields, and a model-aware
-interaction-inference assessment.
+simple text summaries, heuristic semantic-claim fields, and interaction
+evidence fields derived from the fitted model.
 }
 \details{
-The interaction-related fields are intended to distinguish between:
+The interaction fields separate:
 \itemize{
-\item what the explanation says about the interaction
-\item whether that claim is appropriate given the interaction-term
-p-value(s)
+\item what the explanation claims about the interaction, and
+\item whether that claim is appropriate relative to the interaction-term
+p-value.
 }
 }

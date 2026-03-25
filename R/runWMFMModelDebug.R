@@ -1,8 +1,8 @@
 #' Fit a WMFM model and generate console outputs without launching Shiny
 #'
 #' Fits a model using a supplied dataset and formula, optionally attaches
-#' dataset context, and then attempts to generate fitted equations and a
-#' model explanation using the same helper functions used by the app.
+#' dataset context, and then attempts to generate fitted equations and a model
+#' explanation using the same helper functions used by the app.
 #'
 #' Supported model types are linear regression, logistic regression, and
 #' Poisson regression.
@@ -12,10 +12,9 @@
 #' model for the same fitted model it is often useful to set it to `FALSE`
 #' so that each run makes a fresh explanation request.
 #'
-#' The returned object also includes interaction-term metadata extracted from
-#' the fitted model summary. These values are used by repeated-run evaluation
-#' helpers to assess whether the language-model explanation interprets the
-#' interaction evidence appropriately.
+#' The returned object also includes interaction-term names and the minimum
+#' interaction-term p-value, which can be used later when evaluating whether
+#' the explanation interpreted interaction evidence appropriately.
 #'
 #' @param data A `data.frame` containing the variables used in the model.
 #' @param formula A model formula, either as a formula object or a character
@@ -24,8 +23,8 @@
 #'   of `"lm"`, `"logistic"`, or `"poisson"`.
 #' @param dataContext Optional character string giving additional context
 #'   about the dataset, study, variables, coding, or research aim.
-#' @param ollamaBaseUrl Optional character string giving the base URL for
-#'   the language model service.
+#' @param ollamaBaseUrl Optional character string giving the base URL for the
+#'   language model service.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
 #'   equations, and explanation to the console.
 #' @param useExplanationCache Logical. Should cached explanation text be reused
@@ -40,26 +39,11 @@
 #'   explanation generation failed or no chat provider was available.}
 #'   \item{`datasetContext`}{The dataset context attached to the model, or
 #'   `NULL` if none was supplied.}
-#'   \item{`interactionTerms`}{Character vector of interaction-term names.}
-#'   \item{`interactionPValues`}{Numeric vector of interaction-term p-values.}
+#'   \item{`interactionTerms`}{Character vector of fitted interaction-term
+#'   coefficient names.}
+#'   \item{`interactionMinPValue`}{Minimum p-value across fitted interaction
+#'   terms, or `NA` if unavailable.}
 #' }
-#'
-#' @examples
-#' \dontrun{
-#' runWMFMModelDebug(
-#'   data = course.df,
-#'   formula = Exam ~ Attend + Test,
-#'   modelType = "lm"
-#' )
-#'
-#' runWMFMModelDebug(
-#'   data = course.df,
-#'   formula = Exam ~ Attend + Test,
-#'   modelType = "lm",
-#'   useExplanationCache = FALSE
-#' )
-#' }
-#'
 #' @export
 runWMFMModelDebug = function(
     data,
@@ -72,42 +56,51 @@ runWMFMModelDebug = function(
 ) {
 
   extractInteractionInfo = function(model) {
-    coefMatrix = tryCatch(
-      stats::coef(summary(model)),
+    out = list(
+      interactionTerms = character(0),
+      interactionMinPValue = NA_real_
+    )
+
+    coefficientTable = tryCatch(
+      summary(model)$coefficients,
       error = function(e) {
         NULL
       }
     )
 
-    if (is.null(coefMatrix) || nrow(coefMatrix) == 0) {
-      return(list(
-        interactionTerms = character(),
-        interactionPValues = numeric()
-      ))
+    if (is.null(coefficientTable) || !is.matrix(coefficientTable)) {
+      return(out)
     }
 
-    coefNames = rownames(coefMatrix)
-    interactionIdx = grepl(":", coefNames, fixed = TRUE)
+    termNames = rownames(coefficientTable)
+
+    if (is.null(termNames) || length(termNames) == 0) {
+      return(out)
+    }
+
+    interactionIdx = grepl(":", termNames, fixed = TRUE)
 
     if (!any(interactionIdx)) {
-      return(list(
-        interactionTerms = character(),
-        interactionPValues = numeric()
-      ))
+      return(out)
     }
 
-    pValueColName = grep("pr\\(>.*\\)$", colnames(coefMatrix), ignore.case = TRUE, value = TRUE)
+    interactionTerms = termNames[interactionIdx]
+    pColumnIdx = grep("^Pr\\(", colnames(coefficientTable))
 
-    if (length(pValueColName) == 0) {
-      return(list(
-        interactionTerms = coefNames[interactionIdx],
-        interactionPValues = rep(NA_real_, sum(interactionIdx))
-      ))
+    interactionMinPValue = NA_real_
+
+    if (length(pColumnIdx) >= 1) {
+      interactionPValues = suppressWarnings(as.numeric(coefficientTable[interactionIdx, pColumnIdx[1]]))
+      interactionPValues = interactionPValues[!is.na(interactionPValues)]
+
+      if (length(interactionPValues) > 0) {
+        interactionMinPValue = min(interactionPValues)
+      }
     }
 
     list(
-      interactionTerms = coefNames[interactionIdx],
-      interactionPValues = as.numeric(coefMatrix[interactionIdx, pValueColName[1]])
+      interactionTerms = interactionTerms,
+      interactionMinPValue = interactionMinPValue
     )
   }
 
@@ -252,8 +245,6 @@ runWMFMModelDebug = function(
     }
   )
 
-  interactionInfo = extractInteractionInfo(model)
-
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
 
@@ -272,6 +263,8 @@ runWMFMModelDebug = function(
   if (!is.null(ollamaBaseUrl)) {
     options(wmfm.ollama_base_url = ollamaBaseUrl)
   }
+
+  interactionInfo = extractInteractionInfo(model)
 
   chatProvider = tryCatch(
     getChatProvider(),
@@ -316,7 +309,7 @@ runWMFMModelDebug = function(
     explanation = explanation,
     datasetContext = attr(model, "wmfm_dataset_doc", exact = TRUE),
     interactionTerms = interactionInfo$interactionTerms,
-    interactionPValues = interactionInfo$interactionPValues
+    interactionMinPValue = interactionInfo$interactionMinPValue
   )
 
   if (isTRUE(printOutput)) {

@@ -1,14 +1,14 @@
 #' Build a single run record
 #'
 #' Creates a structured record for one repeated WMFM run, including raw text,
-#' simple text summaries, heuristic semantic-claim fields, and a model-aware
-#' interaction-inference assessment.
+#' simple text summaries, heuristic semantic-claim fields, and interaction
+#' evidence fields derived from the fitted model.
 #'
-#' The interaction-related fields are intended to distinguish between:
+#' The interaction fields separate:
 #' \itemize{
-#'   \item what the explanation says about the interaction
-#'   \item whether that claim is appropriate given the interaction-term
-#'   p-value(s)
+#'   \item what the explanation claims about the interaction, and
+#'   \item whether that claim is appropriate relative to the interaction-term
+#'   p-value.
 #' }
 #'
 #' @param runId Integer.
@@ -19,11 +19,13 @@
 #' @param equationsText Character.
 #' @param explanationText Character.
 #' @param errorMessage Character.
-#' @param interactionTerms Character vector of fitted interaction-term names.
-#' @param interactionPValues Numeric vector of p-values for fitted interaction
-#'   terms.
-#' @param interactionAlpha Numeric. Significance threshold used when assessing
-#'   whether the interaction claim is too strong or too weak. Defaults to 0.05.
+#' @param interactionTerms Character vector of interaction-term names from the
+#'   fitted model.
+#' @param interactionMinPValue Numeric. Minimum p-value across fitted
+#'   interaction terms, or `NA` if no interaction terms are present or no
+#'   p-value could be extracted.
+#' @param interactionAlpha Numeric. Threshold used to judge whether the
+#'   explanation's interaction interpretation is appropriate.
 #'
 #' @return Named list.
 #' @export
@@ -36,8 +38,8 @@ buildWmfmRunRecord = function(
     equationsText,
     explanationText,
     errorMessage = NA_character_,
-    interactionTerms = character(),
-    interactionPValues = numeric(),
+    interactionTerms = character(0),
+    interactionMinPValue = NA_real_,
     interactionAlpha = 0.05
 ) {
 
@@ -56,33 +58,29 @@ buildWmfmRunRecord = function(
 
     decreasePattern = paste(
       "\\bdecrease(s|d)?\\b",
-      "\\bdecreased\\b",
       "\\bdecline(s|d)?\\b",
-      "\\bdeclined\\b",
-      "\\bfall(s|en)?\\b",
-      "\\bfell\\b",
-      "\\bdrop(s|ped)?\\b",
-      "\\bdropped\\b",
+      "\\bdeclines?\\b",
       "\\breduce(s|d)?\\b",
-      "\\breduced\\b",
+      "\\breduction\\b",
+      "\\bdrop(s|ped)?\\b",
+      "\\bfall(s|en)?\\b",
       "\\blower\\b",
-      "\\brarer\\b",
       "\\bsmaller\\b",
-      "\\bsharply lower\\b",
-      "\\bmarkedly lower\\b",
+      "\\brare(r)?\\b",
+      "\\bfalls to\\b",
+      "\\bcut(s|ting)?\\b",
       sep = "|"
     )
 
     increasePattern = paste(
       "\\bincrease(s|d)?\\b",
-      "\\bincreased\\b",
+      "\\bincreasing\\b",
       "\\brise(s|n)?\\b",
-      "\\brose\\b",
-      "\\bgrow(s|n)?\\b",
-      "\\bgrew\\b",
+      "\\bgrow(s|n|th)?\\b",
       "\\bhigher\\b",
       "\\blarger\\b",
       "\\bgreater\\b",
+      "\\bmore likely\\b",
       "\\bmore frequent\\b",
       "\\bmore abundant\\b",
       sep = "|"
@@ -92,10 +90,6 @@ buildWmfmRunRecord = function(
     increaseDetected = detectPatternLocal(text, increasePattern)
 
     if (decreaseDetected && increaseDetected) {
-      if (detectPatternLocal(text, "\\bfalls? to\\b|\\bdrops? to\\b|\\breduces? to\\b|\\bdeclines? to\\b")) {
-        return("decrease")
-      }
-
       return("mixed_or_both")
     }
 
@@ -116,63 +110,56 @@ buildWmfmRunRecord = function(
     }
 
     multiplicativePattern = paste(
-      "\\bpercent\\b",
-      "%",
+      "\\bmultipl(?:y|ies|ied|ier|iers)?\\b",
+      "\\bmultiplier\\b",
       "\\btimes\\b",
       "\\bfold\\b",
-      "\\bmultipl(y|ies|ied)?\\b",
-      "\\bmultiplier\\b",
+      "\\bpercent\\b",
+      "%",
       "\\brate ratio\\b",
-      "\\brelative risk\\b",
+      "\\bodds ratio\\b",
+      "\\bof its previous\\b",
+      "\\bfalls to about\\b",
       "\\bexpected count\\b",
-      "\\bfalls? to\\b",
-      "\\bdrops? to\\b",
-      "\\breduces? to\\b",
-      "\\bof (its|their|the) previous\\b",
+      "\\bexpected number\\b",
       sep = "|"
     )
 
-    probabilityOrOddsPattern = paste(
+    probabilityPattern = paste(
       "\\bodds\\b",
-      "\\bodds ratio\\b",
       "\\bprobability\\b",
-      "\\bprobabilities\\b",
       "\\bchance\\b",
       "\\blikelihood\\b",
       sep = "|"
     )
 
     additivePattern = paste(
-      "\\bby [0-9]+(\\.[0-9]+)? units?\\b",
-      "\\bby [0-9]+(\\.[0-9]+)? points?\\b",
-      "\\bincrease of [0-9]+(\\.[0-9]+)?\\b",
-      "\\bdecrease of [0-9]+(\\.[0-9]+)?\\b",
-      "\\bhigher by [0-9]+(\\.[0-9]+)?\\b",
-      "\\blower by [0-9]+(\\.[0-9]+)?\\b",
-      "\\badditive\\b",
+      "\\bunit(s)?\\b",
+      "\\bpoint(s)?\\b",
+      "\\bhigher by\\b",
+      "\\blower by\\b",
+      "\\bincrease of\\b",
+      "\\bdecrease of\\b",
+      "\\bdifference of\\b",
       sep = "|"
     )
 
     multiplicativeDetected = detectPatternLocal(text, multiplicativePattern)
-    probabilityOrOddsDetected = detectPatternLocal(text, probabilityOrOddsPattern)
+    probabilityDetected = detectPatternLocal(text, probabilityPattern)
     additiveDetected = detectPatternLocal(text, additivePattern)
 
-    nDetected = sum(c(multiplicativeDetected, probabilityOrOddsDetected, additiveDetected))
+    nDetected = sum(c(multiplicativeDetected, probabilityDetected, additiveDetected))
 
     if (nDetected > 1) {
-      if (multiplicativeDetected && probabilityOrOddsDetected && !additiveDetected) {
-        return("probability_or_odds")
-      }
-
       return("mixed_or_unclear")
-    }
-
-    if (probabilityOrOddsDetected) {
-      return("probability_or_odds")
     }
 
     if (multiplicativeDetected) {
       return("multiplicative")
+    }
+
+    if (probabilityDetected) {
+      return("probability_or_odds")
     }
 
     if (additiveDetected) {
@@ -182,95 +169,107 @@ buildWmfmRunRecord = function(
     "not_stated"
   }
 
-  classifyInteractionClaim = function(text, mentionsInteraction) {
-    if (!isTRUE(mentionsInteraction)) {
-      return("not_mentioned")
+  classifyInteractionClaim = function(text, hasInteractionTerms) {
+    if (!isTRUE(hasInteractionTerms)) {
+      return("not_applicable")
     }
 
     if (is.na(text) || !nzchar(trimws(text))) {
       return("not_mentioned")
     }
 
-    noDifferencePattern = paste(
-      "\\blittle evidence\\b",
-      "\\bno evidence\\b",
-      "\\bnot clear\\b",
-      "\\bdoes not clearly\\b",
-      "\\bdo not clearly\\b",
-      "\\bno clear interaction\\b",
-      "\\bweak evidence\\b",
-      "\\buncertain interaction\\b",
-      "\\binteraction .* not .* clear\\b",
+    strongDifferencePattern = paste(
+      "\\bsteeper\\b",
+      "\\bstronger\\b",
+      "\\bmore pronounced\\b",
+      "\\bespecially pronounced\\b",
+      "\\bclearly different\\b",
+      "\\bdrops? more rapidly\\b",
+      "\\bdiffers? markedly\\b",
       sep = "|"
     )
 
-    strongDifferencePattern = paste(
-      "\\binteraction\\b",
+    cautiousDifferencePattern = paste(
+      "\\bevidence.*differ",
+      "\\bsuggest(s|ed)?.*differ",
+      "\\bindicate(s|d)?.*differ",
       "\\beffect differs by\\b",
-      "\\bdiffers by group\\b",
       "\\bdepends on\\b",
       "\\bvaries by\\b",
+      "\\binteraction\\b",
       "\\bdifferent slope\\b",
-      "\\bdifferent slopes\\b",
-      "\\bsteeper\\b",
-      "\\bshallower\\b",
-      "\\bstronger\\b",
-      "\\bweaker\\b",
-      "\\bmore pronounced\\b",
-      "\\bless pronounced\\b",
-      "\\bespecially pronounced\\b",
       sep = "|"
     )
 
-    noDifferenceDetected = detectPatternLocal(text, noDifferencePattern)
-    strongDifferenceDetected = detectPatternLocal(text, strongDifferencePattern)
+    noClearDifferencePattern = paste(
+      "\\blittle evidence\\b",
+      "\\bno clear evidence\\b",
+      "\\bno strong evidence\\b",
+      "\\bdoes not clearly show\\b",
+      "\\bnot clearly different\\b",
+      "\\bno clear interaction\\b",
+      "\\binteraction.*weak\\b",
+      sep = "|"
+    )
 
-    if (noDifferenceDetected && strongDifferenceDetected) {
-      return("mixed_or_unclear")
+    strongDetected = detectPatternLocal(text, strongDifferencePattern)
+    cautiousDetected = detectPatternLocal(text, cautiousDifferencePattern)
+    noClearDetected = detectPatternLocal(text, noClearDifferencePattern)
+
+    if ((strongDetected || cautiousDetected) && noClearDetected) {
+      return("unclear")
     }
 
-    if (strongDifferenceDetected) {
-      return("difference_claimed")
+    if (strongDetected) {
+      return("difference_claimed_strongly")
     }
 
-    if (noDifferenceDetected) {
+    if (cautiousDetected) {
+      return("difference_claimed_cautiously")
+    }
+
+    if (noClearDetected) {
       return("no_clear_difference")
     }
 
-    "mentioned_but_unclear"
+    "not_mentioned"
   }
 
   classifyInteractionInference = function(
       interactionClaim,
-      interactionPValues,
+      interactionMinPValue,
+      hasInteractionTerms,
       interactionAlpha
   ) {
-    interactionPValues = as.numeric(interactionPValues)
-    interactionPValues = interactionPValues[!is.na(interactionPValues)]
-
-    if (length(interactionPValues) == 0) {
+    if (!isTRUE(hasInteractionTerms)) {
       return("not_applicable")
     }
 
-    if (interactionClaim %in% c("mixed_or_unclear", "mentioned_but_unclear")) {
+    if (is.na(interactionMinPValue)) {
       return("unclear")
     }
 
-    strongestEvidence = min(interactionPValues)
+    if (interactionClaim == "unclear") {
+      return("unclear")
+    }
 
-    if (interactionClaim == "difference_claimed") {
-      if (strongestEvidence < interactionAlpha) {
+    if (interactionMinPValue <= interactionAlpha) {
+      if (interactionClaim %in% c("difference_claimed_strongly", "difference_claimed_cautiously")) {
         return("appropriate")
       }
 
+      if (interactionClaim %in% c("no_clear_difference", "not_mentioned")) {
+        return("too_weak")
+      }
+
+      return("unclear")
+    }
+
+    if (interactionClaim %in% c("difference_claimed_strongly", "difference_claimed_cautiously")) {
       return("too_strong")
     }
 
     if (interactionClaim %in% c("no_clear_difference", "not_mentioned")) {
-      if (strongestEvidence < interactionAlpha) {
-        return("too_weak")
-      }
-
       return("appropriate")
     }
 
@@ -301,9 +300,6 @@ buildWmfmRunRecord = function(
   equationsText = as.character(equationsText)
   errorMessage = as.character(errorMessage)
   interactionTerms = as.character(interactionTerms)
-  interactionTerms = interactionTerms[!is.na(interactionTerms) & nzchar(trimws(interactionTerms))]
-  interactionPValues = as.numeric(interactionPValues)
-  interactionPValues = interactionPValues[!is.na(interactionPValues)]
 
   if (length(explanationText) == 0 || is.na(explanationText)) {
     explanationText = NA_character_
@@ -315,6 +311,10 @@ buildWmfmRunRecord = function(
 
   if (length(errorMessage) == 0 || identical(errorMessage, "NA")) {
     errorMessage = NA_character_
+  }
+
+  if (length(interactionTerms) == 1 && is.na(interactionTerms)) {
+    interactionTerms = character(0)
   }
 
   normalizedExplanation = normalizeWmfmText(explanationText)
@@ -333,12 +333,29 @@ buildWmfmRunRecord = function(
 
   mentionsReferenceGroup = detectPatternLocal(
     explanationText,
-    "reference group|reference category|reference level|baseline|compared with the reference|relative to the reference"
+    paste(
+      "reference group",
+      "reference category",
+      "reference level",
+      "baseline",
+      "compared with the reference",
+      "relative to the reference",
+      sep = "|"
+    )
   )
 
   mentionsInteraction = detectPatternLocal(
     explanationText,
-    "interaction|effect differs by|depends on|varies by|different slope|different slopes|steeper|shallower|more pronounced|less pronounced"
+    paste(
+      "interaction",
+      "effect differs by",
+      "depends on",
+      "varies by",
+      "different slope",
+      "steeper",
+      "shallower",
+      sep = "|"
+    )
   )
 
   uncertaintyMentioned = detectPatternLocal(
@@ -375,9 +392,7 @@ buildWmfmRunRecord = function(
     explanationText,
     paste(
       "\\bprove(s|d)?\\b",
-      "\\bproves that\\b",
       "\\bdefinitely\\b",
-      "\\bclearly proves\\b",
       "\\bguarantee(s|d)?\\b",
       "\\bcauses?\\b",
       "\\bleads to\\b",
@@ -396,18 +411,18 @@ buildWmfmRunRecord = function(
         "\\bon average\\b",
         "\\bthere were\\b",
         "\\bthere are\\b",
-        "\\bhas\\b",
-        "\\bhave\\b",
         sep = "|"
       )
     )
 
   effectDirection = classifyEffectDirection(explanationText)
   effectScale = classifyEffectScale(explanationText)
-  interactionClaim = classifyInteractionClaim(explanationText, mentionsInteraction)
+  hasInteractionTerms = length(interactionTerms) > 0
+  interactionClaim = classifyInteractionClaim(explanationText, hasInteractionTerms)
   interactionInference = classifyInteractionInference(
     interactionClaim = interactionClaim,
-    interactionPValues = interactionPValues,
+    interactionMinPValue = interactionMinPValue,
+    hasInteractionTerms = hasInteractionTerms,
     interactionAlpha = interactionAlpha
   )
 
@@ -416,12 +431,6 @@ buildWmfmRunRecord = function(
     usesDescriptiveOnlyLanguage = usesDescriptiveOnlyLanguage,
     overclaimDetected = overclaimDetected
   )
-
-  interactionMinPValue = if (length(interactionPValues) > 0) {
-    min(interactionPValues)
-  } else {
-    NA_real_
-  }
 
   list(
     runId = runId,
@@ -445,10 +454,11 @@ buildWmfmRunRecord = function(
     overclaimDetected = overclaimDetected,
     effectDirection = effectDirection,
     effectScale = effectScale,
-    interactionTerms = if (length(interactionTerms) > 0) paste(interactionTerms, collapse = " | ") else NA_character_,
-    interactionMinPValue = interactionMinPValue,
     interactionClaim = interactionClaim,
     interactionInference = interactionInference,
+    interactionMinPValue = interactionMinPValue,
+    interactionTerms = paste(interactionTerms, collapse = " | "),
+    interactionAlpha = interactionAlpha,
     inferentialStyle = inferentialStyle,
     hasError = !is.na(errorMessage),
     errorMessage = errorMessage
