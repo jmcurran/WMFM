@@ -173,7 +173,8 @@ summariseWmfmRepeatedRuns = function(runsDf) {
   categoryNames = c(
     "effectDirection",
     "effectScale",
-    "interactionDirection",
+    "interactionClaim",
+    "interactionInference",
     "inferentialStyle"
   )
 

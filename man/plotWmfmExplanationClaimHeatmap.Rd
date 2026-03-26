@@ -12,12 +12,13 @@ plotWmfmExplanationClaimHeatmap(
   sortRows = TRUE,
   naLabel = "(missing)",
   main = "WMFM explanation claim heatmap",
-  xlab = "Claim",
+  xlab = "",
   ylab = "Run",
   cexAxis = 0.8,
-  cexLegend = 0.8,
-  mar = c(8, 8, 4, 12),
-  legendRightInset = -0.28
+  cexLegend = 0.85,
+  xLabelSrt = 30,
+  mar = c(10, 8, 4, 2),
+  legendWidth = 2.8
 )
 
 plotWmfmExplanationClaimHeatmap(
@@ -27,12 +28,13 @@ plotWmfmExplanationClaimHeatmap(
   sortRows = TRUE,
   naLabel = "(missing)",
   main = "WMFM explanation claim heatmap",
-  xlab = "Claim",
+  xlab = "",
   ylab = "Run",
   cexAxis = 0.8,
-  cexLegend = 0.8,
-  mar = c(8, 8, 4, 12),
-  legendRightInset = -0.28
+  cexLegend = 0.85,
+  xLabelSrt = 30,
+  mar = c(10, 8, 4, 2),
+  legendWidth = 2.8
 )
 }
 \arguments{
@@ -49,7 +51,7 @@ data.frame named \code{runsDf}.}
 
 \item{main}{Character. Plot title.}
 
-\item{xlab}{Character. X-axis label.}
+\item{xlab}{Character. X-axis label. Defaults to \code{""}.}
 
 \item{ylab}{Character. Y-axis label.}
 
@@ -57,7 +59,11 @@ data.frame named \code{runsDf}.}
 
 \item{cexLegend}{Numeric. Legend text expansion factor.}
 
-\item{mar}{Numeric vector of length 4 giving plot margins.}
+\item{xLabelSrt}{Numeric. Rotation angle in degrees for x-axis tick labels.}
+
+\item{mar}{Numeric vector of length 4 giving heatmap plot margins.}
+
+\item{legendWidth}{Numeric. Relative width allocated to the legend panel.}
 
 \item{legendRightInset}{Numeric. Right-side inset used for the legend.}
 }
@@ -106,4 +112,13 @@ The input may be either:
 
 If \code{claimColumns = NULL}, the function uses a default set of semantic claim
 columns when present.
+
+Colour assignment uses the named WMFM semantic colour map first. Any unseen
+values are assigned colours deterministically from a fallback qualitative
+palette so that the plot remains stable and readable.
+}
+\examples{
+\dontrun{
+plotWmfmExplanationClaimHeatmap(repeatedRuns)
+}
 }
