@@ -2661,8 +2661,8 @@ $$")
 
     # Talk to the LLM with a progress bar
     withProgress(message = "Talking to the language model...", value = 0, {
-      incProgress(0.3, detail = "Deriving equations...")
 
+      incProgress(0.05, detail = "Preparing equation request...")
       eq = tryCatch(
         lmEquations(m, chatProvider),
         error = function(e) {
@@ -2679,14 +2679,13 @@ $$")
         }
       )
 
-      # If equation generation failed, don't try for an explanation
+      incProgress(0.45, detail = "Equations received. Preparing explanation request...")
+
       if (is.null(eq)) {
         rv$modelEquations   = NULL
         rv$modelExplanation = NULL
         return(NULL)
       }
-
-      incProgress(0.7, detail = "Writing explanation...")
 
       expl = tryCatch(
         lmExplanation(m, chatProvider),
@@ -2704,12 +2703,13 @@ $$")
         }
       )
 
-      # It's fine if expl is NULL - we just skip showing an explanation
+      incProgress(0.40, detail = "Explanation received. Updating app...")
+
       rv$modelEquations   = eq
       rv$modelExplanation = expl
-      incProgress(1)
-    })
 
+      incProgress(0.10, detail = "Done.")
+    })
     # After fitting and LLM completion, switch to the "Fitted Model" tab
     updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
   })

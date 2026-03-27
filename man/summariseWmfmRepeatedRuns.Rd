@@ -11,16 +11,49 @@ summariseWmfmRepeatedRuns(runsDf)
 element.}
 }
 \value{
-A named list summary.
+A named list containing repeated-run variability and quality
+summaries.
 }
 \description{
-Produces a set-level summary of repeated explanation runs, with emphasis on
-variability in explanation text rather than equation generation.
+Produces a set-level summary of repeated WMFM explanation runs using the
+revised run-record schema. The summary is designed to cover two distinct
+questions:
 }
 \details{
-This function accepts either a data.frame of run records or a list returned
-by \code{runWMFMPackageExampleRepeated()} containing a \code{runsDf} element.
+\enumerate{
+\item How variable were the explanations across repeated runs?
+\item How stable and how strong was explanation quality across runs?
+}
+
+The function accepts either:
+\itemize{
+\item a data.frame of run records, or
+\item a list containing a \code{runsDf} element.
+}
 
 Exact duplication is assessed using \code{normalizedExplanation} when available,
 otherwise using trimmed explanation text.
+\subsection{Summary structure}{
+
+The returned list contains five top-level sections:
+
+\describe{
+\item{runCounts}{Counts of runs, valid explanations, unique explanations,
+and error rate.}
+\item{textVariability}{Duplicate rate, variability flag, and word/sentence
+summaries.}
+\item{claimSummaries}{Rates and distributions for extracted claim fields
+such as interaction mention, uncertainty mention, and inferential
+register.}
+\item{qualitySummaries}{Summaries of judged quality fields and aggregate
+dimension scores such as factual, inference, completeness, clarity,
+calibration, and overall score.}
+\item{qualityStability}{Cross-run stability indicators for key judged
+fields and score variability measures.}
+}
+
+The function is written to work primarily with the revised schema introduced
+in \code{buildWmfmRunRecord()}, but it also recognises several older field names
+where doing so is easy and low-risk.
+}
 }
