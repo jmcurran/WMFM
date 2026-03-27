@@ -123,11 +123,14 @@ appUI = function() {
         "Model",
         tagList(
           h4("Assign variables"),
-          uiOutput("var_buckets"),
-          uiOutput("interaction_ui"),
-          uiOutput(outputId = "modelHelpBtnUi"),
-          uiOutput("userDatasetContextUi"),
 
+          h5("Response"),
+          uiOutput("response_picker"),
+          uiOutput("response_explain"),
+
+          hr(),
+
+          uiOutput("var_buckets"),
 
           hr(),
 
@@ -159,17 +162,16 @@ appUI = function() {
 
           hr(),
 
+          uiOutput("interaction_ui"),
+          uiOutput(outputId = "modelHelpBtnUi"),
+          uiOutput("userDatasetContextUi"),
+
+          hr(),
+
           h4("Response, model type, and fitting"),
           fluidRow(
             column(
-              width = 4,
-              h5("Response"),
-              uiOutput("response_picker"),
-              uiOutput("response_explain")
-            ),
-
-            column(
-              width = 4,
+              width = 8,
               h5("Type"),
               radioButtons(
                 "model_type",

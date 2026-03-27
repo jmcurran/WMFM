@@ -1,4 +1,4 @@
-#' Build an LLM prompt for fitted-model equations
+#' Build an L prompt for fitted-model equations
 #'
 #' @param model A fitted \code{lm} or \code{glm} object.
 #'
@@ -94,7 +94,6 @@ The model has NO interaction terms (only main effects).
 
 VERY IMPORTANT: For every factor predictor, you MUST output one equation
 for the reference level and one equation for EACH non-reference level.
-
 Example (linear model): suppose the model is Exam ~ Attend + Test with coefficients
   (Intercept) = a,  AttendYes = b,  Test = c.
 This notation (a, b, c) is ONLY for your internal reasoning; do NOT use these letters
@@ -139,6 +138,8 @@ You are given output from an R regression model.
 {modelDesc}
 
 Your task is to write fitted-model equations for teaching.
+These must be presented ONLY in fully expanded, condition-specific form,
+NOT in abstract coefficient or dummy-variable form.
 
 Response: {response}
 
@@ -157,6 +158,11 @@ General rules:
   * write (11.69 - 1.56), NOT (11.69 + (-1.56))
   * write -3.15 * X, NOT + (-3.15) * X
 - Never show '+ (-number)' anywhere in the output.
+- Do NOT write the model in coefficient or dummy-variable form such as:
+    Y = b0 + b1 * X1 + b2 * FactorLevel
+- Do NOT include any equation containing indicator variables such as AttendYes,
+  GroupB, or similar dummy-variable names.
+- ONLY write fully expanded fitted equations for specific predictor conditions.
 - For linear regression (Gaussian, identity link):
   * Write equations like: {response} = b0 + b1 * X1 + ...
 - For binomial GLMs with logit link:
@@ -188,6 +194,8 @@ Formatting:
 - Write the equations in plain text, one equation per line (or with simple wrapped lines).
 - Label each equation with the relevant condition in brackets, like
   (when Attend = \"Yes\") or (when Colour = \"Blue\").
+- Do NOT include any general, combined, or coefficient-form equation.
+- The output must consist ONLY of condition-specific equations.
 - Do not mention standard errors, t-values, z-values, or p-values.
 - Return ONLY the equations, with no extra commentary.
 ")

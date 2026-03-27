@@ -2,7 +2,7 @@
 % Please edit documentation in R/lmToPrompt.R
 \name{lmToPrompt}
 \alias{lmToPrompt}
-\title{Build an LLM prompt for fitted-model equations}
+\title{Build an L prompt for fitted-model equations}
 \usage{
 lmToPrompt(model)
 }
@@ -13,6 +13,6 @@ lmToPrompt(model)
 A single character string to be sent to the chat model.
 }
 \description{
-Build an LLM prompt for fitted-model equations
+Build an L prompt for fitted-model equations
 }
 \keyword{internal}
