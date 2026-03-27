@@ -42,21 +42,6 @@ appUI = function() {
       .shiny-input-container { font-size: 90%; }
       .nav-tabs > li > a { font-size: 90%; }
       pre, code { font-size: 90%; }
-      /* Derived-variable row: align nicely */
-      .wmfmDerivedVar .shiny-input-container {
-        margin-bottom: 0 !important;
-      }
-
-      .wmfmDerivedVarRow {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      /* Keep the input to a sensible width so the button sits just after it */
-      .wmfmDerivedVarRow .wmfmDerivedVarInput {
-        flex: 0 1 620px;   /* change 620px if you want longer/shorter */
-      }
     ")),
 
     tabsetPanel(
@@ -122,60 +107,46 @@ appUI = function() {
       tabPanel(
         "Model",
         tagList(
-          h4("Assign variables"),
-
-          h5("Response"),
-          uiOutput("response_picker"),
-          uiOutput("response_explain"),
-
-          hr(),
-
-          uiOutput("var_buckets"),
-
-          hr(),
-
-          div(
-            class = "wmfmDerivedVar",
-            tags$h4("Create a derived variable"),
-
-            div(
-              class = "wmfmDerivedVarRow",
-              div(
-                class = "wmfmDerivedVarInput",
-                textInput(
-                  inputId = "derivedVarText",
-                  label = NULL,
-                  placeholder = "e.g. t = 1:nrow(data)    or    month = factor(rep(1:12, 12))",
-                  value = ""
-                )
-              ),
-              actionButton(
-                "addDerivedVarBtn",
-                "Add variable",
-                class = "btn btn-success"
-              )
+          h5("Select response variable"),
+          fluidRow(
+            column(
+              width = 8,
+              uiOutput("response_picker")
             ),
-
-            div(style = "margin-top: 6px;"),
-            textOutput("derivedVarMsg")
+            column(
+              width = 4,
+              div(
+                style = "margin-top: 25px;",
+                uiOutput(outputId = "modelHelpBtnUi")
+              )
+            )
           ),
-
-          hr(),
-
-          uiOutput("interaction_ui"),
-          uiOutput(outputId = "modelHelpBtnUi"),
+          uiOutput("response_explain"),
           uiOutput("userDatasetContextUi"),
 
           hr(),
 
-          h4("Response, model type, and fitting"),
+          h5("Assign explanatory/predictor variables"),
+          uiOutput("var_buckets"),
+          div(
+            actionButton(
+              "addDerivedVarBtn",
+              "Add derived variable",
+              class = "btn btn-success"
+            )
+          ),
+
+          uiOutput("interaction_ui"),
+
+          hr(),
+
+          h5("Model type and model fitting"),
           fluidRow(
             column(
               width = 8,
-              h5("Type"),
               radioButtons(
                 "model_type",
-                label = NULL,
+                label = "Model type:",
                 choices = c(
                   "Linear regression" = "lm",
                   "Logistic regression (binomial, logit)" = "logistic",
@@ -207,14 +178,14 @@ appUI = function() {
 
           hr(),
 
-          h4("Model formula"),
+          h5("Model formula"),
+          textInput("formula_text", label = NULL, value = "", width = "100%"),
+          verbatimTextOutput("formula_status"),
           checkboxInput(
             "expert_mode",
             "Use compact (expert) formula notation where possible",
             value = FALSE
-          ),
-          textInput("formula_text", label = NULL, value = "", width = "100%"),
-          verbatimTextOutput("formula_status")
+          )
         )
       ),
 

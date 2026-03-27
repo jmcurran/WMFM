@@ -10,25 +10,33 @@ getWmfmClaimColorMap()
 A named character vector of hexadecimal colours.
 }
 \description{
-Returns a named character vector of colours for common semantic claim values
-used in WMFM explanation heatmaps.
+Returns a named character vector of colours for common semantic values used
+in WMFM repeated-run heatmaps.
 }
 \details{
-The mapping is intentionally semantic rather than purely algorithmic. Common
-values such as \code{TRUE}, \code{FALSE}, \code{appropriate}, \code{inferential}, and \code{unclear}
-are assigned stable colours that are easier to interpret across plots.
+The mapping is designed for the revised repeated-run evaluation schema and is
+intended to work across three broad groups of fields:
 
-The palette is designed so that:
 \itemize{
-\item green/teal tones indicate presence or appropriate claims,
-\item blue indicates inferential style,
-\item orange/red indicates absence, weakness, or problematic claims,
-\item purple/magenta indicates ambiguity or mixed claims, and
-\item grey indicates missing or not-mentioned values.
+\item extracted claim fields such as \code{effectDirectionClaim} and
+\code{interactionSubstantiveClaim},
+\item judged quality fields such as \code{interactionEvidenceAppropriate} and
+\code{clarityAdequate}, and
+\item aggregate flags such as \code{fatalFlawDetected} and \code{overallPass}.
 }
 
-The returned vector can be used directly, or as a first-pass lookup before a
-fallback palette is used for previously unseen values.
+The palette is semantic rather than purely algorithmic. In broad terms:
+\itemize{
+\item green/teal tones indicate appropriate, adequate, present, or pass,
+\item blue tones indicate substantive interaction or inferential language,
+\item orange tones indicate weakness, partial adequacy, or caution,
+\item red tones indicate problematic, incorrect, or overstrong claims,
+\item purple/magenta tones indicate ambiguity or mixed content, and
+\item grey tones indicate absence, missingness, or not-applicable values.
+}
+
+The returned vector can be used directly as a lookup table before assigning
+deterministic fallback colours to previously unseen values.
 }
 \examples{
 getWmfmClaimColorMap()

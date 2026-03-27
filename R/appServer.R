@@ -84,7 +84,8 @@ appServer = function(input, output, session) {
     bucketFactors = character(0),
     bucketContinuous = character(0),
     isResetting = FALSE,
-    activeChatBackend = "ollama"
+    activeChatBackend = "ollama",
+    userDatasetContext = ""
   )
 
 
@@ -1587,6 +1588,7 @@ $$")
 
     rv$data             = df
     rv$allVars          = names(df)
+    rv$userDatasetContext = ""
     resetModelPage(resetResponse = TRUE)
   }
 
@@ -1616,6 +1618,7 @@ $$")
 
       rv$data             = df
       rv$allVars          = names(df)
+      rv$userDatasetContext = ""
       resetModelPage(resetResponse = TRUE)
 
       return(NULL)
@@ -1712,6 +1715,7 @@ $$")
 
     rv$data             = df
     rv$allVars          = names(df)
+    rv$userDatasetContext = ""
     resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading an s20x data set
@@ -1875,42 +1879,42 @@ $$")
 
   output$modelHelpBtnUi = renderUI({
     isReady = datasetLoaded()
+    source = input$data_source %||% "upload"
+
+    btnLabel = if (identical(source, "s20x")) {
+      "Data description"
+    } else {
+      "Provide data context"
+    }
 
     tags$button(
       id    = "modelHelpBtn",
       type  = "button",
       class = "btn btn-outline-secondary action-button",
       disabled = if (!isReady) "disabled" else NULL,
-      icon("circle-question"),
-      " Help"
+      btnLabel
     )
   })
 
   output$userDatasetContextUi = renderUI({
 
-    # Only show this UI when the user is uploading their own data
-    if (!identical(input$data_source %||% "", "upload")) {
+    if (!identical(input$data_source %||% "", "upload") || !datasetLoaded()) {
       return(NULL)
     }
 
-    isReady = datasetLoaded()
+    ctx = trimws(rv$userDatasetContext %||% "")
 
-    tagList(
-      hr(),
-      h5("Add context for the language model"),
-      helpText(
-        "Because you uploaded your own data, there is no built-in help page. ",
-        "Optionally describe the dataset, variables, units, and the question you are trying to answer. ",
-        "This will be included when generating the model explanation and contrast interpretations."
-      ),
-      tags$textarea(
-        id = "userDatasetContext",
-        class = "form-control",
-        rows = 5,
-        placeholder = "Example: Each row is a student. pass is 0/1. test is a score out of 20. attendance is days attended. We want to understand how test and attendance relate to passing.",
-        disabled = if (!isReady) "disabled" else NULL
+    if (nzchar(ctx)) {
+      tags$div(
+        style = "margin-top: 6px; color: #2b6a2b;",
+        "Data context has been provided."
       )
-    )
+    } else {
+      tags$div(
+        style = "margin-top: 6px; color: #666;",
+        "No data context has been provided yet."
+      )
+    }
   })
 
 
@@ -1960,24 +1964,63 @@ $$")
       return(NULL)
     }
 
-    titleText =
-      if (identical(input$data_source, "s20x") && !is.null(input$s20x_dataset) && nzchar(input$s20x_dataset)) {
-        paste0("Data help: ", input$s20x_dataset)
-      } else {
-        "Data help"
-      }
+    if (identical(input$data_source %||% "", "s20x")) {
+      titleText =
+        if (!is.null(input$s20x_dataset) && nzchar(input$s20x_dataset)) {
+          paste0("Data description: ", input$s20x_dataset)
+        } else {
+          "Data description"
+        }
+
+      showModal(
+        modalDialog(
+          title = titleText,
+          size = "l",
+          easyClose = TRUE,
+          uiOutput("modelHelpModalBody"),
+          footer = tagList(
+            modalButton("Close")
+          )
+        )
+      )
+
+      return(NULL)
+    }
 
     showModal(
       modalDialog(
-        title = titleText,
+        title = "Provide data context",
         size = "l",
         easyClose = TRUE,
-        uiOutput("modelHelpModalBody"),
+        tagList(
+          helpText(
+            "Describe the dataset in a way that will help the model explanation. For example, explain what the variables mean, how the data were collected, and what research question you want to answer."
+          ),
+          tags$textarea(
+            id = "userDatasetContextModal",
+            class = "form-control",
+            rows = 8,
+            placeholder = "Example: Each row is a student. pass is 0/1. test is a score out of 20. attendance is days attended. We want to understand how test and attendance relate to passing.",
+            rv$userDatasetContext %||% ""
+          )
+        ),
         footer = tagList(
-          modalButton("Close")
+          modalButton("Cancel"),
+          actionButton("saveUserDatasetContextBtn", "Save data context", class = "btn-primary")
         )
       )
     )
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$saveUserDatasetContextBtn, {
+    rv$userDatasetContext = trimws(input$userDatasetContextModal %||% "")
+    removeModal()
+
+    if (nzchar(rv$userDatasetContext)) {
+      showNotification("Data context saved.", type = "message", duration = 4)
+    } else {
+      showNotification("Data context cleared.", type = "message", duration = 4)
+    }
   }, ignoreInit = TRUE)
 
 
@@ -2112,40 +2155,72 @@ $$")
   # -------------------------------------------------------------------
   observeEvent(input$addDerivedVarBtn, {
     if (is.null(rv$data)) {
-      output$derivedVarMsg = renderText("Load a data set first.")
-      return()
+      showNotification("Load a data set first.", type = "message")
+      return(NULL)
     }
 
-    res = addDerivedVariableToData(rv$data, input$derivedVarText)
-    output$derivedVarMsg = renderText(res$msg)
-
-    if (isTRUE(res$ok)) {
-      rv$data = res$data
-
-      # Refresh variable list used by the buckets + response picker
-      rv$allVars = names(rv$data)
-
-      # Force buckets to re-render (without losing current placements)
-      rv$bucketGroupId = rv$bucketGroupId + 1L
-
-      # Keep the current response if possible, otherwise fall back to first column
-      currentResp = input$response_var
-      selectedResp = if (!is.null(currentResp) && nzchar(currentResp) && currentResp %in% rv$allVars) {
-        currentResp
-      } else {
-        rv$allVars[1]
-      }
-
-      updateSelectInput(
-        session,
-        "response_var",
-        choices  = rv$allVars,
-        selected = selectedResp
+    showModal(
+      modalDialog(
+        title = "Add derived variable",
+        easyClose = TRUE,
+        tagList(
+          helpText(
+            "Enter a single R expression of the form newVariable = ... . The new variable will be added to the dataset and will then be available in the response picker and variable buckets."
+          ),
+          textInput(
+            inputId = "derivedVarTextModal",
+            label = NULL,
+            placeholder = "e.g. t = 1:nrow(data)    or    month = factor(rep(1:12, 12))",
+            value = ""
+          )
+        ),
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton("confirmAddDerivedVarBtn", "Add variable", class = "btn-success")
+        )
       )
+    )
+  }, ignoreInit = TRUE)
 
-      updateTextInput(session, "derivedVarText", value = "")
+  observeEvent(input$confirmAddDerivedVarBtn, {
+    if (is.null(rv$data)) {
+      showNotification("Load a data set first.", type = "message")
+      return(NULL)
     }
-  })
+
+    res = addDerivedVariableToData(rv$data, input$derivedVarTextModal)
+
+    if (!isTRUE(res$ok)) {
+      showNotification(res$msg, type = "error", duration = 8)
+      return(NULL)
+    }
+
+    rv$data = res$data
+
+    # Refresh variable list used by the buckets + response picker
+    rv$allVars = names(rv$data)
+
+    # Force buckets to re-render (without losing current placements)
+    rv$bucketGroupId = rv$bucketGroupId + 1L
+
+    # Keep the current response if possible, otherwise fall back to first column
+    currentResp = input$response_var
+    selectedResp = if (!is.null(currentResp) && nzchar(currentResp) && currentResp %in% rv$allVars) {
+      currentResp
+    } else {
+      rv$allVars[1]
+    }
+
+    updateSelectInput(
+      session,
+      "response_var",
+      choices  = rv$allVars,
+      selected = selectedResp
+    )
+
+    removeModal()
+    showNotification(res$msg, type = "message", duration = 4)
+  }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
   # Response picker
@@ -2621,7 +2696,7 @@ $$")
     # -------------------------------------------------------------
     if (identical(input$data_source %||% "", "upload")) {
 
-      userCtxRaw = input$userDatasetContext %||% ""
+      userCtxRaw = rv$userDatasetContext %||% ""
       userCtxRaw = trimws(userCtxRaw)
 
       if (nzchar(userCtxRaw)) {
