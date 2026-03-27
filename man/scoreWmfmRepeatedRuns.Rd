@@ -2,67 +2,133 @@
 % Please edit documentation in R/scoreWmfmRepeatedRuns.R
 \name{scoreWmfmRepeatedRuns}
 \alias{scoreWmfmRepeatedRuns}
-\title{Score repeated WMFM explanation runs}
+\title{Score repeated WMFM explanation runs using a multidimensional rubric}
 \usage{
 scoreWmfmRepeatedRuns(
   runsDf,
   preferredMinWords = 80L,
   preferredMaxWords = 220L,
-  requireConfidenceInterval = TRUE,
-  preferPercentLanguage = TRUE,
-  requireReferenceGroup = FALSE,
-  requireInteraction = FALSE,
   penaliseDuplicates = TRUE,
-  duplicatePenalty = -1L
+  duplicatePenalty = 5,
+  fatalFlawCap = 40,
+  passThreshold = 65,
+  factualWeight = 0.3,
+  inferenceWeight = 0.25,
+  completenessWeight = 0.2,
+  clarityWeight = 0.15,
+  calibrationWeight = 0.1
 )
 }
 \arguments{
 \item{runsDf}{A data.frame of repeated-run outputs, or a list containing a
 \code{runsDf} element.}
 
-\item{preferredMinWords}{Integer. Lower bound for preferred explanation
-length in words.}
+\item{preferredMinWords}{Integer. Lower bound for a preferred explanation
+length band.}
 
-\item{preferredMaxWords}{Integer. Upper bound for preferred explanation
-length in words.}
+\item{preferredMaxWords}{Integer. Upper bound for a preferred explanation
+length band.}
 
-\item{requireConfidenceInterval}{Logical. If \code{TRUE}, runs are rewarded for
-mentioning confidence intervals.}
+\item{penaliseDuplicates}{Logical. Should exact duplicate explanations be
+penalised?}
 
-\item{preferPercentLanguage}{Logical. If \code{TRUE}, runs are rewarded for
-using percentage language.}
+\item{duplicatePenalty}{Numeric penalty subtracted from the final
+\code{overallScore} for exact duplicates.}
 
-\item{requireReferenceGroup}{Logical. If \code{TRUE}, runs are rewarded for
-reference-group language.}
+\item{fatalFlawCap}{Numeric in \code{0} to \code{100}. Maximum allowed overall score
+when \code{fatalFlawDetected} is \code{TRUE}.}
 
-\item{requireInteraction}{Logical. If \code{TRUE}, runs are rewarded for
-interaction language.}
+\item{passThreshold}{Numeric in \code{0} to \code{100}. Threshold used to create
+\code{overallPass}.}
 
-\item{penaliseDuplicates}{Logical. Should exact duplicate explanations
-receive a penalty?}
+\item{factualWeight}{Numeric weight for the factual dimension.}
 
-\item{duplicatePenalty}{Integer. Penalty applied to runs whose explanation
-appears more than once.}
+\item{inferenceWeight}{Numeric weight for the inference dimension.}
+
+\item{completenessWeight}{Numeric weight for the completeness dimension.}
+
+\item{clarityWeight}{Numeric weight for the clarity dimension.}
+
+\item{calibrationWeight}{Numeric weight for the calibration dimension.}
 }
 \value{
-A data.frame with additional scoring columns.
+A data.frame with judged quality columns and dimension scores added.
 }
 \description{
-Applies an explanation-focused scoring rubric to repeated WMFM runs.
+Applies a rubric-based scoring framework to repeated WMFM explanation runs.
+The scoring structure is designed to align with the revised
+\code{buildWmfmRunRecord()} schema by separating:
 }
 \details{
-This function accepts either a data.frame of run records or a list returned
-by \code{runWMFMPackageExampleRepeated()}.
+\enumerate{
+\item descriptive metadata about the run,
+\item extracted claim variables describing what the explanation said,
+\item judged quality variables describing whether those claims were
+appropriate, and
+\item aggregate dimension scores.
+}
 
-The score focuses on:
+The function accepts either:
 \itemize{
-\item whether an explanation was returned
-\item whether the run completed without error
-\item whether the explanation length is within a preferred range
-\item whether optional explanation features are present
-\item whether the explanation is an exact duplicate of another run
+\item a data.frame of run records, or
+\item a list containing a \code{runsDf} element.
+}
+\subsection{Rubric dimensions}{
+
+The function scores explanations across five dimensions:
+
+\describe{
+\item{Factual score}{How well the explanation states the main effect,
+effect scale, reference-group structure, and interaction substance.}
+\item{Inference score}{How appropriate the explanation's inferential
+language is, especially for uncertainty and interaction evidence.}
+\item{Completeness score}{Whether the explanation covers the important
+ingredients that the model structure suggests should be present.}
+\item{Clarity score}{Whether the explanation is reasonably clear, sensibly
+expressed, and not excessively short or long.}
+\item{Calibration score}{Whether the explanation avoids overclaiming and
+severe underclaiming.}
+}
+}
+
+\subsection{Judged fields created here}{
+
+This function fills or overwrites the following judged fields when they are
+missing or \code{NA}:
+
+\describe{
+\item{effectDirectionCorrect}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{effectScaleAppropriate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{referenceGroupHandledCorrectly}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{interactionCoverageAdequate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{interactionSubstantiveCorrect}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{uncertaintyHandlingAppropriate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{inferentialRegisterAppropriate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{mainEffectCoverageAdequate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{referenceGroupCoverageAdequate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{clarityAdequate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{numericExpressionAdequate}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{comparisonStructureClear}{Integer in \code{0}, \code{1}, \code{2}.}
+\item{fatalFlawDetected}{Logical.}
+}
+}
+
+\subsection{Aggregate fields created here}{
+
+\describe{
+\item{factualScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{inferenceScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{completenessScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{clarityScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{calibrationScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{overallScore}{Numeric weighted score on a \code{0} to \code{100} scale.}
+\item{overallPass}{Logical.}
 }
 
 Duplicate detection is based on \code{normalizedExplanation} when available,
 otherwise on trimmed explanation text.
+
+Fatal flaws do not force the score to zero, but they cap the final overall
+score using \code{fatalFlawCap}.
+}
 }

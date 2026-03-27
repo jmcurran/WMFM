@@ -2,7 +2,7 @@
 % Please edit documentation in R/buildWmfmRunRecord.R
 \name{buildWmfmRunRecord}
 \alias{buildWmfmRunRecord}
-\title{Build a single run record}
+\title{Build a single WMFM repeated-run record}
 \usage{
 buildWmfmRunRecord(
   runId,
@@ -19,45 +19,154 @@ buildWmfmRunRecord(
 )
 }
 \arguments{
-\item{runId}{Integer.}
+\item{runId}{Integer run identifier.}
 
-\item{exampleName}{Character.}
+\item{exampleName}{Character example identifier.}
 
-\item{package}{Character.}
+\item{package}{Character package name.}
 
-\item{modelType}{Character.}
+\item{modelType}{Character model class.}
 
-\item{formula}{Character.}
+\item{formula}{Character model formula.}
 
-\item{equationsText}{Character.}
+\item{equationsText}{Character fitted-equation text.}
 
-\item{explanationText}{Character.}
+\item{explanationText}{Character explanation text.}
 
-\item{errorMessage}{Character.}
+\item{errorMessage}{Character error message, or \code{NA}.}
 
 \item{interactionTerms}{Character vector of interaction-term names from the
 fitted model.}
 
-\item{interactionMinPValue}{Numeric. Minimum p-value across fitted
-interaction terms, or \code{NA} if no interaction terms are present or no
-p-value could be extracted.}
+\item{interactionMinPValue}{Numeric minimum p-value across fitted interaction
+terms, or \code{NA} if no interaction terms are present or no p-value could be
+extracted.}
 
-\item{interactionAlpha}{Numeric. Threshold used to judge whether the
-explanation's interaction interpretation is appropriate.}
+\item{interactionAlpha}{Numeric threshold used to judge whether the
+explanation's interaction-evidence wording is appropriate.}
 }
 \value{
-Named list.
+Named list containing one structured run record.
 }
 \description{
-Creates a structured record for one repeated WMFM run, including raw text,
-simple text summaries, heuristic semantic-claim fields, and interaction
-evidence fields derived from the fitted model.
+Creates a structured record for one repeated WMFM run using a schema that
+separates:
+\enumerate{
+\item metadata and model context,
+\item raw explanation text and text summaries,
+\item extracted semantic claims, and
+\item judged quality fields and aggregate score placeholders.
+}
 }
 \details{
-The interaction fields separate:
+This design is intended to keep a clear distinction between:
 \itemize{
-\item what the explanation claims about the interaction, and
-\item whether that claim is appropriate relative to the interaction-term
-p-value.
+\item what the explanation said, and
+\item whether those claims were appropriate or correct.
+}
+
+In this file, most claim fields are extracted directly from the explanation
+text using simple heuristics. Only one judged field is computed here:
+\code{interactionEvidenceAppropriate}, because that judgment can be made from the
+extracted interaction claim together with the fitted model's interaction-term
+evidence (\code{interactionMinPValue}, \code{interactionAlpha}, and whether interaction
+terms are present).
+
+The remaining judged fields and aggregate scores are initialised as \code{NA} and
+are intended to be populated later by downstream scoring functions such as
+\code{scoreWmfmRepeatedRuns()}.
+\subsection{Output schema}{
+
+The returned named list contains the following groups of fields.
+\subsection{Metadata and model context}{
+
+\describe{
+\item{runId}{Integer run identifier.}
+\item{timestamp}{Character timestamp created at record build time.}
+\item{exampleName}{Example identifier.}
+\item{package}{Package name.}
+\item{modelType}{High-level model class.}
+\item{modelFamily}{Optional model family. Initialised to \code{NA}.}
+\item{linkFunction}{Optional link function. Initialised to \code{NA}.}
+\item{formula}{Model formula as character.}
+\item{equationsText}{Fitted-equation text.}
+\item{interactionTerms}{Pipe-separated interaction-term names.}
+\item{hasInteractionTerms}{Logical. Whether the fitted model includes interactions.}
+\item{nInteractionTerms}{Integer count of interaction terms.}
+\item{interactionMinPValue}{Minimum interaction-term p-value, or \code{NA}.}
+\item{interactionAlpha}{Threshold used when judging interaction evidence.}
+\item{hasError}{Logical. Whether an error was recorded for the run.}
+\item{errorMessage}{Run error message, or \code{NA}.}
+}
+}
+
+\subsection{Raw explanation text and summaries}{
+
+\describe{
+\item{explanationText}{Raw explanation text.}
+\item{normalizedExplanation}{Normalised explanation used for duplicate detection.}
+\item{explanationPresent}{Logical. Whether a non-empty explanation is present.}
+\item{wordCount}{Approximate word count.}
+\item{sentenceCount}{Approximate sentence count.}
+}
+}
+
+\subsection{Extracted claim variables}{
+
+\describe{
+\item{ciMention}{Logical. Whether a confidence or credible interval is mentioned.}
+\item{percentLanguageMention}{Logical. Whether percent language is used.}
+\item{referenceGroupMention}{Logical. Whether reference/baseline framing is mentioned.}
+\item{interactionMention}{Logical. Whether interaction or differential-pattern language is mentioned.}
+\item{uncertaintyMention}{Logical. Whether uncertainty or evidential caution is mentioned.}
+\item{usesInferentialLanguage}{Logical. Whether inferential wording is present.}
+\item{usesDescriptiveOnlyLanguage}{Logical. Whether wording is descriptive only.}
+\item{overclaimDetected}{Logical. Whether overstrong language is detected.}
+\item{underclaimDetected}{Logical. Whether unusually weak language is detected.}
+\item{conditionalLanguageMention}{Logical. Whether conditional wording such as "depends on" or subgroup-conditioned interpretation is present.}
+\item{comparisonLanguageMention}{Logical. Whether explicit comparison wording is present.}
+\item{outcomeMention}{Logical. Placeholder for whether the response is clearly named. Initialised conservatively.}
+\item{predictorMention}{Logical. Placeholder for whether the focal predictor is clearly named. Initialised conservatively.}
+\item{effectDirectionClaim}{Character. One of \code{increase}, \code{decrease}, \code{mixed_or_both}, \code{not_stated}.}
+\item{effectScaleClaim}{Character. One of \code{additive}, \code{multiplicative}, \code{probability_or_odds}, \code{mixed_or_unclear}, \code{not_stated}.}
+\item{interactionSubstantiveClaim}{Character. One of \code{difference_claimed_strongly}, \code{difference_claimed_cautiously}, \code{no_clear_difference}, \code{not_mentioned}, \code{unclear}, \code{not_applicable}.}
+\item{inferentialRegister}{Character. One of \code{inferential}, \code{descriptive_only}, \code{overclaiming}, \code{unclear}.}
+\item{uncertaintyTypeClaim}{Character. One of \code{none}, \code{generic_uncertainty}, \code{confidence_interval}, \code{mixed}, \code{unclear}.}
+}
+}
+
+\subsection{Judged quality fields created or reserved here}{
+
+\describe{
+\item{interactionEvidenceAppropriate}{Character. One of \code{appropriate}, \code{too_strong}, \code{too_weak}, \code{unclear}, \code{not_applicable}.}
+\item{effectDirectionCorrect}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{effectScaleAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{referenceGroupHandledCorrectly}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{interactionCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{interactionSubstantiveCorrect}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{uncertaintyHandlingAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{inferentialRegisterAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{mainEffectCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{referenceGroupCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{clarityAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{numericExpressionAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{comparisonStructureClear}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
+\item{fatalFlawDetected}{Logical placeholder.}
+}
+}
+
+\subsection{Aggregate score placeholders}{
+
+\describe{
+\item{factualScore}{Numeric placeholder.}
+\item{inferenceScore}{Numeric placeholder.}
+\item{completenessScore}{Numeric placeholder.}
+\item{clarityScore}{Numeric placeholder.}
+\item{calibrationScore}{Numeric placeholder.}
+\item{overallScore}{Numeric placeholder.}
+\item{overallPass}{Logical placeholder.}
+}
+}
+
 }
 }
