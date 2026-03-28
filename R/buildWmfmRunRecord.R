@@ -574,7 +574,7 @@ buildWmfmRunRecord = function(
       "\\bguarantee(s|d)?\\b",
       "\\bcauses?\\b",
       "\\bleads to\\b",
-      "\\bresults in\\b",
+      "(?<!\\b(final\\s)?exam(ination)?\\s)(?<!\\btest\\s)(?<!\\bscore\\s)\\bresults in\\b",
       sep = "|"
     )
   )
