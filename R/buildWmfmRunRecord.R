@@ -557,11 +557,14 @@ buildWmfmRunRecord = function(
     explanationText,
     paste(
       "\\bevidence\\b",
-      "\\bsuggest(s|ed)?\\b",
-      "\\bindicate(s|d)?\\b",
-      "\\bconsistent with the data\\b",
-      "\\bestimate(d)?\\b",
+      "\\bsuggest(ing|s|ed)?\\b",
+      "\\bindicate(s|d|ing)?\\b",
+      "\\b(the data (are )?)?consistent with\\b",
+      "\\bestimate(d|s|ing)?\\b",
       "\\bconfidence interval\\b",
+      "\\bassociated with\\b",
+      "\\blinked to\\b",
+      "\\brelated to\\b",
       sep = "|"
     )
   )
@@ -579,8 +582,7 @@ buildWmfmRunRecord = function(
     )
   )
 
-  underclaimDetected = detectPatternLocal(
-    explanationText,
+  weakMatches = gregexpr(
     paste(
       "\\bmay\\b",
       "\\bmight\\b",
@@ -589,8 +591,19 @@ buildWmfmRunRecord = function(
       "\\bperhaps\\b",
       "\\bappears? to\\b",
       sep = "|"
-    )
-  ) && !usesInferentialLanguage
+    ),
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )[[1]]
+
+  weakCount = if (length(weakMatches) == 0 || weakMatches[1] == -1) {
+    0L
+  } else {
+    length(weakMatches)
+  }
+
+  underclaimDetected = weakCount >= 2L && !usesInferentialLanguage
 
   usesDescriptiveOnlyLanguage =
     !usesInferentialLanguage &&
