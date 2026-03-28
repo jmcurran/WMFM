@@ -17,6 +17,12 @@
 #' score columns are converted to character labels before plotting, so scores are
 #' usually best shown only when they take a small set of rounded values.
 #'
+#' Column order can optionally be changed using a Gini-style impurity measure.
+#' This ranks fields by how mixed their observed values are across runs.
+#' Low impurity means a field is very pure or stable across runs, while high
+#' impurity means the field is more heterogeneous. This is an ordering device,
+#' not a quality score.
+#'
 #' @param runsDf A data.frame of run records, or a list containing a data.frame
 #'   named `runsDf`.
 #' @param fieldColumns Optional character vector of columns to plot. When this
@@ -25,6 +31,14 @@
 #'   `"auto"`.
 #' @param runIdColumn Character. Column to use for row labels.
 #' @param sortRows Logical. Should rows be sorted by field pattern?
+#' @param sortColumns Character. One of `"schema"`, `"purity"`, or `"none"`.
+#'   `"schema"` preserves the supplied or detected field order. `"purity"`
+#'   reorders columns from lowest to highest impurity.
+#' @param purityMetric Character. One of `"normalized_gini"` or `"gini"`.
+#'   `"normalized_gini"` rescales impurity by the largest possible impurity for
+#'   the observed number of categories in that field.
+#' @param includeMissingInPurity Logical. Should missing values count as a
+#'   category when calculating column purity?
 #' @param naLabel Character. Label used for missing values.
 #' @param main Character. Plot title.
 #' @param xlab Character. X-axis label.
@@ -39,11 +53,13 @@
 #' @param includeBreaksInLegend Logical. Should the legend insert blank spacer
 #'   rows between semantic groups?
 #'
-#' @return Invisibly returns a list describing the plotted data.
+#' @return Invisibly returns a list describing the plotted data, including
+#'   column-order information and purity statistics.
 #' @examples
 #' \dontrun{
 #' plotWmfmExplanationClaimHeatmap(repeatedRuns)
 #' plotWmfmExplanationClaimHeatmap(repeatedRuns, plotType = "judged")
+#' plotWmfmExplanationClaimHeatmap(repeatedRuns, sortColumns = "purity")
 #' }
 #' @export
 plotWmfmExplanationClaimHeatmap = function(
@@ -52,6 +68,9 @@ plotWmfmExplanationClaimHeatmap = function(
     plotType = c("claims", "judged", "scores", "auto"),
     runIdColumn = "runId",
     sortRows = TRUE,
+    sortColumns = c("schema", "purity", "none"),
+    purityMetric = c("normalized_gini", "gini"),
+    includeMissingInPurity = TRUE,
     naLabel = "(missing)",
     main = NULL,
     xlab = "",
@@ -202,6 +221,77 @@ plotWmfmExplanationClaimHeatmap = function(
     x[is.na(x)] = naLabel
     x[trimws(x) == ""] = naLabel
     x
+  }
+
+  calculateGiniImpurity = function(x, naLabel, includeMissing = TRUE, metric = "normalized_gini") {
+    x = as.character(x)
+
+    if (isTRUE(includeMissing)) {
+      x[is.na(x) | trimws(x) == ""] = naLabel
+    } else {
+      keepIdx = !(is.na(x) | trimws(x) == "")
+      x = x[keepIdx]
+    }
+
+    if (length(x) == 0) {
+      return(list(
+        impurity = NA_real_,
+        rawGini = NA_real_,
+        nCategories = 0L,
+        modalValue = NA_character_,
+        modalProportion = NA_real_
+      ))
+    }
+
+    counts = table(x)
+    probs = as.numeric(counts) / sum(counts)
+    rawGini = 1 - sum(probs^2)
+    nCategories = length(counts)
+    modalValue = names(counts)[which.max(counts)]
+    modalProportion = max(probs)
+
+    if (identical(metric, "normalized_gini")) {
+      maxGini = 1 - (1 / nCategories)
+
+      if (nCategories <= 1 || maxGini <= 0) {
+        impurity = 0
+      } else {
+        impurity = rawGini / maxGini
+      }
+    } else {
+      impurity = rawGini
+    }
+
+    list(
+      impurity = as.numeric(impurity),
+      rawGini = as.numeric(rawGini),
+      nCategories = as.integer(nCategories),
+      modalValue = as.character(modalValue),
+      modalProportion = as.numeric(modalProportion)
+    )
+  }
+
+  buildColumnPurityDf = function(fieldMatrix, naLabel, includeMissing, metric) {
+    pieces = lapply(seq_len(ncol(fieldMatrix)), function(j) {
+      stats = calculateGiniImpurity(
+        x = fieldMatrix[, j],
+        naLabel = naLabel,
+        includeMissing = includeMissing,
+        metric = metric
+      )
+
+      data.frame(
+        field = colnames(fieldMatrix)[j],
+        impurity = stats$impurity,
+        rawGini = stats$rawGini,
+        nCategories = stats$nCategories,
+        modalValue = stats$modalValue,
+        modalProportion = stats$modalProportion,
+        stringsAsFactors = FALSE
+      )
+    })
+
+    do.call(rbind, pieces)
   }
 
   buildFallbackPaletteBank = function() {
@@ -415,6 +505,8 @@ plotWmfmExplanationClaimHeatmap = function(
   }
 
   plotType = match.arg(plotType)
+  sortColumns = match.arg(sortColumns)
+  purityMetric = match.arg(purityMetric)
   runsDf = extractRunsDf(runsDf)
 
   if (is.null(fieldColumns)) {
@@ -442,6 +534,29 @@ plotWmfmExplanationClaimHeatmap = function(
   fieldMatrix = do.call(cbind, lapply(plotDf, coerceFieldColumn, naLabel = naLabel))
   fieldMatrix = as.matrix(fieldMatrix)
   colnames(fieldMatrix) = fieldColumns
+
+  columnPurity = buildColumnPurityDf(
+    fieldMatrix = fieldMatrix,
+    naLabel = naLabel,
+    includeMissing = includeMissingInPurity,
+    metric = purityMetric
+  )
+
+  originalFieldColumns = colnames(fieldMatrix)
+
+  if (identical(sortColumns, "purity") && ncol(fieldMatrix) > 1) {
+    columnOrder = order(
+      columnPurity$impurity,
+      columnPurity$modalValue,
+      columnPurity$field,
+      na.last = TRUE
+    )
+    fieldMatrix = fieldMatrix[, columnOrder, drop = FALSE]
+    columnPurity = columnPurity[match(colnames(fieldMatrix), columnPurity$field), , drop = FALSE]
+  } else {
+    columnOrder = seq_len(ncol(fieldMatrix))
+    columnPurity = columnPurity[match(colnames(fieldMatrix), columnPurity$field), , drop = FALSE]
+  }
 
   if (runIdColumn %in% names(runsDf)) {
     rowLabels = as.character(runsDf[[runIdColumn]])
@@ -548,7 +663,13 @@ plotWmfmExplanationClaimHeatmap = function(
     colourMatrix = colourMatrix,
     colourKey = colourKey,
     rowOrder = rowOrder,
-    fieldColumns = fieldColumns,
-    plotType = plotType
+    columnOrder = columnOrder,
+    fieldColumns = colnames(fieldMatrix),
+    originalFieldColumns = originalFieldColumns,
+    columnPurity = columnPurity,
+    plotType = plotType,
+    sortColumns = sortColumns,
+    purityMetric = purityMetric,
+    includeMissingInPurity = includeMissingInPurity
   ))
 }

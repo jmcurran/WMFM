@@ -18,7 +18,8 @@
 #' @param plotType Character. One of `"claims"`, `"judged"`, `"scores"`, or
 #'   `"auto"`.
 #' @param ... Additional arguments passed to
-#'   `plotWmfmExplanationClaimHeatmap()`.
+#'   `plotWmfmExplanationClaimHeatmap()`, including `sortColumns = "purity"`
+#'   when you want columns ordered by purity.
 #'
 #' @return Invisibly returns the object returned by
 #'   `plotWmfmExplanationClaimHeatmap()`.
@@ -26,6 +27,7 @@
 #' \dontrun{
 #' plot(repeatedRuns)
 #' plot(repeatedRuns, plotType = "judged")
+#' plot(repeatedRuns, sortColumns = "purity")
 #' }
 #' @export
 plot.wmfmRepeatedExplanationRuns = function(

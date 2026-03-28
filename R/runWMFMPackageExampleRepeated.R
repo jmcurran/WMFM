@@ -170,10 +170,13 @@ runWMFMPackageExampleRepeated = function(
     message("Finished. Total elapsed time: ", formatWmfmElapsedTime(totalSeconds))
   }
 
-  list(
+  out = list(
     runsDf = runsDf,
     summary = summary,
     spec = spec,
     dataContext = dataContext
   )
+
+  class(out) = c("wmfmRepeatedExplanationRuns", class(out))
+  out
 }

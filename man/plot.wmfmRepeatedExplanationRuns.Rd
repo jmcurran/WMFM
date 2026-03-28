@@ -20,7 +20,8 @@
 \code{"auto"}.}
 
 \item{...}{Additional arguments passed to
-\code{plotWmfmExplanationClaimHeatmap()}.}
+\code{plotWmfmExplanationClaimHeatmap()}, including \code{sortColumns = "purity"}
+when you want columns ordered by purity.}
 }
 \value{
 Invisibly returns the object returned by
@@ -45,5 +46,6 @@ a \code{runsDf} element, or
 \dontrun{
 plot(repeatedRuns)
 plot(repeatedRuns, plotType = "judged")
+plot(repeatedRuns, sortColumns = "purity")
 }
 }

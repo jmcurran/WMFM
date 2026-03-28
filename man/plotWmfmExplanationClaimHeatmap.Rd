@@ -10,6 +10,9 @@ plotWmfmExplanationClaimHeatmap(
   plotType = c("claims", "judged", "scores", "auto"),
   runIdColumn = "runId",
   sortRows = TRUE,
+  sortColumns = c("schema", "purity", "none"),
+  purityMetric = c("normalized_gini", "gini"),
+  includeMissingInPurity = TRUE,
   naLabel = "(missing)",
   main = NULL,
   xlab = "",
@@ -37,6 +40,17 @@ is supplied it takes precedence over \code{plotType}.}
 
 \item{sortRows}{Logical. Should rows be sorted by field pattern?}
 
+\item{sortColumns}{Character. One of \code{"schema"}, \code{"purity"}, or \code{"none"}.
+\code{"schema"} preserves the supplied or detected field order. \code{"purity"}
+reorders columns from lowest to highest impurity.}
+
+\item{purityMetric}{Character. One of \code{"normalized_gini"} or \code{"gini"}.
+\code{"normalized_gini"} rescales impurity by the largest possible impurity for
+the observed number of categories in that field.}
+
+\item{includeMissingInPurity}{Logical. Should missing values count as a
+category when calculating column purity?}
+
 \item{naLabel}{Character. Label used for missing values.}
 
 \item{main}{Character. Plot title.}
@@ -62,7 +76,8 @@ labels?}
 rows between semantic groups?}
 }
 \value{
-Invisibly returns a list describing the plotted data.
+Invisibly returns a list describing the plotted data, including
+column-order information and purity statistics.
 }
 \description{
 Draws a run-by-field heatmap for repeated WMFM explanation runs. The function
@@ -82,10 +97,17 @@ the revised schema first and older field names as fallbacks where possible.
 Heatmaps are most useful for categorical or low-cardinality fields. Numeric
 score columns are converted to character labels before plotting, so scores are
 usually best shown only when they take a small set of rounded values.
+
+Column order can optionally be changed using a Gini-style impurity measure.
+This ranks fields by how mixed their observed values are across runs.
+Low impurity means a field is very pure or stable across runs, while high
+impurity means the field is more heterogeneous. This is an ordering device,
+not a quality score.
 }
 \examples{
 \dontrun{
 plotWmfmExplanationClaimHeatmap(repeatedRuns)
 plotWmfmExplanationClaimHeatmap(repeatedRuns, plotType = "judged")
+plotWmfmExplanationClaimHeatmap(repeatedRuns, sortColumns = "purity")
 }
 }
