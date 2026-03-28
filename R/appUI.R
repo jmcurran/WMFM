@@ -42,6 +42,38 @@ appUI = function() {
       .shiny-input-container { font-size: 90%; }
       .nav-tabs > li > a { font-size: 90%; }
       pre, code { font-size: 90%; }
+
+      h4 {
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
+
+      h5 {
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      hr {
+        margin: 8px 0;
+      }
+
+      .hr-tight {
+        margin: 6px 0;
+      }
+
+      .form-group {
+        margin-bottom: 8px;
+      }
+
+      .radio {
+        margin-top: 3px;
+        margin-bottom: 3px;
+      }
+
+      .shiny-html-output,
+      .shiny-text-output {
+        margin-bottom: 6px;
+      }
     ")),
 
     tabsetPanel(
@@ -116,7 +148,7 @@ appUI = function() {
             column(
               width = 4,
               div(
-                style = "margin-top: 25px;",
+                style = "margin-top: 18px;",
                 uiOutput(outputId = "modelHelpBtnUi")
               )
             )
@@ -124,7 +156,7 @@ appUI = function() {
           uiOutput("response_explain"),
           uiOutput("userDatasetContextUi"),
 
-          hr(),
+          tags$hr(class = "hr-tight"),
 
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
@@ -138,7 +170,7 @@ appUI = function() {
 
           uiOutput("interaction_ui"),
 
-          hr(),
+          tags$hr(class = "hr-tight"),
 
           h5("Model type and model fitting"),
           fluidRow(
@@ -176,7 +208,7 @@ appUI = function() {
             )
           ),
 
-          hr(),
+          tags$hr(class = "hr-tight"),
 
           h5("Model formula"),
           textInput("formula_text", label = NULL, value = "", width = "100%"),
