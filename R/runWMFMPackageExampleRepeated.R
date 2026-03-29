@@ -27,6 +27,14 @@
 #'   Defaults to `FALSE` so repeated runs query the language model each time.
 #' @param interactionAlpha Numeric. Threshold used when judging whether an
 #'   explanation interpreted interaction evidence appropriately.
+#' @param scoringMethod Character. One of `"deterministic"`, `"llm"`, or
+#'   `"none"`.
+#' @param scoringChat Optional chat provider object used when
+#'   `scoringMethod = "llm"`.
+#' @param useScoringCache Logical. Passed to `scoreWmfmRunWithLlm()` when
+#'   `scoringMethod = "llm"`.
+#' @param verboseScoring Logical. Passed to `scoreWmfmRunWithLlm()` when
+#'   `scoringMethod = "llm"`.
 #' @param ... Additional arguments passed to `runWMFMModelDebug()`.
 #'
 #' @return A list with elements:
@@ -35,6 +43,7 @@
 #'   \item{summary}{Summary statistics}
 #'   \item{spec}{Specification}
 #'   \item{dataContext}{Context text}
+#'   \item{primaryScoringMethod}{Scoring method used during the initial run}
 #' }
 #' @export
 runWMFMPackageExampleRepeated = function(
@@ -46,10 +55,15 @@ runWMFMPackageExampleRepeated = function(
     showProgress = TRUE,
     useExplanationCache = FALSE,
     interactionAlpha = 0.05,
+    scoringMethod = c("deterministic", "llm", "none"),
+    scoringChat = NULL,
+    useScoringCache = FALSE,
+    verboseScoring = FALSE,
     ...
 ) {
 
   nRuns = as.integer(nRuns)
+  scoringMethod = match.arg(scoringMethod)
 
   if (length(nRuns) != 1 || is.na(nRuns) || nRuns < 1) {
     stop("`nRuns` must be a single positive integer.", call. = FALSE)
@@ -69,6 +83,21 @@ runWMFMPackageExampleRepeated = function(
 
   if (!is.numeric(interactionAlpha) || length(interactionAlpha) != 1 || is.na(interactionAlpha) || interactionAlpha <= 0 || interactionAlpha >= 1) {
     stop("`interactionAlpha` must be a single number strictly between 0 and 1.", call. = FALSE)
+  }
+
+  if (!is.logical(useScoringCache) || length(useScoringCache) != 1 || is.na(useScoringCache)) {
+    stop("`useScoringCache` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(verboseScoring) || length(verboseScoring) != 1 || is.na(verboseScoring)) {
+    stop("`verboseScoring` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (identical(scoringMethod, "llm") && is.null(scoringChat)) {
+    stop(
+      "`scoringChat` must be supplied when `scoringMethod = \"llm\"`.",
+      call. = FALSE
+    )
   }
 
   basePath = system.file("extdata", "examples", name, package = package)
@@ -122,7 +151,7 @@ runWMFMPackageExampleRepeated = function(
       }
     )
 
-    runResults[[i]] = buildWmfmRunRecord(
+    runRecord = buildWmfmRunRecord(
       runId = i,
       exampleName = name,
       package = package,
@@ -135,6 +164,16 @@ runWMFMPackageExampleRepeated = function(
       interactionMinPValue = result$interactionMinPValue %||% NA_real_,
       interactionAlpha = interactionAlpha
     )
+
+    runRecord = scoreWmfmRunRecordByMethod(
+      runRecord = runRecord,
+      scoringMethod = scoringMethod,
+      scoringChat = scoringChat,
+      useScoringCache = useScoringCache,
+      verbose = verboseScoring
+    )
+
+    runResults[[i]] = runRecord
 
     if (pauseSeconds > 0) {
       Sys.sleep(pauseSeconds)
@@ -163,7 +202,12 @@ runWMFMPackageExampleRepeated = function(
   runsDf = do.call(rbind, lapply(runResults, as.data.frame))
   rownames(runsDf) = NULL
 
-  summary = summariseWmfmRepeatedRuns(runsDf)
+  summary =
+    if (exists("summariseWmfmRepeatedRuns", mode = "function")) {
+      summariseWmfmRepeatedRuns(runsDf)
+    } else {
+      NULL
+    }
 
   if (showProgress) {
     totalSeconds = as.numeric(difftime(Sys.time(), overallStartTime, units = "secs"))
@@ -174,7 +218,8 @@ runWMFMPackageExampleRepeated = function(
     runsDf = runsDf,
     summary = summary,
     spec = spec,
-    dataContext = dataContext
+    dataContext = dataContext,
+    primaryScoringMethod = scoringMethod
   )
 
   class(out) = c("wmfmRepeatedExplanationRuns", class(out))
