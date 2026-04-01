@@ -1,13 +1,14 @@
 #' Create a safe chat provider for WMFM
 #'
 #' Constructs a chat provider used by WMFM, choosing between an Ollama-based
-#' provider and an Anthropic Claude-based provider.
+#' provider, an Ollama-hosted Qwen provider, and an Anthropic Claude-based
+#' provider.
 #'
 #' The backend is selected via the `backend` argument, or if omitted, from the
 #' `wmfm.chat_backend` option.
 #'
 #' @param backend Character scalar giving the backend to use. Supported values
-#'   are `"ollama"` and `"claude"`.
+#'   are `"ollama"`, `"qwen"`, and `"claude"`.
 #'
 #' @return
 #' A chat provider object created by `ellmer::chat_ollama()` or
@@ -16,8 +17,9 @@
 #'
 #' @examples
 #' \dontrun{
-#'   provider <- getChatProvider("ollama")
-#'   providerClaude <- getChatProvider("claude")
+#'   provider = getChatProvider("ollama")
+#'   providerQwen = getChatProvider("qwen")
+#'   providerClaude = getChatProvider("claude")
 #' }
 #'
 #' @keywords internal
@@ -36,10 +38,11 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     )
   }
 
-  if (!backend %in% c("ollama", "claude")) {
+  if (!backend %in% c("ollama", "qwen", "claude")) {
     return(makeDummyProvider(
       paste0(
-        "Unsupported chat backend: ", backend, ". Supported backends are 'ollama' and 'claude'."
+        "Unsupported chat backend: ", backend,
+        ". Supported backends are 'ollama', 'qwen', and 'claude'."
       )
     ))
   }
@@ -92,7 +95,7 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
         "  - the Anthropic credentials are missing or invalid, or",
         "  - the server cannot reach the Anthropic API.",
         "",
-        "Check ANTHROPIC_API_KEY and network access, or switch back to Ollama.",
+        "Check ANTHROPIC_API_KEY and network access, or switch back to Ollama or Qwen.",
         sep = "\n"
       )
       return(makeDummyProvider(msg))
@@ -106,26 +109,37 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     default = "http://corrin.stat.auckland.ac.nz:11434"
   )
 
+  modelName = if (identical(backend, "qwen")) {
+    getOption("wmfm.qwen_model", default = "qwen")
+  } else {
+    getOption("wmfm.ollama_model", default = "gpt-oss")
+  }
+
   safeProvider = try(
     ellmer::chat_ollama(
       base_url = baseUrl,
-      model = "gpt-oss"
+      model = modelName
     ),
     silent = TRUE
   )
 
   if (inherits(safeProvider, "try-error")) {
+    backendLabel = if (identical(backend, "qwen")) "Qwen" else "Ollama"
+    optionName = if (identical(backend, "qwen")) "wmfm.qwen_model" else "wmfm.ollama_model"
+
     msg = paste(
-      "WMFM cannot contact the Ollama backend.",
+      paste0("WMFM cannot contact the ", backendLabel, " backend."),
       "",
-      "Backend: ollama",
+      paste0("Backend: ", backend),
       paste0("Server: ", baseUrl),
+      paste0("Model: ", modelName),
       "",
       "This usually means either:",
-      "  - The Ollama server is not running or unreachable, or",
+      "  - The Ollama server is not running or unreachable,",
+      paste0("  - The configured model name is wrong (check the ", optionName, " option), or"),
       "  - The wmfm.ollama_base_url option is incorrect.",
       "",
-      "You can either fix the Ollama server/URL or switch to Claude.",
+      "You can either fix the Ollama server/model settings or switch to another provider.",
       sep = "\n"
     )
     return(makeDummyProvider(msg))

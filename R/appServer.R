@@ -121,12 +121,24 @@ appServer = function(input, output, session) {
   contrastResultText = reactiveVal("")
 
   output$chatProviderStatus = renderText({
-    backendLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama"
+    backendLabel = switch(
+      rv$activeChatBackend %||% "ollama",
+      "claude" = "Claude",
+      "qwen" = "Qwen",
+      "ollama" = "Ollama",
+      "Ollama"
+    )
     paste0("Current provider: ", backendLabel)
   })
 
   observeEvent(input$applyChatProviderBtn, {
-    requested = input$chat_provider %||% "ollama"
+    requested = tolower(trimws(input$chat_provider %||% "ollama"))
+
+    if (!requested %in% c("ollama", "qwen", "claude")) {
+      updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
+      showNotification("Unknown provider selected.", type = "error", duration = 6)
+      return(NULL)
+    }
 
     if (identical(requested, "claude")) {
       passwordOk = tryCatch(
@@ -148,8 +160,16 @@ appServer = function(input, output, session) {
     rv$activeChatBackend = requested
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
 
+    providerLabel = switch(
+      requested,
+      "claude" = "Claude",
+      "qwen" = "Qwen",
+      "ollama" = "Ollama",
+      requested
+    )
+
     showNotification(
-      paste0("Chat provider set to ", if (identical(requested, "claude")) "Claude" else "Ollama", "."),
+      paste0("Chat provider set to ", providerLabel, "."),
       type = "message",
       duration = 4
     )

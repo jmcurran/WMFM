@@ -300,6 +300,7 @@ appUI = function() {
           label = "Provider",
           choices = c(
             "Ollama" = "ollama",
+            "Qwen" = "qwen",
             "Claude" = "claude"
           ),
           selected = "ollama"
@@ -317,7 +318,7 @@ appUI = function() {
         tags$br(), tags$br(),
         textOutput("chatProviderStatus"),
         helpText(
-          "Ollama can be selected directly. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
+          "Ollama and Qwen can be selected directly. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
         )
       )
 
