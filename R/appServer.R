@@ -36,37 +36,63 @@
 #' @importFrom htmltools htmlEscape
 appServer = function(input, output, session) {
   # -------------------------------------------------------------------
-  # Cache s20x dataset names once per session
+  # Pre-populate installed package + dataset dropdowns once per session
   # -------------------------------------------------------------------
-  s20xNames = character(0)
-  if (requireNamespace("s20x", quietly = TRUE)) {
-    dsInfo    = data(package = "s20x")
-    s20xNames = dsInfo$results[, "Item"]
-  }
-
-  # Pre-populate s20x dataset dropdown once per session
   observe({
-    if (length(s20xNames) == 0) {
-      # s20x not installed or no datasets
+
+    packageNames = getInstalledPackagesWithData()
+
+    if (length(packageNames) == 0) {
       updateSelectInput(
         session,
-        "s20x_dataset",
-        choices  = character(0),
-        selected = NULL
+        "data_package",
+        choices = character(0),
+        selected = character(0)
+      )
+      updateSelectInput(
+        session,
+        "package_dataset",
+        choices = character(0),
+        selected = character(0)
       )
       return(NULL)
     }
 
-    # Add placeholder to avoid auto-selecting the first real dataset
-    choices = c("Choose a data set..." = "", s20xNames)
+    defaultPkg = if ("s20x" %in% packageNames) "s20x" else packageNames[1]
 
     updateSelectInput(
       session,
-      "s20x_dataset",
-      choices  = choices,
-      selected = ""
+      "data_package",
+      choices = packageNames,
+      selected = defaultPkg
     )
   })
+
+  observeEvent(input$data_package, {
+    req(input$data_source == "package")
+
+    pkg = input$data_package %||% ""
+    dsNames = getPackageDatasetNames(pkg)
+
+    if (length(dsNames) == 0) {
+      updateSelectInput(
+        session,
+        "package_dataset",
+        choices = c("No datasets found" = ""),
+        selected = ""
+      )
+      return(NULL)
+    }
+
+    choices = c("Choose a data set..." = "", dsNames)
+
+    updateSelectInput(
+      session,
+      "package_dataset",
+      choices = choices,
+      selected = ""
+    )
+  }, ignoreInit = FALSE)
 
   rv = reactiveValues(
     data = NULL,
@@ -1685,27 +1711,35 @@ $$")
   })
 
   # -------------------------------------------------------------------
-  # Load s20x dataset when selected
+  # Load package dataset when selected
   # -------------------------------------------------------------------
-  observeEvent(input$s20x_dataset, {
-    req(input$data_source == "s20x")
+  observeEvent(input$package_dataset, {
+    req(input$data_source == "package")
 
-    # Ignore the dummy "Choose a data set..." entry
-    dsName = input$s20x_dataset
+    pkg = input$data_package %||% ""
+    dsName = input$package_dataset
+
     if (is.null(dsName) || dsName == "") {
       return(NULL)
     }
 
-    if (length(s20xNames) == 0) {
+    env = new.env()
+
+    ok = tryCatch({
+      data(list = dsName, package = pkg, envir = env)
+      TRUE
+    }, error = function(e) {
+      FALSE
+    })
+
+    if (!ok || !exists(dsName, envir = env, inherits = FALSE)) {
       showNotification(
-        "The s20x package is not installed. Please install it to use the example data sets.",
+        paste0("Could not load dataset '", dsName, "' from package '", pkg, "'."),
         type = "error"
       )
       return(NULL)
     }
 
-    env = new.env()
-    data(list = dsName, package = "s20x", envir = env)
     df = env[[dsName]]
 
     if (!is.data.frame(df)) {
@@ -1713,12 +1747,12 @@ $$")
       return(NULL)
     }
 
-    rv$data             = df
-    rv$allVars          = names(df)
+    rv$data               = df
+    rv$allVars            = names(df)
     rv$userDatasetContext = ""
     resetModelPage(resetResponse = TRUE)
 
-    # Switch to the Model tab after loading an s20x data set
+    # Switch to the Model tab after loading a package data set
     updateTabsetPanel(session, "main_tabs", selected = "Model")
   })
 
@@ -1881,7 +1915,7 @@ $$")
     isReady = datasetLoaded()
     source = input$data_source %||% "upload"
 
-    btnLabel = if (identical(source, "s20x")) {
+    btnLabel = if (identical(source, "package")) {
       "Data description"
     } else {
       "Provide data context"
@@ -1927,14 +1961,15 @@ $$")
 
     # Optional: s20x help HTML
     helpHtml = NULL
-    if (identical(input$data_source, "s20x")) {
-      helpHtml = getS20xDocHtml(input$s20x_dataset)
+    pkg = input$data_package %||% ""
+    if (identical(input$data_source, "package") && identical(pkg, "s20x")) {
+      helpHtml = getS20xDocHtml(input$package_dataset)
     }
 
     tagList(
-      if (identical(input$data_source, "s20x")) {
+      if (identical(input$data_source, "package") && identical(pkg, "s20x")) {
         tagList(
-          h4("s20x help"),
+          h4("Package help"),
           if (!is.null(helpHtml) && nzchar(helpHtml)) {
             tags$div(
               style = "max-height: 280px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 6px;",
@@ -1964,10 +1999,10 @@ $$")
       return(NULL)
     }
 
-    if (identical(input$data_source %||% "", "s20x")) {
+    if (identical(input$data_source %||% "", "package")) {
       titleText =
-        if (!is.null(input$s20x_dataset) && nzchar(input$s20x_dataset)) {
-          paste0("Data description: ", input$s20x_dataset)
+        if (!is.null(input$package_dataset) && nzchar(input$package_dataset)) {
+          paste0("Data description: ", input$package_dataset)
         } else {
           "Data description"
         }
@@ -2671,24 +2706,32 @@ $$")
       return(NULL)
     }
 
-    # If this data came from s20x, attach its documentation to the model
-    if (identical(input$data_source, "s20x")) {
-      dsName  = input$s20x_dataset
-      docText = getS20xDocText(dsName)
-      if (!is.null(docText)) {
-        attr(m, "wmfm_dataset_doc")  = docText
-        attr(m, "wmfm_dataset_name") = dsName
+    # If this data came from a package, attach package metadata to the model.
+    if (identical(input$data_source, "package")) {
+      pkg = input$data_package %||% ""
+      dsName = input$package_dataset
 
-        nounPhrase = resolveResponseNounPhrase(m, respName)
-
-        attr(m, "wmfm_response_noun_phrase") = nounPhrase
-
-        rv$modelContext = list(
-          responseVar = respName,
-          nounPhrase  = nounPhrase,
-          datasetName = attr(m, "wmfm_dataset_name", exact = TRUE)
-        )
+      docText = NULL
+      if (identical(pkg, "s20x")) {
+        docText = getS20xDocText(dsName)
       }
+
+      if (!is.null(docText)) {
+        attr(m, "wmfm_dataset_doc") = docText
+      }
+
+      attr(m, "wmfm_dataset_name") = dsName
+      attr(m, "wmfm_dataset_package") = pkg
+
+      nounPhrase = resolveResponseNounPhrase(m, respName)
+      attr(m, "wmfm_response_noun_phrase") = nounPhrase
+
+      rv$modelContext = list(
+        responseVar = respName,
+        nounPhrase = nounPhrase,
+        datasetName = dsName,
+        packageName = pkg
+      )
     }
 
     # -------------------------------------------------------------

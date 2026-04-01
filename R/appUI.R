@@ -88,9 +88,9 @@ appUI = function() {
           label = "Data source:",
           choices = c(
             "Upload file"               = "upload",
-            "Example from s20x package" = "s20x"
+            "Data from installed package" = "package"
           ),
-          selected = "upload"
+          selected = "package"
         ),
 
         conditionalPanel(
@@ -111,15 +111,19 @@ appUI = function() {
         ),
 
         conditionalPanel(
-          condition = "input.data_source == 's20x'",
+          condition = "input.data_source == 'package'",
           selectInput(
-            "s20x_dataset",
-            "Choose an s20x example data set:",
+            "data_package",
+            "Choose a package:",
+            choices = character(0)
+          ),
+          selectInput(
+            "package_dataset",
+            "Choose a dataset:",
             choices = character(0)
           ),
           helpText(
-            "These data sets are shipped with the s20x package and are useful ",
-            "for examples and teaching."
+            "Packages listed here are installed packages that appear to contain datasets."
           )
         ),
 
