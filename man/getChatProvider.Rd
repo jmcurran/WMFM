@@ -8,7 +8,7 @@ getChatProvider(backend = getOption("wmfm.chat_backend", default = "ollama"))
 }
 \arguments{
 \item{backend}{Character scalar giving the backend to use. Supported values
-are \code{"ollama"} and \code{"claude"}.}
+are \code{"ollama"}, \code{"qwen"}, and \code{"claude"}.}
 }
 \value{
 A chat provider object created by \code{ellmer::chat_ollama()} or
@@ -17,7 +17,8 @@ A chat provider object created by \code{ellmer::chat_ollama()} or
 }
 \description{
 Constructs a chat provider used by WMFM, choosing between an Ollama-based
-provider and an Anthropic Claude-based provider.
+provider, an Ollama-hosted Qwen provider, and an Anthropic Claude-based
+provider.
 }
 \details{
 The backend is selected via the \code{backend} argument, or if omitted, from the
@@ -25,8 +26,9 @@ The backend is selected via the \code{backend} argument, or if omitted, from the
 }
 \examples{
 \dontrun{
-  provider <- getChatProvider("ollama")
-  providerClaude <- getChatProvider("claude")
+  provider = getChatProvider("ollama")
+  providerQwen = getChatProvider("qwen")
+  providerClaude = getChatProvider("claude")
 }
 
 }

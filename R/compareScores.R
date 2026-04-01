@@ -1,22 +1,65 @@
 
 #' Compare deterministic and LLM scoring results
 #'
-#' Summarises agreement and disagreement between deterministic and LLM scoring
-#' columns stored in a repeated-run object.
+#' Compares two repeated-run objects, typically one scored deterministically and
+#' one scored using the LLM, and summarises agreement and disagreement across
+#' shared scoring fields.
 #'
-#' @param x Object produced by `runWMFMPackageExampleRepeated()` and optionally
-#'   updated by `rescoreWmfmRepeatedRunsWithOpposingMethod()`.
+#' The two inputs are aligned by `runId` when that column is available in both
+#' objects. Otherwise, rows are aligned by position.
+#'
+#' @param deterministicObj Repeated-run object containing deterministic scores.
+#' @param llmObj Repeated-run object containing LLM scores.
 #'
 #' @return An object of class \code{"WmfmScoreComparison"} containing comparison
 #'   summaries.
 #' @export
-compareScores = function(x) {
+compareScores = function(deterministicObj, llmObj) {
 
-  if (!is.list(x) || is.null(x$runsDf) || !is.data.frame(x$runsDf)) {
-    stop("`x` must contain a `runsDf` data frame.", call. = FALSE)
+  if (!is.list(deterministicObj) || is.null(deterministicObj$runsDf) || !is.data.frame(deterministicObj$runsDf)) {
+    stop("`deterministicObj` must contain a `runsDf` data frame.", call. = FALSE)
   }
 
-  runsDf = x$runsDf
+  if (!is.list(llmObj) || is.null(llmObj$runsDf) || !is.data.frame(llmObj$runsDf)) {
+    stop("`llmObj` must contain a `runsDf` data frame.", call. = FALSE)
+  }
+
+  detDf = deterministicObj$runsDf
+  llmDf = llmObj$runsDf
+
+  if ("runId" %in% names(detDf) && "runId" %in% names(llmDf)) {
+    mergedDf = merge(
+      detDf,
+      llmDf,
+      by = "runId",
+      suffixes = c(".det", ".llm"),
+      all = FALSE,
+      sort = TRUE
+    )
+  } else {
+    if (nrow(detDf) != nrow(llmDf)) {
+      stop(
+        "The two objects do not have the same number of runs and cannot be aligned by position.",
+        call. = FALSE
+      )
+    }
+
+    detDf$..rowIndexCompare = seq_len(nrow(detDf))
+    llmDf$..rowIndexCompare = seq_len(nrow(llmDf))
+
+    mergedDf = merge(
+      detDf,
+      llmDf,
+      by = "..rowIndexCompare",
+      suffixes = c(".det", ".llm"),
+      all = FALSE,
+      sort = TRUE
+    )
+  }
+
+  if (nrow(mergedDf) == 0) {
+    stop("No overlapping runs were found to compare.", call. = FALSE)
+  }
 
   metricFields = c(
     "effectDirectionCorrect",
@@ -41,36 +84,30 @@ compareScores = function(x) {
     "overallPass"
   )
 
-  getMethodColumnName = function(method, field) {
-    prefix = if (identical(method, "deterministic")) "det_" else "llm_"
-    paste0(prefix, field)
-  }
+  getMergedFieldPair = function(field) {
+    detName = paste0(field, ".det")
+    llmName = paste0(field, ".llm")
 
-  getFieldVector = function(method, field) {
-    prefixedName = getMethodColumnName(method, field)
-
-    if (prefixedName %in% names(runsDf)) {
-      return(runsDf[[prefixedName]])
+    if (!(detName %in% names(mergedDf)) || !(llmName %in% names(mergedDf))) {
+      return(NULL)
     }
 
-    if (field %in% names(runsDf) && identical(x$primaryScoringMethod, method)) {
-      return(runsDf[[field]])
-    }
-
-    NULL
+    list(
+      det = mergedDf[[detName]],
+      llm = mergedDf[[llmName]]
+    )
   }
 
   availableMetrics = Filter(
     function(field) {
-      !is.null(getFieldVector("deterministic", field)) &&
-        !is.null(getFieldVector("llm", field))
+      !is.null(getMergedFieldPair(field))
     },
     metricFields
   )
 
   if (length(availableMetrics) == 0) {
     stop(
-      "No paired deterministic/LLM scoring columns were found.",
+      "No shared scoring columns were found between the two objects.",
       call. = FALSE
     )
   }
@@ -87,8 +124,9 @@ compareScores = function(x) {
   pairedOverallScores = NULL
 
   for (field in availableMetrics) {
-    det = getFieldVector("deterministic", field)
-    llm = getFieldVector("llm", field)
+    pair = getMergedFieldPair(field)
+    det = pair$det
+    llm = pair$llm
 
     ok = !(is.na(det) | is.na(llm))
     nCompared = sum(ok)
@@ -105,6 +143,8 @@ compareScores = function(x) {
     meanDiff =
       if (is.numeric(detOk) && is.numeric(llmOk)) {
         mean(llmOk - detOk)
+      } else if (is.logical(detOk) && is.logical(llmOk)) {
+        mean(as.integer(llmOk) - as.integer(detOk))
       } else {
         NA_real_
       }
@@ -132,29 +172,24 @@ compareScores = function(x) {
     }
   }
 
-  overallDet = getFieldVector("deterministic", "overallScore")
-  overallLlm = getFieldVector("llm", "overallScore")
-
   overallSummary = NULL
-  if (!is.null(overallDet) && !is.null(overallLlm)) {
-    ok = !(is.na(overallDet) | is.na(overallLlm))
-    if (any(ok)) {
-      diffVec = overallLlm[ok] - overallDet[ok]
-      overallSummary = list(
-        meanDeterministicOverallScore = mean(overallDet[ok]),
-        meanLlmOverallScore = mean(overallLlm[ok]),
-        meanDifferenceLlmMinusDeterministic = mean(diffVec),
-        sdDifferenceLlmMinusDeterministic = stats::sd(diffVec)
-      )
-    }
+  if (!is.null(pairedOverallScores) && nrow(pairedOverallScores) > 0) {
+    diffVec = pairedOverallScores$differenceOverallScore
+    overallSummary = list(
+      meanDeterministicOverallScore = mean(pairedOverallScores$detOverallScore),
+      meanLlmOverallScore = mean(pairedOverallScores$llmOverallScore),
+      meanDifferenceLlmMinusDeterministic = mean(diffVec),
+      sdDifferenceLlmMinusDeterministic = stats::sd(diffVec)
+    )
   }
 
   out = list(
-    primaryScoringMethod = x$primaryScoringMethod %||% NA_character_,
-    opposingScoringMethod = x$opposingScoringMethod %||% NA_character_,
     metricAgreement = agreementDf,
     overallSummary = overallSummary,
-    pairedOverallScores = pairedOverallScores
+    pairedOverallScores = pairedOverallScores,
+    nRunsCompared = nrow(mergedDf),
+    deterministicPrimaryMethod = deterministicObj$primaryScoringMethod %||% NA_character_,
+    llmPrimaryMethod = llmObj$primaryScoringMethod %||% NA_character_
   )
 
   class(out) = c("WmfmScoreComparison", class(out))

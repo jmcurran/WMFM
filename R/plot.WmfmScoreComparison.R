@@ -24,6 +24,10 @@ plot.WmfmScoreComparison = function(
 
   type = match.arg(type)
 
+  if (!inherits(x, "WmfmScoreComparison")) {
+    stop("`x` must inherit from `WmfmScoreComparison`.", call. = FALSE)
+  }
+
   if (!is.numeric(labelSize) || length(labelSize) != 1 || is.na(labelSize) || labelSize <= 0) {
     stop("`labelSize` must be a single positive number.", call. = FALSE)
   }
