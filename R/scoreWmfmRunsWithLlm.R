@@ -1,11 +1,12 @@
+
 #' Score multiple WMFM run records using a language model
 #'
 #' Applies `scoreWmfmRunWithLlm()` to one or more WMFM run records. This helper
 #' is designed for repeated-run workflows where the number of explanations to
 #' score can vary from 1 to `N`.
 #'
-#' @param runRecords Either a single run record, or a list of run records, where
-#'   each run record is a named list produced by `buildWmfmRunRecord()`.
+#' @param runRecords Either a single run record, a list of run records, or a
+#'   repeated-run object containing a `runsDf` component.
 #' @param chat A chat provider object as returned by `getChatProvider()`.
 #' @param useCache Logical. Should scoring results be cached and reused for
 #'   identical run records? Defaults to `FALSE`.
@@ -15,6 +16,8 @@
 #'   `FALSE`.
 #'
 #' @return If the input is a single run record, returns one scored run record.
+#'   If the input is a repeated-run object, returns that object with its `runsDf`
+#'   replaced by the scored runs and with `primaryScoringMethod = "llm"`.
 #'   Otherwise returns a list of scored run records of the same length as the
 #'   input list.
 #' @export
@@ -28,6 +31,10 @@ scoreWmfmRunsWithLlm = function(
     verbose = FALSE
 ) {
 
+  if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
+    stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
+  }
+
   if (is.list(runRecords) && !is.null(names(runRecords)) && "explanationText" %in% names(runRecords)) {
     return(
       scoreWmfmRunWithLlm(
@@ -39,9 +46,30 @@ scoreWmfmRunsWithLlm = function(
     )
   }
 
+  if (is.list(runRecords) && !is.null(runRecords$runsDf) && is.data.frame(runRecords$runsDf)) {
+    runList = lapply(seq_len(nrow(runRecords$runsDf)), function(i) {
+      as.list(runRecords$runsDf[i, , drop = FALSE])
+    })
+
+    scoredList = scoreWmfmRunsWithLlm(
+      runRecords = runList,
+      chat = chat,
+      useCache = useCache,
+      showProgress = showProgress,
+      verbose = verbose
+    )
+
+    scoredDf = do.call(rbind, lapply(scoredList, as.data.frame))
+    rownames(scoredDf) = NULL
+
+    runRecords$runsDf = scoredDf
+    runRecords$primaryScoringMethod = "llm"
+    return(runRecords)
+  }
+
   if (!is.list(runRecords) || length(runRecords) == 0) {
     stop(
-      "`runRecords` must be either a single run record or a non-empty list of run records.",
+      "`runRecords` must be either a single run record, a non-empty list of run records, or a repeated-run object with `runsDf`.",
       call. = FALSE
     )
   }
@@ -49,10 +77,6 @@ scoreWmfmRunsWithLlm = function(
   badIndex = which(!vapply(runRecords, function(x) is.list(x) && !is.null(names(x)), logical(1)))
   if (length(badIndex) > 0) {
     stop("All elements of `runRecords` must be named lists.", call. = FALSE)
-  }
-
-  if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
-    stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
   }
 
   nRuns = length(runRecords)

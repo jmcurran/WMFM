@@ -1,3 +1,4 @@
+
 #' Score a single WMFM run record using a language model
 #'
 #' Sends a prompt-based scoring request to the supplied chat provider and writes
@@ -28,8 +29,22 @@ scoreWmfmRunWithLlm = function(
     stop("`runRecord` must be a named list.", call. = FALSE)
   }
 
-  if (is.null(chat) || !is.list(chat) || is.null(chat$chat) || !is.function(chat$chat)) {
-    stop("`chat` must be a chat provider object with a `$chat()` method.", call. = FALSE)
+  if (is.null(chat)) {
+    stop("`chat` must not be NULL.", call. = FALSE)
+  }
+
+  chatMethod = tryCatch(
+    chat$chat,
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(chatMethod) || !is.function(chatMethod)) {
+    stop(
+      "`chat` must provide a callable `$chat()` method.",
+      call. = FALSE
+    )
   }
 
   if (!is.logical(useCache) || length(useCache) != 1 || is.na(useCache)) {
@@ -81,7 +96,7 @@ scoreWmfmRunWithLlm = function(
 
     prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
 
-    rawResponse = chat$chat(prompt)
+    rawResponse = chatMethod(prompt)
 
     if (isTRUE(useCache) && is.environment(cacheEnv)) {
       cacheEnv[[key]] = rawResponse

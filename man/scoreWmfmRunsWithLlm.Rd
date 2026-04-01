@@ -13,8 +13,8 @@ scoreWmfmRunsWithLlm(
 )
 }
 \arguments{
-\item{runRecords}{Either a single run record, or a list of run records, where
-each run record is a named list produced by \code{buildWmfmRunRecord()}.}
+\item{runRecords}{Either a single run record, a list of run records, or a
+repeated-run object containing a \code{runsDf} component.}
 
 \item{chat}{A chat provider object as returned by \code{getChatProvider()}.}
 
@@ -29,6 +29,8 @@ multiple runs interactively? Defaults to \code{TRUE}.}
 }
 \value{
 If the input is a single run record, returns one scored run record.
+If the input is a repeated-run object, returns that object with its \code{runsDf}
+replaced by the scored runs and with \code{primaryScoringMethod = "llm"}.
 Otherwise returns a list of scored run records of the same length as the
 input list.
 }

@@ -13,6 +13,10 @@ runWMFMPackageExampleRepeated(
   showProgress = TRUE,
   useExplanationCache = FALSE,
   interactionAlpha = 0.05,
+  scoringMethod = c("deterministic", "llm", "none"),
+  scoringChat = NULL,
+  useScoringCache = FALSE,
+  verboseScoring = FALSE,
   ...
 )
 }
@@ -36,6 +40,18 @@ Defaults to \code{FALSE} so repeated runs query the language model each time.}
 \item{interactionAlpha}{Numeric. Threshold used when judging whether an
 explanation interpreted interaction evidence appropriately.}
 
+\item{scoringMethod}{Character. One of \code{"deterministic"}, \code{"llm"}, or
+\code{"none"}.}
+
+\item{scoringChat}{Optional chat provider object used when
+\code{scoringMethod = "llm"}.}
+
+\item{useScoringCache}{Logical. Passed to \code{scoreWmfmRunWithLlm()} when
+\code{scoringMethod = "llm"}.}
+
+\item{verboseScoring}{Logical. Passed to \code{scoreWmfmRunWithLlm()} when
+\code{scoringMethod = "llm"}.}
+
 \item{...}{Additional arguments passed to \code{runWMFMModelDebug()}.}
 }
 \value{
@@ -45,6 +61,7 @@ A list with elements:
 \item{summary}{Summary statistics}
 \item{spec}{Specification}
 \item{dataContext}{Context text}
+\item{primaryScoringMethod}{Scoring method used during the initial run}
 }
 }
 \description{
