@@ -1,24 +1,22 @@
-
 #' Print a WMFM score comparison object
 #'
-#' Provides a concise console summary of agreement between deterministic and
-#' LLM scoring methods.
+#' Provides a concise console summary of agreement between two WMFM scoring
+#' result sets.
 #'
-#' @param x Object produced by `compareScores()`.
-#' @param digits Integer. Number of digits to display for numeric summaries.
-#'   Defaults to `2`.
+#' @param x A `wmfmScoreComparison` object.
+#' @param digits Integer. Number of digits to display.
 #' @param ... Unused. Included for S3 compatibility.
 #'
 #' @return Invisibly returns `x`.
 #' @export
-print.WmfmScoreComparison = function(
+print.wmfmScoreComparison = function(
     x,
     digits = 2,
     ...
 ) {
 
-  if (!inherits(x, "WmfmScoreComparison")) {
-    stop("Object is not of class 'WmfmScoreComparison'.", call. = FALSE)
+  if (!inherits(x, "wmfmScoreComparison")) {
+    stop("Object is not of class `wmfmScoreComparison`.", call. = FALSE)
   }
 
   if (!is.numeric(digits) || length(digits) != 1 || is.na(digits) || digits < 0) {
@@ -34,17 +32,18 @@ print.WmfmScoreComparison = function(
   }
 
   cat("\nWMFM Score Comparison\n")
-  cat("----------------------\n")
-  cat("Runs compared     :", x$nRunsCompared, "\n")
-  cat("Deterministic set :", x$deterministicPrimaryMethod, "\n")
-  cat("LLM set           :", x$llmPrimaryMethod, "\n\n")
+  cat("---------------------\n")
+  cat("Source          :", x$source, "\n")
+  cat("Left method     :", x$leftMethod, "\n")
+  cat("Right method    :", x$rightMethod, "\n")
+  cat("Runs compared   :", x$nRunsCompared, "\n\n")
 
   if (!is.null(x$overallSummary)) {
     cat("Overall score summary:\n")
-    cat("  Deterministic mean :", fmt(x$overallSummary$meanDeterministicOverallScore), "\n")
-    cat("  LLM mean           :", fmt(x$overallSummary$meanLlmOverallScore), "\n")
-    cat("  Mean difference    :", fmt(x$overallSummary$meanDifferenceLlmMinusDeterministic), "\n")
-    cat("  SD difference      :", fmt(x$overallSummary$sdDifferenceLlmMinusDeterministic), "\n\n")
+    cat("  Left mean             :", fmt(x$overallSummary$meanLeftOverallScore), "\n")
+    cat("  Right mean            :", fmt(x$overallSummary$meanRightOverallScore), "\n")
+    cat("  Mean difference       :", fmt(x$overallSummary$meanDifferenceRightMinusLeft), "\n")
+    cat("  SD difference         :", fmt(x$overallSummary$sdDifferenceRightMinusLeft), "\n\n")
   }
 
   metricAgreement = x$metricAgreement

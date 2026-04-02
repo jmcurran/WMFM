@@ -83,6 +83,20 @@ as.data.frame.wmfmScores = function(
     return(data.frame())
   }
 
+  allCols = unique(unlist(lapply(longPieces, names)))
+
+  longPieces = lapply(longPieces, function(df) {
+    missingCols = setdiff(allCols, names(df))
+
+    if (length(missingCols) > 0) {
+      for (colName in missingCols) {
+        df[[colName]] = NA
+      }
+    }
+
+    df[, allCols, drop = FALSE]
+  })
+
   longDf = do.call(rbind, longPieces)
   rownames(longDf) = NULL
 
@@ -93,7 +107,7 @@ as.data.frame.wmfmScores = function(
   nonKeyCols = setdiff(names(longDf), c("runId", "method"))
 
   if (length(nonKeyCols) == 0) {
-    wideDf = unique(longDf[, "runId", drop = FALSE])
+    wideDf = unique(longDf[, c("runId"), drop = FALSE])
     rownames(wideDf) = NULL
     return(wideDf)
   }
