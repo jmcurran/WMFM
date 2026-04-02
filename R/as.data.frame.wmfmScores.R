@@ -93,28 +93,35 @@ as.data.frame.wmfmScores = function(
   nonKeyCols = setdiff(names(longDf), c("runId", "method"))
 
   if (length(nonKeyCols) == 0) {
-    wideDf = unique(longDf[, c("runId"), drop = FALSE])
+    wideDf = unique(longDf[, "runId", drop = FALSE])
     rownames(wideDf) = NULL
     return(wideDf)
   }
 
-  wideList = lapply(seq_len(nrow(longDf)), function(i) {
-    row = longDf[i, , drop = FALSE]
-    method = row$method[[1]]
-    out = data.frame(runId = row$runId[[1]], stringsAsFactors = FALSE)
+  methodDfs = lapply(methods, function(methodName) {
+    methodDf = longDf[longDf$method == methodName, c("runId", nonKeyCols), drop = FALSE]
 
-    for (colName in nonKeyCols) {
-      out[[paste0(method, ".", colName)]] = row[[colName]][[1]]
+    if (nrow(methodDf) == 0) {
+      return(NULL)
     }
 
-    out
+    names(methodDf)[names(methodDf) != "runId"] =
+      paste0(methodName, ".", names(methodDf)[names(methodDf) != "runId"])
+
+    methodDf
   })
+
+  methodDfs = Filter(Negate(is.null), methodDfs)
+
+  if (length(methodDfs) == 0) {
+    return(data.frame())
+  }
 
   wideDf = Reduce(
     function(left, right) {
       merge(left, right, by = "runId", all = TRUE, sort = TRUE)
     },
-    wideList
+    methodDfs
   )
 
   rownames(wideDf) = NULL
