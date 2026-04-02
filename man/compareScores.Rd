@@ -4,17 +4,23 @@
 \alias{compareScores}
 \title{Compare deterministic and LLM scoring results}
 \usage{
-compareScores(x)
+compareScores(deterministicObj, llmObj)
 }
 \arguments{
-\item{x}{Object produced by \code{runWMFMPackageExampleRepeated()} and optionally
-updated by \code{rescoreWmfmRepeatedRunsWithOpposingMethod()}.}
+\item{deterministicObj}{Repeated-run object containing deterministic scores.}
+
+\item{llmObj}{Repeated-run object containing LLM scores.}
 }
 \value{
 An object of class \code{"WmfmScoreComparison"} containing comparison
 summaries.
 }
 \description{
-Summarises agreement and disagreement between deterministic and LLM scoring
-columns stored in a repeated-run object.
+Compares two repeated-run objects, typically one scored deterministically and
+one scored using the LLM, and summarises agreement and disagreement across
+shared scoring fields.
+}
+\details{
+The two inputs are aligned by \code{runId} when that column is available in both
+objects. Otherwise, rows are aligned by position.
 }
