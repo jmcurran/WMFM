@@ -6,12 +6,8 @@
 #'   \item between two `wmfmScores` objects.
 #' }
 #'
-#' When `y = NULL`, `x` must contain both deterministic and LLM scoring results.
-#' In that case the two methods are compared within the same score object.
-#'
-#' When `y` is supplied, each object must contain exactly one scoring method, or
-#' the requested methods must be specified explicitly using `xMethod` and
-#' `yMethod`.
+#' The comparison summarises agreement separately for binary, ordinal, and
+#' continuous score fields.
 #'
 #' @param x A `wmfmScores` object.
 #' @param y Optional second `wmfmScores` object.
@@ -81,6 +77,86 @@ compare.wmfmScores = function(
     df
   }
 
+  summarizeBinaryField = function(leftVec, rightVec, field) {
+    ok = !(is.na(leftVec) | is.na(rightVec))
+    nCompared = sum(ok)
+
+    if (nCompared == 0) {
+      return(NULL)
+    }
+
+    leftOk = as.logical(leftVec[ok])
+    rightOk = as.logical(rightVec[ok])
+
+    data.frame(
+      metric = field,
+      nCompared = nCompared,
+      nEqual = sum(leftOk == rightOk),
+      proportionEqual = mean(leftOk == rightOk),
+      positiveRateLeft = mean(leftOk),
+      positiveRateRight = mean(rightOk),
+      meanDifference = mean(as.integer(rightOk) - as.integer(leftOk)),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  summarizeOrdinalField = function(leftVec, rightVec, field) {
+    ok = !(is.na(leftVec) | is.na(rightVec))
+    nCompared = sum(ok)
+
+    if (nCompared == 0) {
+      return(NULL)
+    }
+
+    leftOk = suppressWarnings(as.numeric(leftVec[ok]))
+    rightOk = suppressWarnings(as.numeric(rightVec[ok]))
+
+    diff = rightOk - leftOk
+
+    data.frame(
+      metric = field,
+      nCompared = nCompared,
+      nEqual = sum(diff == 0),
+      proportionEqual = mean(diff == 0),
+      proportionAdjacent = mean(abs(diff) <= 1),
+      meanDifference = mean(diff),
+      meanAbsoluteDifference = mean(abs(diff)),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  summarizeContinuousField = function(leftVec, rightVec, field) {
+    ok = !(is.na(leftVec) | is.na(rightVec))
+    nCompared = sum(ok)
+
+    if (nCompared == 0) {
+      return(NULL)
+    }
+
+    leftOk = suppressWarnings(as.numeric(leftVec[ok]))
+    rightOk = suppressWarnings(as.numeric(rightVec[ok]))
+    diff = rightOk - leftOk
+
+    corr =
+      if (length(leftOk) >= 2 && stats::sd(leftOk) > 0 && stats::sd(rightOk) > 0) {
+        stats::cor(leftOk, rightOk)
+      } else {
+        NA_real_
+      }
+
+    data.frame(
+      metric = field,
+      nCompared = nCompared,
+      meanLeft = mean(leftOk),
+      meanRight = mean(rightOk),
+      meanDifference = mean(diff),
+      sdDifference = stats::sd(diff),
+      meanAbsoluteDifference = mean(abs(diff)),
+      correlation = corr,
+      stringsAsFactors = FALSE
+    )
+  }
+
   buildComparison = function(leftDf, rightDf, leftMethod, rightMethod, sourceLabel) {
     mergedDf = merge(
       leftDf,
@@ -95,7 +171,12 @@ compare.wmfmScores = function(
       stop("No overlapping run IDs were found to compare.", call. = FALSE)
     }
 
-    metricFields = c(
+    binaryFields = c(
+      "fatalFlawDetected",
+      "overallPass"
+    )
+
+    ordinalFields = c(
       "effectDirectionCorrect",
       "effectScaleAppropriate",
       "referenceGroupHandledCorrectly",
@@ -107,77 +188,63 @@ compare.wmfmScores = function(
       "referenceGroupCoverageAdequate",
       "clarityAdequate",
       "numericExpressionAdequate",
-      "comparisonStructureClear",
+      "comparisonStructureClear"
+    )
+
+    continuousFields = c(
       "factualScore",
       "inferenceScore",
       "completenessScore",
       "clarityScore",
       "calibrationScore",
-      "overallScore",
-      "fatalFlawDetected",
-      "overallPass"
+      "overallScore"
     )
 
-    metricAgreement = data.frame(
-      metric = character(0),
-      nCompared = integer(0),
-      nEqual = integer(0),
-      proportionEqual = numeric(0),
-      meanDifference = numeric(0),
-      stringsAsFactors = FALSE
-    )
+    collectSummaries = function(fields, summarizer) {
+      pieces = lapply(fields, function(field) {
+        leftName = paste0(field, ".x")
+        rightName = paste0(field, ".y")
+
+        if (!(leftName %in% names(mergedDf)) || !(rightName %in% names(mergedDf))) {
+          return(NULL)
+        }
+
+        summarizer(
+          leftVec = mergedDf[[leftName]],
+          rightVec = mergedDf[[rightName]],
+          field = field
+        )
+      })
+
+      pieces = Filter(Negate(is.null), pieces)
+
+      if (length(pieces) == 0) {
+        return(data.frame())
+      }
+
+      out = do.call(rbind, pieces)
+      rownames(out) = NULL
+      out
+    }
+
+    binaryAgreement = collectSummaries(binaryFields, summarizeBinaryField)
+    ordinalAgreement = collectSummaries(ordinalFields, summarizeOrdinalField)
+    continuousAgreement = collectSummaries(continuousFields, summarizeContinuousField)
 
     pairedOverallScores = NULL
 
-    for (field in metricFields) {
-      leftName = paste0(field, ".x")
-      rightName = paste0(field, ".y")
+    if ("overallScore.x" %in% names(mergedDf) && "overallScore.y" %in% names(mergedDf)) {
+      leftOverall = suppressWarnings(as.numeric(mergedDf$overallScore.x))
+      rightOverall = suppressWarnings(as.numeric(mergedDf$overallScore.y))
+      ok = !(is.na(leftOverall) | is.na(rightOverall))
 
-      if (!(leftName %in% names(mergedDf)) || !(rightName %in% names(mergedDf))) {
-        next
-      }
-
-      leftVec = mergedDf[[leftName]]
-      rightVec = mergedDf[[rightName]]
-
-      ok = !(is.na(leftVec) | is.na(rightVec))
-      nCompared = sum(ok)
-
-      if (nCompared == 0) {
-        next
-      }
-
-      leftOk = leftVec[ok]
-      rightOk = rightVec[ok]
-      nEqual = sum(leftOk == rightOk)
-
-      meanDifference =
-        if (is.numeric(leftOk) && is.numeric(rightOk)) {
-          mean(rightOk - leftOk)
-        } else if (is.logical(leftOk) && is.logical(rightOk)) {
-          mean(as.integer(rightOk) - as.integer(leftOk))
-        } else {
-          NA_real_
-        }
-
-      metricAgreement = rbind(
-        metricAgreement,
-        data.frame(
-          metric = field,
-          nCompared = nCompared,
-          nEqual = nEqual,
-          proportionEqual = nEqual / nCompared,
-          meanDifference = meanDifference,
-          stringsAsFactors = FALSE
-        )
-      )
-
-      if (identical(field, "overallScore")) {
+      if (any(ok)) {
         pairedOverallScores = data.frame(
-          leftOverallScore = as.numeric(leftOk),
-          rightOverallScore = as.numeric(rightOk),
-          meanOverallScore = (as.numeric(leftOk) + as.numeric(rightOk)) / 2,
-          differenceOverallScore = as.numeric(rightOk) - as.numeric(leftOk),
+          runId = mergedDf$runId[ok],
+          leftOverallScore = leftOverall[ok],
+          rightOverallScore = rightOverall[ok],
+          meanOverallScore = (leftOverall[ok] + rightOverall[ok]) / 2,
+          differenceOverallScore = rightOverall[ok] - leftOverall[ok],
           stringsAsFactors = FALSE
         )
       }
@@ -191,7 +258,8 @@ compare.wmfmScores = function(
         meanLeftOverallScore = mean(pairedOverallScores$leftOverallScore),
         meanRightOverallScore = mean(pairedOverallScores$rightOverallScore),
         meanDifferenceRightMinusLeft = mean(diffVec),
-        sdDifferenceRightMinusLeft = stats::sd(diffVec)
+        sdDifferenceRightMinusLeft = stats::sd(diffVec),
+        meanAbsoluteDifference = mean(abs(diffVec))
       )
     }
 
@@ -200,7 +268,9 @@ compare.wmfmScores = function(
       leftMethod = leftMethod,
       rightMethod = rightMethod,
       nRunsCompared = nrow(mergedDf),
-      metricAgreement = metricAgreement,
+      binaryAgreement = binaryAgreement,
+      ordinalAgreement = ordinalAgreement,
+      continuousAgreement = continuousAgreement,
       overallSummary = overallSummary,
       pairedOverallScores = pairedOverallScores
     )
