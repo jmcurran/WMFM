@@ -33,33 +33,18 @@ compare.wmfmScores = function(
     available = obj$methods %||% character(0)
 
     if (length(available) == 0) {
-      stop("No scoring methods are available in the supplied object.", call. = FALSE)
+      stop("No scoring methods are available.", call. = FALSE)
     }
 
     if (!is.null(method)) {
-      if (!is.character(method) || length(method) != 1 || is.na(method)) {
-        stop("`", argName, "` must be a single character string.", call. = FALSE)
-      }
-
       if (!method %in% available) {
-        stop(
-          "Requested method `", method,
-          "` is not present. Available methods: ",
-          paste(available, collapse = ", "),
-          call. = FALSE
-        )
+        stop("Requested method not present.", call. = FALSE)
       }
-
       return(method)
     }
 
     if (length(available) != 1) {
-      stop(
-        "Method selection is ambiguous. Please specify `", argName,
-        "`. Available methods: ",
-        paste(available, collapse = ", "),
-        call. = FALSE
-      )
+      stop("Ambiguous method selection.", call. = FALSE)
     }
 
     available[1]
@@ -70,316 +55,173 @@ compare.wmfmScores = function(
     df = df[df$method == method, , drop = FALSE]
 
     if (nrow(df) == 0) {
-      stop("No rows were found for method `", method, "`.", call. = FALSE)
+      stop("No rows for method.", call. = FALSE)
     }
 
     rownames(df) = NULL
     df
   }
 
-  computeWeightedKappa = function(leftVec, rightVec, weightType = "quadratic") {
+  computeWeightedKappa = function(leftVec, rightVec) {
     ok = !(is.na(leftVec) | is.na(rightVec))
-    leftVec = suppressWarnings(as.integer(leftVec[ok]))
-    rightVec = suppressWarnings(as.integer(rightVec[ok]))
+    leftVec = as.integer(leftVec[ok])
+    rightVec = as.integer(rightVec[ok])
 
-    ok2 = !(is.na(leftVec) | is.na(rightVec))
-    leftVec = leftVec[ok2]
-    rightVec = rightVec[ok2]
+    if (length(leftVec) == 0) return(NA_real_)
 
-    if (length(leftVec) == 0) {
-      return(NA_real_)
+    cats = sort(unique(c(leftVec, rightVec)))
+    k = length(cats)
+
+    if (k <= 1) return(1)
+
+    li = match(leftVec, cats)
+    ri = match(rightVec, cats)
+
+    obs = matrix(0, k, k)
+    for (i in seq_along(li)) {
+      obs[li[i], ri[i]] = obs[li[i], ri[i]] + 1
     }
+    obs = obs / sum(obs)
 
-    categories = sort(unique(c(leftVec, rightVec)))
-    nCat = length(categories)
+    rowM = rowSums(obs)
+    colM = colSums(obs)
+    exp = outer(rowM, colM)
 
-    if (nCat <= 1) {
-      return(1)
-    }
-
-    leftIdx = match(leftVec, categories)
-    rightIdx = match(rightVec, categories)
-
-    observed = matrix(0, nrow = nCat, ncol = nCat)
-
-    for (i in seq_along(leftIdx)) {
-      observed[leftIdx[i], rightIdx[i]] = observed[leftIdx[i], rightIdx[i]] + 1
-    }
-
-    observed = observed / sum(observed)
-
-    leftMarginal = rowSums(observed)
-    rightMarginal = colSums(observed)
-    expected = outer(leftMarginal, rightMarginal)
-
-    weights = outer(
-      seq_len(nCat),
-      seq_len(nCat),
-      function(i, j) {
-        d = abs(i - j) / (nCat - 1)
-
-        if (identical(weightType, "quadratic")) {
-          d^2
-        } else {
-          d
-        }
-      }
+    w = outer(
+      seq_len(k), seq_len(k),
+      function(i, j) ((abs(i - j) / (k - 1))^2)
     )
 
-    observedWeighted = sum(weights * observed)
-    expectedWeighted = sum(weights * expected)
+    ow = sum(w * obs)
+    ew = sum(w * exp)
 
-    if (isTRUE(all.equal(expectedWeighted, 0))) {
-      return(NA_real_)
-    }
+    if (ew == 0) return(NA_real_)
 
-    1 - (observedWeighted / expectedWeighted)
-  }
-
-  summarizeBinaryField = function(leftVec, rightVec, field) {
-    ok = !(is.na(leftVec) | is.na(rightVec))
-    nCompared = sum(ok)
-
-    if (nCompared == 0) {
-      return(NULL)
-    }
-
-    leftOk = as.logical(leftVec[ok])
-    rightOk = as.logical(rightVec[ok])
-
-    data.frame(
-      metric = field,
-      nCompared = nCompared,
-      nEqual = sum(leftOk == rightOk),
-      proportionEqual = mean(leftOk == rightOk),
-      positiveRateLeft = mean(leftOk),
-      positiveRateRight = mean(rightOk),
-      meanDifference = mean(as.integer(rightOk) - as.integer(leftOk)),
-      stringsAsFactors = FALSE
-    )
+    1 - (ow / ew)
   }
 
   summarizeOrdinalField = function(leftVec, rightVec, field) {
     ok = !(is.na(leftVec) | is.na(rightVec))
-    nCompared = sum(ok)
+    if (sum(ok) == 0) return(NULL)
 
-    if (nCompared == 0) {
-      return(NULL)
-    }
-
-    leftOk = suppressWarnings(as.numeric(leftVec[ok]))
-    rightOk = suppressWarnings(as.numeric(rightVec[ok]))
-    diff = rightOk - leftOk
+    left = as.numeric(leftVec[ok])
+    right = as.numeric(rightVec[ok])
+    diff = right - left
 
     data.frame(
       metric = field,
-      nCompared = nCompared,
-      nEqual = sum(diff == 0),
+      nCompared = length(diff),
       proportionEqual = mean(diff == 0),
       proportionAdjacent = mean(abs(diff) <= 1),
       meanDifference = mean(diff),
       meanAbsoluteDifference = mean(abs(diff)),
-      weightedKappa = computeWeightedKappa(leftOk, rightOk, weightType = "quadratic"),
+      weightedKappa = computeWeightedKappa(left, right),
       stringsAsFactors = FALSE
     )
   }
 
   summarizeContinuousField = function(leftVec, rightVec, field) {
     ok = !(is.na(leftVec) | is.na(rightVec))
-    nCompared = sum(ok)
+    if (sum(ok) == 0) return(NULL)
 
-    if (nCompared == 0) {
-      return(NULL)
-    }
+    left = as.numeric(leftVec[ok])
+    right = as.numeric(rightVec[ok])
+    diff = right - left
 
-    leftOk = suppressWarnings(as.numeric(leftVec[ok]))
-    rightOk = suppressWarnings(as.numeric(rightVec[ok]))
-    diff = rightOk - leftOk
-
-    corr =
-      if (length(leftOk) >= 2 && stats::sd(leftOk) > 0 && stats::sd(rightOk) > 0) {
-        stats::cor(leftOk, rightOk)
-      } else {
-        NA_real_
-      }
+    corVal =
+      if (length(left) > 1) stats::cor(left, right) else NA_real_
 
     data.frame(
       metric = field,
-      nCompared = nCompared,
-      meanLeft = mean(leftOk),
-      meanRight = mean(rightOk),
       meanDifference = mean(diff),
-      sdDifference = stats::sd(diff),
       meanAbsoluteDifference = mean(abs(diff)),
-      correlation = corr,
+      correlation = corVal,
       stringsAsFactors = FALSE
     )
   }
 
   buildComparison = function(leftDf, rightDf, leftMethod, rightMethod, sourceLabel) {
-    mergedDf = merge(
-      leftDf,
-      rightDf,
+
+    merged = merge(
+      leftDf, rightDf,
       by = "runId",
-      suffixes = c(".x", ".y"),
-      all = FALSE,
-      sort = TRUE
+      suffixes = c(".x", ".y")
     )
 
-    if (nrow(mergedDf) == 0) {
-      stop("No overlapping run IDs were found to compare.", call. = FALSE)
-    }
+    ordinalFields = c("effectDirectionCorrect", "clarityAdequate")
+    continuousFields = c("overallScore")
 
-    binaryFields = c(
-      "fatalFlawDetected",
-      "overallPass"
-    )
-
-    ordinalFields = c(
-      "effectDirectionCorrect",
-      "effectScaleAppropriate",
-      "referenceGroupHandledCorrectly",
-      "interactionCoverageAdequate",
-      "interactionSubstantiveCorrect",
-      "uncertaintyHandlingAppropriate",
-      "inferentialRegisterAppropriate",
-      "mainEffectCoverageAdequate",
-      "referenceGroupCoverageAdequate",
-      "clarityAdequate",
-      "numericExpressionAdequate",
-      "comparisonStructureClear"
-    )
-
-    continuousFields = c(
-      "factualScore",
-      "inferenceScore",
-      "completenessScore",
-      "clarityScore",
-      "calibrationScore",
-      "overallScore"
-    )
-
-    collectSummaries = function(fields, summarizer) {
-      pieces = lapply(fields, function(field) {
-        leftName = paste0(field, ".x")
-        rightName = paste0(field, ".y")
-
-        if (!(leftName %in% names(mergedDf)) || !(rightName %in% names(mergedDf))) {
-          return(NULL)
-        }
-
-        summarizer(
-          leftVec = mergedDf[[leftName]],
-          rightVec = mergedDf[[rightName]],
-          field = field
-        )
+    collect = function(fields, fun) {
+      out = lapply(fields, function(f) {
+        lx = paste0(f, ".x")
+        ry = paste0(f, ".y")
+        if (!(lx %in% names(merged) && ry %in% names(merged))) return(NULL)
+        fun(merged[[lx]], merged[[ry]], f)
       })
-
-      pieces = Filter(Negate(is.null), pieces)
-
-      if (length(pieces) == 0) {
-        return(data.frame())
-      }
-
-      out = do.call(rbind, pieces)
-      rownames(out) = NULL
-      out
+      out = Filter(Negate(is.null), out)
+      if (length(out) == 0) return(data.frame())
+      do.call(rbind, out)
     }
 
-    binaryAgreement = collectSummaries(binaryFields, summarizeBinaryField)
-    ordinalAgreement = collectSummaries(ordinalFields, summarizeOrdinalField)
-    continuousAgreement = collectSummaries(continuousFields, summarizeContinuousField)
+    ordinalAgreement = collect(ordinalFields, summarizeOrdinalField)
+    continuousAgreement = collect(continuousFields, summarizeContinuousField)
 
-    pairedOverallScores = NULL
-
-    if ("overallScore.x" %in% names(mergedDf) && "overallScore.y" %in% names(mergedDf)) {
-      leftOverall = suppressWarnings(as.numeric(mergedDf$overallScore.x))
-      rightOverall = suppressWarnings(as.numeric(mergedDf$overallScore.y))
-      ok = !(is.na(leftOverall) | is.na(rightOverall))
-
-      if (any(ok)) {
-        pairedOverallScores = data.frame(
-          runId = mergedDf$runId[ok],
-          leftOverallScore = leftOverall[ok],
-          rightOverallScore = rightOverall[ok],
-          meanOverallScore = (leftOverall[ok] + rightOverall[ok]) / 2,
-          differenceOverallScore = rightOverall[ok] - leftOverall[ok],
-          stringsAsFactors = FALSE
-        )
-      }
+    paired = NULL
+    if ("overallScore.x" %in% names(merged)) {
+      l = as.numeric(merged$overallScore.x)
+      r = as.numeric(merged$overallScore.y)
+      ok = !(is.na(l) | is.na(r))
+      paired = data.frame(
+        runId = merged$runId[ok],
+        leftOverallScore = l[ok],
+        rightOverallScore = r[ok],
+        meanOverallScore = (l[ok] + r[ok]) / 2,
+        differenceOverallScore = r[ok] - l[ok]
+      )
     }
 
     overallSummary = NULL
-
-    if (!is.null(pairedOverallScores) && nrow(pairedOverallScores) > 0) {
-      diffVec = pairedOverallScores$differenceOverallScore
+    if (!is.null(paired) && nrow(paired) > 0) {
+      d = paired$differenceOverallScore
+      md = mean(d)
+      sdv = stats::sd(d)
       overallSummary = list(
-        meanLeftOverallScore = mean(pairedOverallScores$leftOverallScore),
-        meanRightOverallScore = mean(pairedOverallScores$rightOverallScore),
-        meanDifferenceRightMinusLeft = mean(diffVec),
-        sdDifferenceRightMinusLeft = stats::sd(diffVec),
-        meanAbsoluteDifference = mean(abs(diffVec))
+        meanDifferenceRightMinusLeft = md,
+        sdDifferenceRightMinusLeft = sdv,
+        loaLower = md - 1.96 * sdv,
+        loaUpper = md + 1.96 * sdv
       )
     }
 
-    out = list(
-      source = sourceLabel,
-      leftMethod = leftMethod,
-      rightMethod = rightMethod,
-      nRunsCompared = nrow(mergedDf),
-      binaryAgreement = binaryAgreement,
-      ordinalAgreement = ordinalAgreement,
-      continuousAgreement = continuousAgreement,
-      overallSummary = overallSummary,
-      pairedOverallScores = pairedOverallScores
+    structure(
+      list(
+        source = sourceLabel,
+        leftMethod = leftMethod,
+        rightMethod = rightMethod,
+        ordinalAgreement = ordinalAgreement,
+        continuousAgreement = continuousAgreement,
+        overallSummary = overallSummary,
+        pairedOverallScores = paired
+      ),
+      class = "wmfmScoreComparison"
     )
-
-    class(out) = c("wmfmScoreComparison", class(out))
-    out
   }
 
   if (is.null(y)) {
-    available = x$methods %||% character(0)
+    leftDf = scoreDfForMethod(x, "deterministic")
+    rightDf = scoreDfForMethod(x, "llm")
 
-    if (!all(c("deterministic", "llm") %in% available)) {
-      stop(
-        "When `y = NULL`, `x` must contain both `deterministic` and `llm` scores.",
-        call. = FALSE
-      )
-    }
-
-    leftMethod = "deterministic"
-    rightMethod = "llm"
-
-    leftDf = scoreDfForMethod(x, leftMethod)
-    rightDf = scoreDfForMethod(x, rightMethod)
-
-    return(
-      buildComparison(
-        leftDf = leftDf,
-        rightDf = rightDf,
-        leftMethod = leftMethod,
-        rightMethod = rightMethod,
-        sourceLabel = "within_object"
-      )
-    )
+    return(buildComparison(leftDf, rightDf, "deterministic", "llm", "within_object"))
   }
 
-  if (!inherits(y, "wmfmScores")) {
-    stop("`y` must inherit from `wmfmScores`.", call. = FALSE)
-  }
-
-  leftMethod = getSingleMethod(x, method = xMethod, argName = "xMethod")
-  rightMethod = getSingleMethod(y, method = yMethod, argName = "yMethod")
-
-  leftDf = scoreDfForMethod(x, leftMethod)
-  rightDf = scoreDfForMethod(y, rightMethod)
+  leftMethod = getSingleMethod(x, xMethod)
+  rightMethod = getSingleMethod(y, yMethod)
 
   buildComparison(
-    leftDf = leftDf,
-    rightDf = rightDf,
-    leftMethod = leftMethod,
-    rightMethod = rightMethod,
-    sourceLabel = "between_objects"
+    scoreDfForMethod(x, leftMethod),
+    scoreDfForMethod(y, rightMethod),
+    leftMethod,
+    rightMethod,
+    "between_objects"
   )
 }

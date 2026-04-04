@@ -3,6 +3,7 @@
 S3method(as.data.frame,wmfmScores)
 S3method(compare,wmfmScores)
 S3method(plot,wmfmRepeatedExplanationRuns)
+S3method(plot,wmfmScoreComparison)
 S3method(plot,wmfmScoreStability)
 S3method(print,wmfmScoreComparison)
 S3method(print,wmfmScoreStability)
