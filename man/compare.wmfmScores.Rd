@@ -28,10 +28,6 @@ Compares score results either:
 }
 }
 \details{
-When \code{y = NULL}, \code{x} must contain both deterministic and LLM scoring results.
-In that case the two methods are compared within the same score object.
-
-When \code{y} is supplied, each object must contain exactly one scoring method, or
-the requested methods must be specified explicitly using \code{xMethod} and
-\code{yMethod}.
+The comparison summarises agreement separately for binary, ordinal, and
+continuous score fields.
 }
