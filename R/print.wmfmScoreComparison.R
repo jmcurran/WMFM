@@ -19,6 +19,10 @@ print.wmfmScoreComparison = function(
     stop("Object is not of class `wmfmScoreComparison`.", call. = FALSE)
   }
 
+  if (!is.numeric(digits) || length(digits) != 1 || is.na(digits) || digits < 0) {
+    stop("`digits` must be a single non-negative number.", call. = FALSE)
+  }
+
   fmt = function(v) {
     ifelse(
       is.na(v),
@@ -44,15 +48,16 @@ print.wmfmScoreComparison = function(
   }
 
   if (!is.null(x$ordinalAgreement) && nrow(x$ordinalAgreement) > 0) {
-    cat("Ordinal metrics with lowest exact agreement:\n")
-    ord = order(x$ordinalAgreement$proportionEqual, na.last = TRUE)
+    cat("Ordinal metrics with lowest weighted agreement:\n")
+    ord = order(x$ordinalAgreement$weightedKappa, na.last = TRUE)
     showN = min(5, length(ord))
 
     for (i in seq_len(showN)) {
       idx = ord[i]
       cat(
         "  -", x$ordinalAgreement$metric[idx],
-        ": exact =", fmt(x$ordinalAgreement$proportionEqual[idx]),
+        ": kappa =", fmt(x$ordinalAgreement$weightedKappa[idx]),
+        ", exact =", fmt(x$ordinalAgreement$proportionEqual[idx]),
         ", adjacent =", fmt(x$ordinalAgreement$proportionAdjacent[idx]),
         ", MAD =", fmt(x$ordinalAgreement$meanAbsoluteDifference[idx]),
         "\n"

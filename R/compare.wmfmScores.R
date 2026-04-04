@@ -77,6 +77,65 @@ compare.wmfmScores = function(
     df
   }
 
+  computeWeightedKappa = function(leftVec, rightVec, weightType = "quadratic") {
+    ok = !(is.na(leftVec) | is.na(rightVec))
+    leftVec = suppressWarnings(as.integer(leftVec[ok]))
+    rightVec = suppressWarnings(as.integer(rightVec[ok]))
+
+    ok2 = !(is.na(leftVec) | is.na(rightVec))
+    leftVec = leftVec[ok2]
+    rightVec = rightVec[ok2]
+
+    if (length(leftVec) == 0) {
+      return(NA_real_)
+    }
+
+    categories = sort(unique(c(leftVec, rightVec)))
+    nCat = length(categories)
+
+    if (nCat <= 1) {
+      return(1)
+    }
+
+    leftIdx = match(leftVec, categories)
+    rightIdx = match(rightVec, categories)
+
+    observed = matrix(0, nrow = nCat, ncol = nCat)
+
+    for (i in seq_along(leftIdx)) {
+      observed[leftIdx[i], rightIdx[i]] = observed[leftIdx[i], rightIdx[i]] + 1
+    }
+
+    observed = observed / sum(observed)
+
+    leftMarginal = rowSums(observed)
+    rightMarginal = colSums(observed)
+    expected = outer(leftMarginal, rightMarginal)
+
+    weights = outer(
+      seq_len(nCat),
+      seq_len(nCat),
+      function(i, j) {
+        d = abs(i - j) / (nCat - 1)
+
+        if (identical(weightType, "quadratic")) {
+          d^2
+        } else {
+          d
+        }
+      }
+    )
+
+    observedWeighted = sum(weights * observed)
+    expectedWeighted = sum(weights * expected)
+
+    if (isTRUE(all.equal(expectedWeighted, 0))) {
+      return(NA_real_)
+    }
+
+    1 - (observedWeighted / expectedWeighted)
+  }
+
   summarizeBinaryField = function(leftVec, rightVec, field) {
     ok = !(is.na(leftVec) | is.na(rightVec))
     nCompared = sum(ok)
@@ -110,7 +169,6 @@ compare.wmfmScores = function(
 
     leftOk = suppressWarnings(as.numeric(leftVec[ok]))
     rightOk = suppressWarnings(as.numeric(rightVec[ok]))
-
     diff = rightOk - leftOk
 
     data.frame(
@@ -121,6 +179,7 @@ compare.wmfmScores = function(
       proportionAdjacent = mean(abs(diff) <= 1),
       meanDifference = mean(diff),
       meanAbsoluteDifference = mean(abs(diff)),
+      weightedKappa = computeWeightedKappa(leftOk, rightOk, weightType = "quadratic"),
       stringsAsFactors = FALSE
     )
   }
