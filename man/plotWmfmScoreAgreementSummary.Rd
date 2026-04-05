@@ -2,33 +2,18 @@
 % Please edit documentation in R/plotWmfmScoreAgreementSummary.R
 \name{plotWmfmScoreAgreementSummary}
 \alias{plotWmfmScoreAgreementSummary}
-\title{Plot an ordinal agreement summary for WMFM score comparison}
+\title{Plot ordinal agreement summary for WMFM score comparison}
 \usage{
 plotWmfmScoreAgreementSummary(x, orderBy = c("worst", "registry"))
 }
 \arguments{
-\item{x}{A \code{wmfmScoreComparison} object.}
+\item{x}{A wmfmScoreComparison object}
 
-\item{orderBy}{Character. One of \code{"worst"} or \code{"registry"}.}
+\item{orderBy}{"worst" or "registry"}
 }
 \value{
-A \code{ggplot} object.
+ggplot object
 }
 \description{
-Draws an agreement summary plot for ordinal metrics in a
-\code{wmfmScoreComparison} object. Metrics can be ordered from worst to best
-agreement using a composite disagreement score.
+Plot ordinal agreement summary for WMFM score comparison
 }
-\details{
-The plot shows:
-\itemize{
-\item weighted kappa,
-\item exact agreement,
-\item adjacent agreement, and
-\item mean absolute difference.
-}
-
-Agreement proportions and weighted kappa are displayed on a common 0 to 1
-scale. Mean absolute difference is shown in a separate panel.
-}
-\keyword{internal}

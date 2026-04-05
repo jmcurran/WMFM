@@ -2,39 +2,54 @@
 % Please edit documentation in R/plotWmfmScoreHeatmap.R
 \name{plotWmfmScoreHeatmap}
 \alias{plotWmfmScoreHeatmap}
-\title{Plot a disagreement heatmap for WMFM score comparison}
+\title{Plot a run-level disagreement heatmap for WMFM score comparisons}
 \usage{
 plotWmfmScoreHeatmap(
   x,
-  includeContinuous = FALSE,
-  orderMetrics = c("worst", "registry"),
-  facetBy = c("group", "metricType", "none"),
-  continuousBreaks = c(0.1, 0.35, 0.75)
+  includeMetricTypes = c("ordinal", "binary"),
+  orderBy = c("worst", "registry", "alphabetical"),
+  facetBy = c("group", "metricType"),
+  prettyLabels = TRUE,
+  showRunEvery = 1L,
+  ...
 )
 }
 \arguments{
 \item{x}{A \code{wmfmScoreComparison} object.}
 
-\item{includeContinuous}{Logical. Should continuous metrics be included?}
+\item{includeMetricTypes}{Character vector of metric types to include.
+Defaults to \code{c("ordinal", "binary")}.}
 
-\item{orderMetrics}{Character. One of \code{"worst"} or \code{"registry"}.}
+\item{orderBy}{Character. One of \code{"worst"}, \code{"registry"}, or \code{"alphabetical"}.}
 
-\item{facetBy}{Character. One of \code{"group"}, \code{"metricType"}, or \code{"none"}.}
+\item{facetBy}{Character. One of \code{"group"} or \code{"metricType"}.}
 
-\item{continuousBreaks}{Numeric vector of length 3 giving cut points for the
-absolute difference bins used for continuous metrics.}
+\item{prettyLabels}{Logical. Should metric labels be prettified using the
+stored labels in \code{pairData}?}
+
+\item{showRunEvery}{Integer. Show every \code{k}th run label on the x-axis.}
+
+\item{...}{Unused. Included for future compatibility.}
 }
 \value{
-A \code{ggplot} object.
+A ggplot object.
 }
 \description{
-Draws a run-by-metric heatmap from the run-level paired comparison data in a
-\code{wmfmScoreComparison} object. The fill indicates the degree of disagreement
-between the left and right scoring methods.
+Visualises run-level disagreement between two scoring methods stored in a
+\code{wmfmScoreComparison} object. The heatmap is built from \code{pairData} and is
+intended primarily for ordinal and binary metrics.
 }
 \details{
-By default, the heatmap includes ordinal and binary metrics only. Continuous
-metrics can be included by setting \code{includeContinuous = TRUE}, in which case
-they are classified using absolute-difference bins.
+Ordinal metrics are classified into disagreement classes using the absolute
+difference between the paired scores:
+\itemize{
+\item \code{exact} = no difference,
+\item \code{adjacent} = difference of 1,
+\item \code{moderate} = difference of 2 or more.
 }
-\keyword{internal}
+
+Binary metrics are classified as either \code{exact} or \code{different}.
+
+Metrics can be ordered by mean disagreement severity so that the worst-agreeing
+metrics appear first.
+}
