@@ -7,7 +7,8 @@
 summariseMetricComparison(
   scores,
   comparison,
-  deterministicMethod = "deterministic"
+  deterministicMethod = "deterministic",
+  orderBy = NULL
 )
 }
 \arguments{
@@ -16,15 +17,13 @@ summariseMetricComparison(
 \item{comparison}{A \code{wmfmScoreComparison} object.}
 
 \item{deterministicMethod}{Name of deterministic method.}
+
+\item{orderBy}{Optional ordering: NULL, \code{"disagreement"}, or \code{"ease"}.}
 }
 \value{
-A data.frame with one row per metric.
+An object of class \code{metricComparisonSummary}.
 }
 \description{
 Builds a metric-level summary combining cross-method disagreement
 with deterministic stability/ease measures.
-}
-\details{
-Useful for investigating whether metrics that are easy to score
-deterministically are also those with high disagreement.
 }
