@@ -4,11 +4,15 @@
 #' agreement, adjacent agreement, mean differences, and quadratic
 #' weighted kappa.
 #'
+#' WMFM ordinal judged fields are currently stored as integer-like values
+#' \code{0}, \code{1}, and \code{2}. The registry's \code{orderedLevels}
+#' is used as the source of truth for mapping values onto the ordinal scale.
+#'
 #' @param leftVec Vector of left-side values.
 #' @param rightVec Vector of right-side values.
 #' @param metricRow Single-row metric registry data frame.
 #'
-#' @return A one-row data frame, or `NULL` if no complete pairs are available.
+#' @return A one-row data frame, or \code{NULL} if no complete pairs are available.
 #' @keywords internal
 summarizeOrdinalAgreement = function(leftVec, rightVec, metricRow) {
   ok = !(is.na(leftVec) | is.na(rightVec))
@@ -18,8 +22,19 @@ summarizeOrdinalAgreement = function(leftVec, rightVec, metricRow) {
   }
 
   orderedLevels = metricRow$orderedLevels[[1]]
-  left = match(as.character(leftVec[ok]), orderedLevels)
-  right = match(as.character(rightVec[ok]), orderedLevels)
+
+  if (is.null(orderedLevels) || length(orderedLevels) < 2) {
+    stop(
+      "Ordinal metric `", metricRow$metricName, "` must define orderedLevels.",
+      call. = FALSE
+    )
+  }
+
+  leftRaw = leftVec[ok]
+  rightRaw = rightVec[ok]
+
+  left = match(as.character(leftRaw), as.character(orderedLevels))
+  right = match(as.character(rightRaw), as.character(orderedLevels))
   ok2 = !(is.na(left) | is.na(right))
 
   if (sum(ok2) == 0) {

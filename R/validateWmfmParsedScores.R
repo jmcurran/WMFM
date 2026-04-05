@@ -28,13 +28,12 @@ validateWmfmParsedScores = function(parsedScores) {
     "comparisonStructureClear"
   )
 
-  numericFields = c(
+  dimensionScoreFields = c(
     "factualScore",
     "inferenceScore",
     "completenessScore",
     "clarityScore",
-    "calibrationScore",
-    "overallScore"
+    "calibrationScore"
   )
 
   logicalFields = c(
@@ -53,7 +52,8 @@ validateWmfmParsedScores = function(parsedScores) {
 
   requiredFields = c(
     rubricFields,
-    numericFields,
+    dimensionScoreFields,
+    "overallScore",
     logicalFields,
     characterFields,
     "fieldReasons"
@@ -81,7 +81,7 @@ validateWmfmParsedScores = function(parsedScores) {
     out[[field]] = value
   }
 
-  for (field in numericFields) {
+  for (field in dimensionScoreFields) {
     value = suppressWarnings(as.numeric(out[[field]]))
     if (length(value) != 1 || is.na(value) || !is.finite(value)) {
       stop("Field `", field, "` must be a finite numeric scalar.", call. = FALSE)
@@ -91,6 +91,15 @@ validateWmfmParsedScores = function(parsedScores) {
     }
     out[[field]] = value
   }
+
+  overallScore = suppressWarnings(as.numeric(out$overallScore))
+  if (length(overallScore) != 1 || is.na(overallScore) || !is.finite(overallScore)) {
+    stop("Field `overallScore` must be a finite numeric scalar.", call. = FALSE)
+  }
+  if (overallScore < 0 || overallScore > 100) {
+    stop("Field `overallScore` must lie between 0 and 100.", call. = FALSE)
+  }
+  out$overallScore = overallScore
 
   for (field in logicalFields) {
     value = out[[field]]

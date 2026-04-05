@@ -31,7 +31,8 @@ buildWmfmLlmScoringSystemPrompt = function() {
     "  0 = clearly wrong, inappropriate, missing when important, or seriously unclear",
     "",
     "Aggregate score rules:",
-    "- factualScore, inferenceScore, completenessScore, clarityScore, calibrationScore, and overallScore must each be numeric values between 0 and 2 inclusive.",
+    "- factualScore, inferenceScore, completenessScore, clarityScore, and calibrationScore must each be numeric values between 0 and 2 inclusive.",
+    "- overallScore must be a numeric value between 0 and 100 inclusive.",
     "- overallPass should usually be FALSE if fatalFlawDetected is TRUE.",
     sep = "\n"
   )

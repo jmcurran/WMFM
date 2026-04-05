@@ -5,9 +5,10 @@
 #' source of truth for which metrics are available and how they should
 #' be treated.
 #'
-#' The default registry below includes the metrics that are currently
-#' known from the scoring framework. Add rows here as new metrics are
-#' introduced so that downstream methods automatically pick them up.
+#' The default registry below reflects the current WMFM scoring schema:
+#' ordinal judged fields are stored as integer-like values \code{0},
+#' \code{1}, and \code{2}; binary judged fields are stored as logicals;
+#' and aggregate score fields are numeric.
 #'
 #' @return A data frame containing metric metadata.
 #' @export
@@ -15,61 +16,109 @@ getWmfmMetricRegistry = function() {
   registry = data.frame(
     metricName = c(
       "overallScore",
-      "clarityAdequate",
+      "factualScore",
+      "inferenceScore",
+      "completenessScore",
+      "clarityScore",
+      "calibrationScore",
       "effectDirectionCorrect",
-      "interactionDirectionCorrect",
-      "uncertaintyAppropriate"
+      "effectScaleAppropriate",
+      "referenceGroupHandledCorrectly",
+      "interactionCoverageAdequate",
+      "interactionSubstantiveCorrect",
+      "uncertaintyHandlingAppropriate",
+      "inferentialRegisterAppropriate",
+      "mainEffectCoverageAdequate",
+      "referenceGroupCoverageAdequate",
+      "clarityAdequate",
+      "numericExpressionAdequate",
+      "comparisonStructureClear",
+      "fatalFlawDetected",
+      "overallPass"
     ),
     metricType = c(
       "continuous",
-      "ordinal",
-      "ordinal",
-      "ordinal",
+      "continuous",
+      "continuous",
+      "continuous",
+      "continuous",
+      "continuous",
+      rep("ordinal", 11),
+      "binary",
       "binary"
     ),
     label = c(
       "Overall score",
-      "Clarity adequate",
+      "Factual score",
+      "Inference score",
+      "Completeness score",
+      "Clarity score",
+      "Calibration score",
       "Effect direction correct",
-      "Interaction direction correct",
-      "Uncertainty appropriate"
+      "Effect scale appropriate",
+      "Reference group handled correctly",
+      "Interaction coverage adequate",
+      "Interaction substantive correct",
+      "Uncertainty handling appropriate",
+      "Inferential register appropriate",
+      "Main-effect coverage adequate",
+      "Reference group coverage adequate",
+      "Clarity adequate",
+      "Numeric expression adequate",
+      "Comparison structure clear",
+      "Fatal flaw detected",
+      "Overall pass"
     ),
     group = c(
       "overall",
-      "communication",
+      "dimension_scores",
+      "dimension_scores",
+      "dimension_scores",
+      "dimension_scores",
+      "dimension_scores",
       "interpretation",
       "interpretation",
-      "inference"
+      "reference",
+      "interaction",
+      "interaction",
+      "inference",
+      "inference",
+      "completeness",
+      "reference",
+      "clarity",
+      "clarity",
+      "clarity",
+      "quality_flags",
+      "quality_flags"
     ),
-    includeInComparison = c(
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE
-    ),
-    includeInStability = c(
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE
-    ),
-    includeInPlots = c(
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE,
-      TRUE
-    ),
+    includeInComparison = rep(TRUE, 20),
+    includeInStability = rep(TRUE, 20),
+    includeInPlots = rep(TRUE, 20),
     stringsAsFactors = FALSE
   )
 
+  ordinalLevels = c("0", "1", "2")
+
   registry$orderedLevels = I(list(
     NULL,
-    c("inadequate", "mixed_or_unclear", "adequate"),
-    c("incorrect", "mixed_or_unclear", "correct"),
-    c("incorrect", "mixed_or_unclear", "correct"),
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    ordinalLevels,
+    NULL,
     NULL
   ))
 

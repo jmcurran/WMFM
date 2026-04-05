@@ -21,4 +21,9 @@ Summarizes agreement between two ordinal vectors using exact
 agreement, adjacent agreement, mean differences, and quadratic
 weighted kappa.
 }
+\details{
+WMFM ordinal judged fields are currently stored as integer-like values
+\code{0}, \code{1}, and \code{2}. The registry's \code{orderedLevels}
+is used as the source of truth for mapping values onto the ordinal scale.
+}
 \keyword{internal}
