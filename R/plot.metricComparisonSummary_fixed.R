@@ -65,26 +65,22 @@ plot.metricComparisonSummary = function(
 
   if (type %in% c("scatter", "diagnostic")) {
 
-    p = ggplot2::ggplot(
-      df,
-      ggplot2::aes(
-        x = modalProportionDeterministic,
-        y = meanAbsoluteDifference
-      )
-    )
-
     if (identical(type, "diagnostic")) {
       df$isFlagged =
         (!is.na(df$meanAbsoluteDifference) & df$meanAbsoluteDifference >= disagreementThreshold) |
         (!is.na(df$modalProportionDeterministic) & df$modalProportionDeterministic >= easeThreshold)
 
-      p = p +
+      p = ggplot2::ggplot(
+        df,
+        ggplot2::aes(
+          x = modalProportionDeterministic,
+          y = meanAbsoluteDifference,
+          colour = isFlagged
+        )
+      ) +
         ggplot2::geom_vline(xintercept = easeThreshold, linetype = 2, alpha = 0.5) +
         ggplot2::geom_hline(yintercept = disagreementThreshold, linetype = 2, alpha = 0.5) +
-        ggplot2::geom_point(
-          ggplot2::aes(colour = isFlagged),
-          size = 2.5
-        ) +
+        ggplot2::geom_point(size = 2.5) +
         ggplot2::scale_colour_manual(
           values = c("FALSE" = "grey40", "TRUE" = "black"),
           guide = "none"
@@ -101,7 +97,13 @@ plot.metricComparisonSummary = function(
           y = "Mean absolute difference"
         )
     } else {
-      p = p +
+      p = ggplot2::ggplot(
+        df,
+        ggplot2::aes(
+          x = modalProportionDeterministic,
+          y = meanAbsoluteDifference
+        )
+      ) +
         ggplot2::geom_point() +
         ggplot2::labs(
           title = "Disagreement versus deterministic ease",
@@ -128,7 +130,12 @@ plot.metricComparisonSummary = function(
       if (nrow(labelDf) > 0) {
         p = p + ggrepel::geom_text_repel(
           data = labelDf,
-          ggplot2::aes(label = label),
+          ggplot2::aes(
+            x = modalProportionDeterministic,
+            y = meanAbsoluteDifference,
+            label = label
+          ),
+          inherit.aes = FALSE,
           size = 3,
           max.overlaps = Inf,
           box.padding = 0.3,
