@@ -121,6 +121,15 @@ validateWmfmParsedScores = function(parsedScores) {
     stop("Field `fieldReasons` must be a named JSON object.", call. = FALSE)
   }
 
+  if (!"fatalFlawDetected" %in% names(reasons)) {
+    reasons$fatalFlawDetected =
+      if (isTRUE(out$fatalFlawDetected)) {
+        "A fatal flaw was detected based on the explanation."
+      } else {
+        "No fatal flaw was detected."
+      }
+  }
+
   missingReasonFields = setdiff(requiredReasonFields, names(reasons))
   if (length(missingReasonFields) > 0) {
     stop(
