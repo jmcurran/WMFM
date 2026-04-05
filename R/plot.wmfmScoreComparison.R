@@ -1,7 +1,7 @@
 #' Plot a WMFM score comparison object
 #'
-#' Provides three plotting modes for a `wmfmScoreComparison` object:
-#' 
+#' Provides plotting modes for a `wmfmScoreComparison` object.
+#'
 #' \describe{
 #'   \item{`type = "overall"`}{A Bland-Altman plot for paired overall scores.}
 #'   \item{`type = "agreement"`}{An ordinal-agreement summary plot showing
@@ -49,7 +49,7 @@ plot.wmfmScoreComparison = function(
         df,
         ggplot2::aes(x = meanOverallScore, y = differenceOverallScore)
       ) +
-        ggplot2::geom_point(size = 2, alpha = 0.8) +
+        ggplot2::geom_point(size = 2.6, alpha = 0.85) +
         ggplot2::geom_hline(
           yintercept = summary$meanDifferenceRightMinusLeft,
           linewidth = 0.5
@@ -73,9 +73,18 @@ plot.wmfmScoreComparison = function(
             leftMethod
           ),
           x = "Mean overall score",
-          y = paste0("Difference in overall score (", rightMethod, " - ", leftMethod, ")")
+          y = paste0(
+            "Difference in overall score (",
+            rightMethod,
+            " - ",
+            leftMethod,
+            ")"
+          )
         ) +
-        ggplot2::theme_bw()
+        ggplot2::theme_bw() +
+        ggplot2::theme(
+          panel.grid.minor = ggplot2::element_blank()
+        )
     )
   }
 

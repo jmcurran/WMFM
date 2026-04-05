@@ -1,8 +1,8 @@
 #' Plot an ordinal agreement summary for WMFM score comparison
 #'
 #' Draws an agreement summary plot for ordinal metrics in a
-#' `wmfmScoreComparison` object. Metrics are ordered from worst to best
-#' agreement using a simple composite disagreement score.
+#' `wmfmScoreComparison` object. Metrics can be ordered from worst to best
+#' agreement using a composite disagreement score.
 #'
 #' The plot shows:
 #' \itemize{
@@ -12,16 +12,19 @@
 #'   \item mean absolute difference.
 #' }
 #'
-#' Exact agreement, adjacent agreement, and weighted kappa are displayed on a
-#' common 0-1 scale. Mean absolute difference is shown in a separate facet so
-#' that it keeps its original interpretation.
+#' Agreement proportions and weighted kappa are displayed on a common 0 to 1
+#' scale. Mean absolute difference is shown in a separate panel.
 #'
 #' @param x A `wmfmScoreComparison` object.
-#' @param orderBy Character. Currently only `"worst"` is supported.
+#' @param orderBy Character. One of `"worst"` or `"registry"`.
 #'
 #' @return A `ggplot` object.
 #' @keywords internal
-plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst")) {
+plotWmfmScoreAgreementSummary = function(
+    x,
+    orderBy = c("worst", "registry")
+) {
+
   orderBy = match.arg(orderBy)
 
   df = x$ordinalAgreement
@@ -30,25 +33,19 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst")) {
     stop("No ordinal agreement summary is available to plot.", call. = FALSE)
   }
 
-  disagreementScore =
-    (1 - df$weightedKappa) +
-    (1 - df$proportionAdjacent) +
-    (1 - df$proportionEqual) +
-    df$meanAbsoluteDifference
+  metricOrder = orderWmfmAgreementMetrics(df, orderBy = orderBy)
 
-  if (identical(orderBy, "worst")) {
-    metricOrder = df$label[order(disagreementScore, decreasing = TRUE)]
-  } else {
-    metricOrder = df$label
-  }
-
-  scale01Df = data.frame(
+  agreementDf = data.frame(
     label = rep(df$label, times = 3),
     statistic = rep(
       c("Weighted kappa", "Adjacent agreement", "Exact agreement"),
       each = nrow(df)
     ),
-    value = c(df$weightedKappa, df$proportionAdjacent, df$proportionEqual),
+    value = c(
+      df$weightedKappa,
+      df$proportionAdjacent,
+      df$proportionEqual
+    ),
     panel = "Agreement proportion / index",
     stringsAsFactors = FALSE
   )
@@ -61,8 +58,8 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst")) {
     stringsAsFactors = FALSE
   )
 
-  plotDf = rbind(scale01Df, madDf)
-  plotDf$label = factor(plotDf$label, levels = rev(unique(metricOrder)))
+  plotDf = rbind(agreementDf, madDf)
+  plotDf$label = factor(plotDf$label, levels = rev(metricOrder))
   plotDf$statistic = factor(
     plotDf$statistic,
     levels = c(
@@ -72,20 +69,50 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst")) {
       "Mean absolute difference"
     )
   )
+  plotDf$panel = factor(
+    plotDf$panel,
+    levels = c("Agreement proportion / index", "Mean absolute difference")
+  )
 
-  ggplot2::ggplot(
+  rightMethod = x$rightMethod %||% "right"
+  leftMethod = x$leftMethod %||% "left"
+
+  p = ggplot2::ggplot(
     plotDf,
     ggplot2::aes(x = value, y = label, shape = statistic)
   ) +
-    ggplot2::geom_point(size = 2.6) +
-    ggplot2::facet_wrap(~ panel, scales = "free_x") +
+    ggplot2::geom_vline(
+      data = data.frame(
+        panel = factor("Agreement proportion / index", levels = levels(plotDf$panel)),
+        xint = 0
+      ),
+      ggplot2::aes(xintercept = xint),
+      linewidth = 0.3,
+      alpha = 0.6
+    ) +
+    ggplot2::geom_point(size = 3) +
+    ggplot2::facet_grid(
+      rows = ggplot2::vars(),
+      cols = ggplot2::vars(panel),
+      scales = "free_x",
+      space = "free_x"
+    ) +
+    ggplot2::scale_shape_manual(
+      values = c(16, 17, 15, 3),
+      breaks = c(
+        "Weighted kappa",
+        "Adjacent agreement",
+        "Exact agreement",
+        "Mean absolute difference"
+      )
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = scales::pretty_breaks(n = 5),
+      expand = ggplot2::expansion(mult = c(0.02, 0.05))
+    ) +
     ggplot2::labs(
       title = "Agreement across ordinal metrics",
-      subtitle = paste0(
-        x$rightMethod %||% "right",
-        " versus ",
-        x$leftMethod %||% "left"
-      ),
+      subtitle = paste0(rightMethod, " versus ", leftMethod),
       x = NULL,
       y = NULL,
       shape = NULL
@@ -93,7 +120,13 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst")) {
     ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "bottom",
+      legend.box = "horizontal",
       strip.background = ggplot2::element_rect(fill = "grey95"),
-      panel.grid.minor = ggplot2::element_blank()
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(hjust = 1),
+      plot.margin = ggplot2::margin(10, 18, 16, 10)
     )
+
+  p
 }

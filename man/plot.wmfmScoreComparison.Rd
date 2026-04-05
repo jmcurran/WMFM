@@ -17,7 +17,7 @@
 A \code{ggplot} object.
 }
 \description{
-Provides three plotting modes for a \code{wmfmScoreComparison} object:
+Provides plotting modes for a \code{wmfmScoreComparison} object.
 }
 \details{
 \describe{
