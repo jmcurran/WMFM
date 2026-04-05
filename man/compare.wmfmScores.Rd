@@ -4,7 +4,14 @@
 \alias{compare.wmfmScores}
 \title{Compare WMFM score results}
 \usage{
-\method{compare}{wmfmScores}(x, y = NULL, xMethod = NULL, yMethod = NULL, ...)
+\method{compare}{wmfmScores}(
+  x,
+  y = NULL,
+  xMethod = NULL,
+  yMethod = NULL,
+  registry = getWmfmMetricRegistry(),
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{wmfmScores} object.}
@@ -14,6 +21,9 @@
 \item{xMethod}{Optional character string naming the method to use from \code{x}.}
 
 \item{yMethod}{Optional character string naming the method to use from \code{y}.}
+
+\item{registry}{Optional WMFM metric registry. Defaults to
+\code{getWmfmMetricRegistry()}.}
 
 \item{...}{Unused. Included for S3 compatibility.}
 }
@@ -28,6 +38,6 @@ Compares score results either:
 }
 }
 \details{
-The comparison summarises agreement separately for binary, ordinal, and
-continuous score fields.
+The comparison summarizes agreement separately for binary, ordinal,
+and continuous score fields using the WMFM metric registry.
 }
