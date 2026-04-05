@@ -1,34 +1,87 @@
 #' Plot a WMFM score comparison object
 #'
+#' Provides three plotting modes for a `wmfmScoreComparison` object:
+#' 
+#' \describe{
+#'   \item{`type = "overall"`}{A Bland-Altman plot for paired overall scores.}
+#'   \item{`type = "agreement"`}{An ordinal-agreement summary plot showing
+#'   exact agreement, adjacent agreement, weighted kappa, and mean absolute
+#'   difference.}
+#'   \item{`type = "heatmap"`}{A run-by-metric disagreement heatmap based on
+#'   run-level comparison pairs.}
+#' }
+#'
 #' @param x A `wmfmScoreComparison` object.
-#' @param type "agreement" or "overall"
+#' @param type Character. One of `"agreement"`, `"overall"`, or `"heatmap"`.
+#' @param ... Additional arguments passed to the underlying helper.
+#'
+#' @return A `ggplot` object.
 #' @export
-plot.wmfmScoreComparison = function(x, type = c("agreement", "overall"), ...) {
+plot.wmfmScoreComparison = function(
+    x,
+    type = c("agreement", "overall", "heatmap"),
+    ...
+) {
+
+  if (!inherits(x, "wmfmScoreComparison")) {
+    stop("`x` must inherit from `wmfmScoreComparison`.", call. = FALSE)
+  }
 
   type = match.arg(type)
 
   if (type == "overall") {
-
     df = x$pairedOverallScores
+    summary = x$overallSummary
 
-    meanDiff = x$overallSummary$meanDifferenceRightMinusLeft
-    lowerLoA = x$overallSummary$loaLower
-    upperLoA = x$overallSummary$loaUpper
+    if (!is.data.frame(df) || nrow(df) == 0) {
+      stop("No paired overall scores are available to plot.", call. = FALSE)
+    }
+
+    if (is.null(summary)) {
+      stop("No overall summary is available to plot.", call. = FALSE)
+    }
+
+    leftMethod = x$leftMethod %||% "left"
+    rightMethod = x$rightMethod %||% "right"
 
     return(
-      ggplot2::ggplot(df, ggplot2::aes(meanOverallScore, differenceOverallScore)) +
-        ggplot2::geom_point() +
-        ggplot2::geom_hline(yintercept = meanDiff) +
-        ggplot2::geom_hline(yintercept = lowerLoA, linetype = 2) +
-        ggplot2::geom_hline(yintercept = upperLoA, linetype = 2) +
+      ggplot2::ggplot(
+        df,
+        ggplot2::aes(x = meanOverallScore, y = differenceOverallScore)
+      ) +
+        ggplot2::geom_point(size = 2, alpha = 0.8) +
+        ggplot2::geom_hline(
+          yintercept = summary$meanDifferenceRightMinusLeft,
+          linewidth = 0.5
+        ) +
+        ggplot2::geom_hline(
+          yintercept = summary$loaLower,
+          linetype = 2,
+          linewidth = 0.4
+        ) +
+        ggplot2::geom_hline(
+          yintercept = summary$loaUpper,
+          linetype = 2,
+          linewidth = 0.4
+        ) +
+        ggplot2::labs(
+          title = "Overall score agreement",
+          subtitle = paste0(
+            "Bland-Altman view: ",
+            rightMethod,
+            " minus ",
+            leftMethod
+          ),
+          x = "Mean overall score",
+          y = paste0("Difference in overall score (", rightMethod, " - ", leftMethod, ")")
+        ) +
         ggplot2::theme_bw()
     )
   }
 
-  df = x$ordinalAgreement
+  if (type == "agreement") {
+    return(plotWmfmScoreAgreementSummary(x = x, ...))
+  }
 
-  ggplot2::ggplot(df, ggplot2::aes(metric, weightedKappa)) +
-    ggplot2::geom_col() +
-    ggplot2::coord_flip() +
-    ggplot2::theme_bw()
+  plotWmfmScoreHeatmap(x = x, ...)
 }

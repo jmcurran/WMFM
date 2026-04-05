@@ -4,13 +4,28 @@
 \alias{plot.wmfmScoreComparison}
 \title{Plot a WMFM score comparison object}
 \usage{
-\method{plot}{wmfmScoreComparison}(x, type = c("agreement", "overall"), ...)
+\method{plot}{wmfmScoreComparison}(x, type = c("agreement", "overall", "heatmap"), ...)
 }
 \arguments{
 \item{x}{A \code{wmfmScoreComparison} object.}
 
-\item{type}{"agreement" or "overall"}
+\item{type}{Character. One of \code{"agreement"}, \code{"overall"}, or \code{"heatmap"}.}
+
+\item{...}{Additional arguments passed to the underlying helper.}
+}
+\value{
+A \code{ggplot} object.
 }
 \description{
-Plot a WMFM score comparison object
+Provides three plotting modes for a \code{wmfmScoreComparison} object:
+}
+\details{
+\describe{
+\item{\code{type = "overall"}}{A Bland-Altman plot for paired overall scores.}
+\item{\code{type = "agreement"}}{An ordinal-agreement summary plot showing
+exact agreement, adjacent agreement, weighted kappa, and mean absolute
+difference.}
+\item{\code{type = "heatmap"}}{A run-by-metric disagreement heatmap based on
+run-level comparison pairs.}
+}
 }
