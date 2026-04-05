@@ -6,10 +6,12 @@
 \usage{
 \method{plot}{metricComparisonSummary}(
   x,
-  type = c("scatter", "lollipop"),
+  type = c("scatter", "lollipop", "diagnostic"),
   metricType = NULL,
   labelPoints = TRUE,
   orderBy = c("disagreement", "ease"),
+  disagreementThreshold = 0.5,
+  easeThreshold = 0.8,
   ...
 )
 }
@@ -17,15 +19,22 @@
 \item{x}{A \code{metricComparisonSummary} object created by
 \code{summariseMetricComparison()}.}
 
-\item{type}{Plot type. One of \code{"scatter"} or \code{"lollipop"}.}
+\item{type}{Plot type. One of \code{"scatter"}, \code{"lollipop"}, or \code{"diagnostic"}.}
 
 \item{metricType}{Optional metric type filter. One of \code{NULL}, \code{"ordinal"},
 \code{"binary"}, or \code{"continuous"}.}
 
-\item{labelPoints}{Logical. Should points be labelled in the scatter plot?}
+\item{labelPoints}{Logical. Should points be labelled in the scatter-style
+plots?}
 
 \item{orderBy}{Ordering for the lollipop plot. One of \code{"disagreement"} or
 \code{"ease"}.}
+
+\item{disagreementThreshold}{Numeric threshold used by \code{type = "diagnostic"}
+to decide which metrics to label and highlight.}
+
+\item{easeThreshold}{Numeric threshold used by \code{type = "diagnostic"} to
+decide which metrics to label and highlight.}
 
 \item{...}{Unused. Included for S3 compatibility.}
 }
