@@ -15,9 +15,3 @@ summaries, and plotting. The registry is intended to be the single
 source of truth for which metrics are available and how they should
 be treated.
 }
-\details{
-The default registry below reflects the current WMFM scoring schema:
-ordinal judged fields are stored as integer-like values \code{0},
-\code{1}, and \code{2}; binary judged fields are stored as logicals;
-and aggregate score fields are numeric.
-}

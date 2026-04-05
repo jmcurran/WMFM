@@ -5,11 +5,6 @@
 #' source of truth for which metrics are available and how they should
 #' be treated.
 #'
-#' The default registry below reflects the current WMFM scoring schema:
-#' ordinal judged fields are stored as integer-like values \code{0},
-#' \code{1}, and \code{2}; binary judged fields are stored as logicals;
-#' and aggregate score fields are numeric.
-#'
 #' @return A data frame containing metric metadata.
 #' @export
 getWmfmMetricRegistry = function() {
@@ -43,7 +38,18 @@ getWmfmMetricRegistry = function() {
       "continuous",
       "continuous",
       "continuous",
-      rep("ordinal", 11),
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
+      "ordinal",
       "binary",
       "binary"
     ),
@@ -61,7 +67,7 @@ getWmfmMetricRegistry = function() {
       "Interaction substantive correct",
       "Uncertainty handling appropriate",
       "Inferential register appropriate",
-      "Main-effect coverage adequate",
+      "Main effect coverage adequate",
       "Reference group coverage adequate",
       "Clarity adequate",
       "Numeric expression adequate",
@@ -71,55 +77,116 @@ getWmfmMetricRegistry = function() {
     ),
     group = c(
       "overall",
-      "dimension_scores",
-      "dimension_scores",
-      "dimension_scores",
-      "dimension_scores",
-      "dimension_scores",
-      "interpretation",
-      "interpretation",
-      "reference",
-      "interaction",
-      "interaction",
-      "inference",
-      "inference",
-      "completeness",
-      "reference",
-      "clarity",
-      "clarity",
-      "clarity",
-      "quality_flags",
-      "quality_flags"
+      "dimension",
+      "dimension",
+      "dimension",
+      "dimension",
+      "dimension",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "judgement",
+      "outcome",
+      "outcome"
     ),
-    includeInComparison = rep(TRUE, 20),
-    includeInStability = rep(TRUE, 20),
-    includeInPlots = rep(TRUE, 20),
+    includeInComparison = c(
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE
+    ),
+    includeInStability = c(
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE
+    ),
+    includeInPlots = c(
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE,
+      TRUE
+    ),
     stringsAsFactors = FALSE
   )
 
-  ordinalLevels = c("0", "1", "2")
-
   registry$orderedLevels = I(list(
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    ordinalLevels,
-    NULL,
-    NULL
+    NULL,            # overallScore
+    NULL,            # factualScore
+    NULL,            # inferenceScore
+    NULL,            # completenessScore
+    NULL,            # clarityScore
+    NULL,            # calibrationScore
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    c("0", "1", "2"),
+    NULL,            # fatalFlawDetected
+    NULL             # overallPass
   ))
 
   validateWmfmMetricRegistry(registry)
