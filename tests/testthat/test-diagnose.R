@@ -96,10 +96,9 @@ test_that("diagnose errors on invalid metric", {
 
   expect_error(
     diagnose(scores, metric = NA_character_),
-    "metric must be a single non-missing character string"
+    "metric must be NULL or a single"
   )
 })
-
 test_that("diagnose.default errors for unsupported object class", {
   x = list()
 

@@ -15,14 +15,33 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
   llmHigherCount = sum(metricDf$disagreementDirection == "llmHigher", na.rm = TRUE)
   detHigherCount = sum(metricDf$disagreementDirection == "detHigher", na.rm = TRUE)
 
-  detUnique = sort(unique(metricDf$detValue))
-  llmUnique = sort(unique(metricDf$llmValue))
+  detNonMissing = metricDf$detValue[!is.na(metricDf$detValue)]
+  llmNonMissing = metricDf$llmValue[!is.na(metricDf$llmValue)]
+
+  detUnique = sort(unique(detNonMissing))
+  llmUnique = sort(unique(llmNonMissing))
+
+  safeMin = function(x) {
+    if (length(x) < 1L) {
+      return(NA_real_)
+    }
+
+    min(x)
+  }
+
+  safeMax = function(x) {
+    if (length(x) < 1L) {
+      return(NA_real_)
+    }
+
+    max(x)
+  }
 
   out = data.frame(
     metric = metric,
     nRuns = nRuns,
     nDisagree = nDisagree,
-    disagreementRate = nDisagree / nRuns,
+    disagreementRate = if (nRuns > 0) nDisagree / nRuns else NA_real_,
     meanDet = mean(metricDf$detValue, na.rm = TRUE),
     meanLlm = mean(metricDf$llmValue, na.rm = TRUE),
     meanLlmMinusDet = mean(metricDf$llmMinusDet, na.rm = TRUE),
@@ -30,12 +49,12 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
     llmHigherCount = llmHigherCount,
     detHigherCount = detHigherCount,
     directionConsistency = max(llmHigherCount, detHigherCount) / max(1, nDisagree),
-    detConstant = length(detUnique) == 1L,
-    llmConstant = length(llmUnique) == 1L,
-    detMin = min(metricDf$detValue, na.rm = TRUE),
-    detMax = max(metricDf$detValue, na.rm = TRUE),
-    llmMin = min(metricDf$llmValue, na.rm = TRUE),
-    llmMax = max(metricDf$llmValue, na.rm = TRUE),
+    detConstant = length(detUnique) == 1L && length(detUnique) > 0L,
+    llmConstant = length(llmUnique) == 1L && length(llmUnique) > 0L,
+    detMin = safeMin(detNonMissing),
+    detMax = safeMax(detNonMissing),
+    llmMin = safeMin(llmNonMissing),
+    llmMax = safeMax(llmNonMissing),
     stringsAsFactors = FALSE
   )
 

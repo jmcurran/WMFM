@@ -4,30 +4,34 @@
 \alias{diagnose.wmfmScores}
 \title{Diagnose disagreement for a WMFM scores object}
 \usage{
-\method{diagnose}{wmfmScores}(x, metric, runs = NULL, cmp = NULL, maxExamples = 5, ...)
+\method{diagnose}{wmfmScores}(x, metric = NULL, runs = NULL, cmp = NULL, maxExamples = 5, ...)
 }
 \arguments{
 \item{x}{A \code{wmfmScores} object.}
 
-\item{metric}{A single metric name.}
+\item{metric}{Optional single metric name. If \code{NULL}, diagnose all
+comparable metrics.}
 
-\item{runs}{Optional \code{wmfmRuns} object or compatible run container
-used to provide explanation text and claim-level context.}
+\item{runs}{Optional \code{wmfmRuns} object or compatible run container used
+to provide explanation text and claim-level context.}
 
 \item{cmp}{Optional \code{wmfmScoreComparison} object.}
 
-\item{maxExamples}{Maximum number of flagged disagreement examples to
-retain in the \code{flaggedRuns} component.}
+\item{maxExamples}{Maximum number of flagged disagreement examples to retain
+for each metric diagnosis.}
 
 \item{...}{Reserved for future method-specific arguments.}
 }
 \value{
-An object of class \code{wmfmMetricDiagnosis}.
+A \code{wmfmMetricDiagnosis} or \code{wmfmScoresDiagnosis} object.
 }
 \description{
-Diagnoses systematic disagreement between deterministic and LLM scoring
-for a single metric. The function summarises disagreement patterns,
-classifies the likely source of disagreement using simple heuristics,
-and optionally attaches run-level context from the original
-\code{wmfmRuns} object.
+Diagnoses disagreement between deterministic and LLM scoring for either a
+single metric or all available metrics.
+}
+\details{
+When \code{metric} is supplied, the function returns a
+\code{wmfmMetricDiagnosis} object. When \code{metric = NULL}, it returns a
+\code{wmfmScoresDiagnosis} object summarising all metrics that can be
+compared.
 }
