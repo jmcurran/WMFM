@@ -1,74 +1,27 @@
-#' Apply parsed LLM scores to a WMFM run record
+#' Apply LLM scoring to a run record
 #'
-#' Validates a parsed LLM scoring response and writes the scored fields back into
-#' a run record produced by `buildWmfmRunRecord()`.
+#' Wrapper around `scoreWmfmRunWithLlm()` that ensures consistent output
+#' structure and attaches metadata if required.
 #'
-#' @param runRecord Named list produced by `buildWmfmRunRecord()`.
-#' @param parsedScores Named list produced by `parseWmfmScoringJson()`.
-#' @param modelName Optional character identifier for the scoring model.
-#' @param rawResponse Raw character response returned by the LLM.
+#' @param runRecord A single raw run record.
+#' @param chat Chat provider.
+#' @param useCache Logical.
+#' @param verbose Logical.
 #'
-#' @return Updated run record with scored fields populated.
-#' @keywords internal
-#'
-#' @importFrom jsonlite toJSON
+#' @return Named list containing scoring fields.
+#' @export
 applyWmfmLlmScoresToRecord = function(
     runRecord,
-    parsedScores,
-    modelName = NA_character_,
-    rawResponse = NA_character_
+    chat,
+    useCache = FALSE,
+    verbose = FALSE
 ) {
-
-  if (!is.list(runRecord) || is.null(names(runRecord))) {
-    stop("`runRecord` must be a named list.", call. = FALSE)
-  }
-
-  parsedScores = validateWmfmParsedScores(parsedScores)
-
-  rubricFields = c(
-    "effectDirectionCorrect",
-    "effectScaleAppropriate",
-    "referenceGroupHandledCorrectly",
-    "interactionCoverageAdequate",
-    "interactionSubstantiveCorrect",
-    "uncertaintyHandlingAppropriate",
-    "inferentialRegisterAppropriate",
-    "mainEffectCoverageAdequate",
-    "referenceGroupCoverageAdequate",
-    "clarityAdequate",
-    "numericExpressionAdequate",
-    "comparisonStructureClear"
+  score = scoreWmfmRunWithLlm(
+    runRecord = runRecord,
+    chat = chat,
+    useCache = useCache,
+    verbose = verbose
   )
 
-  numericFields = c(
-    "factualScore",
-    "inferenceScore",
-    "completenessScore",
-    "clarityScore",
-    "calibrationScore",
-    "overallScore"
-  )
-
-  for (field in rubricFields) {
-    runRecord[[field]] = parsedScores[[field]]
-  }
-
-  for (field in numericFields) {
-    runRecord[[field]] = parsedScores[[field]]
-  }
-
-  runRecord$fatalFlawDetected = parsedScores$fatalFlawDetected
-  runRecord$overallPass = parsedScores$overallPass
-
-  runRecord$llmScored = TRUE
-  runRecord$llmScoringModel = safeWmfmScalar(modelName)
-  runRecord$llmScoringRaw = safeWmfmScalar(rawResponse, naString = "")
-  runRecord$llmScoringSummary = parsedScores$llmScoringSummary
-  runRecord$llmFieldReasons = jsonlite::toJSON(
-    parsedScores$fieldReasons,
-    auto_unbox = TRUE,
-    null = "null"
-  )
-
-  runRecord
+  score
 }

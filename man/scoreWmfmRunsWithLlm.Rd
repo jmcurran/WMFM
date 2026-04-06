@@ -2,7 +2,7 @@
 % Please edit documentation in R/scoreWmfmRunsWithLlm.R
 \name{scoreWmfmRunsWithLlm}
 \alias{scoreWmfmRunsWithLlm}
-\title{Score multiple WMFM run records using a language model}
+\title{Score multiple WMFM runs using an LLM}
 \usage{
 scoreWmfmRunsWithLlm(
   runRecords,
@@ -13,29 +13,28 @@ scoreWmfmRunsWithLlm(
 )
 }
 \arguments{
-\item{runRecords}{Either a single run record, a list of run records, or a
-repeated-run object containing a \code{runsDf} component.}
+\item{runRecords}{List of raw WMFM run records.}
 
-\item{chat}{A chat provider object as returned by \code{getChatProvider()}.}
+\item{chat}{Chat provider object used for LLM scoring.}
 
-\item{useCache}{Logical. Should scoring results be cached and reused for
-identical run records? Defaults to \code{FALSE}.}
+\item{useCache}{Logical. Whether to allow cached LLM responses.}
 
-\item{showProgress}{Logical. Should a text progress bar and timing summary be
-shown while scoring repeated runs? Defaults to \code{TRUE}.}
+\item{showProgress}{Logical. Whether to display progress and timing
+information during scoring.}
 
-\item{verbose}{Logical. Should raw scoring responses be printed? Defaults to
-\code{FALSE}.}
+\item{verbose}{Logical. Whether to print additional diagnostic information.}
 }
 \value{
-If the input is a single run record, returns one scored run record.
-If the input is a repeated-run object, returns that object with its \code{runsDf}
-replaced by the scored runs and with \code{primaryScoringMethod = "llm"}.
-Otherwise returns a list of scored run records of the same length as the
-input list. Repeated-run outputs also receive timing metadata.
+A list of score records. Each element corresponds to one input run
+record and contains only judged fields and score summaries. A \code{"timing"}
+attribute is attached to the returned list.
 }
 \description{
-Applies \code{scoreWmfmRunWithLlm()} to one or more WMFM run records. This helper
-is designed for repeated-run workflows where the number of explanations to
-score can vary from 1 to \code{N}.
+Scores each raw run record in a \code{wmfmRuns} object using an LLM-based scorer.
+The returned value is a list of score records containing only judged fields
+and score summaries. The input run records are not modified.
+}
+\details{
+Timing metadata is attached to the returned list as an attribute named
+\code{"timing"}.
 }

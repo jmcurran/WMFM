@@ -2,29 +2,23 @@
 % Please edit documentation in R/applyWmfmLlmScoresToRecord.R
 \name{applyWmfmLlmScoresToRecord}
 \alias{applyWmfmLlmScoresToRecord}
-\title{Apply parsed LLM scores to a WMFM run record}
+\title{Apply LLM scoring to a run record}
 \usage{
-applyWmfmLlmScoresToRecord(
-  runRecord,
-  parsedScores,
-  modelName = NA_character_,
-  rawResponse = NA_character_
-)
+applyWmfmLlmScoresToRecord(runRecord, chat, useCache = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{runRecord}{Named list produced by \code{buildWmfmRunRecord()}.}
+\item{runRecord}{A single raw run record.}
 
-\item{parsedScores}{Named list produced by \code{parseWmfmScoringJson()}.}
+\item{chat}{Chat provider.}
 
-\item{modelName}{Optional character identifier for the scoring model.}
+\item{useCache}{Logical.}
 
-\item{rawResponse}{Raw character response returned by the LLM.}
+\item{verbose}{Logical.}
 }
 \value{
-Updated run record with scored fields populated.
+Named list containing scoring fields.
 }
 \description{
-Validates a parsed LLM scoring response and writes the scored fields back into
-a run record produced by \code{buildWmfmRunRecord()}.
+Wrapper around \code{scoreWmfmRunWithLlm()} that ensures consistent output
+structure and attaches metadata if required.
 }
-\keyword{internal}
