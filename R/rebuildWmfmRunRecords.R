@@ -1,39 +1,24 @@
-#' Rebuild WMFM repeated-run records without rerunning the LLM
+#' Rebuild raw WMFM run records without rerunning the LLM
 #'
-#' Recomputes extracted claim fields by re-running buildWmfmRunRecord() on
-#' existing repeated-run outputs. This is useful when the extraction rules
-#' change, for example when debugging overclaim detection.
+#' Recomputes raw extracted fields for an existing `wmfmRuns` object by
+#' re-running `buildWmfmRunRecord()` on the stored run metadata and generated
+#' text. This is useful when extraction rules change and you want to refresh the
+#' raw run records without generating new LLM outputs.
 #'
-#' @param x A data.frame of run records or an object containing a runsDf element.
-#' @param rescore Logical. Should scoreWmfmRepeatedRuns() be run after rebuilding?
-#' @param preserveClass Logical. If x is a repeated-runs object, should its class
-#'   be preserved on output?
+#' This function is intentionally limited to rebuilding raw run records. It does
+#' not rescore runs and does not compute summaries. If scoring is needed after
+#' rebuilding, call `score()` on the returned object.
 #'
-#' @return If x is a data.frame, returns a rebuilt data.frame.
-#'   If x is a repeated-runs object, returns the same kind of object with runsDf
-#'   replaced by rebuilt records and summary recomputed.
+#' @param x A `wmfmRuns` object.
+#' @param preserveClass Logical. Should the class of `x` be preserved on the
+#'   returned object? Defaults to `TRUE`.
+#'
+#' @return A rebuilt `wmfmRuns` object with refreshed `runs` records.
 #' @export
 rebuildWmfmRunRecords = function(
     x,
-    rescore = TRUE,
     preserveClass = TRUE
 ) {
-
-  extractRunsDf = function(obj) {
-    if (is.data.frame(obj)) {
-      return(obj)
-    }
-
-    if (is.list(obj) && "runsDf" %in% names(obj) && is.data.frame(obj$runsDf)) {
-      return(obj$runsDf)
-    }
-
-    stop(
-      "`x` must be a data.frame or an object containing a data.frame named `runsDf`.",
-      call. = FALSE
-    )
-  }
-
   splitInteractionTerms = function(x) {
     if (length(x) == 0 || is.na(x) || !nzchar(trimws(x))) {
       return(character(0))
@@ -43,44 +28,73 @@ rebuildWmfmRunRecords = function(
     trimws(parts[nzchar(trimws(parts))])
   }
 
-  rebuildOne = function(rowDf) {
+  getScalarField = function(runRecord, fieldName, default = NA) {
+    if (!(fieldName %in% names(runRecord))) {
+      return(default)
+    }
+
+    value = runRecord[[fieldName]]
+
+    if (length(value) == 0) {
+      return(default)
+    }
+
+    value[[1]]
+  }
+
+  rebuildOne = function(runRecord) {
     buildWmfmRunRecord(
-      runId = rowDf$runId[[1]],
-      exampleName = rowDf$exampleName[[1]],
-      package = rowDf$package[[1]],
-      modelType = rowDf$modelType[[1]],
-      formula = rowDf$formula[[1]],
-      equationsText = rowDf$equationsText[[1]],
-      explanationText = rowDf$explanationText[[1]],
-      errorMessage = rowDf$errorMessage[[1]],
-      interactionTerms = splitInteractionTerms(rowDf$interactionTerms[[1]]),
-      interactionMinPValue = rowDf$interactionMinPValue[[1]],
-      interactionAlpha = rowDf$interactionAlpha[[1]]
+      runId = getScalarField(runRecord, "runId"),
+      exampleName = getScalarField(runRecord, "exampleName"),
+      package = getScalarField(runRecord, "package"),
+      modelType = getScalarField(runRecord, "modelType"),
+      formula = getScalarField(runRecord, "formula"),
+      equationsText = getScalarField(runRecord, "equationsText"),
+      explanationText = getScalarField(runRecord, "explanationText"),
+      errorMessage = getScalarField(runRecord, "errorMessage", NA_character_),
+      interactionTerms = splitInteractionTerms(
+        getScalarField(runRecord, "interactionTerms", NA_character_)
+      ),
+      interactionMinPValue = getScalarField(
+        runRecord,
+        "interactionMinPValue",
+        NA_real_
+      ),
+      interactionAlpha = getScalarField(
+        runRecord,
+        "interactionAlpha",
+        0.05
+      )
     )
   }
 
-  runsDf = extractRunsDf(x)
-
-  rebuiltList = lapply(seq_len(nrow(runsDf)), function(i) {
-    rebuildOne(runsDf[i, , drop = FALSE])
-  })
-
-  rebuiltDf = do.call(rbind, lapply(rebuiltList, as.data.frame))
-  rownames(rebuiltDf) = NULL
-
-  if (isTRUE(rescore)) {
-    rebuiltDf = scoreWmfmRepeatedRuns(rebuiltDf)
+  if (!inherits(x, "wmfmRuns")) {
+    stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
   }
 
-  if (is.data.frame(x)) {
-    return(rebuiltDf)
+  if (!is.list(x$runs) || length(x$runs) == 0) {
+    stop("`x$runs` must be a non-empty list of run records.", call. = FALSE)
   }
+
+  rebuiltRuns = lapply(
+    x$runs,
+    function(runRecord) {
+      if (!is.list(runRecord) || is.null(names(runRecord))) {
+        stop(
+          "Each element of `x$runs` must be a named run-record list.",
+          call. = FALSE
+        )
+      }
+
+      rebuildOne(runRecord)
+    }
+  )
 
   out = x
-  out$runsDf = rebuiltDf
+  out$runs = rebuiltRuns
 
   if ("summary" %in% names(out)) {
-    out$summary = summariseWmfmRepeatedRuns(rebuiltDf)
+    out$summary = NULL
   }
 
   if (isTRUE(preserveClass)) {

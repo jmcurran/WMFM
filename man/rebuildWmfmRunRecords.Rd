@@ -2,25 +2,27 @@
 % Please edit documentation in R/rebuildWmfmRunRecords.R
 \name{rebuildWmfmRunRecords}
 \alias{rebuildWmfmRunRecords}
-\title{Rebuild WMFM repeated-run records without rerunning the LLM}
+\title{Rebuild raw WMFM run records without rerunning the LLM}
 \usage{
-rebuildWmfmRunRecords(x, rescore = TRUE, preserveClass = TRUE)
+rebuildWmfmRunRecords(x, preserveClass = TRUE)
 }
 \arguments{
-\item{x}{A data.frame of run records or an object containing a runsDf element.}
+\item{x}{A \code{wmfmRuns} object.}
 
-\item{rescore}{Logical. Should scoreWmfmRepeatedRuns() be run after rebuilding?}
-
-\item{preserveClass}{Logical. If x is a repeated-runs object, should its class
-be preserved on output?}
+\item{preserveClass}{Logical. Should the class of \code{x} be preserved on the
+returned object? Defaults to \code{TRUE}.}
 }
 \value{
-If x is a data.frame, returns a rebuilt data.frame.
-If x is a repeated-runs object, returns the same kind of object with runsDf
-replaced by rebuilt records and summary recomputed.
+A rebuilt \code{wmfmRuns} object with refreshed \code{runs} records.
 }
 \description{
-Recomputes extracted claim fields by re-running buildWmfmRunRecord() on
-existing repeated-run outputs. This is useful when the extraction rules
-change, for example when debugging overclaim detection.
+Recomputes raw extracted fields for an existing \code{wmfmRuns} object by
+re-running \code{buildWmfmRunRecord()} on the stored run metadata and generated
+text. This is useful when extraction rules change and you want to refresh the
+raw run records without generating new LLM outputs.
+}
+\details{
+This function is intentionally limited to rebuilding raw run records. It does
+not rescore runs and does not compute summaries. If scoring is needed after
+rebuilding, call \code{score()} on the returned object.
 }
