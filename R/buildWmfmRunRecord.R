@@ -467,6 +467,8 @@ buildWmfmRunRecord = function(
     )
   )
 
+  rangeMention = detectRangeExpression(explanationText)
+
   uncertaintyMention = detectPatternLocal(
     explanationText,
     paste(
@@ -483,7 +485,7 @@ buildWmfmRunRecord = function(
       "\\bestimate(d)?\\b",
       sep = "|"
     )
-  )
+  ) || rangeMention
 
   usesInferentialLanguage = detectPatternLocal(
     explanationText,
