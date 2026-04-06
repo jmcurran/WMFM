@@ -3,8 +3,12 @@
 #' Scores a `wmfmRuns` object using deterministic scoring, LLM scoring, or both,
 #' and returns a separate `wmfmScores` object.
 #'
+#' This method assumes that `x` is a raw runs object produced by
+#' `runExample()`. Judged fields and aggregate scores are created during the
+#' scoring step and are stored only in the returned `wmfmScores` object.
+#'
 #' @param x A `wmfmRuns` object created by `runExample()`.
-#' @param method Character. One of "deterministic", "llm", or "both".
+#' @param method Character. One of `"deterministic"`, `"llm"`, or `"both"`.
 #' @param chat Optional chat provider object. If omitted and LLM scoring is
 #'   requested, a provider is obtained via `getChatProvider()`.
 #' @param useCache Logical. Passed to LLM scoring helpers.
@@ -24,11 +28,48 @@ score.wmfmRuns = function(
     verbose = FALSE,
     ...
 ) {
+  coerceRunRecordsToDataFrame = function(runRecords) {
+    if (!is.list(runRecords) || length(runRecords) == 0) {
+      stop("`x$runs` must be a non-empty list of run records.", call. = FALSE)
+    }
+
+    badIndex = which(!vapply(
+      runRecords,
+      function(run) {
+        is.list(run) && !is.null(names(run))
+      },
+      logical(1)
+    ))
+
+    if (length(badIndex) > 0) {
+      stop(
+        "All elements of `x$runs` must be named run-record lists.",
+        call. = FALSE
+      )
+    }
+
+    runsDf = do.call(
+      rbind,
+      lapply(
+        runRecords,
+        function(run) {
+          as.data.frame(run, stringsAsFactors = FALSE)
+        }
+      )
+    )
+
+    rownames(runsDf) = NULL
+    runsDf
+  }
 
   method = match.arg(method)
 
   if (!inherits(x, "wmfmRuns")) {
     stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
+  }
+
+  if (!is.list(x$runs)) {
+    stop("`x$runs` must be a list of run records.", call. = FALSE)
   }
 
   methods =
@@ -63,15 +104,15 @@ score.wmfmRuns = function(
   if ("deterministic" %in% methods) {
     deterministicStartTime = Sys.time()
 
-    runsDf = do.call(
-      rbind,
-      lapply(runRecords, function(run) {
-        as.data.frame(run, stringsAsFactors = FALSE)
-      })
-    )
-    rownames(runsDf) = NULL
-
+    runsDf = coerceRunRecordsToDataFrame(runRecords)
     detDf = scoreWmfmRepeatedRuns(runsDf)
+
+    if (!is.data.frame(detDf) || nrow(detDf) != length(runRecords)) {
+      stop(
+        "`scoreWmfmRepeatedRuns()` did not return one scored row per run.",
+        call. = FALSE
+      )
+    }
 
     out$scores$deterministic = lapply(
       seq_len(nrow(detDf)),
@@ -97,6 +138,13 @@ score.wmfmRuns = function(
       showProgress = showProgress,
       verbose = verbose
     )
+
+    if (!is.list(llmScoredRuns) || length(llmScoredRuns) != length(runRecords)) {
+      stop(
+        "`scoreWmfmRunsWithLlm()` did not return one scored record per run.",
+        call. = FALSE
+      )
+    }
 
     out$scores$llm = lapply(
       llmScoredRuns,

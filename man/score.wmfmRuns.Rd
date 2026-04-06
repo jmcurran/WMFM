@@ -17,7 +17,7 @@
 \arguments{
 \item{x}{A \code{wmfmRuns} object created by \code{runExample()}.}
 
-\item{method}{Character. One of "deterministic", "llm", or "both".}
+\item{method}{Character. One of \code{"deterministic"}, \code{"llm"}, or \code{"both"}.}
 
 \item{chat}{Optional chat provider object. If omitted and LLM scoring is
 requested, a provider is obtained via \code{getChatProvider()}.}
@@ -37,4 +37,9 @@ An object of class \code{wmfmScores}.
 \description{
 Scores a \code{wmfmRuns} object using deterministic scoring, LLM scoring, or both,
 and returns a separate \code{wmfmScores} object.
+}
+\details{
+This method assumes that \code{x} is a raw runs object produced by
+\code{runExample()}. Judged fields and aggregate scores are created during the
+scoring step and are stored only in the returned \code{wmfmScores} object.
 }
