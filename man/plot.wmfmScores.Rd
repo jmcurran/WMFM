@@ -7,7 +7,7 @@
 \method{plot}{wmfmScores}(
   x,
   method = c("deterministic", "llm"),
-  type = c("scores", "overall"),
+  type = c("scores", "overall", "summary"),
   fieldColumns = NULL,
   ...
 )
@@ -18,18 +18,19 @@
 \item{method}{Character. Scoring method to plot. One of "deterministic" or
 "llm".}
 
-\item{type}{Character. One of "scores" or "overall".}
+\item{type}{Character. One of "scores", "overall", or "summary".}
 
 \item{fieldColumns}{Optional character vector of score columns to plot when
-type = "scores".}
+\code{type = "scores"} or \code{type = "summary"}.}
 
 \item{...}{Additional arguments for future extensibility.}
 }
 \value{
-A ggplot2 object.
+A \code{ggplot2} object.
 }
 \description{
 Provides plotting methods for a \code{wmfmScores} object returned by \code{score()}.
 Score heatmaps use a continuous colour scale and, by default, include only
-the 0–2 dimension scores to avoid distortion from the 0–100 overall score.
+the 0 to 2 dimension scores to avoid distortion from the 0 to 100 overall
+score.
 }

@@ -4,27 +4,16 @@
 #' separates:
 #' \enumerate{
 #'   \item metadata and model context,
-#'   \item raw explanation text and text summaries,
-#'   \item extracted semantic claims, and
-#'   \item judged quality fields and aggregate score placeholders.
+#'   \item raw explanation text and text summaries, and
+#'   \item extracted semantic claims.
 #' }
 #'
-#' This design is intended to keep a clear distinction between:
-#' \itemize{
-#'   \item what the explanation said, and
-#'   \item whether those claims were appropriate or correct.
-#' }
-#'
-#' In this file, most claim fields are extracted directly from the explanation
-#' text using simple heuristics. Only one judged field is computed here:
-#' `interactionEvidenceAppropriate`, because that judgment can be made from the
-#' extracted interaction claim together with the fitted model's interaction-term
-#' evidence (`interactionMinPValue`, `interactionAlpha`, and whether interaction
-#' terms are present).
-#'
-#' The remaining judged fields and aggregate scores are initialised as `NA` and
-#' are intended to be populated later by downstream scoring functions such as
-#' `scoreWmfmRepeatedRuns()`.
+#' This function is intentionally limited to describing what happened during a
+#' run and what the explanation appeared to say. It does \emph{not} create any
+#' judged scoring fields or aggregate score placeholders. Scoring is handled
+#' later by downstream functions such as `score()` and
+#' `scoreWmfmRepeatedRuns()`, which should operate on the raw run record rather
+#' than being partially embedded in it.
 #'
 #' ## Output schema
 #'
@@ -45,7 +34,7 @@
 #'   \item{hasInteractionTerms}{Logical. Whether the fitted model includes interactions.}
 #'   \item{nInteractionTerms}{Integer count of interaction terms.}
 #'   \item{interactionMinPValue}{Minimum interaction-term p-value, or `NA`.}
-#'   \item{interactionAlpha}{Threshold used when judging interaction evidence.}
+#'   \item{interactionAlpha}{Stored interaction threshold metadata from the run.}
 #'   \item{hasError}{Logical. Whether an error was recorded for the run.}
 #'   \item{errorMessage}{Run error message, or `NA`.}
 #' }
@@ -81,35 +70,6 @@
 #'   \item{uncertaintyTypeClaim}{Character. One of `none`, `generic_uncertainty`, `confidence_interval`, `mixed`, `unclear`.}
 #' }
 #'
-#' ### Judged quality fields created or reserved here
-#' \describe{
-#'   \item{interactionEvidenceAppropriate}{Character. One of `appropriate`, `too_strong`, `too_weak`, `unclear`, `not_applicable`.}
-#'   \item{effectDirectionCorrect}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{effectScaleAppropriate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{referenceGroupHandledCorrectly}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{interactionCoverageAdequate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{interactionSubstantiveCorrect}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{uncertaintyHandlingAppropriate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{inferentialRegisterAppropriate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{mainEffectCoverageAdequate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{referenceGroupCoverageAdequate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{clarityAdequate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{numericExpressionAdequate}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{comparisonStructureClear}{Integer score placeholder (`0`, `1`, `2`, or `NA`).}
-#'   \item{fatalFlawDetected}{Logical placeholder.}
-#' }
-#'
-#' ### Aggregate score placeholders
-#' \describe{
-#'   \item{factualScore}{Numeric placeholder.}
-#'   \item{inferenceScore}{Numeric placeholder.}
-#'   \item{completenessScore}{Numeric placeholder.}
-#'   \item{clarityScore}{Numeric placeholder.}
-#'   \item{calibrationScore}{Numeric placeholder.}
-#'   \item{overallScore}{Numeric placeholder.}
-#'   \item{overallPass}{Logical placeholder.}
-#' }
-#'
 #' @param runId Integer run identifier.
 #' @param exampleName Character example identifier.
 #' @param package Character package name.
@@ -123,10 +83,10 @@
 #' @param interactionMinPValue Numeric minimum p-value across fitted interaction
 #'   terms, or `NA` if no interaction terms are present or no p-value could be
 #'   extracted.
-#' @param interactionAlpha Numeric threshold used to judge whether the
-#'   explanation's interaction-evidence wording is appropriate.
+#' @param interactionAlpha Numeric interaction threshold metadata stored with
+#'   the run record.
 #'
-#' @return Named list containing one structured run record.
+#' @return Named list containing one structured raw run record.
 #' @export
 buildWmfmRunRecord = function(
     runId,
@@ -141,7 +101,6 @@ buildWmfmRunRecord = function(
     interactionMinPValue = NA_real_,
     interactionAlpha = 0.05
 ) {
-
   detectPatternLocal = function(text, pattern) {
     if (is.na(text) || !nzchar(trimws(text))) {
       return(FALSE)
@@ -299,57 +258,10 @@ buildWmfmRunRecord = function(
     "not_mentioned"
   }
 
-  classifyInteractionEvidenceAppropriate = function(
-      interactionSubstantiveClaim,
-      interactionMinPValue,
-      hasInteractionTerms,
-      interactionAlpha
-  ) {
-    if (!isTRUE(hasInteractionTerms)) {
-      return("not_applicable")
-    }
-
-    if (is.na(interactionMinPValue)) {
-      return("unclear")
-    }
-
-    if (interactionSubstantiveClaim == "unclear") {
-      return("unclear")
-    }
-
-    if (interactionMinPValue <= interactionAlpha) {
-      if (interactionSubstantiveClaim %in% c(
-        "difference_claimed_strongly",
-        "difference_claimed_cautiously"
-      )) {
-        return("appropriate")
-      }
-
-      if (interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned")) {
-        return("too_weak")
-      }
-
-      return("unclear")
-    }
-
-    if (interactionSubstantiveClaim %in% c(
-      "difference_claimed_strongly",
-      "difference_claimed_cautiously"
-    )) {
-      return("too_strong")
-    }
-
-    if (interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned")) {
-      return("appropriate")
-    }
-
-    "unclear"
-  }
-
   classifyInferentialRegister = function(
-      usesInferentialLanguage,
-      usesDescriptiveOnlyLanguage,
-      overclaimDetected
+    usesInferentialLanguage,
+    usesDescriptiveOnlyLanguage,
+    overclaimDetected
   ) {
     if (isTRUE(overclaimDetected)) {
       return("overclaiming")
@@ -605,13 +517,6 @@ buildWmfmRunRecord = function(
 
   uncertaintyTypeClaim = classifyUncertaintyTypeClaim(explanationText)
 
-  interactionEvidenceAppropriate = classifyInteractionEvidenceAppropriate(
-    interactionSubstantiveClaim = interactionSubstantiveClaim,
-    interactionMinPValue = interactionMinPValue,
-    hasInteractionTerms = hasInteractionTerms,
-    interactionAlpha = interactionAlpha
-  )
-
   list(
     runId = runId,
     timestamp = as.character(Sys.time()),
@@ -651,27 +556,6 @@ buildWmfmRunRecord = function(
     effectScaleClaim = effectScaleClaim,
     interactionSubstantiveClaim = interactionSubstantiveClaim,
     inferentialRegister = inferentialRegister,
-    uncertaintyTypeClaim = uncertaintyTypeClaim,
-    interactionEvidenceAppropriate = interactionEvidenceAppropriate,
-    effectDirectionCorrect = NA_integer_,
-    effectScaleAppropriate = NA_integer_,
-    referenceGroupHandledCorrectly = NA_integer_,
-    interactionCoverageAdequate = NA_integer_,
-    interactionSubstantiveCorrect = NA_integer_,
-    uncertaintyHandlingAppropriate = NA_integer_,
-    inferentialRegisterAppropriate = NA_integer_,
-    mainEffectCoverageAdequate = NA_integer_,
-    referenceGroupCoverageAdequate = NA_integer_,
-    clarityAdequate = NA_integer_,
-    numericExpressionAdequate = NA_integer_,
-    comparisonStructureClear = NA_integer_,
-    fatalFlawDetected = NA,
-    factualScore = NA_real_,
-    inferenceScore = NA_real_,
-    completenessScore = NA_real_,
-    clarityScore = NA_real_,
-    calibrationScore = NA_real_,
-    overallScore = NA_real_,
-    overallPass = NA
+    uncertaintyTypeClaim = uncertaintyTypeClaim
   )
 }

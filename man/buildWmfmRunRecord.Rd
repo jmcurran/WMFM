@@ -42,39 +42,28 @@ fitted model.}
 terms, or \code{NA} if no interaction terms are present or no p-value could be
 extracted.}
 
-\item{interactionAlpha}{Numeric threshold used to judge whether the
-explanation's interaction-evidence wording is appropriate.}
+\item{interactionAlpha}{Numeric interaction threshold metadata stored with
+the run record.}
 }
 \value{
-Named list containing one structured run record.
+Named list containing one structured raw run record.
 }
 \description{
 Creates a structured record for one repeated WMFM run using a schema that
 separates:
 \enumerate{
 \item metadata and model context,
-\item raw explanation text and text summaries,
-\item extracted semantic claims, and
-\item judged quality fields and aggregate score placeholders.
+\item raw explanation text and text summaries, and
+\item extracted semantic claims.
 }
 }
 \details{
-This design is intended to keep a clear distinction between:
-\itemize{
-\item what the explanation said, and
-\item whether those claims were appropriate or correct.
-}
-
-In this file, most claim fields are extracted directly from the explanation
-text using simple heuristics. Only one judged field is computed here:
-\code{interactionEvidenceAppropriate}, because that judgment can be made from the
-extracted interaction claim together with the fitted model's interaction-term
-evidence (\code{interactionMinPValue}, \code{interactionAlpha}, and whether interaction
-terms are present).
-
-The remaining judged fields and aggregate scores are initialised as \code{NA} and
-are intended to be populated later by downstream scoring functions such as
-\code{scoreWmfmRepeatedRuns()}.
+This function is intentionally limited to describing what happened during a
+run and what the explanation appeared to say. It does \emph{not} create any
+judged scoring fields or aggregate score placeholders. Scoring is handled
+later by downstream functions such as \code{score()} and
+\code{scoreWmfmRepeatedRuns()}, which should operate on the raw run record rather
+than being partially embedded in it.
 \subsection{Output schema}{
 
 The returned named list contains the following groups of fields.
@@ -94,7 +83,7 @@ The returned named list contains the following groups of fields.
 \item{hasInteractionTerms}{Logical. Whether the fitted model includes interactions.}
 \item{nInteractionTerms}{Integer count of interaction terms.}
 \item{interactionMinPValue}{Minimum interaction-term p-value, or \code{NA}.}
-\item{interactionAlpha}{Threshold used when judging interaction evidence.}
+\item{interactionAlpha}{Stored interaction threshold metadata from the run.}
 \item{hasError}{Logical. Whether an error was recorded for the run.}
 \item{errorMessage}{Run error message, or \code{NA}.}
 }
@@ -132,39 +121,6 @@ The returned named list contains the following groups of fields.
 \item{interactionSubstantiveClaim}{Character. One of \code{difference_claimed_strongly}, \code{difference_claimed_cautiously}, \code{no_clear_difference}, \code{not_mentioned}, \code{unclear}, \code{not_applicable}.}
 \item{inferentialRegister}{Character. One of \code{inferential}, \code{descriptive_only}, \code{overclaiming}, \code{unclear}.}
 \item{uncertaintyTypeClaim}{Character. One of \code{none}, \code{generic_uncertainty}, \code{confidence_interval}, \code{mixed}, \code{unclear}.}
-}
-}
-
-\subsection{Judged quality fields created or reserved here}{
-
-\describe{
-\item{interactionEvidenceAppropriate}{Character. One of \code{appropriate}, \code{too_strong}, \code{too_weak}, \code{unclear}, \code{not_applicable}.}
-\item{effectDirectionCorrect}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{effectScaleAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{referenceGroupHandledCorrectly}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{interactionCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{interactionSubstantiveCorrect}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{uncertaintyHandlingAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{inferentialRegisterAppropriate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{mainEffectCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{referenceGroupCoverageAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{clarityAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{numericExpressionAdequate}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{comparisonStructureClear}{Integer score placeholder (\code{0}, \code{1}, \code{2}, or \code{NA}).}
-\item{fatalFlawDetected}{Logical placeholder.}
-}
-}
-
-\subsection{Aggregate score placeholders}{
-
-\describe{
-\item{factualScore}{Numeric placeholder.}
-\item{inferenceScore}{Numeric placeholder.}
-\item{completenessScore}{Numeric placeholder.}
-\item{clarityScore}{Numeric placeholder.}
-\item{calibrationScore}{Numeric placeholder.}
-\item{overallScore}{Numeric placeholder.}
-\item{overallPass}{Logical placeholder.}
 }
 }
 
