@@ -21,6 +21,22 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
   detUnique = sort(unique(detNonMissing))
   llmUnique = sort(unique(llmNonMissing))
 
+  safeMean = function(x) {
+    if (all(is.na(x))) {
+      return(NA_real_)
+    }
+
+    mean(x, na.rm = TRUE)
+  }
+
+  safeMedian = function(x) {
+    if (all(is.na(x))) {
+      return(NA_real_)
+    }
+
+    stats::median(x, na.rm = TRUE)
+  }
+
   safeMin = function(x) {
     if (length(x) < 1L) {
       return(NA_real_)
@@ -41,11 +57,11 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
     metric = metric,
     nRuns = nRuns,
     nDisagree = nDisagree,
-    disagreementRate = if (nRuns > 0) nDisagree / nRuns else NA_real_,
-    meanDet = mean(metricDf$detValue, na.rm = TRUE),
-    meanLlm = mean(metricDf$llmValue, na.rm = TRUE),
-    meanLlmMinusDet = mean(metricDf$llmMinusDet, na.rm = TRUE),
-    medianLlmMinusDet = stats::median(metricDf$llmMinusDet, na.rm = TRUE),
+    disagreementRate = if (nRuns > 0L) nDisagree / nRuns else NA_real_,
+    meanDet = safeMean(metricDf$detValue),
+    meanLlm = safeMean(metricDf$llmValue),
+    meanLlmMinusDet = safeMean(metricDf$llmMinusDet),
+    medianLlmMinusDet = safeMedian(metricDf$llmMinusDet),
     llmHigherCount = llmHigherCount,
     detHigherCount = detHigherCount,
     directionConsistency = max(llmHigherCount, detHigherCount) / max(1, nDisagree),

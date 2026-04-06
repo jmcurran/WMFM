@@ -5,7 +5,8 @@
 #' @param scores A \code{wmfmScores} object.
 #'
 #' @return A character vector of metric names present in both deterministic and
-#'   LLM score records.
+#'   LLM score records and having at least one non-missing numeric value on
+#'   each side.
 #'
 #' @keywords internal
 listDiagnosableMetrics = function(scores) {
@@ -36,10 +37,34 @@ listDiagnosableMetrics = function(scores) {
     "llmScoringModel",
     "llmScoringRaw",
     "llmScoringSummary",
-    "primaryScoringMethod"
+    "primaryScoringMethod",
+    "interactionEvidenceAppropriate"
   )
 
   metricNames = setdiff(metricNames, excluded)
   metricNames = metricNames[!is.na(metricNames) & nzchar(metricNames)]
+
+  extractMetricValues = function(runList, metricName) {
+    vapply(
+      runList,
+      function(x) {
+        if (!is.list(x) || is.null(names(x)) || !(metricName %in% names(x))) {
+          return(NA_character_)
+        }
+
+        as.character(x[[metricName]])
+      },
+      FUN.VALUE = character(1)
+    )
+  }
+
+  hasUsableNumericValues = function(metricName) {
+    detVals = suppressWarnings(as.numeric(extractMetricValues(detList, metricName)))
+    llmVals = suppressWarnings(as.numeric(extractMetricValues(llmList, metricName)))
+
+    any(!is.na(detVals)) && any(!is.na(llmVals))
+  }
+
+  metricNames = metricNames[vapply(metricNames, hasUsableNumericValues, logical(1))]
   sort(metricNames)
 }

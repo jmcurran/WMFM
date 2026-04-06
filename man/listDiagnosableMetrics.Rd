@@ -14,7 +14,8 @@ listDiagnosableMetrics(scores)
 }
 \value{
 A character vector of metric names present in both deterministic and
-LLM score records.
+LLM score records and having at least one non-missing numeric value on
+each side.
 
 A character vector of metric names present in both deterministic and
 LLM score records and having at least one non-missing numeric value on
