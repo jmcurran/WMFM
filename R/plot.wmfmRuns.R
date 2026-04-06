@@ -9,11 +9,13 @@
 #' \describe{
 #'   \item{`"claims"`}{Bar plot of extracted binary claim frequencies across runs.}
 #'   \item{`"textMetrics"`}{Bar plot of per-run text and timing metrics.}
+#'   \item{`"claimProfile"`}{Heatmap of raw extracted claim fields across runs.}
 #' }
 #'
 #' @param x A `wmfmRuns` object.
-#' @param type Character. Plot type. One of `"claims"` or `"textMetrics"`.
-#' @param ... Reserved for future extensions.
+#' @param type Character. Plot type. One of `"claims"`, `"textMetrics"`, or
+#'   `"claimProfile"`.
+#' @param ... Passed through to lower-level plotting helpers.
 #'
 #' @return A `ggplot2` object.
 #'
@@ -22,7 +24,7 @@
 #' @export
 plot.wmfmRuns = function(
     x,
-    type = c("claims", "textMetrics"),
+    type = c("claims", "textMetrics", "claimProfile"),
     ...
 ) {
   if (!inherits(x, "wmfmRuns")) {
@@ -58,9 +60,12 @@ plot.wmfmRuns = function(
     return(plotObj)
   }
 
+  if (identical(type, "claimProfile")) {
+    return(plotWmfmExplanationClaimHeatmap(x = x, ...))
+  }
+
   plotData = getWmfmRunsTextMetricsData(x)
 
-  # base R reshape instead of tidyr
   plotDataLong = rbind(
     data.frame(
       runId = plotData$runId,
@@ -79,7 +84,7 @@ plot.wmfmRuns = function(
     )
   )
 
-  plotObj = ggplot(
+  ggplot(
     plotDataLong,
     aes(
       x = factor(runId),
@@ -94,6 +99,4 @@ plot.wmfmRuns = function(
       y = "Value"
     ) +
     theme_minimal()
-
-  plotObj
 }

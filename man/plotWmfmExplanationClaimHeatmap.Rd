@@ -2,112 +2,47 @@
 % Please edit documentation in R/plotWmfmExplanationClaimHeatmap.R
 \name{plotWmfmExplanationClaimHeatmap}
 \alias{plotWmfmExplanationClaimHeatmap}
-\title{Plot a heatmap of WMFM repeated-run explanation fields}
+\title{Plot a raw-claim heatmap for WMFM runs}
 \usage{
 plotWmfmExplanationClaimHeatmap(
-  runsDf,
+  x,
   fieldColumns = NULL,
-  plotType = c("claims", "judged", "scores", "auto"),
-  runIdColumn = "runId",
-  sortRows = TRUE,
-  sortColumns = c("schema", "purity", "none"),
-  purityMetric = c("normalized_gini", "gini"),
-  includeMissingInPurity = TRUE,
   naLabel = "(missing)",
-  main = NULL,
-  xlab = "",
-  ylab = "Run",
-  cexAxis = 0.8,
-  cexLegend = 0.85,
-  xLabelSrt = 30,
-  mar = c(10, 8, 4, 2),
-  legendWidth = 2.8,
+  main = "Claim profile across repeated runs",
+  xlab = "Run ID",
+  ylab = NULL,
   prettyFieldLabels = TRUE,
-  includeBreaksInLegend = TRUE
+  xLabelAngle = 0,
+  includeLegendBreaks = FALSE
 )
 }
 \arguments{
-\item{runsDf}{A data.frame of run records, or a list containing a data.frame
-named \code{runsDf}.}
+\item{x}{A \code{wmfmRuns} object.}
 
-\item{fieldColumns}{Optional character vector of columns to plot. When this
-is supplied it takes precedence over \code{plotType}.}
+\item{fieldColumns}{Optional character vector of raw claim fields to plot.
+If \code{NULL}, a default raw-only claim profile is used.}
 
-\item{plotType}{Character. One of \code{"claims"}, \code{"judged"}, \code{"scores"}, or
-\code{"auto"}.}
+\item{naLabel}{Character label used for missing values.}
 
-\item{runIdColumn}{Character. Column to use for row labels.}
+\item{main}{Character plot title.}
 
-\item{sortRows}{Logical. Should rows be sorted by field pattern?}
+\item{xlab}{Character x-axis label.}
 
-\item{sortColumns}{Character. One of \code{"schema"}, \code{"purity"}, or \code{"none"}.
-\code{"schema"} preserves the supplied or detected field order. \code{"purity"}
-reorders columns from lowest to highest impurity.}
+\item{ylab}{Character y-axis label.}
 
-\item{purityMetric}{Character. One of \code{"normalized_gini"} or \code{"gini"}.
-\code{"normalized_gini"} rescales impurity by the largest possible impurity for
-the observed number of categories in that field.}
+\item{prettyFieldLabels}{Logical. Should field names be prettified for
+display?}
 
-\item{includeMissingInPurity}{Logical. Should missing values count as a
-category when calculating column purity?}
+\item{xLabelAngle}{Numeric rotation angle for x-axis tick labels.}
 
-\item{naLabel}{Character. Label used for missing values.}
-
-\item{main}{Character. Plot title.}
-
-\item{xlab}{Character. X-axis label.}
-
-\item{ylab}{Character. Y-axis label.}
-
-\item{cexAxis}{Numeric. Axis text expansion factor.}
-
-\item{cexLegend}{Numeric. Legend text expansion factor.}
-
-\item{xLabelSrt}{Numeric. Rotation angle in degrees for x-axis tick labels.}
-
-\item{mar}{Numeric vector of length 4 giving heatmap plot margins.}
-
-\item{legendWidth}{Numeric. Relative width allocated to the legend panel.}
-
-\item{prettyFieldLabels}{Logical. Should field names be prettified for axis
-labels?}
-
-\item{includeBreaksInLegend}{Logical. Should the legend insert blank spacer
-rows between semantic groups?}
+\item{includeLegendBreaks}{Logical. Passed to \code{orderWmfmLegendValues()}.}
 }
 \value{
-Invisibly returns a list describing the plotted data, including
-column-order information and purity statistics.
+A \code{ggplot2} object.
 }
 \description{
-Draws a run-by-field heatmap for repeated WMFM explanation runs. The function
-is designed for the revised repeated-run evaluation schema and can plot
-extracted claim fields, judged quality fields, or aggregate scores.
-}
-\details{
-The input may be either:
-\itemize{
-\item a data.frame of run records, or
-\item a list containing a \code{runsDf} element.
-}
-
-When \code{fieldColumns = NULL}, a sensible default field set is selected using
-the revised schema first and older field names as fallbacks where possible.
-
-Heatmaps are most useful for categorical or low-cardinality fields. Numeric
-score columns are converted to character labels before plotting, so scores are
-usually best shown only when they take a small set of rounded values.
-
-Column order can optionally be changed using a Gini-style impurity measure.
-This ranks fields by how mixed their observed values are across runs.
-Low impurity means a field is very pure or stable across runs, while high
-impurity means the field is more heterogeneous. This is an ordering device,
-not a quality score.
-}
-\examples{
-\dontrun{
-plotWmfmExplanationClaimHeatmap(repeatedRuns)
-plotWmfmExplanationClaimHeatmap(repeatedRuns, plotType = "judged")
-plotWmfmExplanationClaimHeatmap(repeatedRuns, sortColumns = "purity")
-}
+Draws a run-by-field heatmap for a \code{wmfmRuns} object using raw extracted
+claim fields only. This function is intended for visualising run-to-run
+variation in interpretation patterns and no longer supports judged fields or
+aggregate scores.
 }

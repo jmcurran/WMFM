@@ -4,14 +4,15 @@
 \alias{plot.wmfmRuns}
 \title{Plot a WMFM runs object}
 \usage{
-\method{plot}{wmfmRuns}(x, type = c("claims", "textMetrics"), ...)
+\method{plot}{wmfmRuns}(x, type = c("claims", "textMetrics", "claimProfile"), ...)
 }
 \arguments{
 \item{x}{A \code{wmfmRuns} object.}
 
-\item{type}{Character. Plot type. One of \code{"claims"} or \code{"textMetrics"}.}
+\item{type}{Character. Plot type. One of \code{"claims"}, \code{"textMetrics"}, or
+\code{"claimProfile"}.}
 
-\item{...}{Reserved for future extensions.}
+\item{...}{Passed through to lower-level plotting helpers.}
 }
 \value{
 A \code{ggplot2} object.
@@ -27,5 +28,6 @@ Supported plot types are:
 \describe{
 \item{\code{"claims"}}{Bar plot of extracted binary claim frequencies across runs.}
 \item{\code{"textMetrics"}}{Bar plot of per-run text and timing metrics.}
+\item{\code{"claimProfile"}}{Heatmap of raw extracted claim fields across runs.}
 }
 }
