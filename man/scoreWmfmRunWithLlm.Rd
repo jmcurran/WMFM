@@ -2,23 +2,30 @@
 % Please edit documentation in R/scoreWmfmRunWithLlm.R
 \name{scoreWmfmRunWithLlm}
 \alias{scoreWmfmRunWithLlm}
-\title{Score a single WMFM run using an LLM}
+\title{Score a single WMFM run record using a language model}
 \usage{
 scoreWmfmRunWithLlm(runRecord, chat, useCache = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{runRecord}{A single raw run record (named list).}
+\item{runRecord}{Named list produced by \code{buildWmfmRunRecord()}.}
 
-\item{chat}{Chat provider.}
+\item{chat}{A chat provider object as returned by \code{getChatProvider()}.}
 
-\item{useCache}{Logical. Whether to use caching.}
+\item{useCache}{Logical. Should scoring results be cached and reused for
+identical run records? Defaults to \code{FALSE}.}
 
-\item{verbose}{Logical. Whether to print debug information.}
+\item{verbose}{Logical. Should the raw scoring response be printed?
+Defaults to \code{FALSE}.}
 }
 \value{
-Named list containing only scoring fields.
+Named list containing only scored fields and LLM scoring metadata.
 }
 \description{
-Takes a raw run record and returns a scored record containing only
-judged fields and score summaries. The input run record is not modified.
+Sends a scoring request to the supplied chat provider and returns a pure
+score record containing judged fields and score summaries. The input run
+record is not modified.
+}
+\details{
+This function expects a chat provider object returned by
+\code{getChatProvider()} and uses \code{chat$chat(prompt)}.
 }
