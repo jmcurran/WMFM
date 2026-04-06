@@ -59,11 +59,11 @@
 #' ## Aggregate fields created here
 #'
 #' \describe{
-#'   \item{factualScore}{Numeric score on a `0` to `1` scale.}
-#'   \item{inferenceScore}{Numeric score on a `0` to `1` scale.}
-#'   \item{completenessScore}{Numeric score on a `0` to `1` scale.}
-#'   \item{clarityScore}{Numeric score on a `0` to `1` scale.}
-#'   \item{calibrationScore}{Numeric score on a `0` to `1` scale.}
+#'   \item{factualScore}{Numeric score on a `0` to `2` scale.}
+#'   \item{inferenceScore}{Numeric score on a `0` to `2` scale.}
+#'   \item{completenessScore}{Numeric score on a `0` to `2` scale.}
+#'   \item{clarityScore}{Numeric score on a `0` to `2` scale.}
+#'   \item{calibrationScore}{Numeric score on a `0` to `2` scale.}
 #'   \item{overallScore}{Numeric weighted score on a `0` to `100` scale.}
 #'   \item{overallPass}{Logical.}
 #' }
@@ -488,10 +488,10 @@ scoreWmfmRepeatedRuns = function(
   fatalFlawDetected[fillFatalIdx] = fatalFlawDetectedComputed[fillFatalIdx]
 
   factualScore = meanIgnoringNa(
-    effectDirectionCorrect / 2,
-    effectScaleAppropriate / 2,
-    referenceGroupHandledCorrectly / 2,
-    interactionSubstantiveCorrect / 2
+    effectDirectionCorrect,
+    effectScaleAppropriate,
+    referenceGroupHandledCorrectly,
+    interactionSubstantiveCorrect
   )
 
   interactionEvidenceNumeric = scoreFromKnownState(
@@ -500,32 +500,31 @@ scoreWmfmRepeatedRuns = function(
     partialValues = c("unclear"),
     badValues = c("too_strong", "too_weak"),
     default = 1L
-  ) / 2
+  )
 
   inferenceScore = meanIgnoringNa(
-    uncertaintyHandlingAppropriate / 2,
-    inferentialRegisterAppropriate / 2,
+    uncertaintyHandlingAppropriate,
+    inferentialRegisterAppropriate,
     interactionEvidenceNumeric
   )
 
   completenessScore = meanIgnoringNa(
-    mainEffectCoverageAdequate / 2,
-    interactionCoverageAdequate / 2,
-    referenceGroupCoverageAdequate / 2,
-    ifelse(uncertaintyMention | ciMention, 1, 0.5)
+    mainEffectCoverageAdequate,
+    interactionCoverageAdequate,
+    referenceGroupCoverageAdequate,
+    ifelse(uncertaintyMention | ciMention, 2, 1)
   )
 
   clarityScore = meanIgnoringNa(
-    clarityAdequate / 2,
-    numericExpressionAdequate / 2,
-    comparisonStructureClear / 2,
-    ifelse(outcomeMention | predictorMention, 1, 0.5)
+    clarityAdequate,
+    numericExpressionAdequate,
+    comparisonStructureClear,
+    ifelse(outcomeMention | predictorMention, 2, 1)
   )
 
-  calibrationScore = rep(1, nrow(runsDf))
-  calibrationScore[underclaimDetected] = 0.5
+  calibrationScore = rep(2, nrow(runsDf))
+  calibrationScore[underclaimDetected] = 1
   calibrationScore[overclaimDetected] = 0
-  calibrationScore = clamp01(calibrationScore)
 
   totalWeight = factualWeight + inferenceWeight + completenessWeight + clarityWeight + calibrationWeight
 
@@ -534,11 +533,11 @@ scoreWmfmRepeatedRuns = function(
   }
 
   weightedScore01 = (
-    factualWeight * factualScore +
-      inferenceWeight * inferenceScore +
-      completenessWeight * completenessScore +
-      clarityWeight * clarityScore +
-      calibrationWeight * calibrationScore
+    factualWeight * (factualScore / 2) +
+      inferenceWeight * (inferenceScore / 2) +
+      completenessWeight * (completenessScore / 2) +
+      clarityWeight * (clarityScore / 2) +
+      calibrationWeight * (calibrationScore / 2)
   ) / totalWeight
 
   weightedScore01[is.na(weightedScore01)] = 0
