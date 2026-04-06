@@ -45,10 +45,12 @@ buildMetricEvidenceSummary = function(metricDf, metric) {
     df[[hits[1L]]]
   }
 
+  nDisagree = sum(metricDf$disagrees, na.rm = TRUE)
+
   out = data.frame(
     metric = metric,
     nRuns = nRuns,
-    nDisagree = sum(metricDf$disagrees, na.rm = TRUE),
+    nDisagree = nDisagree,
     stringsAsFactors = FALSE
   )
 
@@ -66,41 +68,51 @@ buildMetricEvidenceSummary = function(metricDf, metric) {
     out$comparisonLanguageMention_rate = propTrue(comparisonLanguageMention)
     out$conditionalLanguageMention_rate = propTrue(conditionalLanguageMention)
 
-    likelyIssue = "insufficientContext"
+    likelyIssue = NA_character_
 
-    if (!is.null(effectScaleClaim)) {
-      notStatedRate = out$effectScale_notStated_n / nRuns
-      mixedRate = out$effectScale_mixedOrUnclear_n / nRuns
-      additiveRate = out$effectScale_additive_n / nRuns
-    } else {
-      notStatedRate = NA_real_
-      mixedRate = NA_real_
-      additiveRate = NA_real_
-    }
+    if (nDisagree > 0L) {
+      likelyIssue = "insufficientContext"
 
-    percentRate = out$percentLanguageMention_rate
-    comparisonRate = out$comparisonLanguageMention_rate
-    conditionalRate = out$conditionalLanguageMention_rate
+      if (!is.null(effectScaleClaim)) {
+        notStatedRate = out$effectScale_notStated_n / nRuns
+        mixedRate = out$effectScale_mixedOrUnclear_n / nRuns
+        additiveRate = out$effectScale_additive_n / nRuns
+      } else {
+        notStatedRate = NA_real_
+        mixedRate = NA_real_
+        additiveRate = NA_real_
+      }
 
-    if (!is.na(notStatedRate) && notStatedRate >= 0.6) {
-      likelyIssue = "effectScaleExtractionOftenMissing"
-    } else if (!is.na(mixedRate) && mixedRate >= 0.6) {
-      likelyIssue = "effectScaleExtractionOftenUnclear"
-    } else if (!is.na(additiveRate) &&
-               additiveRate >= 0.4 &&
-               !is.na(percentRate) &&
-               percentRate < 0.2) {
-      likelyIssue = "ruleMayUndervalueAdditiveNumericLanguage"
-    } else if (!is.na(comparisonRate) &&
-               !is.na(conditionalRate) &&
-               (comparisonRate >= 0.5 || conditionalRate >= 0.5)) {
-      likelyIssue = "numericContentPresentButRuleInputsMayMissIt"
+      percentRate = out$percentLanguageMention_rate
+      comparisonRate = out$comparisonLanguageMention_rate
+      conditionalRate = out$conditionalLanguageMention_rate
+
+      if (!is.na(notStatedRate) && notStatedRate >= 0.6) {
+        likelyIssue = "effectScaleExtractionOftenMissing"
+      } else if (!is.na(mixedRate) && mixedRate >= 0.6) {
+        likelyIssue = "effectScaleExtractionOftenUnclear"
+      } else if (!is.na(additiveRate) &&
+                 additiveRate >= 0.4 &&
+                 !is.na(percentRate) &&
+                 percentRate < 0.2) {
+        likelyIssue = "ruleMayUndervalueAdditiveNumericLanguage"
+      } else if (!is.na(comparisonRate) &&
+                 !is.na(conditionalRate) &&
+                 (comparisonRate >= 0.5 || conditionalRate >= 0.5)) {
+        likelyIssue = "numericContentPresentButRuleInputsMayMissIt"
+      }
     }
 
     out$likelyIssue = likelyIssue
     return(out)
   }
 
-  out$likelyIssue = "metricSpecificEvidenceNotYetImplemented"
+  out$likelyIssue =
+    if (nDisagree > 0L) {
+      "metricSpecificEvidenceNotYetImplemented"
+    } else {
+      NA_character_
+    }
+
   out
 }

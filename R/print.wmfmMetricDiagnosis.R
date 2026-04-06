@@ -26,7 +26,9 @@ print.wmfmMetricDiagnosis = function(x, ...) {
 
     cat("\nEvidence summary:\n")
 
-    if ("likelyIssue" %in% names(e)) {
+    if ("likelyIssue" %in% names(e) &&
+        !is.na(e$likelyIssue) &&
+        nzchar(trimws(e$likelyIssue))) {
       cat("- likely issue: ", e$likelyIssue, "\n", sep = "")
     }
 
