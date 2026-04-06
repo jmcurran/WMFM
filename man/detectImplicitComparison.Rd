@@ -2,7 +2,7 @@
 % Please edit documentation in R/detectImplicitComparison.R
 \name{detectImplicitComparison}
 \alias{detectImplicitComparison}
-\title{Detect implicit comparison language in WMFM explanation text}
+\title{Detect implicit comparison language in WMFM explanations}
 \usage{
 detectImplicitComparison(text)
 }
@@ -14,25 +14,19 @@ Logical scalar. \code{TRUE} if implicit comparison language is detected,
 otherwise \code{FALSE}.
 }
 \description{
-Detects implicit comparison structures that may indicate group contrasts
-even when the explanation does not use a short explicit phrase such as
-"higher than" or "compared with". This is intended as a fallback helper
-for claim extraction in \code{buildWmfmRunRecord()}.
+Detects comparison structure that may not use explicit phrases such as
+"compared with" or "relative to", but still clearly expresses a contrast
+between groups or conditions.
 }
 \details{
-The current heuristic looks for all of the following:
+This helper is intended to support extraction in \code{buildWmfmRunRecord()},
+especially for explanations that use constructions such as:
 \itemize{
-\item a group-referencing phrase such as "students who" or "those who",
-\item a contrast marker such as "did not" or "without", and
-\item a comparative signal such as "higher", "lower", "more", or
-"less".
+\item "higher ... than those who did not"
+\item "more ... than students who did not attend"
+\item "lower ... than those without ..."
 }
 
-This increases recall for explanations that clearly compare groups in
-natural language without explicitly naming a reference group.
-}
-\examples{
-detectImplicitComparison(
-  "Students who attended class had higher exam scores than those who did not."
-)
+The function looks for comparative wording together with at least one
+structural cue indicating contrast or grouping.
 }

@@ -177,7 +177,6 @@ buildWmfmRunRecord = function(
       "\\breduction\\b",
       "\\bdrop(s|ped|ping)?\\b",
       "\\bfall(s|en|ing)?\\b",
-      "\\blower\\b",
       "\\bsmaller\\b",
       "\\brare(r)?\\b",
       "\\bfalls? to\\b",
