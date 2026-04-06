@@ -17,4 +17,9 @@ Given a single run record produced by \code{buildWmfmRunRecord()}, construct a
 prompt asking a language model to score the explanation and return strict
 JSON matching the WMFM scoring schema.
 }
+\details{
+This prompt includes field-specific rubric guidance so that the language
+model applies the WMFM scoring dimensions consistently rather than inferring
+its own definitions of what counts as adequate, clear, or appropriate.
+}
 \keyword{internal}

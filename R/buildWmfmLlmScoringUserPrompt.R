@@ -4,6 +4,10 @@
 #' prompt asking a language model to score the explanation and return strict
 #' JSON matching the WMFM scoring schema.
 #'
+#' This prompt includes field-specific rubric guidance so that the language
+#' model applies the WMFM scoring dimensions consistently rather than inferring
+#' its own definitions of what counts as adequate, clear, or appropriate.
+#'
 #' @param runRecord Named list produced by `buildWmfmRunRecord()`.
 #'
 #' @return A character scalar containing the prompt text.
@@ -50,6 +54,41 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     } else {
       "No interaction terms are present in the fitted model."
     }
+
+  fieldSpecificRubric = paste(
+    "FIELD-SPECIFIC RUBRIC GUIDANCE",
+    "- effectDirectionCorrect:",
+    "  2 if the explanation gives the correct direction of the main effect(s); 1 if only partly correct, mixed, or incomplete; 0 if direction is wrong or missing when important.",
+    "- effectScaleAppropriate:",
+    "  2 if the explanation uses the correct effect scale for the model context (for example additive differences in points, multiplicative changes, probabilities, or odds); 1 if the scale is only partly clear or mixed; 0 if the scale is wrong, seriously confused, or absent when important.",
+    "- referenceGroupHandledCorrectly:",
+    "  2 if the baseline or comparison group is handled correctly; 1 if only partly clear; 0 if the baseline or comparison is wrong or materially misleading.",
+    "- interactionCoverageAdequate:",
+    "  2 if important interactions are clearly covered when present; 1 if interaction coverage is partial; 0 if an important interaction is missed or an interaction is invented.",
+    "- interactionSubstantiveCorrect:",
+    "  2 if the explanation gets the substantive interpretation of the interaction right; 1 if partly right or vague; 0 if wrong.",
+    "- uncertaintyHandlingAppropriate:",
+    "  2 if uncertainty or evidential qualification is handled appropriately; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
+    "- inferentialRegisterAppropriate:",
+    "  2 if the wording matches the evidential strength and avoids inappropriate causal claims; 1 if somewhat mixed; 0 if clearly overclaiming or otherwise inappropriate.",
+    "- mainEffectCoverageAdequate:",
+    "  2 if the key main effects are adequately covered; 1 if partly covered; 0 if important main effects are omitted.",
+    "- referenceGroupCoverageAdequate:",
+    "  2 if the explanation adequately communicates the baseline or comparison structure when relevant; 1 if partial; 0 if missing when important.",
+    "- clarityAdequate:",
+    "  2 if the explanation is generally clear and easy to follow; 1 if understandable but somewhat awkward, wordy, or uneven; 0 if seriously unclear.",
+    "- numericExpressionAdequate:",
+    "  2 if the explanation gives a clear quantitative interpretation of one or more important model effects using meaningful numbers, units, point differences, probabilities, odds, multiplicative language, or intervals where appropriate.",
+    "  1 if some numeric information is present but the quantitative interpretation is partial, weakly connected to the effect, vague, or somewhat unclear.",
+    "  0 if meaningful quantitative interpretation is absent when it should be present, or if the numeric expression is seriously misleading.",
+    "  Minor stylistic awkwardness alone should not reduce a score from 2 to 1 if the quantitative interpretation is still clear.",
+    "  Do not treat percentage language about model fit, such as R-squared or percent of variation explained, as evidence that the coefficient effect scale is multiplicative.",
+    "- comparisonStructureClear:",
+    "  2 if relevant comparisons or conditional structures are clearly expressed; 1 if partly clear; 0 if important comparison structure is missing or confusing.",
+    "- fatalFlawDetected:",
+    "  TRUE only for a serious problem such as a major directional error, clear overclaiming, invented interaction, or another flaw that should strongly affect the final judgment.",
+    sep = "\n"
+  )
 
   jsonTemplate = paste(
     "{",
@@ -110,6 +149,8 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "",
     "EXPLANATION TO SCORE",
     safeWmfmScalar(runRecord$explanationText),
+    "",
+    fieldSpecificRubric,
     "",
     "Return strict JSON with exactly these top-level fields:",
     "effectDirectionCorrect",
