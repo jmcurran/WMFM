@@ -23,10 +23,14 @@ If \code{NULL}, a default raw-only claim profile is used.}
 readable display labels?}
 }
 \value{
-A data frame with columns \code{runId}, \code{field}, \code{value}, and
-\code{fieldLabel}.
+A data frame with columns \code{runId}, \code{field}, \code{fieldLabel}, \code{value},
+\code{fieldPurity}, and \code{runPurity}.
 }
 \description{
 Extracts selected raw claim fields from a \code{wmfmRuns} object and reshapes them
 into long format for heatmap plotting.
+}
+\details{
+The returned data also includes simple purity-based ordering statistics so
+that fields and runs can be displayed in a more informative order.
 }

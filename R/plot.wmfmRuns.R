@@ -19,7 +19,7 @@
 #'
 #' @return A `ggplot2` object.
 #'
-#' @importFrom ggplot2 ggplot aes geom_col coord_flip scale_y_continuous labs theme_minimal facet_wrap
+#' @importFrom ggplot2 aes coord_flip facet_wrap geom_col ggplot labs scale_y_continuous theme_minimal
 #' @importFrom stats reorder
 #' @export
 plot.wmfmRuns = function(
@@ -27,76 +27,76 @@ plot.wmfmRuns = function(
     type = c("claims", "textMetrics", "claimProfile"),
     ...
 ) {
-  if (!inherits(x, "wmfmRuns")) {
-    stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
-  }
+    if (!inherits(x, "wmfmRuns")) {
+        stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
+    }
 
-  if (!is.list(x$runs) || length(x$runs) == 0) {
-    stop("`x$runs` must be a non-empty list of run records.", call. = FALSE)
-  }
+    if (!is.list(x$runs) || length(x$runs) == 0) {
+        stop("`x$runs` must be a non-empty list of run records.", call. = FALSE)
+    }
 
-  type = match.arg(type)
+    type = match.arg(type)
 
-  if (identical(type, "claims")) {
-    plotData = getWmfmRunsClaimsData(x)
+    if (identical(type, "claims")) {
+        plotData = getWmfmRunsClaimsData(x)
 
-    plotObj = ggplot(
-      plotData,
-      aes(
-        x = reorder(claim, proportionPresent),
-        y = proportionPresent
-      )
-    ) +
-      geom_col() +
-      coord_flip() +
-      scale_y_continuous(limits = c(0, 1)) +
-      labs(
-        title = "Claim frequency across repeated runs",
-        x = NULL,
-        y = "Proportion of runs"
-      ) +
-      theme_minimal()
+        plotObj = ggplot(
+            plotData,
+            aes(
+                x = reorder(claim, proportionPresent),
+                y = proportionPresent
+            )
+        ) +
+            geom_col() +
+            coord_flip() +
+            scale_y_continuous(limits = c(0, 1)) +
+            labs(
+                title = "Claim frequency across repeated runs",
+                x = NULL,
+                y = "Proportion of runs"
+            ) +
+            theme_minimal()
 
-    return(plotObj)
-  }
+        return(plotObj)
+    }
 
-  if (identical(type, "claimProfile")) {
-    return(plotWmfmExplanationClaimHeatmap(x = x, ...))
-  }
+    if (identical(type, "claimProfile")) {
+        return(plotWmfmExplanationClaimHeatmap(x = x, ...))
+    }
 
-  plotData = getWmfmRunsTextMetricsData(x)
+    plotData = getWmfmRunsTextMetricsData(x)
 
-  plotDataLong = rbind(
-    data.frame(
-      runId = plotData$runId,
-      metric = "wordCount",
-      value = plotData$wordCount
-    ),
-    data.frame(
-      runId = plotData$runId,
-      metric = "sentenceCount",
-      value = plotData$sentenceCount
-    ),
-    data.frame(
-      runId = plotData$runId,
-      metric = "runElapsedSeconds",
-      value = plotData$runElapsedSeconds
+    plotDataLong = rbind(
+        data.frame(
+            runId = plotData$runId,
+            metric = "wordCount",
+            value = plotData$wordCount
+        ),
+        data.frame(
+            runId = plotData$runId,
+            metric = "sentenceCount",
+            value = plotData$sentenceCount
+        ),
+        data.frame(
+            runId = plotData$runId,
+            metric = "runElapsedSeconds",
+            value = plotData$runElapsedSeconds
+        )
     )
-  )
 
-  ggplot(
-    plotDataLong,
-    aes(
-      x = factor(runId),
-      y = value
-    )
-  ) +
-    geom_col() +
-    facet_wrap(~metric, scales = "free_y", ncol = 1) +
-    labs(
-      title = "Run metrics across repeated runs",
-      x = "Run ID",
-      y = "Value"
+    ggplot(
+        plotDataLong,
+        aes(
+            x = factor(runId),
+            y = value
+        )
     ) +
-    theme_minimal()
+        geom_col() +
+        facet_wrap(~metric, scales = "free_y", ncol = 1) +
+        labs(
+            title = "Run metrics across repeated runs",
+            x = "Run ID",
+            y = "Value"
+        ) +
+        theme_minimal()
 }

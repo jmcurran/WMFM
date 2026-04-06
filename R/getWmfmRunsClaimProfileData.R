@@ -3,6 +3,9 @@
 #' Extracts selected raw claim fields from a `wmfmRuns` object and reshapes them
 #' into long format for heatmap plotting.
 #'
+#' The returned data also includes simple purity-based ordering statistics so
+#' that fields and runs can be displayed in a more informative order.
+#'
 #' @param x A `wmfmRuns` object.
 #' @param fieldColumns Optional character vector of raw claim fields to include.
 #'   If `NULL`, a default raw-only claim profile is used.
@@ -10,8 +13,8 @@
 #' @param prettyFieldLabels Logical. Should field names be converted to more
 #'   readable display labels?
 #'
-#' @return A data frame with columns `runId`, `field`, `value`, and
-#'   `fieldLabel`.
+#' @return A data frame with columns `runId`, `field`, `fieldLabel`, `value`,
+#'   `fieldPurity`, and `runPurity`.
 #' @export
 getWmfmRunsClaimProfileData = function(
     x,
@@ -19,116 +22,183 @@ getWmfmRunsClaimProfileData = function(
     naLabel = "(missing)",
     prettyFieldLabels = TRUE
 ) {
-  coerceFieldColumn = function(x, naLabel) {
-    if (is.logical(x)) {
-      out = ifelse(is.na(x), naLabel, ifelse(x, "TRUE", "FALSE"))
-      return(out)
+    coerceFieldColumn = function(x, naLabel) {
+        if (is.logical(x)) {
+            out = ifelse(is.na(x), naLabel, ifelse(x, "TRUE", "FALSE"))
+            return(out)
+        }
+
+        if (is.factor(x)) {
+            x = as.character(x)
+        }
+
+        if (is.numeric(x)) {
+            if (all(is.na(x) | abs(x - round(x)) < .Machine$double.eps^0.5)) {
+                x = as.character(as.integer(round(x)))
+            } else {
+                x = format(round(x, 2), trim = TRUE, nsmall = 0)
+            }
+        }
+
+        x = as.character(x)
+        x[is.na(x)] = naLabel
+        x[trimws(x) == ""] = naLabel
+        x
     }
 
-    if (is.factor(x)) {
-      x = as.character(x)
+    makeFieldLabel = function(x) {
+        x = gsub("([a-z0-9])([A-Z])", "\\1 \\2", x)
+        x = gsub("_", " ", x, fixed = TRUE)
+        x
     }
 
-    if (is.numeric(x)) {
-      if (all(is.na(x) | abs(x - round(x)) < .Machine$double.eps^0.5)) {
-        x = as.character(as.integer(round(x)))
-      } else {
-        x = format(round(x, 2), trim = TRUE, nsmall = 0)
-      }
+    getModalValue = function(x) {
+        xNoMissing = x[x != naLabel]
+
+        if (length(xNoMissing) == 0) {
+            return(naLabel)
+        }
+
+        tab = sort(table(xNoMissing), decreasing = TRUE)
+        names(tab)[1]
     }
 
-    x = as.character(x)
-    x[is.na(x)] = naLabel
-    x[trimws(x) == ""] = naLabel
-    x
-  }
+    if (!inherits(x, "wmfmRuns")) {
+        stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
+    }
 
-  makeFieldLabel = function(x) {
-    x = gsub("([a-z0-9])([A-Z])", "\\1 \\2", x)
-    x = gsub("_", " ", x, fixed = TRUE)
-    x
-  }
-
-  if (!inherits(x, "wmfmRuns")) {
-    stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
-  }
-
-  runsDf = do.call(
-    rbind,
-    lapply(
-      x$runs,
-      function(run) {
-        as.data.frame(run, stringsAsFactors = FALSE)
-      }
-    )
-  )
-
-  rownames(runsDf) = NULL
-
-  if (is.null(fieldColumns)) {
-    fieldColumns = c(
-      "effectDirectionClaim",
-      "effectScaleClaim",
-      "interactionSubstantiveClaim",
-      "inferentialRegister",
-      "uncertaintyTypeClaim",
-      "referenceGroupMention",
-      "interactionMention",
-      "uncertaintyMention",
-      "comparisonLanguageMention",
-      "conditionalLanguageMention",
-      "ciMention",
-      "percentLanguageMention",
-      "overclaimDetected",
-      "underclaimDetected"
-    )
-  }
-
-  missingFields = setdiff(fieldColumns, names(runsDf))
-  if (length(missingFields) > 0) {
-    stop(
-      "Missing expected raw claim fields in `wmfmRuns`: ",
-      paste(missingFields, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  if (!("runId" %in% names(runsDf))) {
-    stop("`wmfmRuns` records must contain `runId`.", call. = FALSE)
-  }
-
-  out = do.call(
-    rbind,
-    lapply(
-      fieldColumns,
-      function(fieldName) {
-        fieldLabel =
-          if (isTRUE(prettyFieldLabels)) {
-            makeFieldLabel(fieldName)
-          } else {
-            fieldName
-          }
-
-        data.frame(
-          runId = as.integer(runsDf$runId),
-          field = fieldName,
-          fieldLabel = fieldLabel,
-          value = coerceFieldColumn(runsDf[[fieldName]], naLabel = naLabel),
-          stringsAsFactors = FALSE
+    runsDf = do.call(
+        rbind,
+        lapply(
+            x$runs,
+            function(run) {
+                as.data.frame(run, stringsAsFactors = FALSE)
+            }
         )
-      }
     )
-  )
 
-  out$fieldLabel = factor(
-    out$fieldLabel,
-    levels = rev(unique(out$fieldLabel))
-  )
+    rownames(runsDf) = NULL
 
-  out$runId = factor(
-    out$runId,
-    levels = sort(unique(as.integer(out$runId)))
-  )
+    if (is.null(fieldColumns)) {
+        fieldColumns = c(
+            "effectDirectionClaim",
+            "effectScaleClaim",
+            "interactionSubstantiveClaim",
+            "inferentialRegister",
+            "uncertaintyTypeClaim",
+            "referenceGroupMention",
+            "interactionMention",
+            "uncertaintyMention",
+            "comparisonLanguageMention",
+            "conditionalLanguageMention",
+            "ciMention",
+            "percentLanguageMention",
+            "overclaimDetected",
+            "underclaimDetected"
+        )
+    }
 
-  out
+    missingFields = setdiff(fieldColumns, names(runsDf))
+    if (length(missingFields) > 0) {
+        stop(
+            "Missing expected raw claim fields in `wmfmRuns`: ",
+            paste(missingFields, collapse = ", "),
+            call. = FALSE
+        )
+    }
+
+    if (!("runId" %in% names(runsDf))) {
+        stop("`wmfmRuns` records must contain `runId`.", call. = FALSE)
+    }
+
+    longDf = do.call(
+        rbind,
+        lapply(
+            fieldColumns,
+            function(fieldName) {
+                fieldLabel = if (isTRUE(prettyFieldLabels)) {
+                    makeFieldLabel(fieldName)
+                } else {
+                    fieldName
+                }
+
+                data.frame(
+                    runId = as.integer(runsDf$runId),
+                    field = fieldName,
+                    fieldLabel = fieldLabel,
+                    value = coerceFieldColumn(runsDf[[fieldName]], naLabel = naLabel),
+                    stringsAsFactors = FALSE
+                )
+            }
+        )
+    )
+
+    fieldStats = do.call(
+        rbind,
+        lapply(
+            split(longDf, longDf$field),
+            function(df) {
+                modalValue = getModalValue(df$value)
+                comparisonValues = ifelse(df$value == naLabel, NA, df$value == modalValue)
+                fieldPurity = mean(comparisonValues, na.rm = TRUE)
+
+                if (is.nan(fieldPurity)) {
+                    fieldPurity = NA_real_
+                }
+
+                data.frame(
+                    field = df$field[1],
+                    fieldLabel = df$fieldLabel[1],
+                    modalValue = modalValue,
+                    fieldPurity = fieldPurity,
+                    stringsAsFactors = FALSE
+                )
+            }
+        )
+    )
+
+    longDf = merge(
+        longDf,
+        fieldStats,
+        by = c("field", "fieldLabel"),
+        all.x = TRUE,
+        sort = FALSE
+    )
+
+    runStats = do.call(
+        rbind,
+        lapply(
+            split(longDf, longDf$runId),
+            function(df) {
+                matchesModal = ifelse(df$value == naLabel, NA, df$value == df$modalValue)
+                runPurity = mean(matchesModal, na.rm = TRUE)
+
+                if (is.nan(runPurity)) {
+                    runPurity = NA_real_
+                }
+
+                data.frame(
+                    runId = as.integer(df$runId[1]),
+                    runPurity = runPurity,
+                    stringsAsFactors = FALSE
+                )
+            }
+        )
+    )
+
+    longDf = merge(
+        longDf,
+        runStats,
+        by = "runId",
+        all.x = TRUE,
+        sort = FALSE
+    )
+
+    fieldOrder = fieldStats$fieldLabel[order(fieldStats$fieldPurity, fieldStats$fieldLabel)]
+    runOrder = runStats$runId[order(-runStats$runPurity, runStats$runId)]
+
+    longDf$fieldLabel = factor(longDf$fieldLabel, levels = rev(fieldOrder))
+    longDf$runId = factor(longDf$runId, levels = runOrder)
+
+    longDf[order(longDf$fieldLabel, longDf$runId), ]
 }

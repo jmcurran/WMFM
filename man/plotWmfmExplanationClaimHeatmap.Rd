@@ -46,3 +46,8 @@ claim fields only. This function is intended for visualising run-to-run
 variation in interpretation patterns and no longer supports judged fields or
 aggregate scores.
 }
+\details{
+Fields are ordered by purity, and runs are ordered by overall claim-profile
+purity relative to the modal value in each field. Missing values are shown as
+white tiles with an X overlay.
+}

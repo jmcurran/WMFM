@@ -10,33 +10,28 @@ getWmfmClaimColorMap()
 A named character vector of hexadecimal colours.
 }
 \description{
-Returns a named character vector of colours for common semantic values used
-in WMFM repeated-run heatmaps.
+Returns a named character vector of colours for semantic values used in raw
+\code{wmfmRuns} claim-profile heatmaps.
 }
 \details{
-The mapping is designed for the revised repeated-run evaluation schema and is
-intended to work across three broad groups of fields:
+The palette is designed for the current raw-only repeated-run workflow. It
+aims to keep broad semantic groups visually distinct while avoiding overly
+similar shades within the same heatmap:
 
 \itemize{
-\item extracted claim fields such as \code{effectDirectionClaim} and
-\code{interactionSubstantiveClaim},
-\item judged quality fields such as \code{interactionEvidenceAppropriate} and
-\code{clarityAdequate}, and
-\item aggregate flags such as \code{fatalFlawDetected} and \code{overallPass}.
-}
-
-The palette is semantic rather than purely algorithmic. In broad terms:
-\itemize{
-\item green/teal tones indicate appropriate, adequate, present, or pass,
-\item blue tones indicate substantive interaction or inferential language,
-\item orange tones indicate weakness, partial adequacy, or caution,
-\item red tones indicate problematic, incorrect, or overstrong claims,
-\item purple/magenta tones indicate ambiguity or mixed content, and
-\item grey tones indicate absence, missingness, or not-applicable values.
+\item binary presence or absence values use contrasting teal and orange,
+\item directional or scale claims use clearly separated green, red-orange,
+blue, and purple hues,
+\item inferential and uncertainty-related values use distinct blues and
+mustard tones,
+\item structural values such as \code{none}, \code{not_stated}, and
+\code{not_applicable} use separated greys, and
+\item true missingness uses white and is intended to be overlaid with an X
+in the heatmap.
 }
 
 The returned vector can be used directly as a lookup table before assigning
-deterministic fallback colours to previously unseen values.
+fallback colours to previously unseen values.
 }
 \examples{
 getWmfmClaimColorMap()
