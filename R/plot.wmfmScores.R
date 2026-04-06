@@ -157,7 +157,6 @@ plot.wmfmScores = function(
         ggplot2::scale_fill_gradientn(
           colours = c("#F7FBFF", "#6BAED6", "#08306B")
         ) +
-        ggplot2::scale_x_continuous() +
         ggplot2::labs(
           title = paste("WMFM score heatmap:", method),
           x = NULL,
