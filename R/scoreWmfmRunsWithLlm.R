@@ -39,13 +39,14 @@ scoreWmfmRunsWithLlm = function(
 
   startedAt = Sys.time()
 
+  progressBar = NULL
   if (isTRUE(showProgress)) {
-    utils::txtProgressBar(
+    progressBar = utils::txtProgressBar(
       min = 0,
       max = nRuns,
       initial = 0,
       style = 3
-    ) -> progressBar
+    )
 
     on.exit(
       close(progressBar),
@@ -56,7 +57,7 @@ scoreWmfmRunsWithLlm = function(
   for (i in seq_len(nRuns)) {
     iterationStart = Sys.time()
 
-    scoredRuns[[i]] = applyWmfmLlmScoresToRecord(
+    scoredRuns[[i]] = scoreWmfmRunWithLlm(
       runRecord = runRecords[[i]],
       chat = chat,
       useCache = useCache,
