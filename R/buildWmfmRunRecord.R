@@ -219,73 +219,6 @@ buildWmfmRunRecord = function(
     "not_stated"
   }
 
-  classifyEffectScale = function(text) {
-    if (is.na(text) || !nzchar(trimws(text))) {
-      return("not_stated")
-    }
-
-    multiplicativePattern = paste(
-      "\\bmultipl(?:y|ies|ied|ier|iers)?\\b",
-      "\\bmultiplier\\b",
-      "\\btimes\\b",
-      "\\bfold\\b",
-      "\\bpercent\\b",
-      "%",
-      "\\brate ratio\\b",
-      "\\bodds ratio\\b",
-      "\\brelative risk\\b",
-      "\\bof its previous\\b",
-      "\\bof the previous\\b",
-      "\\bfalls? to about\\b",
-      "\\bexpected count\\b",
-      "\\bexpected number\\b",
-      sep = "|"
-    )
-
-    probabilityPattern = paste(
-      "\\bodds\\b",
-      "\\bprobability\\b",
-      "\\bchance\\b",
-      "\\blikelihood\\b",
-      sep = "|"
-    )
-
-    additivePattern = paste(
-      "\\bunit(s)?\\b",
-      "\\bpoint(s)?\\b",
-      "\\bhigher by\\b",
-      "\\blower by\\b",
-      "\\bincrease of\\b",
-      "\\bdecrease of\\b",
-      "\\bdifference of\\b",
-      sep = "|"
-    )
-
-    multiplicativeDetected = detectPatternLocal(text, multiplicativePattern)
-    probabilityDetected = detectPatternLocal(text, probabilityPattern)
-    additiveDetected = detectPatternLocal(text, additivePattern)
-
-    nDetected = sum(c(multiplicativeDetected, probabilityDetected, additiveDetected))
-
-    if (nDetected > 1) {
-      return("mixed_or_unclear")
-    }
-
-    if (multiplicativeDetected) {
-      return("multiplicative")
-    }
-
-    if (probabilityDetected) {
-      return("probability_or_odds")
-    }
-
-    if (additiveDetected) {
-      return("additive")
-    }
-
-    "not_stated"
-  }
-
   classifyInteractionSubstantiveClaim = function(text, hasInteractionTerms) {
     if (!isTRUE(hasInteractionTerms)) {
       return("not_applicable")
@@ -651,7 +584,7 @@ buildWmfmRunRecord = function(
   predictorMention = explanationPresent
 
   effectDirectionClaim = classifyEffectDirection(explanationText)
-  effectScaleClaim = classifyEffectScale(explanationText)
+  effectScaleClaim = classifyEffectScaleClaim(explanationText)
   interactionSubstantiveClaim = classifyInteractionSubstantiveClaim(
     text = explanationText,
     hasInteractionTerms = hasInteractionTerms

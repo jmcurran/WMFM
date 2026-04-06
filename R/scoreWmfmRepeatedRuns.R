@@ -398,11 +398,68 @@ scoreWmfmRepeatedRuns = function(
   referenceGroupCoverageAdequateComputed[hasInteractionTerms & !referenceGroupMention] = 0L
   referenceGroupCoverageAdequate = overwriteIfMissing(referenceGroupCoverageAdequateExisting, referenceGroupCoverageAdequateComputed)
 
-  numericExpressionAdequateComputed = rep(1L, nrow(runsDf))
-  numericExpressionAdequateComputed[effectScaleClaim == "mixed_or_unclear"] = 0L
-  numericExpressionAdequateComputed[effectScaleClaim == "not_stated"] = 0L
-  numericExpressionAdequateComputed[effectScaleClaim == "multiplicative" & percentLanguageMention] = 2L
-  numericExpressionAdequateComputed[effectScaleClaim %in% c("additive", "probability_or_odds", "multiplicative") & !percentLanguageMention] = 1L
+  hasNumericDigits = grepl("\\d", explanationText, perl = TRUE)
+  hasNumberWords = grepl(
+    paste(
+      "\\bone\\b",
+      "\\btwo\\b",
+      "\\bthree\\b",
+      "\\bfour\\b",
+      "\\bfive\\b",
+      "\\bsix\\b",
+      "\\bseven\\b",
+      "\\beight\\b",
+      "\\bnine\\b",
+      "\\bten\\b",
+      "\\beleven\\b",
+      "\\btwelve\\b",
+      "\\bhalf\\b",
+      sep = "|"
+    ),
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+  hasNumericMagnitude = hasNumericDigits | hasNumberWords
+
+  additiveNumericPattern = paste(
+    "\\bpoint(s)?\\b",
+    "\\bhigher\\b",
+    "\\blower\\b",
+    "\\braises?\\b",
+    "\\bboosts?\\b",
+    "\\bincrease(s|d)?\\b",
+    "\\bdecrease(s|d)?\\b",
+    sep = "|"
+  )
+  additiveNumericMention = grepl(
+    additiveNumericPattern,
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
+  numericExpressionAdequateComputed = rep(0L, nrow(runsDf))
+  numericExpressionAdequateComputed[hasNumericMagnitude] = 1L
+  numericExpressionAdequateComputed[
+    effectScaleClaim %in% c("additive", "probability_or_odds", "multiplicative") &
+      hasNumericMagnitude
+  ] = 2L
+  numericExpressionAdequateComputed[
+    effectScaleClaim == "mixed_or_unclear" &
+      hasNumericMagnitude
+  ] = 1L
+  numericExpressionAdequateComputed[
+    effectScaleClaim == "mixed_or_unclear" &
+      hasNumericMagnitude &
+      additiveNumericMention &
+      (comparisonLanguageMention | conditionalLanguageMention | percentLanguageMention)
+  ] = 2L
+  numericExpressionAdequateComputed[
+    effectScaleClaim == "not_stated" &
+      hasNumericMagnitude &
+      additiveNumericMention
+  ] = 1L
   numericExpressionAdequate = overwriteIfMissing(numericExpressionAdequateExisting, numericExpressionAdequateComputed)
 
   comparisonStructureClearComputed = rep(1L, nrow(runsDf))
