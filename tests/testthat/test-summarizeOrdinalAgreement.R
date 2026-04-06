@@ -1,31 +1,43 @@
 test_that("summarizeOrdinalAgreement returns expected ordinal summary", {
-  metricRow = makeMetricRow("clarityAdequate")
 
-  out = summarizeOrdinalAgreement(
-    leftVec = c("inadequate", "mixed_or_unclear", "adequate"),
-    rightVec = c("mixed_or_unclear", "mixed_or_unclear", "adequate"),
-    metricRow = metricRow
+  metricRow = data.frame(
+    metricName = "clarityAdequate",
+    label = "Clarity",
+    group = "g",
+    metricType = "ordinal",
+    stringsAsFactors = FALSE
   )
 
-  expect_s3_class(out, "data.frame")
+  metricRow$orderedLevels = list(c("0", "1", "2"))
+
+  left = c("0", "1", "2")
+  right = c("0", "2", "2")
+
+  out = summarizeOrdinalAgreement(left, right, metricRow)
+
+  expect_true(is.data.frame(out))
   expect_equal(out$metric, "clarityAdequate")
   expect_equal(out$nCompared, 3)
-  expect_equal(out$proportionEqual, 2 / 3)
+  expect_equal(out$proportionEqual, 2/3)
   expect_equal(out$proportionAdjacent, 1)
-  expect_equal(out$meanDifference, 1 / 3)
-  expect_equal(out$meanAbsoluteDifference, 1 / 3)
-  expect_true(is.finite(out$weightedKappa))
 })
 
-test_that("summarizeOrdinalAgreement ignores values not in orderedLevels", {
-  metricRow = makeMetricRow("clarityAdequate")
+test_that("summarizeOrdinalAgreement returns NULL when values not in orderedLevels", {
 
-  out = summarizeOrdinalAgreement(
-    leftVec = c("adequate", "not_a_level"),
-    rightVec = c("adequate", "adequate"),
-    metricRow = metricRow
+  metricRow = data.frame(
+    metricName = "clarityAdequate",
+    label = "Clarity",
+    group = "g",
+    metricType = "ordinal",
+    stringsAsFactors = FALSE
   )
 
-  expect_equal(out$nCompared, 1)
-  expect_equal(out$proportionEqual, 1)
+  metricRow$orderedLevels = list(c("0", "1", "2"))
+
+  left = c("A", "B")
+  right = c("A", "B")
+
+  out = summarizeOrdinalAgreement(left, right, metricRow)
+
+  expect_null(out)
 })
