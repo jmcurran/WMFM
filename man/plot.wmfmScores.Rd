@@ -15,23 +15,21 @@
 \arguments{
 \item{x}{A \code{wmfmScores} object.}
 
-\item{method}{Character. Scoring method to plot. One of \code{"deterministic"} or
-\code{"llm"}.}
+\item{method}{Character. Scoring method to plot. One of "deterministic" or
+"llm".}
 
-\item{type}{Character. One of \code{"scores"} or \code{"overall"}.}
+\item{type}{Character. One of "scores" or "overall".}
 
 \item{fieldColumns}{Optional character vector of score columns to plot when
-\code{type = "scores"}.}
+type = "scores".}
 
-\item{...}{Additional arguments passed to the underlying plotting helper for
-future extensibility.}
+\item{...}{Additional arguments for future extensibility.}
 }
 \value{
-For \code{type = "scores"} or \code{type = "overall"}, a \code{ggplot2} object.
+A ggplot2 object.
 }
 \description{
 Provides plotting methods for a \code{wmfmScores} object returned by \code{score()}.
-Score heatmaps are drawn using a continuous colour scale, which is more
-appropriate for numeric score fields than the categorical heatmap used for
-claim and judged fields.
+Score heatmaps use a continuous colour scale and, by default, include only
+the 0–2 dimension scores to avoid distortion from the 0–100 overall score.
 }

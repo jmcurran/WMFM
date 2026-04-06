@@ -1,20 +1,18 @@
 #' Plot a WMFM scores object
 #'
 #' Provides plotting methods for a `wmfmScores` object returned by `score()`.
-#' Score heatmaps are drawn using a continuous colour scale, which is more
-#' appropriate for numeric score fields than the categorical heatmap used for
-#' claim and judged fields.
+#' Score heatmaps use a continuous colour scale and, by default, include only
+#' the 0–2 dimension scores to avoid distortion from the 0–100 overall score.
 #'
 #' @param x A `wmfmScores` object.
-#' @param method Character. Scoring method to plot. One of `"deterministic"` or
-#'   `"llm"`.
-#' @param type Character. One of `"scores"` or `"overall"`.
+#' @param method Character. Scoring method to plot. One of "deterministic" or
+#'   "llm".
+#' @param type Character. One of "scores" or "overall".
 #' @param fieldColumns Optional character vector of score columns to plot when
-#'   `type = "scores"`.
-#' @param ... Additional arguments passed to the underlying plotting helper for
-#'   future extensibility.
+#'   type = "scores".
+#' @param ... Additional arguments for future extensibility.
 #'
-#' @return For `type = "scores"` or `type = "overall"`, a `ggplot2` object.
+#' @return A ggplot2 object.
 #' @export
 #'
 #' @importFrom ggplot2 ggplot aes geom_tile geom_line geom_point
@@ -42,34 +40,11 @@ plot.wmfmScores = function(
   scoreList = x$scores[[method]]
 
   if (is.null(scoreList)) {
-    stop(
-      "No scores are available for method `", method, "`.",
-      call. = FALSE
-    )
+    stop("No scores are available for method `", method, "`.", call. = FALSE)
   }
 
   if (!is.list(scoreList) || length(scoreList) == 0) {
-    stop(
-      "Stored scores for method `", method, "` are empty.",
-      call. = FALSE
-    )
-  }
-
-  badIndex = which(
-    !vapply(
-      scoreList,
-      function(oneScore) {
-        is.list(oneScore) && !is.null(names(oneScore))
-      },
-      logical(1)
-    )
-  )
-
-  if (length(badIndex) > 0) {
-    stop(
-      "Stored scores for method `", method, "` must be a list of named lists.",
-      call. = FALSE
-    )
+    stop("Stored scores for method `", method, "` are empty.", call. = FALSE)
   }
 
   plotDf = do.call(
@@ -81,13 +56,13 @@ plot.wmfmScores = function(
   rownames(plotDf) = NULL
   plotDf$runId = seq_len(nrow(plotDf))
 
+  # ---- IMPORTANT CHANGE: exclude overallScore by default ----
   defaultScoreFields = c(
     "factualScore",
     "inferenceScore",
     "completenessScore",
     "clarityScore",
-    "calibrationScore",
-    "overallScore"
+    "calibrationScore"
   )
 
   if (is.null(fieldColumns)) {
@@ -95,39 +70,24 @@ plot.wmfmScores = function(
   }
 
   if (length(fieldColumns) == 0) {
-    stop(
-      "No score fields are available to plot for method `", method, "`.",
-      call. = FALSE
-    )
-  }
-
-  missingColumns = setdiff(fieldColumns, names(plotDf))
-
-  if (length(missingColumns) > 0) {
-    stop(
-      "The following `fieldColumns` are not present in the selected scores: ",
-      paste(missingColumns, collapse = ", "),
-      call. = FALSE
-    )
+    stop("No score fields are available to plot.", call. = FALSE)
   }
 
   if (identical(type, "scores")) {
-    longPieces = lapply(fieldColumns, function(metricName) {
-      data.frame(
-        runId = plotDf$runId,
-        metric = metricName,
-        value = suppressWarnings(as.numeric(plotDf[[metricName]])),
-        stringsAsFactors = FALSE
-      )
-    })
 
-    longDf = do.call(rbind, longPieces)
-    rownames(longDf) = NULL
+    longDf = do.call(
+      rbind,
+      lapply(fieldColumns, function(metricName) {
+        data.frame(
+          runId = plotDf$runId,
+          metric = metricName,
+          value = suppressWarnings(as.numeric(plotDf[[metricName]])),
+          stringsAsFactors = FALSE
+        )
+      })
+    )
+
     longDf = longDf[!is.na(longDf$value), , drop = FALSE]
-
-    if (nrow(longDf) == 0) {
-      stop("No non-missing score values are available to plot.", call. = FALSE)
-    }
 
     prettyMetricMap = c(
       factualScore = "Factual score",
@@ -139,26 +99,22 @@ plot.wmfmScores = function(
     )
 
     metricLabels = fieldColumns
-    matchedMetrics = intersect(names(prettyMetricMap), metricLabels)
-    metricLabels[match(matchedMetrics, fieldColumns)] = prettyMetricMap[matchedMetrics]
+    matched = intersect(names(prettyMetricMap), metricLabels)
+    metricLabels[match(matched, fieldColumns)] = prettyMetricMap[matched]
 
     longDf$metric = factor(longDf$metric, levels = fieldColumns, labels = metricLabels)
 
     return(
       ggplot2::ggplot(
         longDf,
-        ggplot2::aes(
-          x = metric,
-          y = runId,
-          fill = value
-        )
+        ggplot2::aes(x = metric, y = runId, fill = value)
       ) +
         ggplot2::geom_tile(colour = "white", linewidth = 0.35) +
         ggplot2::scale_fill_gradientn(
           colours = c("#F7FBFF", "#6BAED6", "#08306B")
         ) +
         ggplot2::labs(
-          title = paste("WMFM score heatmap:", method),
+          title = paste("WMFM dimension score heatmap:", method),
           x = NULL,
           y = "Run",
           fill = "Score"
@@ -171,28 +127,16 @@ plot.wmfmScores = function(
     )
   }
 
+  # ---- overall plot ----
   if (!"overallScore" %in% names(plotDf)) {
-    stop(
-      "`overallScore` is not available for method `", method, "`.",
-      call. = FALSE
-    )
+    stop("`overallScore` is not available.", call. = FALSE)
   }
 
   plotDf$overallScore = suppressWarnings(as.numeric(plotDf$overallScore))
 
-  if (all(is.na(plotDf$overallScore))) {
-    stop(
-      "`overallScore` is all missing for method `", method, "`.",
-      call. = FALSE
-    )
-  }
-
   ggplot2::ggplot(
     plotDf,
-    ggplot2::aes(
-      x = runId,
-      y = overallScore
-    )
+    ggplot2::aes(x = runId, y = overallScore)
   ) +
     ggplot2::geom_line(linewidth = 0.4) +
     ggplot2::geom_point(size = 2.2) +
