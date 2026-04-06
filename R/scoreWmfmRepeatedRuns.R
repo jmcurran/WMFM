@@ -335,8 +335,20 @@ scoreWmfmRepeatedRuns = function(
 
   referenceGroupHandledCorrectlyComputed = rep(1L, nrow(runsDf))
   referenceGroupHandledCorrectlyComputed[referenceGroupMention] = 2L
-  referenceGroupHandledCorrectlyComputed[!referenceGroupMention & hasInteractionTerms] = 0L
-  referenceGroupHandledCorrectlyComputed[!referenceGroupMention & !hasInteractionTerms] = 1L
+  referenceGroupHandledCorrectlyComputed[
+    !referenceGroupMention &
+      (comparisonLanguageMention | conditionalLanguageMention)
+  ] = 2L
+  referenceGroupHandledCorrectlyComputed[
+    !referenceGroupMention &
+      hasInteractionTerms &
+      !(comparisonLanguageMention | conditionalLanguageMention)
+  ] = 0L
+  referenceGroupHandledCorrectlyComputed[
+    !referenceGroupMention &
+      !hasInteractionTerms &
+      !(comparisonLanguageMention | conditionalLanguageMention)
+  ] = 1L
   referenceGroupHandledCorrectly = overwriteIfMissing(referenceGroupHandledCorrectlyExisting, referenceGroupHandledCorrectlyComputed)
 
   interactionCoverageAdequateComputed = rep(2L, nrow(runsDf))
@@ -395,7 +407,15 @@ scoreWmfmRepeatedRuns = function(
 
   referenceGroupCoverageAdequateComputed = rep(1L, nrow(runsDf))
   referenceGroupCoverageAdequateComputed[referenceGroupMention] = 2L
-  referenceGroupCoverageAdequateComputed[hasInteractionTerms & !referenceGroupMention] = 0L
+  referenceGroupCoverageAdequateComputed[
+    !referenceGroupMention &
+      (comparisonLanguageMention | conditionalLanguageMention)
+  ] = 2L
+  referenceGroupCoverageAdequateComputed[
+    hasInteractionTerms &
+      !referenceGroupMention &
+      !(comparisonLanguageMention | conditionalLanguageMention)
+  ] = 0L
   referenceGroupCoverageAdequate = overwriteIfMissing(referenceGroupCoverageAdequateExisting, referenceGroupCoverageAdequateComputed)
 
   hasNumericDigits = grepl("\\d", explanationText, perl = TRUE)
