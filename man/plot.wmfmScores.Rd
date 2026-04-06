@@ -9,8 +9,6 @@
   method = c("deterministic", "llm"),
   type = c("scores", "overall"),
   fieldColumns = NULL,
-  sortRows = FALSE,
-  sortColumns = c("schema", "purity", "none"),
   ...
 )
 }
@@ -25,22 +23,15 @@
 \item{fieldColumns}{Optional character vector of score columns to plot when
 \code{type = "scores"}.}
 
-\item{sortRows}{Logical. Passed to \code{plotWmfmExplanationClaimHeatmap()} when
-\code{type = "scores"}.}
-
-\item{sortColumns}{Character. Passed to \code{plotWmfmExplanationClaimHeatmap()}
-when \code{type = "scores"}.}
-
-\item{...}{Additional arguments passed to the underlying plotting helper.}
+\item{...}{Additional arguments passed to the underlying plotting helper for
+future extensibility.}
 }
 \value{
-For \code{type = "scores"}, invisibly returns the object produced by
-\code{plotWmfmExplanationClaimHeatmap()}. For \code{type = "overall"}, returns a
-\code{ggplot2} object.
+For \code{type = "scores"} or \code{type = "overall"}, a \code{ggplot2} object.
 }
 \description{
 Provides plotting methods for a \code{wmfmScores} object returned by \code{score()}.
-The default score heatmap reuses the existing repeated-run score heatmap
-machinery after reconstructing a small plotting data frame from the stored
-score records.
+Score heatmaps are drawn using a continuous colour scale, which is more
+appropriate for numeric score fields than the categorical heatmap used for
+claim and judged fields.
 }
