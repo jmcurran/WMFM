@@ -1,18 +1,16 @@
 #' Resolve run-level data for metric diagnosis
 #'
-#' Internal helper for \code{diagnose()}. Builds a run-level data
-#' frame for a single metric by combining paired scores with any available
-#' explanation text and scoring detail columns stored inside a
-#' \code{wmfmScores} object.
+#' Internal helper for \code{diagnose()}.
 #'
 #' @param scores A \code{wmfmScores} object.
 #' @param metric A single metric name.
 #' @param cmp Optional \code{wmfmScoreComparison} object.
+#' @param runs Optional \code{wmfmRuns} object or compatible run container.
 #'
 #' @return A data frame with one row per run.
 #'
 #' @keywords internal
-resolveMetricDiagnosisData = function(scores, metric, cmp = NULL) {
+resolveMetricDiagnosisData = function(scores, metric, cmp = NULL, runs = NULL) {
   if (!is.null(cmp)) {
     if (!exists("getMetricComparisonData", mode = "function")) {
       stop("getMetricComparisonData() is required when cmp is supplied.")
@@ -45,7 +43,11 @@ resolveMetricDiagnosisData = function(scores, metric, cmp = NULL) {
     ifelse(metricDf$llmValue < metricDf$detValue, "detHigher", "same")
   )
 
-  extraDf = extractMetricDiagnosisContext(scores = scores, metric = metric)
+  extraDf = extractMetricDiagnosisContext(
+    scores = scores,
+    metric = metric,
+    runs = runs
+  )
 
   if (!is.null(extraDf) && is.data.frame(extraDf) && "runId" %in% names(extraDf)) {
     metricDf = merge(

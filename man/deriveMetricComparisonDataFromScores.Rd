@@ -17,6 +17,6 @@ A data frame with columns \code{runId}, \code{detValue}, and
 }
 \description{
 Internal helper that reconstructs run-level paired deterministic and LLM
-scores for a single metric when a comparison object is not supplied.
+scores for a single metric from a \code{wmfmScores} object.
 }
 \keyword{internal}

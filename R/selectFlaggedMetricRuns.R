@@ -1,7 +1,7 @@
 #' Select flagged runs for metric diagnosis
 #'
-#' Internal helper for \code{diagnose()} that selects the most
-#' informative disagreement cases for inspection.
+#' Internal helper for \code{diagnose()} that selects the most informative
+#' disagreement cases for inspection.
 #'
 #' @param metricDf Run-level metric diagnosis data.
 #' @param maxExamples Maximum number of examples to return.

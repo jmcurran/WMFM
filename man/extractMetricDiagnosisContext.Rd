@@ -4,25 +4,22 @@
 \alias{extractMetricDiagnosisContext}
 \title{Extract contextual run-level information for metric diagnosis}
 \usage{
-extractMetricDiagnosisContext(scores, metric)
+extractMetricDiagnosisContext(scores, metric, runs = NULL)
 }
 \arguments{
 \item{scores}{A \code{wmfmScores} object.}
 
 \item{metric}{A single metric name.}
+
+\item{runs}{Optional \code{wmfmRuns} object or compatible list/data.frame.}
 }
 \value{
-A data frame keyed by \code{runId}, or \code{NULL} if no
-contextual information is available.
+A data frame keyed by \code{runId}, or \code{NULL}.
 }
 \description{
 Internal helper for \code{diagnose()} that attempts to recover
-explanation text and any metric-specific scoring detail columns from a
-\code{wmfmScores} object.
-}
-\details{
-The function is intentionally permissive because the exact storage
-structure may evolve. It looks for common columns and returns whatever
-relevant context is available.
+explanation text and diagnostic context. Preference is given to the
+original runs object, because \code{wmfmScores} retains score fields
+but not the full raw explanation record.
 }
 \keyword{internal}

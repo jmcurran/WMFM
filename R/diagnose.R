@@ -1,52 +1,39 @@
-#' Diagnose disagreement for a single scoring metric
+#' Diagnose scoring disagreement
 #'
-#' Diagnoses systematic disagreement between deterministic and LLM scoring
-#' for a single metric. The function summarises the disagreement pattern,
-#' classifies the likely source of disagreement using simple heuristics,
-#' and returns run-level records for inspection.
+#' S3 generic for diagnosing disagreement between deterministic and LLM
+#' scoring outputs.
 #'
-#' This function is intended to sit downstream of \code{score()} and
-#' complements \code{compare()} by focusing on explanation rather than
-#' only measurement.
+#' @param x An object to diagnose.
+#' @param ... Additional arguments passed to methods.
 #'
-#' @param x A \code{wmfmScores} object.
-#' @param metric A single metric name.
-#' @param cmp Optional \code{wmfmScoreComparison} object. If supplied,
-#'   run-level paired score data may be taken from this object.
-#' @param maxExamples Maximum number of flagged disagreement examples to
-#'   retain in the \code{flaggedRuns} component.
-#' @param ... Unused.
-#'
-#' @return An object of class \code{wmfmMetricDiagnosis} with elements:
-#' \describe{
-#'   \item{metric}{Metric name.}
-#'   \item{summary}{One-row data frame summarising disagreement pattern.}
-#'   \item{runDiagnosis}{Run-level data frame including scores, differences,
-#'   disagreement indicators, explanation text, and any available scoring
-#'   detail columns.}
-#'   \item{flaggedRuns}{Subset of \code{runDiagnosis} containing the most
-#'   informative disagreement cases.}
-#'   \item{call}{Matched call.}
-#' }
-#'
-#' @examples
-#' \dontrun{
-#' repeated = runExample("Course", nRuns = 20)
-#' scores = score(repeated, method = "both")
-#' cmp = compare(scores)
-#'
-#' dx = diagnose(scores, metric = "numericExpressionAdequate", cmp = cmp)
-#' print(dx)
-#' }
-#'
+#' @return Method-specific diagnosis output.
 #' @export
 diagnose = function(x, ...) {
   UseMethod("diagnose")
 }
 
+#' Diagnose disagreement for a WMFM scores object
+#'
+#' Diagnoses systematic disagreement between deterministic and LLM scoring
+#' for a single metric. The function summarises disagreement patterns,
+#' classifies the likely source of disagreement using simple heuristics,
+#' and optionally attaches run-level context from the original
+#' \code{wmfmRuns} object.
+#'
+#' @param x A \code{wmfmScores} object.
+#' @param metric A single metric name.
+#' @param runs Optional \code{wmfmRuns} object or compatible run container
+#'   used to provide explanation text and claim-level context.
+#' @param cmp Optional \code{wmfmScoreComparison} object.
+#' @param maxExamples Maximum number of flagged disagreement examples to
+#'   retain in the \code{flaggedRuns} component.
+#' @param ... Reserved for future method-specific arguments.
+#'
+#' @return An object of class \code{wmfmMetricDiagnosis}.
 #' @export
 diagnose.wmfmScores = function(x,
                                metric,
+                               runs = NULL,
                                cmp = NULL,
                                maxExamples = 5,
                                ...) {
@@ -58,7 +45,21 @@ diagnose.wmfmScores = function(x,
     stop("cmp must be NULL or a wmfmScoreComparison object.")
   }
 
-  metricDf = resolveMetricDiagnosisData(scores = x, metric = metric, cmp = cmp)
+  if (is.null(runs)) {
+    warning(
+      "No `runs` object supplied. Diagnosis can summarise score disagreement, ",
+      "but will not include explanation text or claim-level context.",
+      call. = FALSE
+    )
+  }
+
+  metricDf = resolveMetricDiagnosisData(
+    scores = x,
+    metric = metric,
+    cmp = cmp,
+    runs = runs
+  )
+
   summaryDf = buildMetricDiagnosisSummary(metricDf = metricDf, metric = metric)
   summaryDf$diagnosisClass = classifyMetricDisagreement(summaryDf)
   flaggedRuns = selectFlaggedMetricRuns(metricDf = metricDf, maxExamples = maxExamples)

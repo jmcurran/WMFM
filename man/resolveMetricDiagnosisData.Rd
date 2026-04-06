@@ -4,7 +4,7 @@
 \alias{resolveMetricDiagnosisData}
 \title{Resolve run-level data for metric diagnosis}
 \usage{
-resolveMetricDiagnosisData(scores, metric, cmp = NULL)
+resolveMetricDiagnosisData(scores, metric, cmp = NULL, runs = NULL)
 }
 \arguments{
 \item{scores}{A \code{wmfmScores} object.}
@@ -12,14 +12,13 @@ resolveMetricDiagnosisData(scores, metric, cmp = NULL)
 \item{metric}{A single metric name.}
 
 \item{cmp}{Optional \code{wmfmScoreComparison} object.}
+
+\item{runs}{Optional \code{wmfmRuns} object or compatible run container.}
 }
 \value{
 A data frame with one row per run.
 }
 \description{
-Internal helper for \code{diagnose()}. Builds a run-level data
-frame for a single metric by combining paired scores with any available
-explanation text and scoring detail columns stored inside a
-\code{wmfmScores} object.
+Internal helper for \code{diagnose()}.
 }
 \keyword{internal}

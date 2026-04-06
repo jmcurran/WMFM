@@ -2,55 +2,19 @@
 % Please edit documentation in R/diagnose.R
 \name{diagnose}
 \alias{diagnose}
-\title{Diagnose disagreement for a single scoring metric}
+\title{Diagnose scoring disagreement}
 \usage{
 diagnose(x, ...)
 }
 \arguments{
-\item{x}{A \code{wmfmScores} object.}
+\item{x}{An object to diagnose.}
 
-\item{...}{Unused.}
-
-\item{metric}{A single metric name.}
-
-\item{cmp}{Optional \code{wmfmScoreComparison} object. If supplied,
-run-level paired score data may be taken from this object.}
-
-\item{maxExamples}{Maximum number of flagged disagreement examples to
-retain in the \code{flaggedRuns} component.}
+\item{...}{Additional arguments passed to methods.}
 }
 \value{
-An object of class \code{wmfmMetricDiagnosis} with elements:
-\describe{
-\item{metric}{Metric name.}
-\item{summary}{One-row data frame summarising disagreement pattern.}
-\item{runDiagnosis}{Run-level data frame including scores, differences,
-disagreement indicators, explanation text, and any available scoring
-detail columns.}
-\item{flaggedRuns}{Subset of \code{runDiagnosis} containing the most
-informative disagreement cases.}
-\item{call}{Matched call.}
-}
+Method-specific diagnosis output.
 }
 \description{
-Diagnoses systematic disagreement between deterministic and LLM scoring
-for a single metric. The function summarises the disagreement pattern,
-classifies the likely source of disagreement using simple heuristics,
-and returns run-level records for inspection.
-}
-\details{
-This function is intended to sit downstream of \code{score()} and
-complements \code{compare()} by focusing on explanation rather than
-only measurement.
-}
-\examples{
-\dontrun{
-repeated = runExample("Course", nRuns = 20)
-scores = score(repeated, method = "both")
-cmp = compare(scores)
-
-dx = diagnose(scores, metric = "numericExpressionAdequate", cmp = cmp)
-print(dx)
-}
-
+S3 generic for diagnosing disagreement between deterministic and LLM
+scoring outputs.
 }
