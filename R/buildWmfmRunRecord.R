@@ -71,7 +71,7 @@
 #'   \item{overclaimDetected}{Logical. Whether overstrong language is detected.}
 #'   \item{underclaimDetected}{Logical. Whether unusually weak language is detected.}
 #'   \item{conditionalLanguageMention}{Logical. Whether conditional wording such as "depends on" or subgroup-conditioned interpretation is present.}
-#'   \item{comparisonLanguageMention}{Logical. Whether explicit comparison wording is present.}
+#'   \item{comparisonLanguageMention}{Logical. Whether explicit or implicit comparison wording is present.}
 #'   \item{outcomeMention}{Logical. Placeholder for whether the response is clearly named. Initialised conservatively.}
 #'   \item{predictorMention}{Logical. Placeholder for whether the focal predictor is clearly named. Initialised conservatively.}
 #'   \item{effectDirectionClaim}{Character. One of `increase`, `decrease`, `mixed_or_both`, `not_stated`.}
@@ -565,7 +565,7 @@ buildWmfmRunRecord = function(
     )
   )
 
-  comparisonLanguageMention = detectPatternLocal(
+  explicitComparisonLanguageMention = detectPatternLocal(
     explanationText,
     paste(
       "compared with",
@@ -579,6 +579,12 @@ buildWmfmRunRecord = function(
       sep = "|"
     )
   )
+
+  implicitComparisonLanguageMention = detectImplicitComparison(explanationText)
+
+  comparisonLanguageMention =
+    explicitComparisonLanguageMention ||
+    implicitComparisonLanguageMention
 
   outcomeMention = explanationPresent
   predictorMention = explanationPresent

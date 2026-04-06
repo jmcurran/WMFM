@@ -116,11 +116,11 @@ missing or \code{NA}:
 \subsection{Aggregate fields created here}{
 
 \describe{
-\item{factualScore}{Numeric score on a \code{0} to \code{1} scale.}
-\item{inferenceScore}{Numeric score on a \code{0} to \code{1} scale.}
-\item{completenessScore}{Numeric score on a \code{0} to \code{1} scale.}
-\item{clarityScore}{Numeric score on a \code{0} to \code{1} scale.}
-\item{calibrationScore}{Numeric score on a \code{0} to \code{1} scale.}
+\item{factualScore}{Numeric score on a \code{0} to \code{2} scale.}
+\item{inferenceScore}{Numeric score on a \code{0} to \code{2} scale.}
+\item{completenessScore}{Numeric score on a \code{0} to \code{2} scale.}
+\item{clarityScore}{Numeric score on a \code{0} to \code{2} scale.}
+\item{calibrationScore}{Numeric score on a \code{0} to \code{2} scale.}
 \item{overallScore}{Numeric weighted score on a \code{0} to \code{100} scale.}
 \item{overallPass}{Logical.}
 }
