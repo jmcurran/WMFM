@@ -40,6 +40,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- Avoid unnecessary numerical precision; round and summarise numbers where possible.",
     "- Use words for integer counts from zero to ten (e.g. \"three\", \"eight\").",
     "- Use numerals for all non-integer quantities, including decimals (e.g. \"3.5\"), percentages (e.g. \"62%\"), confidence-interval bounds, and effect sizes.",
+    "- When a quantity includes a decimal point, always use numerals, even if the value is less than ten.",
     "- Do not express decimal quantities in words or mixed verbal forms (e.g. do not write \"three-point-five\" or \"three and a half\"); always use numerals such as \"3.5\".",
     "- Keep numeric expressions plain, natural, and statistically conventional.",
     "- Do not use markdown emphasis for numbers (e.g. do not use bold or italics).","- Prefer percentages when describing proportional changes.",
