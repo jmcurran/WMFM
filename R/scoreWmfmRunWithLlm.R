@@ -1,4 +1,3 @@
-
 #' Score a single WMFM run record using a language model
 #'
 #' Sends a prompt-based scoring request to the supplied chat provider and writes
@@ -60,6 +59,7 @@ scoreWmfmRunWithLlm = function(
     runRecord$llmScoringModel = safeWmfmScalar(class(chat)[1])
     runRecord$llmScoringRaw = ""
     runRecord$llmScoringSummary = "Run contains an error; LLM scoring skipped."
+    runRecord$llmScoringUsedCache = FALSE
     return(runRecord)
   }
 
@@ -69,6 +69,7 @@ scoreWmfmRunWithLlm = function(
     runRecord$llmScoringModel = safeWmfmScalar(class(chat)[1])
     runRecord$llmScoringRaw = ""
     runRecord$llmScoringSummary = "No explanation text present; LLM scoring skipped."
+    runRecord$llmScoringUsedCache = FALSE
     return(runRecord)
   }
 
@@ -87,9 +88,11 @@ scoreWmfmRunWithLlm = function(
   )
 
   cacheEnv = get0(".env_cache", inherits = TRUE, ifnotfound = NULL)
+  usedCache = FALSE
 
   if (isTRUE(useCache) && is.environment(cacheEnv) && !is.null(cacheEnv[[key]])) {
     rawResponse = cacheEnv[[key]]
+    usedCache = TRUE
   } else {
     systemPrompt = buildWmfmLlmScoringSystemPrompt()
     userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
@@ -111,10 +114,13 @@ scoreWmfmRunWithLlm = function(
 
   parsedScores = parseWmfmScoringJson(rawResponse)
 
-  applyWmfmLlmScoresToRecord(
+  scoredRecord = applyWmfmLlmScoresToRecord(
     runRecord = runRecord,
     parsedScores = parsedScores,
     modelName = safeWmfmScalar(class(chat)[1]),
     rawResponse = rawResponse
   )
+
+  scoredRecord$llmScoringUsedCache = usedCache
+  scoredRecord
 }

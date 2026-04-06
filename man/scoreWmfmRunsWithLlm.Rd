@@ -21,8 +21,8 @@ repeated-run object containing a \code{runsDf} component.}
 \item{useCache}{Logical. Should scoring results be cached and reused for
 identical run records? Defaults to \code{FALSE}.}
 
-\item{showProgress}{Logical. Should a text progress bar be shown when scoring
-multiple runs interactively? Defaults to \code{TRUE}.}
+\item{showProgress}{Logical. Should a text progress bar and timing summary be
+shown while scoring repeated runs? Defaults to \code{TRUE}.}
 
 \item{verbose}{Logical. Should raw scoring responses be printed? Defaults to
 \code{FALSE}.}
@@ -32,7 +32,7 @@ If the input is a single run record, returns one scored run record.
 If the input is a repeated-run object, returns that object with its \code{runsDf}
 replaced by the scored runs and with \code{primaryScoringMethod = "llm"}.
 Otherwise returns a list of scored run records of the same length as the
-input list.
+input list. Repeated-run outputs also receive timing metadata.
 }
 \description{
 Applies \code{scoreWmfmRunWithLlm()} to one or more WMFM run records. This helper

@@ -24,7 +24,8 @@ requested, a provider is obtained via \code{getChatProvider()}.}
 
 \item{useCache}{Logical. Passed to LLM scoring helpers.}
 
-\item{showProgress}{Logical. Should progress be shown for LLM scoring?}
+\item{showProgress}{Logical. Should progress and timing be shown for LLM
+scoring?}
 
 \item{verbose}{Logical. Passed to LLM scoring helpers.}
 

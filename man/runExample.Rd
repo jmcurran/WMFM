@@ -28,8 +28,8 @@ runExample(
 
 \item{pauseSeconds}{Numeric. Optional delay between runs.}
 
-\item{showProgress}{Logical. Should a console progress bar be shown when
-\code{nRuns > 1}?}
+\item{showProgress}{Logical. Should a console progress bar and timing summary
+be shown when work is repeated?}
 
 \item{useExplanationCache}{Logical. Passed to \code{runWMFMModelDebug()}.
 Defaults to \code{FALSE} so repeated runs will usually query the LLM afresh.}
@@ -47,7 +47,8 @@ An object of class \code{wmfmRuns} with elements:
 \item{spec}{Parsed example specification.}
 \item{dataContext}{Optional example context text.}
 \item{runs}{List of raw run records.}
-\item{meta}{Metadata about the run set.}
+\item{meta}{Metadata about the run set, including elapsed time, average
+per-run time, and per-run timing details.}
 }
 }
 \description{

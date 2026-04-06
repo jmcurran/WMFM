@@ -15,8 +15,8 @@
 #' @param nRuns Integer. Number of runs to perform. Defaults to `1`.
 #' @param printOutput Logical. Passed to `runWMFMModelDebug()`.
 #' @param pauseSeconds Numeric. Optional delay between runs.
-#' @param showProgress Logical. Should a console progress bar be shown when
-#'   `nRuns > 1`?
+#' @param showProgress Logical. Should a console progress bar and timing summary
+#'   be shown when work is repeated?
 #' @param useExplanationCache Logical. Passed to `runWMFMModelDebug()`.
 #'   Defaults to `FALSE` so repeated runs will usually query the LLM afresh.
 #' @param interactionAlpha Numeric. Threshold used when judging whether
@@ -30,7 +30,8 @@
 #'   \item{spec}{Parsed example specification.}
 #'   \item{dataContext}{Optional example context text.}
 #'   \item{runs}{List of raw run records.}
-#'   \item{meta}{Metadata about the run set.}
+#'   \item{meta}{Metadata about the run set, including elapsed time, average
+#'   per-run time, and per-run timing details.}
 #' }
 #'
 #' @examples
@@ -88,20 +89,16 @@ runExample = function(
   )
 
   runs = vector("list", nRuns)
-  overallStartTime = Sys.time()
-  progressBar = NULL
-
-  if (isTRUE(showProgress) && nRuns > 1) {
-    progressBar = utils::txtProgressBar(
-      min = 0,
-      max = nRuns,
-      initial = 0,
-      style = 3
-    )
-    on.exit(close(progressBar), add = TRUE)
-  }
+  tracker = newWmfmProgressTracker(
+    nSteps = nRuns,
+    showProgress = showProgress,
+    label = "Run"
+  )
+  on.exit(closeWmfmProgressTracker(tracker), add = TRUE)
 
   for (i in seq_len(nRuns)) {
+    iterationStartTime = Sys.time()
+
     result = tryCatch(
       runWMFMModelDebug(
         data = exampleInfo$data,
@@ -123,6 +120,10 @@ runExample = function(
       }
     )
 
+    iterationSeconds = as.numeric(
+      difftime(Sys.time(), iterationStartTime, units = "secs")
+    )
+
     runs[[i]] = buildWmfmRunRecord(
       runId = i,
       exampleName = name,
@@ -137,8 +138,14 @@ runExample = function(
       interactionAlpha = interactionAlpha
     )
 
-    if (!is.null(progressBar)) {
-      utils::setTxtProgressBar(progressBar, i)
+    runs[[i]]$runElapsedSeconds = iterationSeconds
+
+    if (isTRUE(showProgress)) {
+      updateWmfmProgressTracker(
+        tracker = tracker,
+        step = i,
+        stepSeconds = iterationSeconds
+      )
     }
 
     if (pauseSeconds > 0 && i < nRuns) {
@@ -146,9 +153,7 @@ runExample = function(
     }
   }
 
-  elapsedSeconds = as.numeric(
-    difftime(Sys.time(), overallStartTime, units = "secs")
-  )
+  timing = closeWmfmProgressTracker(tracker)
 
   out = list(
     exampleName = name,
@@ -158,8 +163,11 @@ runExample = function(
     runs = runs,
     meta = list(
       nRuns = nRuns,
-      createdAt = as.character(Sys.time()),
-      elapsedSeconds = elapsedSeconds,
+      createdAt = timing$finishedAt,
+      startedAt = timing$startedAt,
+      elapsedSeconds = timing$elapsedSeconds,
+      averageRunSeconds = timing$averageIterationSeconds,
+      runSeconds = timing$iterationSeconds,
       useExplanationCache = useExplanationCache,
       interactionAlpha = interactionAlpha
     )

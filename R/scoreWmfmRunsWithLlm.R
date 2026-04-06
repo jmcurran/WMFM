@@ -1,4 +1,3 @@
-
 #' Score multiple WMFM run records using a language model
 #'
 #' Applies `scoreWmfmRunWithLlm()` to one or more WMFM run records. This helper
@@ -10,8 +9,8 @@
 #' @param chat A chat provider object as returned by `getChatProvider()`.
 #' @param useCache Logical. Should scoring results be cached and reused for
 #'   identical run records? Defaults to `FALSE`.
-#' @param showProgress Logical. Should a text progress bar be shown when scoring
-#'   multiple runs interactively? Defaults to `TRUE`.
+#' @param showProgress Logical. Should a text progress bar and timing summary be
+#'   shown while scoring repeated runs? Defaults to `TRUE`.
 #' @param verbose Logical. Should raw scoring responses be printed? Defaults to
 #'   `FALSE`.
 #'
@@ -19,7 +18,7 @@
 #'   If the input is a repeated-run object, returns that object with its `runsDf`
 #'   replaced by the scored runs and with `primaryScoringMethod = "llm"`.
 #'   Otherwise returns a list of scored run records of the same length as the
-#'   input list.
+#'   input list. Repeated-run outputs also receive timing metadata.
 #' @export
 #'
 #' @importFrom utils txtProgressBar setTxtProgressBar
@@ -36,14 +35,20 @@ scoreWmfmRunsWithLlm = function(
   }
 
   if (is.list(runRecords) && !is.null(names(runRecords)) && "explanationText" %in% names(runRecords)) {
-    return(
-      scoreWmfmRunWithLlm(
-        runRecord = runRecords,
-        chat = chat,
-        useCache = useCache,
-        verbose = verbose
-      )
+    iterationStartTime = Sys.time()
+
+    scoredRun = scoreWmfmRunWithLlm(
+      runRecord = runRecords,
+      chat = chat,
+      useCache = useCache,
+      verbose = verbose
     )
+
+    scoredRun$llmScoringElapsedSeconds = as.numeric(
+      difftime(Sys.time(), iterationStartTime, units = "secs")
+    )
+
+    return(scoredRun)
   }
 
   if (is.list(runRecords) && !is.null(runRecords$runsDf) && is.data.frame(runRecords$runsDf)) {
@@ -62,8 +67,23 @@ scoreWmfmRunsWithLlm = function(
     scoredDf = do.call(rbind, lapply(scoredList, as.data.frame))
     rownames(scoredDf) = NULL
 
+    scoringSeconds = vapply(
+      scoredList,
+      function(run) {
+        value = suppressWarnings(as.numeric(run$llmScoringElapsedSeconds)[1])
+        if (length(value) == 0 || is.na(value) || !is.finite(value)) {
+          return(NA_real_)
+        }
+        value
+      },
+      numeric(1)
+    )
+
     runRecords$runsDf = scoredDf
     runRecords$primaryScoringMethod = "llm"
+    runRecords$meta$llmScoringElapsedSeconds = sum(scoringSeconds, na.rm = TRUE)
+    runRecords$meta$llmScoringAverageSeconds = mean(scoringSeconds, na.rm = TRUE)
+    runRecords$meta$llmScoringRunSeconds = scoringSeconds
     return(runRecords)
   }
 
@@ -81,16 +101,16 @@ scoreWmfmRunsWithLlm = function(
 
   nRuns = length(runRecords)
   out = vector("list", nRuns)
-
-  pb = NULL
-  usePb = isTRUE(showProgress) && interactive() && nRuns > 1
-
-  if (usePb) {
-    pb = utils::txtProgressBar(min = 0, max = nRuns, style = 3)
-    on.exit(close(pb), add = TRUE)
-  }
+  tracker = newWmfmProgressTracker(
+    nSteps = nRuns,
+    showProgress = showProgress,
+    label = "LLM scoring"
+  )
+  on.exit(closeWmfmProgressTracker(tracker), add = TRUE)
 
   for (i in seq_len(nRuns)) {
+    iterationStartTime = Sys.time()
+
     out[[i]] = scoreWmfmRunWithLlm(
       runRecord = runRecords[[i]],
       chat = chat,
@@ -98,11 +118,22 @@ scoreWmfmRunsWithLlm = function(
       verbose = verbose
     )
 
-    if (usePb) {
-      utils::setTxtProgressBar(pb, i)
+    iterationSeconds = as.numeric(
+      difftime(Sys.time(), iterationStartTime, units = "secs")
+    )
+    out[[i]]$llmScoringElapsedSeconds = iterationSeconds
+
+    if (isTRUE(showProgress)) {
+      updateWmfmProgressTracker(
+        tracker = tracker,
+        step = i,
+        stepSeconds = iterationSeconds
+      )
     }
   }
 
   names(out) = names(runRecords)
+  timing = closeWmfmProgressTracker(tracker)
+  attr(out, "timing") = timing
   out
 }
