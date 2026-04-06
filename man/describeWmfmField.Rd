@@ -37,7 +37,7 @@ Prints a human-readable description of a field used in the WMFM repeated-run
 explanation evaluation workflow. This is intended to help interpret the
 claim, judged-quality, and score columns that appear in objects created or
 updated by \code{buildWmfmRunRecord()}, \code{scoreWmfmRepeatedRuns()},
-\code{summariseWmfmRepeatedRuns()}, and \code{plotWmfmExplanationClaimHeatmap()}.
+\code{summary()} for \code{wmfmRuns} objects, and \code{plotWmfmExplanationClaimHeatmap()}.
 }
 \details{
 The function accepts:

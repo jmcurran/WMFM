@@ -4,7 +4,7 @@
 #' explanation evaluation workflow. This is intended to help interpret the
 #' claim, judged-quality, and score columns that appear in objects created or
 #' updated by `buildWmfmRunRecord()`, `scoreWmfmRepeatedRuns()`,
-#' `summariseWmfmRepeatedRuns()`, and `plotWmfmExplanationClaimHeatmap()`.
+#' `summary()` for `wmfmRuns` objects, and `plotWmfmExplanationClaimHeatmap()`.
 #'
 #' The function accepts:
 #' \itemize{
