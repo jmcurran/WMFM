@@ -1,6 +1,6 @@
-#' List metrics that can be diagnosed from a wmfmScores object
+#' List metrics that can be compared in wmfmScores objects
 #'
-#' Internal helper for \code{diagnose()}.
+#' Internal helper used by comparison and diagnosis workflows.
 #'
 #' @param scores A \code{wmfmScores} object.
 #'
@@ -9,7 +9,7 @@
 #'   each side.
 #'
 #' @keywords internal
-listDiagnosableMetrics = function(scores) {
+listMetricComparisonMetrics = function(scores) {
   if (!inherits(scores, "wmfmScores")) {
     stop("scores must be a wmfmScores object.")
   }
@@ -24,7 +24,7 @@ listDiagnosableMetrics = function(scores) {
   if (is.null(detList) || is.null(llmList)) {
     stop(
       "Both deterministic and llm scores must be present in scores$scores ",
-      "to diagnose disagreement."
+      "to compare metrics."
     )
   }
 
@@ -37,36 +37,30 @@ listDiagnosableMetrics = function(scores) {
     "llmScoringModel",
     "llmScoringRaw",
     "llmScoringSummary",
-    "primaryScoringMethod"
+    "primaryScoringMethod",
+    "interactionEvidenceAppropriate"
   )
 
   metricNames = setdiff(metricNames, excluded)
   metricNames = metricNames[!is.na(metricNames) & nzchar(metricNames)]
 
-  hasUsableNumericValues = function(metricName) {
-    detVals = suppressWarnings(as.numeric(vapply(
-      detList,
+  extractMetricValues = function(runList, metricName) {
+    vapply(
+      runList,
       function(x) {
-        if (metricName %in% names(x)) {
-          x[[metricName]]
-        } else {
-          NA_real_
+        if (!is.list(x) || is.null(names(x)) || !(metricName %in% names(x))) {
+          return(NA_character_)
         }
-      },
-      FUN.VALUE = numeric(1)
-    )))
 
-    llmVals = suppressWarnings(as.numeric(vapply(
-      llmList,
-      function(x) {
-        if (metricName %in% names(x)) {
-          x[[metricName]]
-        } else {
-          NA_real_
-        }
+        as.character(x[[metricName]])
       },
-      FUN.VALUE = numeric(1)
-    )))
+      FUN.VALUE = character(1)
+    )
+  }
+
+  hasUsableNumericValues = function(metricName) {
+    detVals = suppressWarnings(as.numeric(extractMetricValues(detList, metricName)))
+    llmVals = suppressWarnings(as.numeric(extractMetricValues(llmList, metricName)))
 
     any(!is.na(detVals)) && any(!is.na(llmVals))
   }

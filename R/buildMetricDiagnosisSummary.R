@@ -22,7 +22,7 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
   llmUnique = sort(unique(llmNonMissing))
 
   safeMean = function(x) {
-    if (all(is.na(x))) {
+    if (length(x) < 1L || all(is.na(x))) {
       return(NA_real_)
     }
 
@@ -30,7 +30,7 @@ buildMetricDiagnosisSummary = function(metricDf, metric) {
   }
 
   safeMedian = function(x) {
-    if (all(is.na(x))) {
+    if (length(x) < 1L || all(is.na(x))) {
       return(NA_real_)
     }
 
