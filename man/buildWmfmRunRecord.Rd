@@ -124,7 +124,7 @@ The returned named list contains the following groups of fields.
 \item{overclaimDetected}{Logical. Whether overstrong language is detected.}
 \item{underclaimDetected}{Logical. Whether unusually weak language is detected.}
 \item{conditionalLanguageMention}{Logical. Whether conditional wording such as "depends on" or subgroup-conditioned interpretation is present.}
-\item{comparisonLanguageMention}{Logical. Whether explicit comparison wording is present.}
+\item{comparisonLanguageMention}{Logical. Whether explicit or implicit comparison wording is present.}
 \item{outcomeMention}{Logical. Placeholder for whether the response is clearly named. Initialised conservatively.}
 \item{predictorMention}{Logical. Placeholder for whether the focal predictor is clearly named. Initialised conservatively.}
 \item{effectDirectionClaim}{Character. One of \code{increase}, \code{decrease}, \code{mixed_or_both}, \code{not_stated}.}

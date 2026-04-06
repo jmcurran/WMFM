@@ -62,5 +62,6 @@ detectImplicitComparison = function(text) {
   hasContrastMarker = grepl(contrastPattern, text, ignore.case = TRUE, perl = TRUE)
   hasComparativeSignal = grepl(comparativePattern, text, ignore.case = TRUE, perl = TRUE)
 
-  hasGroupReference && hasContrastMarker && hasComparativeSignal
+  (hasComparative && hasContrast) ||
+    (hasComparative && hasGroup)
 }
