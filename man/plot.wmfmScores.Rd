@@ -6,7 +6,7 @@
 \usage{
 \method{plot}{wmfmScores}(
   x,
-  method = c("deterministic", "llm"),
+  method = NULL,
   type = c("scores", "overall", "summary"),
   fieldColumns = NULL,
   ...
@@ -15,8 +15,9 @@
 \arguments{
 \item{x}{A \code{wmfmScores} object.}
 
-\item{method}{Character. Scoring method to plot. One of "deterministic" or
-"llm".}
+\item{method}{Optional character. Scoring method to plot. One of
+"deterministic" or "llm". If omitted, an available method is chosen
+automatically.}
 
 \item{type}{Character. One of "scores", "overall", or "summary".}
 

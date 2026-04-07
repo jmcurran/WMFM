@@ -6,8 +6,9 @@
 #' score.
 #'
 #' @param x A `wmfmScores` object.
-#' @param method Character. Scoring method to plot. One of "deterministic" or
-#'   "llm".
+#' @param method Optional character. Scoring method to plot. One of
+#'   "deterministic" or "llm". If omitted, an available method is chosen
+#'   automatically.
 #' @param type Character. One of "scores", "overall", or "summary".
 #' @param fieldColumns Optional character vector of score columns to plot when
 #'   `type = "scores"` or `type = "summary"`.
@@ -22,7 +23,7 @@
 #' @importFrom ggplot2 coord_cartesian
 plot.wmfmScores = function(
     x,
-    method = c("deterministic", "llm"),
+    method = NULL,
     type = c("scores", "overall", "summary"),
     fieldColumns = NULL,
     ...
@@ -32,11 +33,25 @@ plot.wmfmScores = function(
     stop("`x` must inherit from `wmfmScores`.", call. = FALSE)
   }
 
-  method = match.arg(method)
   type = match.arg(type)
 
   if (is.null(x$scores) || !is.list(x$scores)) {
     stop("`x` does not contain a valid `scores` element.", call. = FALSE)
+  }
+
+  availableMethods = names(x$scores)
+  availableMethods = availableMethods[!is.na(availableMethods) & nzchar(availableMethods)]
+
+  if (is.null(method)) {
+    if ("deterministic" %in% availableMethods) {
+      method = "deterministic"
+    } else if ("llm" %in% availableMethods) {
+      method = "llm"
+    } else {
+      stop("No scoring methods are available to plot.", call. = FALSE)
+    }
+  } else {
+    method = match.arg(method, choices = c("deterministic", "llm"))
   }
 
   scoreList = x$scores[[method]]
