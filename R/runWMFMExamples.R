@@ -50,7 +50,7 @@ listWMFMExamples = function(package = "WMFM") {
 #'
 #' Loads a stored example from the package's `inst/extdata/examples`
 #' directory, reads its specification, data, and optional context, and then
-#' runs `runWMFMModelDebug()` using those inputs.
+#' runs `runModel()` using those inputs.
 #'
 #' Each example is expected to live in its own subdirectory under
 #' `extdata/examples/<name>/` and to contain a specification file named
@@ -73,11 +73,11 @@ listWMFMExamples = function(package = "WMFM") {
 #'   `<name>.spec.yml`.
 #' @param package A character string giving the package name containing the
 #'   packaged examples.
-#' @param printOutput Logical. Passed to `runWMFMModelDebug()`. If `TRUE`,
+#' @param printOutput Logical. Passed to `runModel()`. If `TRUE`,
 #'   prints the model summary, fitted equations, and explanation.
-#' @param ... Additional arguments passed on to `runWMFMModelDebug()`.
+#' @param ... Additional arguments passed on to `runModel()`.
 #'
-#' @return Invisibly returns the result of `runWMFMModelDebug()`.
+#' @return Invisibly returns the result of `runModel()`.
 #'
 #' @examples
 #' \dontrun{
@@ -145,7 +145,7 @@ runWMFMPackageExample = function(
 
   dataContext = loadWMFMExampleContext(spec = spec, basePath = basePath)
 
-  result = runWMFMModelDebug(
+  result = runModel(
     data = data,
     formula = stats::as.formula(spec$formula),
     modelType = spec$modelType,

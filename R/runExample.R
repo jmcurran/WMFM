@@ -13,15 +13,15 @@
 #' @param package Character. Package containing the example. Defaults to
 #'   `"WMFM"`.
 #' @param nRuns Integer. Number of runs to perform. Defaults to `1`.
-#' @param printOutput Logical. Passed to `runWMFMModelDebug()`.
+#' @param printOutput Logical. Passed to `runModel()`.
 #' @param pauseSeconds Numeric. Optional delay between runs.
 #' @param showProgress Logical. Should a console progress bar and timing summary
 #'   be shown when work is repeated?
-#' @param useExplanationCache Logical. Passed to `runWMFMModelDebug()`.
+#' @param useExplanationCache Logical. Passed to `runModel()`.
 #'   Defaults to `FALSE` so repeated runs will usually query the LLM afresh.
 #' @param interactionAlpha Numeric. Threshold used when judging whether
 #'   interaction evidence wording is appropriate in `buildWmfmRunRecord()`.
-#' @param ... Additional arguments passed to `runWMFMModelDebug()`.
+#' @param ... Additional arguments passed to `runModel()`.
 #'
 #' @return An object of class `wmfmRuns` with elements:
 #' \describe{
@@ -100,7 +100,7 @@ runExample = function(
     iterationStartTime = Sys.time()
 
     result = tryCatch(
-      runWMFMModelDebug(
+      runModel(
         data = exampleInfo$data,
         formula = stats::as.formula(exampleInfo$spec$formula),
         modelType = exampleInfo$spec$modelType,

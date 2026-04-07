@@ -24,20 +24,20 @@ runExample(
 
 \item{nRuns}{Integer. Number of runs to perform. Defaults to \code{1}.}
 
-\item{printOutput}{Logical. Passed to \code{runWMFMModelDebug()}.}
+\item{printOutput}{Logical. Passed to \code{runModel()}.}
 
 \item{pauseSeconds}{Numeric. Optional delay between runs.}
 
 \item{showProgress}{Logical. Should a console progress bar and timing summary
 be shown when work is repeated?}
 
-\item{useExplanationCache}{Logical. Passed to \code{runWMFMModelDebug()}.
+\item{useExplanationCache}{Logical. Passed to \code{runModel()}.
 Defaults to \code{FALSE} so repeated runs will usually query the LLM afresh.}
 
 \item{interactionAlpha}{Numeric. Threshold used when judging whether
 interaction evidence wording is appropriate in \code{buildWmfmRunRecord()}.}
 
-\item{...}{Additional arguments passed to \code{runWMFMModelDebug()}.}
+\item{...}{Additional arguments passed to \code{runModel()}.}
 }
 \value{
 An object of class \code{wmfmRuns} with elements:

@@ -14,18 +14,18 @@ runWMFMPackageExample(name, package = "WMFM", printOutput = TRUE, ...)
 \item{package}{A character string giving the package name containing the
 packaged examples.}
 
-\item{printOutput}{Logical. Passed to \code{runWMFMModelDebug()}. If \code{TRUE},
+\item{printOutput}{Logical. Passed to \code{runModel()}. If \code{TRUE},
 prints the model summary, fitted equations, and explanation.}
 
-\item{...}{Additional arguments passed on to \code{runWMFMModelDebug()}.}
+\item{...}{Additional arguments passed on to \code{runModel()}.}
 }
 \value{
-Invisibly returns the result of \code{runWMFMModelDebug()}.
+Invisibly returns the result of \code{runModel()}.
 }
 \description{
 Loads a stored example from the package's \code{inst/extdata/examples}
 directory, reads its specification, data, and optional context, and then
-runs \code{runWMFMModelDebug()} using those inputs.
+runs \code{runModel()} using those inputs.
 }
 \details{
 Each example is expected to live in its own subdirectory under
