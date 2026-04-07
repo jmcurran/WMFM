@@ -68,6 +68,10 @@ print.wmfmGrade = function(
   cat("Overall score:", format(round(overallScore, digits = digits), nsmall = digits), "/ 100\n")
   cat("Words:", wordCount, "\n")
 
+  if (identical(method, "llm") && isTRUE(scoreBlock$overallDerivedFromDimensions)) {
+    cat("Note: overall score was derived from the five dimension scores for consistency.\n")
+  }
+
   dimensionMetrics = c(
     "factualScore",
     "inferenceScore",
@@ -117,6 +121,13 @@ print.wmfmGrade = function(
   } else {
     cat("\nDetailed mark losses\n")
     cat("None detected by the current rubric.\n")
+  }
+
+  advisoryFlags = feedbackBlock$advisoryFlags
+  if (is.data.frame(advisoryFlags) && nrow(advisoryFlags) > 0) {
+    cat("\nAdditional rubric flags not counted directly in the overall mark\n")
+    advisoryPrint = utils::head(advisoryFlags[, c("label", "severity", "detail"), drop = FALSE], maxRows)
+    print(advisoryPrint, row.names = FALSE)
   }
 
   comparison = feedbackBlock$modelAnswerComparison

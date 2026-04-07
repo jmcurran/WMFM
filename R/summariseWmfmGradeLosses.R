@@ -51,6 +51,29 @@ summariseWmfmGradeLosses = function(
     "comparisonStructureClear"
   )
 
+  dimensionMetrics = c(
+    "factualScore",
+    "inferenceScore",
+    "completenessScore",
+    "clarityScore",
+    "calibrationScore"
+  )
+
+  llmAdvisoryMetrics = c(
+    "effectDirectionCorrect",
+    "effectScaleAppropriate",
+    "referenceGroupHandledCorrectly",
+    "interactionCoverageAdequate",
+    "interactionSubstantiveCorrect",
+    "uncertaintyHandlingAppropriate",
+    "inferentialRegisterAppropriate",
+    "mainEffectCoverageAdequate",
+    "referenceGroupCoverageAdequate",
+    "clarityAdequate",
+    "numericExpressionAdequate",
+    "comparisonStructureClear"
+  )
+
   maxScoreMap = c(
     overallScore = 100,
     factualScore = 2,
@@ -297,6 +320,19 @@ summariseWmfmGradeLosses = function(
     unname(missingDetailMap[metric])
   }
 
+  buildAdvisoryDetail = function(metric, marksLost, studentValue, maxValue) {
+    if (identical(method, "llm") && length(studentFieldReasons[[metric]]) == 1) {
+      return(as.character(studentFieldReasons[[metric]]))
+    }
+
+    buildReason(
+      metric = metric,
+      marksLost = marksLost,
+      studentValue = studentValue,
+      maxValue = maxValue
+    )
+  }
+
   studentVals = suppressWarnings(as.numeric(studentScoreDf[1, metricOrder, drop = FALSE]))
   maxVals = unname(maxScoreMap[metricOrder])
   marksLost = pmax(maxVals - studentVals, 0)
@@ -336,8 +372,13 @@ summariseWmfmGradeLosses = function(
     metricSummary$referenceDelta = referenceDelta
   }
 
+  scoreMetrics = metricSummary$metric
+  if (identical(method, "llm")) {
+    scoreMetrics = c("overallScore", dimensionMetrics)
+  }
+
   whereMarksLost = metricSummary[
-    metricSummary$marksLost > 0,
+    metricSummary$metric %in% scoreMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -363,8 +404,13 @@ summariseWmfmGradeLosses = function(
     rownames(strengths) = NULL
   }
 
+  missingElementMetrics = missingMetrics
+  if (identical(method, "llm")) {
+    missingElementMetrics = intersect(missingMetrics, scoreMetrics)
+  }
+
   missingElements = metricSummary[
-    metricSummary$metric %in% missingMetrics & metricSummary$marksLost > 0,
+    metricSummary$metric %in% missingElementMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost"),
     drop = FALSE
   ]
@@ -391,7 +437,7 @@ summariseWmfmGradeLosses = function(
   }
 
   weaknesses = metricSummary[
-    metricSummary$marksLost > 0 & !metricSummary$metric %in% c("overallScore", missingMetrics),
+    metricSummary$marksLost > 0 & metricSummary$metric %in% setdiff(scoreMetrics, c("overallScore", missingElementMetrics)),
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -403,6 +449,38 @@ summariseWmfmGradeLosses = function(
       drop = FALSE
     ]
     rownames(weaknesses) = NULL
+  }
+
+  advisoryFlags = metricSummary[0, c("metric", "label", "studentValue", "maxValue", "marksLost"), drop = FALSE]
+
+  if (identical(method, "llm")) {
+    advisoryFlags = metricSummary[
+      metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0,
+      c("metric", "label", "studentValue", "maxValue", "marksLost"),
+      drop = FALSE
+    ]
+
+    if (nrow(advisoryFlags) > 0) {
+      advisoryFlags$severity = advisoryFlags$marksLost
+      advisoryFlags$detail = vapply(
+        seq_len(nrow(advisoryFlags)),
+        function(i) {
+          buildAdvisoryDetail(
+            metric = advisoryFlags$metric[i],
+            marksLost = advisoryFlags$marksLost[i],
+            studentValue = advisoryFlags$studentValue[i],
+            maxValue = advisoryFlags$maxValue[i]
+          )
+        },
+        character(1)
+      )
+      advisoryFlags = advisoryFlags[
+        order(-advisoryFlags$severity, advisoryFlags$label),
+        ,
+        drop = FALSE
+      ]
+      rownames(advisoryFlags) = NULL
+    }
   }
 
   modelAnswerComparison = NULL
@@ -449,6 +527,7 @@ summariseWmfmGradeLosses = function(
     strengths = strengths,
     weaknesses = weaknesses,
     missingElements = missingElements,
+    advisoryFlags = advisoryFlags,
     modelAnswerComparison = modelAnswerComparison
   )
 }

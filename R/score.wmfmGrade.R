@@ -44,6 +44,14 @@ score.wmfmGrade = function(
 
   method = match.arg(method)
 
+  dimensionMetrics = c(
+    "factualScore",
+    "inferenceScore",
+    "completenessScore",
+    "clarityScore",
+    "calibrationScore"
+  )
+
   scoreOneRecordDeterministic = function(record) {
     df = as.data.frame(record, stringsAsFactors = FALSE)
     scored = scoreWmfmRunRecordsCore(
@@ -73,6 +81,38 @@ score.wmfmGrade = function(
     out
   }
 
+  deriveOverallFromDimensions = function(scoreDf, scoreScale) {
+    availableMetrics = intersect(dimensionMetrics, names(scoreDf))
+
+    if (length(availableMetrics) != length(dimensionMetrics)) {
+      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1]))
+      return(list(
+        overallScore = rawOverallScore,
+        mark = rawOverallScore / 100 * scoreScale,
+        derivedFromDimensions = FALSE
+      ))
+    }
+
+    dimensionValues = suppressWarnings(as.numeric(scoreDf[1, dimensionMetrics, drop = FALSE]))
+    if (any(is.na(dimensionValues))) {
+      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1]))
+      return(list(
+        overallScore = rawOverallScore,
+        mark = rawOverallScore / 100 * scoreScale,
+        derivedFromDimensions = FALSE
+      ))
+    }
+
+    maxDimensionTotal = 2 * length(dimensionMetrics)
+    derivedOverallScore = sum(dimensionValues) / maxDimensionTotal * 100
+
+    list(
+      overallScore = derivedOverallScore,
+      mark = derivedOverallScore / 100 * scoreScale,
+      derivedFromDimensions = TRUE
+    )
+  }
+
   if (identical(method, "llm") && is.null(chat)) {
     chat = tryCatch(
       getChatProvider(),
@@ -91,7 +131,9 @@ score.wmfmGrade = function(
     modelAnswer = NULL,
     metricSummary = NULL,
     mark = NA_real_,
-    overallScore = NA_real_
+    overallScore = NA_real_,
+    rawOverallScore = NA_real_,
+    overallDerivedFromDimensions = FALSE
   )
 
   studentScoreDf = NULL
@@ -125,14 +167,29 @@ score.wmfmGrade = function(
     method = method
   )
 
-  overallScore = suppressWarnings(as.numeric(studentScoreDf$overallScore[1]))
-  mark = overallScore / 100 * x$scoreScale
+  rawOverallScore = suppressWarnings(as.numeric(studentScoreDf$overallScore[1]))
+
+  if (identical(method, "llm")) {
+    overallInfo = deriveOverallFromDimensions(
+      scoreDf = studentScoreDf,
+      scoreScale = x$scoreScale
+    )
+    overallScore = overallInfo$overallScore
+    mark = overallInfo$mark
+    overallDerivedFromDimensions = isTRUE(overallInfo$derivedFromDimensions)
+  } else {
+    overallScore = rawOverallScore
+    mark = overallScore / 100 * x$scoreScale
+    overallDerivedFromDimensions = FALSE
+  }
 
   methodScore$student = studentScoreDf
   methodScore$modelAnswer = modelAnswerScoreDf
   methodScore$metricSummary = feedback$metricSummary
   methodScore$overallScore = overallScore
   methodScore$mark = mark
+  methodScore$rawOverallScore = rawOverallScore
+  methodScore$overallDerivedFromDimensions = overallDerivedFromDimensions
 
   x$scores$byMethod[[method]] = methodScore
   x$feedback$byMethod[[method]] = list(
@@ -140,6 +197,7 @@ score.wmfmGrade = function(
     strengths = feedback$strengths,
     weaknesses = feedback$weaknesses,
     missingElements = feedback$missingElements,
+    advisoryFlags = feedback$advisoryFlags,
     modelAnswerComparison = feedback$modelAnswerComparison
   )
 
@@ -153,6 +211,7 @@ score.wmfmGrade = function(
   x$feedback$strengths = feedback$strengths
   x$feedback$weaknesses = feedback$weaknesses
   x$feedback$missingElements = feedback$missingElements
+  x$feedback$advisoryFlags = feedback$advisoryFlags
   x$feedback$modelAnswerComparison = feedback$modelAnswerComparison
 
   scoredMethods = unique(c(x$meta$scoredMethods %||% character(0), method))
