@@ -24,13 +24,13 @@ readable display labels?}
 }
 \value{
 A data frame with columns \code{runId}, \code{field}, \code{fieldLabel}, \code{value},
-\code{fieldPurity}, and \code{runPurity}.
+\code{modalValue}, \code{fieldPurity}, and \code{runPurity}.
 }
 \description{
 Extracts selected raw claim fields from a \code{wmfmRuns} object and reshapes them
 into long format for heatmap plotting.
 }
 \details{
-The returned data also includes simple purity-based ordering statistics so
-that fields and runs can be displayed in a more informative order.
+Runs are intended to be shown on rows and claim fields on columns. Runs are
+ordered by run purity and fields are ordered by field purity.
 }

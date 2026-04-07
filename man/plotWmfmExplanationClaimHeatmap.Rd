@@ -9,10 +9,10 @@ plotWmfmExplanationClaimHeatmap(
   fieldColumns = NULL,
   naLabel = "(missing)",
   main = "Claim profile across repeated runs",
-  xlab = "Run ID",
-  ylab = NULL,
+  xlab = NULL,
+  ylab = "Run ID",
   prettyFieldLabels = TRUE,
-  xLabelAngle = 0,
+  xLabelAngle = 45,
   includeLegendBreaks = FALSE
 )
 }
@@ -42,12 +42,8 @@ A \code{ggplot2} object.
 }
 \description{
 Draws a run-by-field heatmap for a \code{wmfmRuns} object using raw extracted
-claim fields only. This function is intended for visualising run-to-run
-variation in interpretation patterns and no longer supports judged fields or
-aggregate scores.
-}
-\details{
-Fields are ordered by purity, and runs are ordered by overall claim-profile
-purity relative to the modal value in each field. Missing values are shown as
-white tiles with an X overlay.
+claim fields only. Rows represent runs and columns represent claim fields.
+This function is intended for visualising run-to-run variation in
+interpretation patterns and no longer supports judged fields or aggregate
+scores.
 }
