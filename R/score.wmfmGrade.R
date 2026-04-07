@@ -32,7 +32,7 @@ score.wmfmGrade = function(
 
   scoreOneRecord = function(record) {
     df = as.data.frame(record, stringsAsFactors = FALSE)
-    scored = scoreWmfmRepeatedRuns(
+    scored = scoreWmfmRunRecordsCore(
       runsDf = df,
       preferredMinWords = preferredMinWords,
       preferredMaxWords = preferredMaxWords,
