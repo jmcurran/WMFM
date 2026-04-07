@@ -8,8 +8,8 @@
   x,
   explanation,
   modelAnswer = NULL,
-  score = TRUE,
   method = c("deterministic", "llm"),
+  autoScore = TRUE,
   scoreScale = 10,
   ...
 )
@@ -21,15 +21,16 @@
 
 \item{modelAnswer}{Optional character scalar giving a reference answer.}
 
-\item{score}{Logical. Should the returned \code{wmfmGrade} object be scored
-immediately? Defaults to \code{TRUE}.}
-
 \item{method}{Character. One of \code{"deterministic"} or \code{"llm"}.}
+
+\item{autoScore}{Logical. Should the returned \code{wmfmGrade} object be scored
+immediately? Defaults to \code{TRUE}.}
 
 \item{scoreScale}{Numeric scalar giving the displayed mark scale. Defaults to
 \code{10}.}
 
-\item{...}{Additional arguments passed to \code{score.wmfmGrade()}.}
+\item{...}{Additional arguments passed to \code{score.wmfmGrade()} when
+\code{autoScore = TRUE}.}
 }
 \value{
 An object of class \code{wmfmGrade}.

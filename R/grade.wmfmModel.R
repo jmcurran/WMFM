@@ -7,12 +7,13 @@
 #' @param x A `wmfmModel` object, typically created by `runModel()`.
 #' @param explanation Character scalar giving the explanation to grade.
 #' @param modelAnswer Optional character scalar giving a reference answer.
-#' @param score Logical. Should the returned `wmfmGrade` object be scored
-#'   immediately? Defaults to `TRUE`.
 #' @param method Character. One of `"deterministic"` or `"llm"`.
+#' @param autoScore Logical. Should the returned `wmfmGrade` object be scored
+#'   immediately? Defaults to `TRUE`.
 #' @param scoreScale Numeric scalar giving the displayed mark scale. Defaults to
 #'   `10`.
-#' @param ... Additional arguments passed to `score.wmfmGrade()`.
+#' @param ... Additional arguments passed to `score.wmfmGrade()` when
+#'   `autoScore = TRUE`.
 #'
 #' @return An object of class `wmfmGrade`.
 #' @export
@@ -20,8 +21,8 @@ grade.wmfmModel = function(
     x,
     explanation,
     modelAnswer = NULL,
-    score = TRUE,
     method = c("deterministic", "llm"),
+    autoScore = TRUE,
     scoreScale = 10,
     ...
 ) {
@@ -34,8 +35,13 @@ grade.wmfmModel = function(
     stop("`explanation` must be a single non-missing character string.", call. = FALSE)
   }
 
-  if (!is.logical(score) || length(score) != 1 || is.na(score)) {
-    stop("`score` must be TRUE or FALSE.", call. = FALSE)
+  if (!is.null(modelAnswer) &&
+      (!is.character(modelAnswer) || length(modelAnswer) != 1 || is.na(modelAnswer))) {
+    stop("`modelAnswer` must be NULL or a single non-missing character string.", call. = FALSE)
+  }
+
+  if (!is.logical(autoScore) || length(autoScore) != 1 || is.na(autoScore)) {
+    stop("`autoScore` must be TRUE or FALSE.", call. = FALSE)
   }
 
   method = match.arg(method)
@@ -69,7 +75,7 @@ grade.wmfmModel = function(
     )
   )
 
-  if (isTRUE(score)) {
+  if (isTRUE(autoScore)) {
     out = score(out, method = method, ...)
   }
 
