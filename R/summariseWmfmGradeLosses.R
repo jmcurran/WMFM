@@ -178,12 +178,10 @@ summariseWmfmGradeLosses = function(
 
   hasNumericLiteral = grepl("\\b\\d+(\\.\\d+)?\\b", explanationText, perl = TRUE)
 
-  # normalize en-dash and em-dash to hyphen to avoid PCRE unicode issues
   normalizedExplanationText = explanationText
   normalizedExplanationText = gsub(intToUtf8(0x2013), "-", normalizedExplanationText, fixed = TRUE)
   normalizedExplanationText = gsub(intToUtf8(0x2014), "-", normalizedExplanationText, fixed = TRUE)
 
-  # detect range language after normalization
   hasRangeIndicator = grepl(
     "\\bbetween\\b|\\bas low as\\b|\\bas high as\\b|\\bfrom\\b.+?\\bto\\b|\\b\\d+(\\.\\d+)?\\s*-\\s*\\d+(\\.\\d+)?\\b",
     normalizedExplanationText,
@@ -191,7 +189,6 @@ summariseWmfmGradeLosses = function(
     perl = TRUE
   )
 
-  # detect outcome scale mentions after normalization
   mentionsOutcomeScale = grepl(
     "0\\s*-?\\s*100|out of 100|marks?\\b|points?\\b|percent|percentage|probabilit|odds",
     normalizedExplanationText,
@@ -398,6 +395,14 @@ summariseWmfmGradeLosses = function(
     drop = FALSE
   ]
 
+  if (identical(method, "llm")) {
+    strengthLabelsToSuppress = intersect(
+      strengths$label,
+      unique(c(whereMarksLost$label, metricSummary$label[metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0]))
+    )
+    strengths = strengths[!strengths$label %in% strengthLabelsToSuppress, , drop = FALSE]
+  }
+
   if (nrow(strengths) > 0) {
     strengths$comment = unname(strengthMap[strengths$metric])
     strengths = strengths[order(strengths$label), , drop = FALSE]
@@ -474,12 +479,37 @@ summariseWmfmGradeLosses = function(
         },
         character(1)
       )
-      advisoryFlags = advisoryFlags[
-        order(-advisoryFlags$severity, advisoryFlags$label),
-        ,
-        drop = FALSE
-      ]
-      rownames(advisoryFlags) = NULL
+
+      overlappingDimensionFlags = c(
+        clarityAdequate = "clarityScore",
+        inferentialRegisterAppropriate = "inferenceScore"
+      )
+
+      if (nrow(advisoryFlags) > 0) {
+        keep = rep(TRUE, nrow(advisoryFlags))
+
+        for (i in seq_len(nrow(advisoryFlags))) {
+          advisoryMetric = advisoryFlags$metric[i]
+          mappedDimension = unname(overlappingDimensionFlags[advisoryMetric])
+
+          if (!is.na(mappedDimension) &&
+              nzchar(mappedDimension) &&
+              mappedDimension %in% weaknesses$metric) {
+            keep[i] = FALSE
+          }
+        }
+
+        advisoryFlags = advisoryFlags[keep, , drop = FALSE]
+      }
+
+      if (nrow(advisoryFlags) > 0) {
+        advisoryFlags = advisoryFlags[
+          order(-advisoryFlags$severity, advisoryFlags$label),
+          ,
+          drop = FALSE
+        ]
+        rownames(advisoryFlags) = NULL
+      }
     }
   }
 

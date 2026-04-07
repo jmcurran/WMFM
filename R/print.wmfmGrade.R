@@ -66,7 +66,10 @@ print.wmfmGrade = function(
   cat("Method:", method, "\n")
   cat("Mark:", format(round(mark, digits = digits), nsmall = digits), "/", scale, "\n")
   cat("Overall score:", format(round(overallScore, digits = digits), nsmall = digits), "/ 100\n")
-  cat("Words:", wordCount, "\n")
+
+  if (!is.na(wordCount)) {
+    cat("Words:", wordCount, "\n")
+  }
 
   if (identical(method, "llm") && isTRUE(scoreBlock$overallDerivedFromDimensions)) {
     cat("Note: overall score was derived from the five dimension scores for consistency.\n")
