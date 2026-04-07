@@ -7,6 +7,9 @@
 #' @param maxRows Maximum rows per section.
 #' @param ... Unused.
 #'
+#' @return Invisibly returns `x` for plaintext and an HTML document for html.
+#' @importFrom htmltools tags browsable save_html HTML
+#' @importFrom utils browseURL
 #' @export
 print.wmfmGrade = function(
     x,
@@ -26,10 +29,10 @@ print.wmfmGrade = function(
   `%||%` = function(a, b) if (is.null(a)) b else a
 
   fmt = function(v) {
-    if (is.na(v)) {
+    if (length(v) != 1 || is.na(v)) {
       return("NA")
     }
-    format(round(v, digits), nsmall = digits)
+    format(round(v, digits), nsmall = digits, trim = TRUE)
   }
 
   chooseMethod = function() {
@@ -42,7 +45,7 @@ print.wmfmGrade = function(
     }
 
     if (!m %in% available) {
-      stop("No grade available for method ", m, call. = FALSE)
+      stop("No grade available for method `", m, "`.", call. = FALSE)
     }
 
     m
@@ -56,8 +59,8 @@ print.wmfmGrade = function(
     df = utils::head(df, maxRows)
 
     vapply(seq_len(nrow(df)), function(i) {
-      label = df[[labelCol]][i]
-      txt = df[[textCol]][i]
+      label = as.character(df[[labelCol]][i])
+      txt = as.character(df[[textCol]][i])
 
       if (!is.null(lossCol) && lossCol %in% names(df)) {
         loss = suppressWarnings(as.numeric(df[[lossCol]][i]))
@@ -80,7 +83,9 @@ print.wmfmGrade = function(
       "calibrationScore"
     )
 
-    df = ms[keep, ]
+    df = ms[keep, , drop = FALSE]
+
+    if (nrow(df) == 0) return(character(0))
 
     vapply(seq_len(nrow(df)), function(i) {
       paste0(
@@ -110,9 +115,7 @@ print.wmfmGrade = function(
   advisory = buildLines(fb$advisoryFlags, "label", "detail", "severity")
   compare = buildLines(fb$modelAnswerComparison, "label", "comment", "referenceDelta")
 
-  # -------------------------
-  # PLAINTEXT
-  # -------------------------
+  # ---------- PLAINTEXT ----------
   if (format == "plaintext") {
 
     cat("WMFM grade\n")
@@ -121,13 +124,7 @@ print.wmfmGrade = function(
     cat("Mark:", fmt(mark), "/", scale, "\n")
     cat("Overall score:", fmt(overall), "/ 100\n")
 
-    if (!is.na(words)) {
-      cat("Words:", words, "\n")
-    }
-
-    if (m == "llm" && isTRUE(scoreBlock$overallDerivedFromDimensions)) {
-      cat("Note: overall score derived from dimension scores\n")
-    }
+    if (!is.na(words)) cat("Words:", words, "\n")
 
     if (length(dims)) {
       cat("\nDimension scores\n")
@@ -169,58 +166,57 @@ print.wmfmGrade = function(
     return(invisible(x))
   }
 
-  # -------------------------
-  # HTML
-  # -------------------------
+  # ---------- HTML ----------
 
   makeList = function(lines) {
     if (!length(lines)) return(NULL)
-    htmltools::tags$ul(lapply(lines, function(l) {
-      htmltools::tags$li(sub("^\\*\\s*", "", l))
-    }))
+    tags$ul(lapply(lines, function(l) tags$li(sub("^\\*\\s*", "", l))))
+  }
+
+  addSection = function(title, lines) {
+    if (!length(lines)) return(NULL)
+    list(tags$h2(title), makeList(lines))
   }
 
   body = list(
-    htmltools::tags$h1("WMFM grade"),
-    htmltools::tags$p(strong("Method: "), m),
-    htmltools::tags$p(strong("Mark: "), paste0(fmt(mark), " / ", scale)),
-    htmltools::tags$p(strong("Overall: "), paste0(fmt(overall), " / 100"))
+    tags$h1("WMFM grade"),
+    tags$p(tags$strong("Method: "), m),
+    tags$p(tags$strong("Mark: "), paste0(fmt(mark), " / ", scale)),
+    tags$p(tags$strong("Overall score: "), paste0(fmt(overall), " / 100"))
   )
-
-  if (!is.na(words)) {
-    body = c(body, list(htmltools::tags$p(strong("Words: "), words)))
-  }
-
-  add = function(title, lines) {
-    if (!length(lines)) return(NULL)
-    list(htmltools::tags$h2(title), makeList(lines))
-  }
 
   body = c(
     body,
-    add("Dimension scores", dims),
-    add("Strengths", strengths),
-    add("Weaknesses", weaknesses),
-    add("Missing", missing),
-    add("Detailed mark losses", losses),
-    add("Advisory flags", advisory),
-    add("Comparison", compare)
+    addSection("Dimension scores", dims),
+    addSection("Strengths", strengths),
+    addSection("Weaknesses", weaknesses),
+    addSection("Missing", missing),
+    addSection("Detailed mark losses", losses),
+    addSection("Advisory flags", advisory),
+    addSection("Comparison", compare)
   )
 
-  doc = htmltools::browsable(
-    htmltools::tags$html(
-      htmltools::tags$body(body)
+  doc = browsable(
+    tags$html(
+      tags$head(tags$title("WMFM grade")),
+      tags$body(body)
     )
   )
 
   tmp = tempfile(fileext = ".html")
-  htmltools::save_html(doc, tmp)
+  save_html(doc, tmp)
 
-  if (requireNamespace("rstudioapi", quietly = TRUE) &&
-      rstudioapi::isAvailable()) {
-    rstudioapi::viewer(tmp)
+  if (requireNamespace("rstudioapi", quietly = TRUE)) {
+    viewer = getFromNamespace("viewer", "rstudioapi")
+    isAvailable = getFromNamespace("isAvailable", "rstudioapi")
+
+    if (isAvailable()) {
+      viewer(tmp)
+    } else {
+      browseURL(tmp)
+    }
   } else {
-    utils::browseURL(tmp)
+    browseURL(tmp)
   }
 
   invisible(doc)

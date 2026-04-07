@@ -4,26 +4,31 @@
 \alias{print.wmfmGrade}
 \title{Print a WMFM grade object}
 \usage{
-\method{print}{wmfmGrade}(x, method = NULL, digits = 2, maxRows = 6, ...)
+\method{print}{wmfmGrade}(
+  x,
+  method = NULL,
+  format = c("plaintext", "html"),
+  digits = 2,
+  maxRows = 6,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{wmfmGrade} object.}
 
-\item{method}{Optional character. One of \code{"deterministic"} or \code{"llm"}.
-When omitted, the most recently scored method is shown if available.}
+\item{method}{Optional character. One of "deterministic" or "llm".}
 
-\item{digits}{Integer number of digits to print for numeric values.}
+\item{format}{Character. One of "plaintext" or "html".}
 
-\item{maxRows}{Integer maximum number of rows to print for each feedback
-section.}
+\item{digits}{Number of digits for numeric output.}
 
-\item{...}{Unused. Included for S3 compatibility.}
+\item{maxRows}{Maximum rows per section.}
+
+\item{...}{Unused.}
 }
 \value{
-Invisibly returns \code{x}.
+Invisibly returns \code{x} for plaintext and an HTML document for html.
 }
 \description{
-Prints a concise summary of a graded explanation, including the mark, key
-dimension scores, strengths, weaknesses, missing elements, and the main
-places where marks were lost.
+Print a WMFM grade object
 }
