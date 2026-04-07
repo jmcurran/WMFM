@@ -66,25 +66,30 @@ test_that("buildMetricEvidenceSummary flags additive numeric language without pe
 })
 
 test_that("buildMetricEvidenceSummary flags missed numeric content when comparison or conditional wording is common", {
-    metricDf = data.frame(
-        runId = 1:4,
-        disagrees = c(TRUE, TRUE, TRUE, TRUE),
-        effectScaleClaim = c("additive", "additive", "multiplicative", "multiplicative"),
-        percentLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
-        comparisonLanguageMention = c(TRUE, TRUE, TRUE, FALSE),
-        conditionalLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
-        stringsAsFactors = FALSE
-    )
+  metricDf = data.frame(
+    runId = 1:4,
+    disagrees = c(TRUE, TRUE, TRUE, TRUE),
+    effectScaleClaim = c(
+      "additive",
+      "multiplicative",
+      "multiplicative",
+      "multiplicative"
+    ),
+    percentLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
+    comparisonLanguageMention = c(TRUE, TRUE, TRUE, FALSE),
+    conditionalLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
+    stringsAsFactors = FALSE
+  )
 
-    out = buildMetricEvidenceSummary(
-        metricDf = metricDf,
-        metric = "numericExpressionAdequate"
-    )
+  out = buildMetricEvidenceSummary(
+    metricDf = metricDf,
+    metric = "numericExpressionAdequate"
+  )
 
-    expect_equal(out$comparisonLanguageMention_rate, 0.75)
-    expect_equal(out$likelyIssue, "numericContentPresentButRuleInputsMayMissIt")
+  expect_equal(out$effectScale_additive_n, 1)
+  expect_equal(out$comparisonLanguageMention_rate, 0.75)
+  expect_equal(out$likelyIssue, "numericContentPresentButRuleInputsMayMissIt")
 })
-
 test_that("buildMetricEvidenceSummary returns insufficientContext when disagreement exists but no stronger heuristic fires", {
     metricDf = data.frame(
         runId = 1:4,
