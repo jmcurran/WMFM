@@ -195,6 +195,19 @@ getWmfmRunsClaimProfileData = function(
     sort = FALSE
   )
 
+  # Drop fields that are entirely missing
+  fieldKeep = vapply(
+    split(longDf$value, longDf$field),
+    function(values) {
+      any(values != naLabel, na.rm = TRUE)
+    },
+    logical(1)
+  )
+
+  keepFields = names(fieldKeep)[fieldKeep]
+
+  longDf = longDf[longDf$field %in% keepFields, , drop = FALSE]
+
   fieldOrder = fieldStats$fieldLabel[order(fieldStats$fieldPurity, fieldStats$fieldLabel)]
   runOrder = runStats$runId[order(-runStats$runPurity, runStats$runId)]
 
