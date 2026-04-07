@@ -1,11 +1,13 @@
 #' Print a WMFM grade object
 #'
 #' Prints a concise summary of a graded explanation, including the mark, key
-#' dimension scores, and the main places where marks were lost.
+#' dimension scores, strengths, weaknesses, missing elements, and the main
+#' places where marks were lost.
 #'
 #' @param x A `wmfmGrade` object.
 #' @param digits Integer number of digits to print for numeric values.
-#' @param maxLossRows Integer maximum number of mark-loss rows to print.
+#' @param maxRows Integer maximum number of rows to print for each feedback
+#'   section.
 #' @param ... Unused. Included for S3 compatibility.
 #'
 #' @return Invisibly returns `x`.
@@ -13,7 +15,7 @@
 print.wmfmGrade = function(
     x,
     digits = 2,
-    maxLossRows = 6,
+    maxRows = 6,
     ...
 ) {
 
@@ -60,21 +62,44 @@ print.wmfmGrade = function(
     }
   }
 
-  losses = x$feedback$whereMarksLost
+  strengths = x$feedback$strengths
+  if (is.data.frame(strengths) && nrow(strengths) > 0) {
+    cat("\nStrengths\n")
+    strengthPrint = utils::head(strengths[, c("label", "comment"), drop = FALSE], maxRows)
+    print(strengthPrint, row.names = FALSE)
+  }
 
+  weaknesses = x$feedback$weaknesses
+  if (is.data.frame(weaknesses) && nrow(weaknesses) > 0) {
+    cat("\nWeaknesses\n")
+    weaknessPrint = utils::head(weaknesses[, c("label", "marksLost", "reason"), drop = FALSE], maxRows)
+    print(weaknessPrint, row.names = FALSE)
+  }
+
+  missingElements = x$feedback$missingElements
+  if (is.data.frame(missingElements) && nrow(missingElements) > 0) {
+    cat("\nMissing or underdeveloped elements\n")
+    missingPrint = utils::head(missingElements[, c("label", "marksLost", "detail"), drop = FALSE], maxRows)
+    print(missingPrint, row.names = FALSE)
+  }
+
+  losses = x$feedback$whereMarksLost
   if (is.data.frame(losses) && nrow(losses) > 0) {
-    cat("\nWhere marks were lost\n")
-    print(utils::head(losses, maxLossRows), row.names = FALSE)
+    cat("\nDetailed mark losses\n")
+    print(utils::head(losses, maxRows), row.names = FALSE)
   } else {
-    cat("\nWhere marks were lost\n")
+    cat("\nDetailed mark losses\n")
     cat("None detected by the current rubric.\n")
   }
 
   comparison = x$feedback$modelAnswerComparison
-
   if (is.data.frame(comparison) && nrow(comparison) > 0) {
     cat("\nCompared with the supplied model answer\n")
-    print(utils::head(comparison, maxLossRows), row.names = FALSE)
+    comparisonPrint = utils::head(
+      comparison[, c("label", "referenceDelta", "comment"), drop = FALSE],
+      maxRows
+    )
+    print(comparisonPrint, row.names = FALSE)
   }
 
   invisible(x)

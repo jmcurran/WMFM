@@ -68,25 +68,82 @@ summariseWmfmGradeLosses = function(
     comparisonStructureClear = 2
   )
 
-  reasonMap = c(
-    overallScore = "The explanation lost marks across one or more rubric dimensions.",
-    factualScore = "Some factual aspects of the fitted model were missing, weak, or inaccurate.",
-    inferenceScore = "The explanation's inferential language or uncertainty handling was not fully appropriate.",
-    completenessScore = "Important parts of the model story were omitted or only partly covered.",
-    clarityScore = "The explanation could be clearer, better structured, or better expressed.",
-    calibrationScore = "The explanation may overclaim, underclaim, or miscalibrate evidential strength.",
-    effectDirectionCorrect = "The explanation did not clearly state the correct effect direction.",
-    effectScaleAppropriate = "The explanation did not use an appropriate effect scale.",
-    referenceGroupHandledCorrectly = "The reference or baseline group was not handled cleanly.",
-    interactionCoverageAdequate = "Interaction structure was not fully acknowledged.",
-    interactionSubstantiveCorrect = "The substantive interaction interpretation was weak or incorrect.",
-    uncertaintyHandlingAppropriate = "Uncertainty was missing, unclear, or not handled appropriately.",
-    inferentialRegisterAppropriate = "The register was too strong, too weak, or otherwise not well matched to the evidence.",
+  missingMetrics = c(
+    "interactionCoverageAdequate",
+    "uncertaintyHandlingAppropriate",
+    "mainEffectCoverageAdequate",
+    "referenceGroupCoverageAdequate",
+    "numericExpressionAdequate"
+  )
+
+  strengthMap = c(
+    factualScore = "The explanation stayed close to the fitted model facts.",
+    inferenceScore = "The explanation used an appropriate inferential tone.",
+    completenessScore = "The explanation covered the main parts of the model story.",
+    clarityScore = "The explanation was generally clear and readable.",
+    calibrationScore = "The explanation kept its claims reasonably well calibrated.",
+    effectDirectionCorrect = "The direction of the fitted effect was described correctly.",
+    effectScaleAppropriate = "The effect was described on an appropriate scale.",
+    referenceGroupHandledCorrectly = "Baseline or reference-group information was handled appropriately.",
+    interactionCoverageAdequate = "Interaction structure was acknowledged where needed.",
+    interactionSubstantiveCorrect = "Any interaction interpretation was substantively appropriate.",
+    uncertaintyHandlingAppropriate = "Uncertainty was handled appropriately for this model.",
+    inferentialRegisterAppropriate = "The wording matched the evidence level well.",
+    mainEffectCoverageAdequate = "The main effect was described adequately.",
+    referenceGroupCoverageAdequate = "Reference-group context was included where needed.",
+    clarityAdequate = "The explanation wording was acceptably clear.",
+    numericExpressionAdequate = "The explanation handled numeric information adequately.",
+    comparisonStructureClear = "Comparisons were structured clearly."
+  )
+
+  partialReasonMap = c(
+    overallScore = "The explanation lost marks across multiple rubric areas.",
+    factualScore = "Some factual details were weak, incomplete, or not fully correct.",
+    inferenceScore = "Inferential wording or treatment of uncertainty could be improved.",
+    completenessScore = "Some relevant parts of the fitted model story were only partly covered.",
+    clarityScore = "The explanation could be clearer or more clearly structured.",
+    calibrationScore = "Some wording may overstate or understate what the model supports.",
+    effectDirectionCorrect = "The effect direction was not stated as clearly or as accurately as it could be.",
+    effectScaleAppropriate = "The explanation could use a more appropriate effect scale.",
+    referenceGroupHandledCorrectly = "Reference-group handling was not completely clean.",
+    interactionCoverageAdequate = "Interaction evidence was only partly acknowledged.",
+    interactionSubstantiveCorrect = "Interaction interpretation was weak or only partly correct.",
+    uncertaintyHandlingAppropriate = "Uncertainty was present but not handled especially well.",
+    inferentialRegisterAppropriate = "The register was somewhat mismatched to the evidence.",
+    mainEffectCoverageAdequate = "The main effect description was partial or underdeveloped.",
+    referenceGroupCoverageAdequate = "Reference-group context was only partly covered.",
+    clarityAdequate = "The wording or structure could be clearer.",
+    numericExpressionAdequate = "Numeric content was present but could be expressed more clearly or more fully.",
+    comparisonStructureClear = "Comparison wording could be clearer or more direct."
+  )
+
+  fullReasonMap = c(
+    overallScore = "The explanation lost marks across multiple rubric areas.",
+    factualScore = "Key factual aspects of the fitted model were missing or incorrect.",
+    inferenceScore = "The explanation did not handle inferential wording or uncertainty appropriately.",
+    completenessScore = "Important parts of the model story were omitted.",
+    clarityScore = "The explanation was not clear enough to communicate the fitted model well.",
+    calibrationScore = "The explanation was not well calibrated to what the model can support.",
+    effectDirectionCorrect = "The explanation did not state the correct effect direction.",
+    effectScaleAppropriate = "The explanation used an inappropriate effect scale or omitted it entirely.",
+    referenceGroupHandledCorrectly = "The baseline or reference group was handled incorrectly.",
+    interactionCoverageAdequate = "Interaction structure that needed discussion was omitted.",
+    interactionSubstantiveCorrect = "The interaction interpretation was incorrect or not substantively appropriate.",
+    uncertaintyHandlingAppropriate = "No appropriate uncertainty language was given.",
+    inferentialRegisterAppropriate = "The register was not matched to the available evidence.",
     mainEffectCoverageAdequate = "The main effect was not described adequately.",
     referenceGroupCoverageAdequate = "Reference-group context was omitted where it was needed.",
-    clarityAdequate = "The wording or structure was not as clear as it could be.",
-    numericExpressionAdequate = "Numeric content was missing, awkward, or not expressed well enough.",
-    comparisonStructureClear = "Comparison wording or contrast structure was not fully clear."
+    clarityAdequate = "The explanation wording or structure was not adequately clear.",
+    numericExpressionAdequate = "No usable numeric effect information was given.",
+    comparisonStructureClear = "Comparison wording or contrast structure was not clear enough."
+  )
+
+  missingDetailMap = c(
+    interactionCoverageAdequate = "Interaction structure that needed discussion was not mentioned.",
+    uncertaintyHandlingAppropriate = "No appropriate statement about uncertainty or variability was given.",
+    mainEffectCoverageAdequate = "The main fitted effect was missing or too incomplete to earn full credit.",
+    referenceGroupCoverageAdequate = "The explanation did not give the needed reference-group context.",
+    numericExpressionAdequate = "No usable numeric effect size or magnitude was stated."
   )
 
   makeLabel = function(metric) {
@@ -115,6 +172,13 @@ summariseWmfmGradeLosses = function(
       marksLost = max(0, maxValue - studentValue)
       referenceValue = NA_real_
       referenceDelta = NA_real_
+      reason = if (marksLost >= maxValue) {
+        unname(fullReasonMap[[metric]])
+      } else if (marksLost > 0) {
+        unname(partialReasonMap[[metric]])
+      } else {
+        NA_character_
+      }
 
       if (!is.null(referenceVals)) {
         referenceValue = suppressWarnings(as.numeric(referenceVals[[metric]]))
@@ -129,7 +193,7 @@ summariseWmfmGradeLosses = function(
         marksLost = marksLost,
         referenceValue = referenceValue,
         referenceDelta = referenceDelta,
-        reason = unname(reasonMap[[metric]]),
+        reason = reason,
         stringsAsFactors = FALSE
       )
     }
@@ -145,19 +209,55 @@ summariseWmfmGradeLosses = function(
   ]
 
   if (nrow(whereMarksLost) > 0) {
-    whereMarksLost = whereMarksLost[order(whereMarksLost$marksLost, decreasing = TRUE), , drop = FALSE]
+    whereMarksLost = whereMarksLost[
+      order(whereMarksLost$marksLost, whereMarksLost$label, decreasing = c(TRUE, FALSE)),
+      ,
+      drop = FALSE
+    ]
     rownames(whereMarksLost) = NULL
   }
 
   strengths = metricSummary[
-    metricSummary$marksLost == 0,
+    metricSummary$marksLost == 0 & metricSummary$metric != "overallScore",
     c("metric", "label", "studentValue", "maxValue"),
     drop = FALSE
   ]
 
   if (nrow(strengths) > 0) {
-    strengths = strengths[order(strengths$maxValue, strengths$label, decreasing = TRUE), , drop = FALSE]
+    strengths$comment = unname(strengthMap[strengths$metric])
+    strengths = strengths[order(strengths$label), , drop = FALSE]
     rownames(strengths) = NULL
+  }
+
+  missingElements = metricSummary[
+    metricSummary$metric %in% missingMetrics & metricSummary$marksLost > 0,
+    c("metric", "label", "studentValue", "maxValue", "marksLost"),
+    drop = FALSE
+  ]
+
+  if (nrow(missingElements) > 0) {
+    missingElements$detail = unname(missingDetailMap[missingElements$metric])
+    missingElements = missingElements[
+      order(missingElements$marksLost, missingElements$label, decreasing = c(TRUE, FALSE)),
+      ,
+      drop = FALSE
+    ]
+    rownames(missingElements) = NULL
+  }
+
+  weaknesses = metricSummary[
+    metricSummary$marksLost > 0 & !metricSummary$metric %in% c("overallScore", missingMetrics),
+    c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
+    drop = FALSE
+  ]
+
+  if (nrow(weaknesses) > 0) {
+    weaknesses = weaknesses[
+      order(weaknesses$marksLost, weaknesses$label, decreasing = c(TRUE, FALSE)),
+      ,
+      drop = FALSE
+    ]
+    rownames(weaknesses) = NULL
   }
 
   modelAnswerComparison = NULL
@@ -170,8 +270,14 @@ summariseWmfmGradeLosses = function(
     ]
 
     if (nrow(modelAnswerComparison) > 0) {
+      comparisonComment = ifelse(
+        modelAnswerComparison$referenceDelta >= modelAnswerComparison$referenceValue,
+        "The supplied model answer covered this area while the student answer did not.",
+        "The supplied model answer was stronger on this dimension."
+      )
+      modelAnswerComparison$comment = comparisonComment
       modelAnswerComparison = modelAnswerComparison[
-        order(modelAnswerComparison$referenceDelta, decreasing = TRUE),
+        order(modelAnswerComparison$referenceDelta, modelAnswerComparison$label, decreasing = c(TRUE, FALSE)),
         ,
         drop = FALSE
       ]
@@ -183,6 +289,8 @@ summariseWmfmGradeLosses = function(
     metricSummary = metricSummary,
     whereMarksLost = whereMarksLost,
     strengths = strengths,
+    weaknesses = weaknesses,
+    missingElements = missingElements,
     modelAnswerComparison = modelAnswerComparison
   )
 }

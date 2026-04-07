@@ -69,6 +69,8 @@ score.wmfmGrade = function(
 
   x$feedback$whereMarksLost = feedback$whereMarksLost
   x$feedback$strengths = feedback$strengths
+  x$feedback$weaknesses = feedback$weaknesses
+  x$feedback$missingElements = feedback$missingElements
   x$feedback$modelAnswerComparison = feedback$modelAnswerComparison
 
   x$meta$scored = TRUE

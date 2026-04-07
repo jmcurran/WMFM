@@ -4,14 +4,15 @@
 \alias{print.wmfmGrade}
 \title{Print a WMFM grade object}
 \usage{
-\method{print}{wmfmGrade}(x, digits = 2, maxLossRows = 6, ...)
+\method{print}{wmfmGrade}(x, digits = 2, maxRows = 6, ...)
 }
 \arguments{
 \item{x}{A \code{wmfmGrade} object.}
 
 \item{digits}{Integer number of digits to print for numeric values.}
 
-\item{maxLossRows}{Integer maximum number of mark-loss rows to print.}
+\item{maxRows}{Integer maximum number of rows to print for each feedback
+section.}
 
 \item{...}{Unused. Included for S3 compatibility.}
 }
@@ -20,5 +21,6 @@ Invisibly returns \code{x}.
 }
 \description{
 Prints a concise summary of a graded explanation, including the mark, key
-dimension scores, and the main places where marks were lost.
+dimension scores, strengths, weaknesses, missing elements, and the main
+places where marks were lost.
 }

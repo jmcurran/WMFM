@@ -91,6 +91,8 @@ newWmfmGrade = function(
       list(
         whereMarksLost = NULL,
         strengths = NULL,
+        weaknesses = NULL,
+        missingElements = NULL,
         modelAnswerComparison = NULL
       ),
       feedback
