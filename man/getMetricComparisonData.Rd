@@ -10,7 +10,7 @@ getMetricComparisonData(x, metric)
 \item{x}{A \code{wmfmScoreComparison} object.}
 
 \item{metric}{Character name of the metric. Must be one of the metric names
-returned by \code{listMetricComparisonMetrics(x)}.}
+stored in \code{x$registry$metricName}.}
 }
 \value{
 An object of class \code{metricComparisonData} with one row per run.
@@ -27,6 +27,5 @@ Returns run-level paired scores for a given metric from a
 This accessor uses the metric registry stored on the comparison object as the
 source of truth for valid metric names. Because the choices are dynamic,
 \code{match.arg()} is used for validation and partial matching, but IDE tab
-completion will not show the possible values automatically. Use
-\code{listMetricComparisonMetrics()} to inspect the available metric names.
+completion will not show the possible values automatically.
 }

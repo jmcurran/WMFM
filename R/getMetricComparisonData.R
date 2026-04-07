@@ -6,12 +6,11 @@
 #' This accessor uses the metric registry stored on the comparison object as the
 #' source of truth for valid metric names. Because the choices are dynamic,
 #' `match.arg()` is used for validation and partial matching, but IDE tab
-#' completion will not show the possible values automatically. Use
-#' `listMetricComparisonMetrics()` to inspect the available metric names.
+#' completion will not show the possible values automatically.
 #'
 #' @param x A `wmfmScoreComparison` object.
 #' @param metric Character name of the metric. Must be one of the metric names
-#'   returned by `listMetricComparisonMetrics(x)`.
+#'   stored in `x$registry$metricName`.
 #'
 #' @return An object of class `metricComparisonData` with one row per run.
 #'   When one of the compared methods is deterministic, the returned data frame
@@ -25,11 +24,16 @@ getMetricComparisonData = function(x, metric) {
     stop("`x` must inherit from `wmfmScoreComparison`.", call. = FALSE)
   }
 
-  metricChoices = listMetricComparisonMetrics(x)
+  metricChoices = unique(as.character(x$registry$metricName))
+  metricChoices = metricChoices[!is.na(metricChoices) & nzchar(metricChoices)]
+
+  if (length(metricChoices) == 0) {
+    stop("`x$registry` does not contain any metric names.", call. = FALSE)
+  }
 
   if (missing(metric)) {
     stop(
-      "`metric` must be supplied. Use `listMetricComparisonMetrics(x)` to see valid choices.",
+      "`metric` must be supplied. Use the comparison registry to see valid choices.",
       call. = FALSE
     )
   }
