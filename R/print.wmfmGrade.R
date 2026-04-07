@@ -1,22 +1,17 @@
 #' Print a WMFM grade object
 #'
-#' Prints a concise summary of a graded explanation, including the mark, key
-#' dimension scores, strengths, weaknesses, missing elements, and the main
-#' places where marks were lost.
-#'
 #' @param x A `wmfmGrade` object.
-#' @param method Optional character. One of `"deterministic"` or `"llm"`.
-#'   When omitted, the most recently scored method is shown if available.
-#' @param digits Integer number of digits to print for numeric values.
-#' @param maxRows Integer maximum number of rows to print for each feedback
-#'   section.
-#' @param ... Unused. Included for S3 compatibility.
+#' @param method Optional character. One of "deterministic" or "llm".
+#' @param format Character. One of "plaintext" or "html".
+#' @param digits Number of digits for numeric output.
+#' @param maxRows Maximum rows per section.
+#' @param ... Unused.
 #'
-#' @return Invisibly returns `x`.
 #' @export
 print.wmfmGrade = function(
     x,
     method = NULL,
+    format = c("plaintext", "html"),
     digits = 2,
     maxRows = 6,
     ...
@@ -26,122 +21,207 @@ print.wmfmGrade = function(
     stop("`x` must inherit from `wmfmGrade`.", call. = FALSE)
   }
 
-  cat("WMFM grade\n")
-  cat("----------\n")
+  format = match.arg(format)
 
-  if (!isTRUE(x$meta$scored)) {
-    cat("Status: not yet scored\n")
-    cat("Call `score()` on this object to produce a mark.\n")
+  `%||%` = function(a, b) if (is.null(a)) b else a
+
+  fmt = function(v) {
+    if (is.na(v)) {
+      return("NA")
+    }
+    format(round(v, digits), nsmall = digits)
+  }
+
+  chooseMethod = function() {
+    available = names(x$scores$byMethod %||% list())
+
+    if (is.null(method)) {
+      m = x$meta$lastScoredMethod %||% available[1]
+    } else {
+      m = match.arg(method, c("deterministic", "llm"))
+    }
+
+    if (!m %in% available) {
+      stop("No grade available for method ", m, call. = FALSE)
+    }
+
+    m
+  }
+
+  buildLines = function(df, labelCol, textCol, lossCol = NULL) {
+    if (!is.data.frame(df) || nrow(df) == 0) {
+      return(character(0))
+    }
+
+    df = utils::head(df, maxRows)
+
+    vapply(seq_len(nrow(df)), function(i) {
+      label = df[[labelCol]][i]
+      txt = df[[textCol]][i]
+
+      if (!is.null(lossCol) && lossCol %in% names(df)) {
+        loss = suppressWarnings(as.numeric(df[[lossCol]][i]))
+        lossTxt = if (!is.na(loss) && loss > 0) paste0(" (-", fmt(loss), ")") else ""
+        paste0("* ", label, lossTxt, ": ", txt)
+      } else {
+        paste0("* ", label, ": ", txt)
+      }
+    }, character(1))
+  }
+
+  buildDims = function(ms) {
+    if (!is.data.frame(ms)) return(character(0))
+
+    keep = ms$metric %in% c(
+      "factualScore",
+      "inferenceScore",
+      "completenessScore",
+      "clarityScore",
+      "calibrationScore"
+    )
+
+    df = ms[keep, ]
+
+    vapply(seq_len(nrow(df)), function(i) {
+      paste0(
+        "  ",
+        df$label[i], ": ",
+        fmt(df$studentValue[i]), " / ",
+        fmt(df$maxValue[i])
+      )
+    }, character(1))
+  }
+
+  m = chooseMethod()
+
+  scoreBlock = x$scores$byMethod[[m]]
+  fb = x$feedback$byMethod[[m]]
+
+  overall = scoreBlock$overallScore
+  mark = scoreBlock$mark
+  scale = x$scoreScale
+  words = scoreBlock$student$wordCount[1] %||% NA
+
+  dims = buildDims(scoreBlock$metricSummary)
+  strengths = buildLines(fb$strengths, "label", "comment")
+  weaknesses = buildLines(fb$weaknesses, "label", "reason", "marksLost")
+  missing = buildLines(fb$missingElements, "label", "detail", "marksLost")
+  losses = buildLines(fb$whereMarksLost, "label", "reason", "marksLost")
+  advisory = buildLines(fb$advisoryFlags, "label", "detail", "severity")
+  compare = buildLines(fb$modelAnswerComparison, "label", "comment", "referenceDelta")
+
+  # -------------------------
+  # PLAINTEXT
+  # -------------------------
+  if (format == "plaintext") {
+
+    cat("WMFM grade\n")
+    cat("----------\n")
+    cat("Method:", m, "\n")
+    cat("Mark:", fmt(mark), "/", scale, "\n")
+    cat("Overall score:", fmt(overall), "/ 100\n")
+
+    if (!is.na(words)) {
+      cat("Words:", words, "\n")
+    }
+
+    if (m == "llm" && isTRUE(scoreBlock$overallDerivedFromDimensions)) {
+      cat("Note: overall score derived from dimension scores\n")
+    }
+
+    if (length(dims)) {
+      cat("\nDimension scores\n")
+      cat(paste(dims, collapse = "\n"), "\n")
+    }
+
+    if (length(strengths)) {
+      cat("\nStrengths\n")
+      cat(paste(strengths, collapse = "\n"), "\n")
+    }
+
+    if (length(weaknesses)) {
+      cat("\nWeaknesses\n")
+      cat(paste(weaknesses, collapse = "\n"), "\n")
+    }
+
+    if (length(missing)) {
+      cat("\nMissing or underdeveloped elements\n")
+      cat(paste(missing, collapse = "\n"), "\n")
+    }
+
+    cat("\nDetailed mark losses\n")
+    if (length(losses)) {
+      cat(paste(losses, collapse = "\n"), "\n")
+    } else {
+      cat("None detected by the current rubric.\n")
+    }
+
+    if (length(advisory)) {
+      cat("\nAdditional rubric flags\n")
+      cat(paste(advisory, collapse = "\n"), "\n")
+    }
+
+    if (length(compare)) {
+      cat("\nCompared with model answer\n")
+      cat(paste(compare, collapse = "\n"), "\n")
+    }
+
     return(invisible(x))
   }
 
-  availableMethods = names(x$scores$byMethod %||% list())
+  # -------------------------
+  # HTML
+  # -------------------------
 
-  if (is.null(method)) {
-    method = x$meta$lastScoredMethod %||% NA_character_
-
-    if (!is.character(method) || length(method) != 1 || is.na(method) || !nzchar(method)) {
-      if ("deterministic" %in% availableMethods) {
-        method = "deterministic"
-      } else if ("llm" %in% availableMethods) {
-        method = "llm"
-      }
-    }
-  } else {
-    method = match.arg(method, choices = c("deterministic", "llm"))
+  makeList = function(lines) {
+    if (!length(lines)) return(NULL)
+    htmltools::tags$ul(lapply(lines, function(l) {
+      htmltools::tags$li(sub("^\\*\\s*", "", l))
+    }))
   }
 
-  if (!method %in% availableMethods) {
-    stop("No grade is available for method `", method, "`.", call. = FALSE)
-  }
-
-  scoreBlock = x$scores$byMethod[[method]]
-  feedbackBlock = x$feedback$byMethod[[method]]
-
-  overallScore = scoreBlock$overallScore
-  mark = scoreBlock$mark
-  scale = x$scoreScale
-  wordCount = scoreBlock$student$wordCount[1] %||% NA_integer_
-
-  cat("Method:", method, "\n")
-  cat("Mark:", format(round(mark, digits = digits), nsmall = digits), "/", scale, "\n")
-  cat("Overall score:", format(round(overallScore, digits = digits), nsmall = digits), "/ 100\n")
-
-  if (!is.na(wordCount)) {
-    cat("Words:", wordCount, "\n")
-  }
-
-  if (identical(method, "llm") && isTRUE(scoreBlock$overallDerivedFromDimensions)) {
-    cat("Note: overall score was derived from the five dimension scores for consistency.\n")
-  }
-
-  dimensionMetrics = c(
-    "factualScore",
-    "inferenceScore",
-    "completenessScore",
-    "clarityScore",
-    "calibrationScore"
+  body = list(
+    htmltools::tags$h1("WMFM grade"),
+    htmltools::tags$p(strong("Method: "), m),
+    htmltools::tags$p(strong("Mark: "), paste0(fmt(mark), " / ", scale)),
+    htmltools::tags$p(strong("Overall: "), paste0(fmt(overall), " / 100"))
   )
 
-  if (is.data.frame(scoreBlock$metricSummary)) {
-    dims = scoreBlock$metricSummary[
-      scoreBlock$metricSummary$metric %in% dimensionMetrics,
-      c("label", "studentValue", "maxValue"),
-      drop = FALSE
-    ]
-
-    if (nrow(dims) > 0) {
-      cat("\nDimension scores\n")
-      print(dims, row.names = FALSE)
-    }
+  if (!is.na(words)) {
+    body = c(body, list(htmltools::tags$p(strong("Words: "), words)))
   }
 
-  strengths = feedbackBlock$strengths
-  if (is.data.frame(strengths) && nrow(strengths) > 0) {
-    cat("\nStrengths\n")
-    strengthPrint = utils::head(strengths[, c("label", "comment"), drop = FALSE], maxRows)
-    print(strengthPrint, row.names = FALSE)
+  add = function(title, lines) {
+    if (!length(lines)) return(NULL)
+    list(htmltools::tags$h2(title), makeList(lines))
   }
 
-  weaknesses = feedbackBlock$weaknesses
-  if (is.data.frame(weaknesses) && nrow(weaknesses) > 0) {
-    cat("\nWeaknesses\n")
-    weaknessPrint = utils::head(weaknesses[, c("label", "marksLost", "reason"), drop = FALSE], maxRows)
-    print(weaknessPrint, row.names = FALSE)
-  }
+  body = c(
+    body,
+    add("Dimension scores", dims),
+    add("Strengths", strengths),
+    add("Weaknesses", weaknesses),
+    add("Missing", missing),
+    add("Detailed mark losses", losses),
+    add("Advisory flags", advisory),
+    add("Comparison", compare)
+  )
 
-  missingElements = feedbackBlock$missingElements
-  if (is.data.frame(missingElements) && nrow(missingElements) > 0) {
-    cat("\nMissing or underdeveloped elements\n")
-    missingPrint = utils::head(missingElements[, c("label", "marksLost", "detail"), drop = FALSE], maxRows)
-    print(missingPrint, row.names = FALSE)
-  }
-
-  losses = feedbackBlock$whereMarksLost
-  if (is.data.frame(losses) && nrow(losses) > 0) {
-    cat("\nDetailed mark losses\n")
-    print(utils::head(losses, maxRows), row.names = FALSE)
-  } else {
-    cat("\nDetailed mark losses\n")
-    cat("None detected by the current rubric.\n")
-  }
-
-  advisoryFlags = feedbackBlock$advisoryFlags
-  if (is.data.frame(advisoryFlags) && nrow(advisoryFlags) > 0) {
-    cat("\nAdditional rubric flags not counted directly in the overall mark\n")
-    advisoryPrint = utils::head(advisoryFlags[, c("label", "severity", "detail"), drop = FALSE], maxRows)
-    print(advisoryPrint, row.names = FALSE)
-  }
-
-  comparison = feedbackBlock$modelAnswerComparison
-  if (is.data.frame(comparison) && nrow(comparison) > 0) {
-    cat("\nCompared with the supplied model answer\n")
-    comparisonPrint = utils::head(
-      comparison[, c("label", "referenceDelta", "comment"), drop = FALSE],
-      maxRows
+  doc = htmltools::browsable(
+    htmltools::tags$html(
+      htmltools::tags$body(body)
     )
-    print(comparisonPrint, row.names = FALSE)
+  )
+
+  tmp = tempfile(fileext = ".html")
+  htmltools::save_html(doc, tmp)
+
+  if (requireNamespace("rstudioapi", quietly = TRUE) &&
+      rstudioapi::isAvailable()) {
+    rstudioapi::viewer(tmp)
+  } else {
+    utils::browseURL(tmp)
   }
 
-  invisible(x)
+  invisible(doc)
 }
