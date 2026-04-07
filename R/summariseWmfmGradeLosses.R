@@ -155,18 +155,23 @@ summariseWmfmGradeLosses = function(
 
   hasNumericLiteral = grepl("\\b\\d+(\\.\\d+)?\\b", explanationText, perl = TRUE)
 
-  # detect range language, including hyphen, en-dash (U+2013) and em-dash (U+2014)
+  # normalize en-dash and em-dash to hyphen to avoid PCRE unicode issues
+  normalizedExplanationText = explanationText
+  normalizedExplanationText = gsub(intToUtf8(0x2013), "-", normalizedExplanationText, fixed = TRUE)
+  normalizedExplanationText = gsub(intToUtf8(0x2014), "-", normalizedExplanationText, fixed = TRUE)
+
+  # detect range language after normalization
   hasRangeIndicator = grepl(
-    "\\bbetween\\b|\\bas low as\\b|\\bas high as\\b|\\bfrom\\b.+?\\bto\\b|\\b\\d+(\\.\\d+)?\\s*(?:-|\\x{2013}|\\x{2014})\\s*\\d+(\\.\\d+)?\\b",
-    explanationText,
+    "\\bbetween\\b|\\bas low as\\b|\\bas high as\\b|\\bfrom\\b.+?\\bto\\b|\\b\\d+(\\.\\d+)?\\s*-\\s*\\d+(\\.\\d+)?\\b",
+    normalizedExplanationText,
     ignore.case = TRUE,
     perl = TRUE
   )
 
-  # detect explicit outcome scale mentions, allowing hyphen, en-dash and em-dash
+  # detect outcome scale mentions after normalization
   mentionsOutcomeScale = grepl(
-    "0\\s*(?:-|\\x{2013}|\\x{2014})?\\s*100|out of 100|marks?\\b|points?\\b|percent|percentage|probabilit|odds",
-    explanationText,
+    "0\\s*-?\\s*100|out of 100|marks?\\b|points?\\b|percent|percentage|probabilit|odds",
+    normalizedExplanationText,
     ignore.case = TRUE,
     perl = TRUE
   )
