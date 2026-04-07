@@ -210,7 +210,7 @@ summariseWmfmGradeLosses = function(
 
   if (nrow(whereMarksLost) > 0) {
     whereMarksLost = whereMarksLost[
-      order(whereMarksLost$marksLost, whereMarksLost$label, decreasing = c(TRUE, FALSE)),
+      order(-whereMarksLost$marksLost, whereMarksLost$label),
       ,
       drop = FALSE
     ]
@@ -238,7 +238,7 @@ summariseWmfmGradeLosses = function(
   if (nrow(missingElements) > 0) {
     missingElements$detail = unname(missingDetailMap[missingElements$metric])
     missingElements = missingElements[
-      order(missingElements$marksLost, missingElements$label, decreasing = c(TRUE, FALSE)),
+      order(-missingElements$marksLost, missingElements$label),
       ,
       drop = FALSE
     ]
@@ -253,7 +253,7 @@ summariseWmfmGradeLosses = function(
 
   if (nrow(weaknesses) > 0) {
     weaknesses = weaknesses[
-      order(weaknesses$marksLost, weaknesses$label, decreasing = c(TRUE, FALSE)),
+      order(-weaknesses$marksLost, weaknesses$label),
       ,
       drop = FALSE
     ]
@@ -277,7 +277,7 @@ summariseWmfmGradeLosses = function(
       )
       modelAnswerComparison$comment = comparisonComment
       modelAnswerComparison = modelAnswerComparison[
-        order(modelAnswerComparison$referenceDelta, modelAnswerComparison$label, decreasing = c(TRUE, FALSE)),
+        order(-modelAnswerComparison$referenceDelta, modelAnswerComparison$label),
         ,
         drop = FALSE
       ]
