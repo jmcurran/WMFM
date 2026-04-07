@@ -2,7 +2,7 @@
 % Please edit documentation in R/describeWmfmField.R
 \name{describeWmfmField}
 \alias{describeWmfmField}
-\title{Describe a WMFM repeated-run evaluation field}
+\title{Describe a WMFM field}
 \usage{
 describeWmfmField(
   field,
@@ -33,11 +33,9 @@ invisibly after being printed to the console. Otherwise a named list or a
 one-row data frame describing the requested field.
 }
 \description{
-Prints a human-readable description of a field used in the WMFM repeated-run
-explanation evaluation workflow. This is intended to help interpret the
-claim, judged-quality, and score columns that appear in objects created or
-updated by \code{buildWmfmRunRecord()}, \code{scoreWmfmRepeatedRuns()},
-\code{summary()} for \code{wmfmRuns} objects, and \code{plotWmfmExplanationClaimHeatmap()}.
+Prints a human-readable description of a field used in the WMFM workflow.
+This is intended to help interpret the raw run fields, judged fields, and
+aggregate score fields that appear in WMFM objects and related plots.
 }
 \details{
 The function accepts:

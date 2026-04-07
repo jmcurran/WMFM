@@ -1,10 +1,8 @@
-#' Describe a WMFM repeated-run evaluation field
+#' Describe a WMFM field
 #'
-#' Prints a human-readable description of a field used in the WMFM repeated-run
-#' explanation evaluation workflow. This is intended to help interpret the
-#' claim, judged-quality, and score columns that appear in objects created or
-#' updated by `buildWmfmRunRecord()`, `scoreWmfmRepeatedRuns()`,
-#' `summary()` for `wmfmRuns` objects, and `plotWmfmExplanationClaimHeatmap()`.
+#' Prints a human-readable description of a field used in the WMFM workflow.
+#' This is intended to help interpret the raw run fields, judged fields, and
+#' aggregate score fields that appear in WMFM objects and related plots.
 #'
 #' The function accepts:
 #' \itemize{
@@ -635,8 +633,8 @@ describeWmfmField = function(
       type = "continuous score",
       title = "Factual score",
       description = "Average factual quality across direction, scale, reference-group handling, and interaction substance.",
-      values = "Numeric from 0 to 1",
-      scoring = "Higher is better. Values near 1 mean the explanation is factually well aligned with the model structure.",
+      values = "Numeric from 0 to 2",
+      scoring = "Higher is better. Values near 2 mean the explanation is factually well aligned with the model structure.",
       examplesHigh = "A high score usually means the explanation gets direction, scale, baseline structure, and interaction content mostly right.",
       examplesLow = "A low score usually means several of those core factual ingredients are wrong or missing.",
       aliases = character(0),
@@ -648,8 +646,8 @@ describeWmfmField = function(
       type = "continuous score",
       title = "Inference score",
       description = "Average quality of uncertainty handling, inferential register, and interaction-evidence calibration.",
-      values = "Numeric from 0 to 1",
-      scoring = "Higher is better. It reflects whether the explanation sounds statistically appropriate rather than over- or under-stated.",
+      values = "Numeric from 0 to 2",
+      scoring = "Higher is better. Values near 2 indicate statistically appropriate inferential language and evidence handling.",
       examplesHigh = "High when the explanation uses careful evidence language and matches the strength of interaction evidence well.",
       examplesLow = "Low when it overclaims, mishandles uncertainty, or mismatches interaction evidence.",
       aliases = character(0),
@@ -661,8 +659,8 @@ describeWmfmField = function(
       type = "continuous score",
       title = "Completeness score",
       description = "How fully the explanation covers the ingredients that ought to be discussed, such as main effects, interactions, reference structure, and uncertainty.",
-      values = "Numeric from 0 to 1",
-      scoring = "Higher is better. A low score usually indicates omission of important model features.",
+      values = "Numeric from 0 to 2",
+      scoring = "Higher is better. Values near 2 indicate that most important model features were covered.",
       examplesHigh = "High when the explanation covers main effects, relevant interactions, baseline structure, and some uncertainty.",
       examplesLow = "Low when it leaves out one or more major ingredients.",
       aliases = character(0),
@@ -674,8 +672,8 @@ describeWmfmField = function(
       type = "continuous score",
       title = "Clarity score",
       description = "How clearly the explanation is expressed, considering length, numeric expression, comparison structure, and whether the outcome or predictor is named.",
-      values = "Numeric from 0 to 1",
-      scoring = "Higher is better. It is about communicative quality rather than factual correctness alone.",
+      values = "Numeric from 0 to 2",
+      scoring = "Higher is better. Values near 2 indicate strong communicative quality rather than factual correctness alone.",
       examplesHigh = "High when the explanation is readable, appropriately sized, and clearly structured.",
       examplesLow = "Low when it is vague, confusing, missing key labels, or badly sized.",
       aliases = character(0),
@@ -687,8 +685,8 @@ describeWmfmField = function(
       type = "continuous score",
       title = "Calibration score",
       description = "How well calibrated the explanation is in tone, especially with respect to overclaiming and underclaiming.",
-      values = "Numeric from 0 to 1",
-      scoring = "Usually 1 when well calibrated, 0.5 for underclaiming, and 0 for overclaiming.",
+      values = "Numeric from 0 to 2",
+      scoring = "Usually 2 when well calibrated, 1 for underclaiming, and 0 for overclaiming.",
       examplesHigh = "High when the explanation is proportionately confident.",
       examplesLow = "Low when it says too much certainty or, less severely, hedges too weakly without proper inferential language.",
       aliases = character(0),
