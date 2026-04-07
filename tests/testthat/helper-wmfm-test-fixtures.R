@@ -1,15 +1,7 @@
 # Helper fixtures for WMFM describeField() and stability() tests
 #
-# These helpers are test-only and create the smallest realistic objects needed
+# These helpers are test-only and create small realistic objects needed
 # to exercise S3 dispatch and user-facing behaviour.
-
-`%||%` = function(x, y) {
-    if (is.null(x)) {
-        y
-    } else {
-        x
-    }
-}
 
 makeExampleWmfmRuns = function() {
     structure(
@@ -39,14 +31,12 @@ makeExampleWmfmScores = function() {
             scores = list(
                 deterministic = list(
                     list(
-                        runId = 1L,
                         factualScore = 2,
                         overallScore = 92,
                         fatalFlawDetected = FALSE,
                         overallPass = TRUE
                     ),
                     list(
-                        runId = 2L,
                         factualScore = 1,
                         overallScore = 81,
                         fatalFlawDetected = FALSE,
@@ -64,40 +54,84 @@ makeExampleWmfmScoresForStability = function() {
         list(
             methods = c("deterministic", "llm"),
             runIds = c(1L, 2L, 3L),
-            .testLongDf = data.frame(
-                method = c(
-                    "deterministic", "deterministic", "deterministic",
-                    "llm", "llm", "llm"
+            scores = list(
+                deterministic = list(
+                    list(
+                        fatalFlawDetected = FALSE,
+                        overallPass = TRUE,
+                        effectDirectionCorrect = 2,
+                        clarityAdequate = 2,
+                        comparisonStructureClear = 2,
+                        factualScore = 2.0,
+                        inferenceScore = 2.0,
+                        overallScore = 92
+                    ),
+                    list(
+                        fatalFlawDetected = FALSE,
+                        overallPass = TRUE,
+                        effectDirectionCorrect = 2,
+                        clarityAdequate = 1,
+                        comparisonStructureClear = 1,
+                        factualScore = 1.5,
+                        inferenceScore = 1.5,
+                        overallScore = 85
+                    ),
+                    list(
+                        fatalFlawDetected = TRUE,
+                        overallPass = FALSE,
+                        effectDirectionCorrect = 1,
+                        clarityAdequate = 2,
+                        comparisonStructureClear = 2,
+                        factualScore = 1.0,
+                        inferenceScore = 1.0,
+                        overallScore = 60
+                    )
                 ),
-                runId = c(1L, 2L, 3L, 1L, 2L, 3L),
-                fatalFlawDetected = c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE),
-                overallPass = c(TRUE, TRUE, FALSE, TRUE, TRUE, TRUE),
-                effectDirectionCorrect = c(2, 2, 1, 2, 2, 2),
-                clarityAdequate = c(2, 1, 2, 2, 2, 2),
-                factualScore = c(2.0, 1.5, 1.0, 2.0, 2.0, 2.0),
-                overallScore = c(92, 85, 60, 95, 95, 95),
-                stringsAsFactors = FALSE
+                llm = list(
+                    list(
+                        fatalFlawDetected = FALSE,
+                        overallPass = TRUE,
+                        effectDirectionCorrect = 2,
+                        clarityAdequate = 2,
+                        comparisonStructureClear = 2,
+                        factualScore = 2.0,
+                        inferenceScore = 2.0,
+                        overallScore = 95
+                    ),
+                    list(
+                        fatalFlawDetected = FALSE,
+                        overallPass = TRUE,
+                        effectDirectionCorrect = 2,
+                        clarityAdequate = 2,
+                        comparisonStructureClear = 2,
+                        factualScore = 2.0,
+                        inferenceScore = 2.0,
+                        overallScore = 95
+                    ),
+                    list(
+                        fatalFlawDetected = FALSE,
+                        overallPass = TRUE,
+                        effectDirectionCorrect = 2,
+                        clarityAdequate = 2,
+                        comparisonStructureClear = 2,
+                        factualScore = 2.0,
+                        inferenceScore = 2.0,
+                        overallScore = 95
+                    )
+                )
             )
         ),
         class = "wmfmScores"
     )
 }
 
-makeEmptyLongWmfmScores = function() {
+makeEmptyWmfmScoresForStability = function() {
     structure(
         list(
             methods = c("deterministic"),
             runIds = integer(0),
-            .testLongDf = data.frame()
+            scores = list(deterministic = list())
         ),
         class = "wmfmScores"
     )
-}
-
-as.data.frame.wmfmScores = function(x, ..., format = NULL) {
-    if (!identical(format, "long")) {
-        stop("Test helper only supports format = 'long'.", call. = FALSE)
-    }
-
-    x$.testLongDf %||% data.frame()
 }

@@ -1,6 +1,8 @@
 test_that("stability dispatches to the wmfmScores method", {
     scores = makeExampleWmfmScoresForStability()
 
+    expect_equal(nrow(as.data.frame(scores, format = "long")), 6)
+
     result = stability(scores)
 
     expect_s3_class(result, "wmfmScoreStability")
@@ -15,8 +17,10 @@ test_that("stability errors cleanly for an unsupported class", {
     )
 })
 
-test_that("stability.wmfmScores errors when no long scoring rows are available", {
-    scores = makeEmptyLongWmfmScores()
+test_that("stability.wmfmScores errors when no scoring rows are available", {
+    scores = makeEmptyWmfmScoresForStability()
+
+    expect_equal(nrow(as.data.frame(scores, format = "long")), 0)
 
     expect_error(
         stability(scores),
@@ -134,9 +138,16 @@ test_that("stability returns an overall summary for overallScore when available"
     expect_true(all(result$overallSummary$overallScore$metric == "overallScore"))
 })
 
-test_that("stability skips metrics that are absent from the long data", {
+test_that("stability skips metrics that are absent from stored score records", {
     scores = makeExampleWmfmScoresForStability()
-    scores$.testLongDf$comparisonStructureClear = NULL
+
+    for (i in seq_along(scores$scores$deterministic)) {
+        scores$scores$deterministic[[i]]$comparisonStructureClear = NULL
+    }
+
+    for (i in seq_along(scores$scores$llm)) {
+        scores$scores$llm[[i]]$comparisonStructureClear = NULL
+    }
 
     result = stability(scores)
 
@@ -145,7 +156,10 @@ test_that("stability skips metrics that are absent from the long data", {
 
 test_that("stability drops all-NA values within a metric", {
     scores = makeExampleWmfmScoresForStability()
-    scores$.testLongDf$clarityAdequate[scores$.testLongDf$method == "llm"] = NA
+
+    for (i in seq_along(scores$scores$llm)) {
+        scores$scores$llm[[i]]$clarityAdequate = NA_real_
+    }
 
     result = stability(scores)
     clarityRows = result$ordinalStability[
