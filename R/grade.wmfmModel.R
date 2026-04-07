@@ -2,13 +2,14 @@
 #'
 #' Creates a `wmfmGrade` object from a prepared `wmfmModel` object and a
 #' user-supplied explanation. By default the returned object is immediately
-#' scored using the existing deterministic WMFM rubric.
+#' scored using either the deterministic or LLM WMFM grading rubric.
 #'
 #' @param x A `wmfmModel` object, typically created by `runModel()`.
 #' @param explanation Character scalar giving the explanation to grade.
 #' @param modelAnswer Optional character scalar giving a reference answer.
 #' @param score Logical. Should the returned `wmfmGrade` object be scored
 #'   immediately? Defaults to `TRUE`.
+#' @param method Character. One of `"deterministic"` or `"llm"`.
 #' @param scoreScale Numeric scalar giving the displayed mark scale. Defaults to
 #'   `10`.
 #' @param ... Additional arguments passed to `score.wmfmGrade()`.
@@ -20,6 +21,7 @@ grade.wmfmModel = function(
     explanation,
     modelAnswer = NULL,
     score = TRUE,
+    method = c("deterministic", "llm"),
     scoreScale = 10,
     ...
 ) {
@@ -35,6 +37,8 @@ grade.wmfmModel = function(
   if (!is.logical(score) || length(score) != 1 || is.na(score)) {
     stop("`score` must be TRUE or FALSE.", call. = FALSE)
   }
+
+  method = match.arg(method)
 
   studentRecord = buildWmfmGradeRunRecord(
     x = x,
@@ -66,7 +70,7 @@ grade.wmfmModel = function(
   )
 
   if (isTRUE(score)) {
-    out = score(out, ...)
+    out = score(out, method = method, ...)
   }
 
   out

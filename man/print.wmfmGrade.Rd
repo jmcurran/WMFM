@@ -4,10 +4,13 @@
 \alias{print.wmfmGrade}
 \title{Print a WMFM grade object}
 \usage{
-\method{print}{wmfmGrade}(x, digits = 2, maxRows = 6, ...)
+\method{print}{wmfmGrade}(x, method = NULL, digits = 2, maxRows = 6, ...)
 }
 \arguments{
 \item{x}{A \code{wmfmGrade} object.}
+
+\item{method}{Optional character. One of \code{"deterministic"} or \code{"llm"}.
+When omitted, the most recently scored method is shown if available.}
 
 \item{digits}{Integer number of digits to print for numeric values.}
 

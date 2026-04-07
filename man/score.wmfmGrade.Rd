@@ -6,31 +6,48 @@
 \usage{
 \method{score}{wmfmGrade}(
   x,
+  method = c("deterministic", "llm"),
   preferredMinWords = 80L,
   preferredMaxWords = 220L,
   fatalFlawCap = 40,
   passThreshold = 65,
+  chat = NULL,
+  useCache = FALSE,
+  showProgress = TRUE,
+  verbose = FALSE,
   ...
 )
 }
 \arguments{
 \item{x}{A \code{wmfmGrade} object.}
 
-\item{preferredMinWords}{Integer. Passed to \code{scoreWmfmRepeatedRuns()}.}
+\item{method}{Character. One of \code{"deterministic"} or \code{"llm"}.}
 
-\item{preferredMaxWords}{Integer. Passed to \code{scoreWmfmRepeatedRuns()}.}
+\item{preferredMinWords}{Integer. Passed to deterministic scoring.}
 
-\item{fatalFlawCap}{Numeric. Passed to \code{scoreWmfmRepeatedRuns()}.}
+\item{preferredMaxWords}{Integer. Passed to deterministic scoring.}
 
-\item{passThreshold}{Numeric. Passed to \code{scoreWmfmRepeatedRuns()}.}
+\item{fatalFlawCap}{Numeric. Passed to deterministic scoring.}
 
-\item{...}{Additional arguments passed to \code{scoreWmfmRepeatedRuns()}.}
+\item{passThreshold}{Numeric. Passed to deterministic scoring.}
+
+\item{chat}{Optional chat provider object. Used for LLM scoring.}
+
+\item{useCache}{Logical. Passed to LLM scoring.}
+
+\item{showProgress}{Logical. Should progress messages be shown for LLM
+scoring?}
+
+\item{verbose}{Logical. Passed to LLM scoring.}
+
+\item{...}{Additional arguments passed to the relevant scoring helper.}
 }
 \value{
 A scored \code{wmfmGrade} object.
 }
 \description{
-Scores a \code{wmfmGrade} object using the existing deterministic WMFM scoring
-rubric. The candidate explanation is always scored. If a reference answer is
-present, it is scored separately and used to enrich feedback.
+Scores a \code{wmfmGrade} object using either the deterministic WMFM rubric or an
+LLM-based scoring rubric. The candidate explanation is always scored. If a
+reference answer is present, it is scored separately and used to enrich
+feedback.
 }

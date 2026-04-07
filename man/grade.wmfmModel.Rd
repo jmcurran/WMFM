@@ -4,7 +4,15 @@
 \alias{grade.wmfmModel}
 \title{Grade an explanation against a WMFM model}
 \usage{
-\method{grade}{wmfmModel}(x, explanation, modelAnswer = NULL, score = TRUE, scoreScale = 10, ...)
+\method{grade}{wmfmModel}(
+  x,
+  explanation,
+  modelAnswer = NULL,
+  score = TRUE,
+  method = c("deterministic", "llm"),
+  scoreScale = 10,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{wmfmModel} object, typically created by \code{runModel()}.}
@@ -15,6 +23,8 @@
 
 \item{score}{Logical. Should the returned \code{wmfmGrade} object be scored
 immediately? Defaults to \code{TRUE}.}
+
+\item{method}{Character. One of \code{"deterministic"} or \code{"llm"}.}
 
 \item{scoreScale}{Numeric scalar giving the displayed mark scale. Defaults to
 \code{10}.}
@@ -27,5 +37,5 @@ An object of class \code{wmfmGrade}.
 \description{
 Creates a \code{wmfmGrade} object from a prepared \code{wmfmModel} object and a
 user-supplied explanation. By default the returned object is immediately
-scored using the existing deterministic WMFM rubric.
+scored using either the deterministic or LLM WMFM grading rubric.
 }

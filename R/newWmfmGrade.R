@@ -63,6 +63,24 @@ newWmfmGrade = function(
     stop("`meta` must be a list.", call. = FALSE)
   }
 
+  defaultScores = list(
+    byMethod = list(),
+    student = NULL,
+    modelAnswer = NULL,
+    metricSummary = NULL,
+    mark = NA_real_,
+    overallScore = NA_real_
+  )
+
+  defaultFeedback = list(
+    byMethod = list(),
+    whereMarksLost = NULL,
+    strengths = NULL,
+    weaknesses = NULL,
+    missingElements = NULL,
+    modelAnswerComparison = NULL
+  )
+
   out = list(
     model = x,
     input = list(
@@ -77,31 +95,15 @@ newWmfmGrade = function(
       ),
       records
     ),
-    scores = utils::modifyList(
-      list(
-        student = NULL,
-        modelAnswer = NULL,
-        metricSummary = NULL,
-        mark = NA_real_,
-        overallScore = NA_real_
-      ),
-      scores
-    ),
-    feedback = utils::modifyList(
-      list(
-        whereMarksLost = NULL,
-        strengths = NULL,
-        weaknesses = NULL,
-        missingElements = NULL,
-        modelAnswerComparison = NULL
-      ),
-      feedback
-    ),
+    scores = utils::modifyList(defaultScores, scores),
+    feedback = utils::modifyList(defaultFeedback, feedback),
     meta = utils::modifyList(
       list(
         createdAt = as.character(Sys.time()),
         sourceClass = class(x)[1],
-        scored = FALSE
+        scored = FALSE,
+        scoredMethods = character(0),
+        lastScoredMethod = NA_character_
       ),
       meta
     )

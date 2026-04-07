@@ -52,6 +52,7 @@ extractWmfmScoreFields = function(x) {
     "llmScoringModel",
     "llmScoringRaw",
     "llmScoringSummary",
+    "llmFieldReasons",
     "primaryScoringMethod"
   )
 
