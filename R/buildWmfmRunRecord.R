@@ -179,7 +179,7 @@ buildWmfmRunRecord = function(
 
   classifyInteractionSubstantiveClaim = function(text, hasInteractionTerms) {
     if (!isTRUE(hasInteractionTerms)) {
-      return("not_applicable")
+      return(NA_character_)
     }
 
     if (is.na(text) || !nzchar(trimws(text))) {
