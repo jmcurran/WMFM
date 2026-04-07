@@ -69,7 +69,7 @@ test_that("buildMetricEvidenceSummary flags missed numeric content when comparis
     metricDf = data.frame(
         runId = 1:4,
         disagrees = c(TRUE, TRUE, TRUE, TRUE),
-        effectScaleClaim = c("additive", "not_stated", "not_stated", "not_stated"),
+        effectScaleClaim = c("additive", "additive", "multiplicative", "multiplicative"),
         percentLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
         comparisonLanguageMention = c(TRUE, TRUE, TRUE, FALSE),
         conditionalLanguageMention = c(FALSE, FALSE, FALSE, FALSE),
