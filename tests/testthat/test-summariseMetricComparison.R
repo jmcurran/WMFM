@@ -85,7 +85,7 @@ test_that("summariseMetricComparison can order by ease", {
 
     result = summariseMetricComparison(scores, comparison, orderBy = "ease")
 
-    expect_equal(result$metric, c("factualScore", "overallScore", "clarityScore"))
+    expect_equal(result$metric, c("clarityScore", "factualScore", "overallScore"))
 })
 
 test_that("summariseMetricComparison validates inputs and options", {
