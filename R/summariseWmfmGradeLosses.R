@@ -154,8 +154,23 @@ summariseWmfmGradeLosses = function(
   }
 
   hasNumericLiteral = grepl("\\b\\d+(\\.\\d+)?\\b", explanationText, perl = TRUE)
-  hasRangeIndicator = grepl("\\bbetween\\b|\\bas low as\\b|\\bas high as\\b|\\bfrom\\b.+\\bto\\b|\\b\\d+(\\.\\d+)?\\s*[-\\u2013\\u2014]\\s*\\d+(\\.\\d+)?\\b", explanationText, ignore.case = TRUE, perl = TRUE)
-  mentionsOutcomeScale = grepl("0\\s*[-\\u2013\\u2014]?\\s*100|out of 100|marks?\\b|points?\\b|percent|percentage|probabilit|odds", explanationText, ignore.case = TRUE, perl = TRUE)
+
+  # detect range language, including hyphen, en-dash (U+2013) and em-dash (U+2014)
+  hasRangeIndicator = grepl(
+    "\\bbetween\\b|\\bas low as\\b|\\bas high as\\b|\\bfrom\\b.+?\\bto\\b|\\b\\d+(\\.\\d+)?\\s*(?:-|\\x{2013}|\\x{2014})\\s*\\d+(\\.\\d+)?\\b",
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
+  # detect explicit outcome scale mentions, allowing hyphen, en-dash and em-dash
+  mentionsOutcomeScale = grepl(
+    "0\\s*(?:-|\\x{2013}|\\x{2014})?\\s*100|out of 100|marks?\\b|points?\\b|percent|percentage|probabilit|odds",
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
   effectScaleClaim = if ("effectScaleClaim" %in% names(studentScoreDf)) as.character(studentScoreDf$effectScaleClaim[1]) else NA_character_
   effectScaleClaim[is.na(effectScaleClaim)] = ""
   numericExpressionScore = if ("numericExpressionAdequate" %in% names(studentScoreDf)) suppressWarnings(as.numeric(studentScoreDf$numericExpressionAdequate[1])) else NA_real_
