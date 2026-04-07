@@ -10,28 +10,12 @@ getWmfmClaimColorMap()
 A named character vector of hexadecimal colours.
 }
 \description{
-Returns a named character vector of colours for semantic values used in raw
-\code{wmfmRuns} claim-profile heatmaps.
+Returns a named character vector of colours for semantic values used in WMFM
+raw repeated-run claim-profile heatmaps.
 }
 \details{
-The palette is designed for the current raw-only repeated-run workflow. It
-aims to keep broad semantic groups visually distinct while avoiding overly
-similar shades within the same heatmap:
-
-\itemize{
-\item binary presence or absence values use contrasting teal and orange,
-\item directional or scale claims use clearly separated green, red-orange,
-blue, and purple hues,
-\item inferential and uncertainty-related values use distinct blues and
-mustard tones,
-\item structural values such as \code{none}, \code{not_stated}, and
-\code{not_applicable} use separated greys, and
-\item true missingness uses white and is intended to be overlaid with an X
-in the heatmap.
-}
-
-The returned vector can be used directly as a lookup table before assigning
-fallback colours to previously unseen values.
+The palette is designed for raw extracted claim fields and aims to keep
+semantically different values visually distinct.
 }
 \examples{
 getWmfmClaimColorMap()

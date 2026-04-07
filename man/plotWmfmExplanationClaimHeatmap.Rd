@@ -12,6 +12,7 @@ plotWmfmExplanationClaimHeatmap(
   xlab = NULL,
   ylab = "Run ID",
   prettyFieldLabels = TRUE,
+  fieldOrder = c("semantic", "purity"),
   xLabelAngle = 45,
   includeLegendBreaks = FALSE
 )
@@ -19,8 +20,7 @@ plotWmfmExplanationClaimHeatmap(
 \arguments{
 \item{x}{A \code{wmfmRuns} object.}
 
-\item{fieldColumns}{Optional character vector of raw claim fields to plot.
-If \code{NULL}, a default raw-only claim profile is used.}
+\item{fieldColumns}{Optional character vector of raw claim fields to plot.}
 
 \item{naLabel}{Character label used for missing values.}
 
@@ -33,6 +33,8 @@ If \code{NULL}, a default raw-only claim profile is used.}
 \item{prettyFieldLabels}{Logical. Should field names be prettified for
 display?}
 
+\item{fieldOrder}{Character. One of \code{"semantic"} or \code{"purity"}.}
+
 \item{xLabelAngle}{Numeric rotation angle for x-axis tick labels.}
 
 \item{includeLegendBreaks}{Logical. Passed to \code{orderWmfmLegendValues()}.}
@@ -43,7 +45,4 @@ A \code{ggplot2} object.
 \description{
 Draws a run-by-field heatmap for a \code{wmfmRuns} object using raw extracted
 claim fields only. Rows represent runs and columns represent claim fields.
-This function is intended for visualising run-to-run variation in
-interpretation patterns and no longer supports judged fields or aggregate
-scores.
 }

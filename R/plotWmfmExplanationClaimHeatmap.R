@@ -2,19 +2,16 @@
 #'
 #' Draws a run-by-field heatmap for a `wmfmRuns` object using raw extracted
 #' claim fields only. Rows represent runs and columns represent claim fields.
-#' This function is intended for visualising run-to-run variation in
-#' interpretation patterns and no longer supports judged fields or aggregate
-#' scores.
 #'
 #' @param x A `wmfmRuns` object.
 #' @param fieldColumns Optional character vector of raw claim fields to plot.
-#'   If `NULL`, a default raw-only claim profile is used.
 #' @param naLabel Character label used for missing values.
 #' @param main Character plot title.
 #' @param xlab Character x-axis label.
 #' @param ylab Character y-axis label.
 #' @param prettyFieldLabels Logical. Should field names be prettified for
 #'   display?
+#' @param fieldOrder Character. One of `"semantic"` or `"purity"`.
 #' @param xLabelAngle Numeric rotation angle for x-axis tick labels.
 #' @param includeLegendBreaks Logical. Passed to `orderWmfmLegendValues()`.
 #'
@@ -30,14 +27,18 @@ plotWmfmExplanationClaimHeatmap = function(
     xlab = NULL,
     ylab = "Run ID",
     prettyFieldLabels = TRUE,
+    fieldOrder = c("semantic", "purity"),
     xLabelAngle = 45,
     includeLegendBreaks = FALSE
 ) {
+  fieldOrder = match.arg(fieldOrder)
+
   plotData = getWmfmRunsClaimProfileData(
     x = x,
     fieldColumns = fieldColumns,
     naLabel = naLabel,
-    prettyFieldLabels = prettyFieldLabels
+    prettyFieldLabels = prettyFieldLabels,
+    fieldOrder = fieldOrder
   )
 
   legendValues = unique(plotData$value)

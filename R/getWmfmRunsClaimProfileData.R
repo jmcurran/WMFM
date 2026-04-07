@@ -4,7 +4,7 @@
 #' into long format for heatmap plotting.
 #'
 #' Runs are intended to be shown on rows and claim fields on columns. Runs are
-#' ordered by run purity and fields are ordered by field purity.
+#' ordered by run purity. Fields can be ordered semantically or by field purity.
 #'
 #' @param x A `wmfmRuns` object.
 #' @param fieldColumns Optional character vector of raw claim fields to include.
@@ -12,6 +12,7 @@
 #' @param naLabel Character label used for missing values.
 #' @param prettyFieldLabels Logical. Should field names be converted to more
 #'   readable display labels?
+#' @param fieldOrder Character. One of `"semantic"` or `"purity"`.
 #'
 #' @return A data frame with columns `runId`, `field`, `fieldLabel`, `value`,
 #'   `modalValue`, `fieldPurity`, and `runPurity`.
@@ -20,7 +21,8 @@ getWmfmRunsClaimProfileData = function(
     x,
     fieldColumns = NULL,
     naLabel = "(missing)",
-    prettyFieldLabels = TRUE
+    prettyFieldLabels = TRUE,
+    fieldOrder = c("semantic", "purity")
 ) {
   coerceFieldColumn = function(x, naLabel) {
     if (is.logical(x)) {
@@ -62,6 +64,8 @@ getWmfmRunsClaimProfileData = function(
     tab = sort(table(xNoMissing), decreasing = TRUE)
     names(tab)[1]
   }
+
+  fieldOrder = match.arg(fieldOrder)
 
   if (!inherits(x, "wmfmRuns")) {
     stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
@@ -134,6 +138,17 @@ getWmfmRunsClaimProfileData = function(
     )
   )
 
+  fieldKeep = vapply(
+    split(longDf$value, longDf$field),
+    function(values) {
+      any(values != naLabel, na.rm = TRUE)
+    },
+    logical(1)
+  )
+
+  keepFields = names(fieldKeep)[fieldKeep]
+  longDf = longDf[longDf$field %in% keepFields, , drop = FALSE]
+
   fieldStats = do.call(
     rbind,
     lapply(
@@ -195,23 +210,19 @@ getWmfmRunsClaimProfileData = function(
     sort = FALSE
   )
 
-  # Drop fields that are entirely missing
-  fieldKeep = vapply(
-    split(longDf$value, longDf$field),
-    function(values) {
-      any(values != naLabel, na.rm = TRUE)
-    },
-    logical(1)
-  )
+  if (identical(fieldOrder, "semantic")) {
+    fieldOrderValues = fieldColumns[fieldColumns %in% unique(longDf$field)]
+    fieldOrderLabels = unique(longDf[, c("field", "fieldLabel")])
+    fieldOrderLabels = fieldOrderLabels[match(fieldOrderValues, fieldOrderLabels$field), "fieldLabel"]
+  } else {
+    fieldOrderLabels = fieldStats$fieldLabel[
+      order(fieldStats$fieldPurity, fieldStats$fieldLabel)
+    ]
+  }
 
-  keepFields = names(fieldKeep)[fieldKeep]
-
-  longDf = longDf[longDf$field %in% keepFields, , drop = FALSE]
-
-  fieldOrder = fieldStats$fieldLabel[order(fieldStats$fieldPurity, fieldStats$fieldLabel)]
   runOrder = runStats$runId[order(-runStats$runPurity, runStats$runId)]
 
-  longDf$fieldLabel = factor(longDf$fieldLabel, levels = fieldOrder)
+  longDf$fieldLabel = factor(longDf$fieldLabel, levels = fieldOrderLabels)
   longDf$runId = factor(longDf$runId, levels = rev(runOrder))
 
   longDf[order(longDf$runId, longDf$fieldLabel), ]

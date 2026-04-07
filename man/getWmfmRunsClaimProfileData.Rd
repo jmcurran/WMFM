@@ -8,7 +8,8 @@ getWmfmRunsClaimProfileData(
   x,
   fieldColumns = NULL,
   naLabel = "(missing)",
-  prettyFieldLabels = TRUE
+  prettyFieldLabels = TRUE,
+  fieldOrder = c("semantic", "purity")
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ If \code{NULL}, a default raw-only claim profile is used.}
 
 \item{prettyFieldLabels}{Logical. Should field names be converted to more
 readable display labels?}
+
+\item{fieldOrder}{Character. One of \code{"semantic"} or \code{"purity"}.}
 }
 \value{
 A data frame with columns \code{runId}, \code{field}, \code{fieldLabel}, \code{value},
@@ -32,5 +35,5 @@ into long format for heatmap plotting.
 }
 \details{
 Runs are intended to be shown on rows and claim fields on columns. Runs are
-ordered by run purity and fields are ordered by field purity.
+ordered by run purity. Fields can be ordered semantically or by field purity.
 }
