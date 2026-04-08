@@ -244,9 +244,23 @@ appUI = function() {
           multiple = TRUE,
           open = NULL,
           accordion_panel(
-            "Regression table",
-            value = "reg_table",
-            verbatimTextOutput("model_output")
+            "Model outputs",
+            value = "model_output_tabs",
+            tabsetPanel(
+              id = "fitted_model_output_tabs",
+              tabPanel(
+                "Summary",
+                verbatimTextOutput("model_output")
+              ),
+              tabPanel(
+                "ANOVA",
+                verbatimTextOutput("model_anova")
+              ),
+              tabPanel(
+                "Confidence intervals",
+                verbatimTextOutput("model_confint")
+              )
+            )
           ),
           accordion_panel(
             "Model explanation",

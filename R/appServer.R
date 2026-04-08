@@ -23,7 +23,7 @@
 #' @importFrom shiny isolate validate need freezeReactiveValue
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
-#' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
+#' @importFrom stats anova as.formula family formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit setNames
 #' @importFrom grDevices replayPlot
 #' @importFrom stats confint density median quantile sd var
@@ -3072,7 +3072,7 @@ $$")
   })
 
   # -------------------------------------------------------------------
-  # Display model summary (regression table)
+  # Display model summary (trimmed to the coefficient section)
   # -------------------------------------------------------------------
   output$model_output = renderPrint({
     m = modelFit()
@@ -3082,12 +3082,53 @@ $$")
     }
 
     out = capture.output(summary(m))
-
-    # Find first occurrence of "Coefficients:"
     idx = grep("^Coefficients:", out)
 
-    # Keep that line and everything after it
-    out = out[idx:length(out)]
+    if (length(idx) > 0) {
+      out = out[idx[1]:length(out)]
+    }
+
+    cat(out, sep = "\n")
+  })
+
+  # -------------------------------------------------------------------
+  # Display ANOVA or Analysis of Deviance
+  # -------------------------------------------------------------------
+  output$model_anova = renderPrint({
+    m = modelFit()
+    if (is.null(m)) {
+      cat("No model fitted yet.")
+      return()
+    }
+
+    out =
+      if (inherits(m, "glm") && (m$family$family %in% c("binomial", "poisson"))) {
+        capture.output(anova(m, test = "Chisq"))
+      } else {
+        capture.output(anova(m))
+      }
+
+    cat(out, sep = "\n")
+  })
+
+  # -------------------------------------------------------------------
+  # Display coefficient confidence intervals
+  # -------------------------------------------------------------------
+  output$model_confint = renderPrint({
+    m = modelFit()
+    if (is.null(m)) {
+      cat("No model fitted yet.")
+      return()
+    }
+
+    out = tryCatch(
+      {
+        capture.output(print(confint(m)))
+      },
+      error = function(e) {
+        paste0("Confidence intervals are not available: ", conditionMessage(e))
+      }
+    )
 
     cat(out, sep = "\n")
   })
