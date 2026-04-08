@@ -247,7 +247,6 @@ appUI = function() {
             "Model outputs",
             value = "model_output_tabs",
             tabsetPanel(
-              id = "fitted_model_output_tabs",
               tabPanel(
                 "Summary",
                 verbatimTextOutput("model_output")
@@ -258,7 +257,15 @@ appUI = function() {
               ),
               tabPanel(
                 "Confidence intervals",
-                verbatimTextOutput("model_confint")
+                uiOutput("modelConfintNoteUi"),
+                tableOutput("modelConfintTable"),
+                hr(),
+                h5("How these intervals are computed"),
+                helpText(
+                  "Use these details when you want to show students how a displayed interval",
+                  "comes from either a single coefficient or a linear combination of coefficients."
+                ),
+                uiOutput("modelConfintDetailsUi")
               )
             )
           ),

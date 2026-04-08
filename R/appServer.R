@@ -3071,8 +3071,43 @@ $$")
     )
   })
 
+  modelConfintInfo = reactive({
+    m = modelFit()
+    req(m)
+
+    buildModelConfidenceIntervalData(
+      model = m,
+      level = 0.95,
+      numericReference = "mean"
+    )
+  })
+
+  output$modelConfintNoteUi = renderUI({
+    info = modelConfintInfo()
+
+    if (is.null(info$note) || !nzchar(info$note)) {
+      return(NULL)
+    }
+
+    tags$div(
+      class = "alert alert-info",
+      style = "margin-top: 10px; margin-bottom: 10px;",
+      info$note
+    )
+  })
+
+  output$modelConfintTable = renderTable({
+    info = modelConfintInfo()
+    info$table
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$modelConfintDetailsUi = renderUI({
+    info = modelConfintInfo()
+    renderModelConfidenceIntervalDetailsUi(info$details)
+  })
+
   # -------------------------------------------------------------------
-  # Display model summary (trimmed to the coefficient section)
+  # Display model summary (regression table)
   # -------------------------------------------------------------------
   output$model_output = renderPrint({
     m = modelFit()
@@ -3082,18 +3117,19 @@ $$")
     }
 
     out = capture.output(summary(m))
+
     idx = grep("^Coefficients:", out)
 
-    if (length(idx) > 0) {
-      out = out[idx[1]:length(out)]
+    if (length(idx) == 0) {
+      cat(out, sep = "\n")
+      return()
     }
+
+    out = out[idx:length(out)]
 
     cat(out, sep = "\n")
   })
 
-  # -------------------------------------------------------------------
-  # Display ANOVA or Analysis of Deviance
-  # -------------------------------------------------------------------
   output$model_anova = renderPrint({
     m = modelFit()
     if (is.null(m)) {
@@ -3101,34 +3137,11 @@ $$")
       return()
     }
 
-    out =
-      if (inherits(m, "glm") && (m$family$family %in% c("binomial", "poisson"))) {
-        capture.output(anova(m, test = "Chisq"))
-      } else {
-        capture.output(anova(m))
-      }
-
-    cat(out, sep = "\n")
-  })
-
-  # -------------------------------------------------------------------
-  # Display coefficient confidence intervals
-  # -------------------------------------------------------------------
-  output$model_confint = renderPrint({
-    m = modelFit()
-    if (is.null(m)) {
-      cat("No model fitted yet.")
-      return()
+    out = if (inherits(m, "glm") && m$family$family %in% c("binomial", "poisson")) {
+      capture.output(anova(m, test = "Chisq"))
+    } else {
+      capture.output(anova(m))
     }
-
-    out = tryCatch(
-      {
-        capture.output(print(confint(m)))
-      },
-      error = function(e) {
-        paste0("Confidence intervals are not available: ", conditionMessage(e))
-      }
-    )
 
     cat(out, sep = "\n")
   })
