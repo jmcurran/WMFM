@@ -13,10 +13,13 @@ testthat::test_that("runExample can be unit-tested offline by mocking the expens
         dataContext = "Synthetic context"
       )
     },
-    runWMFMModelDebug = function(...) {
+    runModel = function(...) {
       list(
-        explanation = "Attendance is associated with higher exam scores.",
-        equations = "Exam = 6.62 + 3.52 * Attend",
+        explanation = paste(
+          "Attendance is associated with higher exam scores.",
+          "The fitted relationship is positive."
+        ),
+        equations = "Exam = 10.00 + 2.00 * Attend",
         interactionTerms = character(0),
         interactionMinPValue = NA_real_
       )

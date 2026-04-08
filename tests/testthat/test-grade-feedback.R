@@ -1,22 +1,17 @@
 test_that("score.wmfmGrade returns structured feedback sections", {
-  skip_if_not(exists("runModel", mode = "function"))
   skip_if_not(exists("grade", mode = "function"))
 
-  m = runModel(
-    data = mtcars,
-    formula = mpg ~ wt,
-    modelType = "lm",
-    printOutput = FALSE
-  )
+  m = makeOfflineWmfmModel()
 
   g = grade(
     m,
-    explanation = "Heavier cars tend to have lower mpg.",
+    explanation = "Higher x is associated with higher y.",
     modelAnswer = paste(
-      "Heavier cars tend to have lower expected miles per gallon.",
-      "The fitted relationship is negative.",
+      "Higher x is associated with higher expected y.",
+      "The fitted relationship is positive.",
       "This is an association rather than a causal claim."
-    )
+    ),
+    score = TRUE
   )
 
   expect_s3_class(g, "wmfmGrade")

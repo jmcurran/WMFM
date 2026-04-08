@@ -12,6 +12,9 @@
 #' @param method Character. One of `"deterministic"`, `"llm"`, or `"both"`.
 #' @param autoScore Logical. Should the returned object be scored immediately?
 #'   Defaults to `TRUE`.
+#' @param score Deprecated logical alias for `autoScore`, retained for backward
+#'   compatibility. When supplied, its logical value is used for
+#'   `autoScore`.
 #' @param scoreScale Numeric scalar giving the displayed mark scale. Defaults to
 #'   `10`.
 #' @param nLlm Integer. Number of repeated LLM gradings per explanation when
@@ -30,28 +33,13 @@ grade.wmfmModel = function(
     modelAnswer = NULL,
     method = c("deterministic", "llm", "both"),
     autoScore = TRUE,
+    score = NULL,
     scoreScale = 10,
     nLlm = 1L,
     confirmLargeLlmJob = FALSE,
     maxLlmJobsWithoutConfirmation = 20L,
     ...
 ) {
-
-  dots = list(...)
-
-  if ("score" %in% names(dots)) {
-    legacyScore = dots[["score"]]
-
-    if (!is.logical(legacyScore) || length(legacyScore) != 1 || is.na(legacyScore)) {
-      stop(
-        "`score` must be TRUE or FALSE when used as a legacy alias for `autoScore`.",
-        call. = FALSE
-      )
-    }
-
-    autoScore = legacyScore
-    dots[["score"]] = NULL
-  }
 
   if (!inherits(x, "wmfmModel")) {
     stop("`x` must inherit from `wmfmModel`.", call. = FALSE)
@@ -60,6 +48,13 @@ grade.wmfmModel = function(
   if (!is.null(modelAnswer) &&
       (!is.character(modelAnswer) || length(modelAnswer) != 1 || is.na(modelAnswer))) {
     stop("`modelAnswer` must be NULL or a single non-missing character string.", call. = FALSE)
+  }
+
+  if (!is.null(score)) {
+    if (!is.logical(score) || length(score) != 1 || is.na(score)) {
+      stop("`score` must be TRUE or FALSE when supplied.", call. = FALSE)
+    }
+    autoScore = isTRUE(score)
   }
 
   if (!is.logical(autoScore) || length(autoScore) != 1 || is.na(autoScore)) {
@@ -138,10 +133,10 @@ grade.wmfmModel = function(
 
     if (isTRUE(autoScore)) {
       if (identical(method, "both")) {
-        out = do.call(score, c(list(x = out, method = "deterministic"), dots))
-        out = do.call(score, c(list(x = out, method = "llm", nLlm = nLlm), dots))
+        out = score(out, method = "deterministic", ...)
+        out = score(out, method = "llm", nLlm = nLlm, ...)
       } else {
-        out = do.call(score, c(list(x = out, method = method, nLlm = nLlm), dots))
+        out = score(out, method = method, nLlm = nLlm, ...)
       }
     }
 
@@ -166,18 +161,13 @@ grade.wmfmModel = function(
   )
 
   if (isTRUE(autoScore)) {
-    out = do.call(
-      score,
-      c(
-        list(
-          x = out,
-          method = method,
-          nLlm = nLlm,
-          confirmLargeLlmJob = confirmLargeLlmJob,
-          maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation
-        ),
-        dots
-      )
+    out = score(
+      out,
+      method = method,
+      nLlm = nLlm,
+      confirmLargeLlmJob = confirmLargeLlmJob,
+      maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation,
+      ...
     )
   }
 

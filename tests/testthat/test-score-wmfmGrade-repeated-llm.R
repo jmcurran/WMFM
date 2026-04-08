@@ -1,45 +1,13 @@
 test_that("score.wmfmGrade stores repeated LLM runs and timing", {
-  df = data.frame(
-    y = c(1, 2, 3, 4, 5),
-    x = c(0, 1, 2, 3, 4)
+  wm = makeOfflineWmfmModel()
+
+  parsed = makeValidParsedScores()
+  parsed$overallScore = 85
+  parsed$llmScoringSummary = "Mock score."
+
+  fakeChat = makeFakeChat(
+    responseText = jsonlite::toJSON(parsed, auto_unbox = TRUE, null = "null")
   )
-
-  model = stats::lm(y ~ x, data = df)
-
-  wm = newWmfmModel(
-    model = model,
-    formula = y ~ x,
-    modelType = "lm",
-    data = df,
-    equations = "y = a + bx",
-    explanation = "Each one-unit increase in x is associated with an average increase in y."
-  )
-
-  fakeChat = makeFakeChat(responseText = paste0(
-    "{",
-    "\"effectDirectionCorrect\": 2,",
-    "\"effectScaleAppropriate\": 2,",
-    "\"referenceGroupHandledCorrectly\": 2,",
-    "\"interactionCoverageAdequate\": 2,",
-    "\"interactionSubstantiveCorrect\": 2,",
-    "\"uncertaintyHandlingAppropriate\": 1,",
-    "\"inferentialRegisterAppropriate\": 2,",
-    "\"mainEffectCoverageAdequate\": 2,",
-    "\"referenceGroupCoverageAdequate\": 2,",
-    "\"clarityAdequate\": 2,",
-    "\"numericExpressionAdequate\": 1,",
-    "\"comparisonStructureClear\": 2,",
-    "\"fatalFlawDetected\": false,",
-    "\"factualScore\": 1.5,",
-    "\"inferenceScore\": 2.0,",
-    "\"completenessScore\": 1.5,",
-    "\"clarityScore\": 2.0,",
-    "\"calibrationScore\": 2.0,",
-    "\"overallScore\": 85.0,",
-    "\"overallPass\": true,",
-    "\"llmScoringSummary\": \"Mock score.\"",
-    "}"
-  ))
 
   g = grade(
     wm,
