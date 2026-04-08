@@ -9,12 +9,12 @@ compare(x, y = NULL, ...)
 \arguments{
 \item{x}{An object to compare.}
 
-\item{y}{Optional second object.}
+\item{y}{Optional second object to compare.}
 
 \item{...}{Additional arguments passed to methods.}
 }
 \value{
-Method-specific comparison output.
+Method specific comparison object.
 }
 \description{
 Generic for comparing WMFM objects.

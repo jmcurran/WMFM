@@ -40,6 +40,7 @@ compare.wmfmGrade = function(
 
   extractSingleMethod = function(g) {
     availableMethods = names(g$scores$byMethod %||% list())
+
     if (length(availableMethods) != 1) {
       stop(
         "When comparing two wmfmGrade objects, each object should normally contain exactly one scored method. ",
