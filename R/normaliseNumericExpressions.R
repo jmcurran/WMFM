@@ -17,15 +17,6 @@ normaliseNumericExpressions = function(text) {
     stop("`text` must be a character vector.", call. = FALSE)
   }
 
-  replaceCaseAware = function(x, pattern, replacement) {
-    out = gsub(pattern, replacement, x, perl = TRUE, ignore.case = TRUE)
-
-    capsPattern = paste0("\\b", toupper(substring(pattern, 3, 3)), substring(pattern, 4))
-    out = gsub(capsPattern, replacement, out, perl = TRUE)
-
-    out
-  }
-
   out = text
 
   decimalMap = c(
@@ -145,15 +136,25 @@ normaliseNumericExpressions = function(text) {
     "ninety-nine percent" = "99 percent"
   )
 
-  for (i in seq_along(decimalMap)) {
-    pattern = paste0("\\b", names(decimalMap)[i], "\\b")
-    out = gsub(pattern, unname(decimalMap[i]), out, perl = TRUE, ignore.case = TRUE)
+  applyReplacementMap = function(x, replacementMap) {
+    orderedNames = names(replacementMap)[order(nchar(names(replacementMap)), decreasing = TRUE)]
+
+    for (patternName in orderedNames) {
+      pattern = paste0("\\b", patternName, "\\b")
+      x = gsub(
+        pattern,
+        unname(replacementMap[[patternName]]),
+        x,
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+    }
+
+    x
   }
 
-  for (i in seq_along(percentMap)) {
-    pattern = paste0("\\b", names(percentMap)[i], "\\b")
-    out = gsub(pattern, unname(percentMap[i]), out, perl = TRUE, ignore.case = TRUE)
-  }
+  out = applyReplacementMap(out, decimalMap)
+  out = applyReplacementMap(out, percentMap)
 
   out
 }
