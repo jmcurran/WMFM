@@ -37,6 +37,22 @@ grade.wmfmModel = function(
     ...
 ) {
 
+  dots = list(...)
+
+  if ("score" %in% names(dots)) {
+    legacyScore = dots[["score"]]
+
+    if (!is.logical(legacyScore) || length(legacyScore) != 1 || is.na(legacyScore)) {
+      stop(
+        "`score` must be TRUE or FALSE when used as a legacy alias for `autoScore`.",
+        call. = FALSE
+      )
+    }
+
+    autoScore = legacyScore
+    dots[["score"]] = NULL
+  }
+
   if (!inherits(x, "wmfmModel")) {
     stop("`x` must inherit from `wmfmModel`.", call. = FALSE)
   }
@@ -122,10 +138,10 @@ grade.wmfmModel = function(
 
     if (isTRUE(autoScore)) {
       if (identical(method, "both")) {
-        out = score(out, method = "deterministic", ...)
-        out = score(out, method = "llm", nLlm = nLlm, ...)
+        out = do.call(score, c(list(x = out, method = "deterministic"), dots))
+        out = do.call(score, c(list(x = out, method = "llm", nLlm = nLlm), dots))
       } else {
-        out = score(out, method = method, nLlm = nLlm, ...)
+        out = do.call(score, c(list(x = out, method = method, nLlm = nLlm), dots))
       }
     }
 
@@ -150,13 +166,18 @@ grade.wmfmModel = function(
   )
 
   if (isTRUE(autoScore)) {
-    out = score(
-      out,
-      method = method,
-      nLlm = nLlm,
-      confirmLargeLlmJob = confirmLargeLlmJob,
-      maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation,
-      ...
+    out = do.call(
+      score,
+      c(
+        list(
+          x = out,
+          method = method,
+          nLlm = nLlm,
+          confirmLargeLlmJob = confirmLargeLlmJob,
+          maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation
+        ),
+        dots
+      )
     )
   }
 
