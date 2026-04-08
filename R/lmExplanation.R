@@ -34,6 +34,7 @@ lmExplanation = function(model, chat, useCache = TRUE) {
 
   prompt = lmToExplanationPrompt(model)
   output = chat$chat(prompt)
+  output = normaliseNumericExpressions(output)
 
   if (isTRUE(useCache)) {
     .env_cache[[key]] = output
