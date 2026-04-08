@@ -74,6 +74,8 @@ buildModelConfidenceIntervalData = function(
     NULL
   }
 
+  predType = if (inherits(model, "glm")) "link" else "response"
+
   baseRow = as.data.frame(mf[1, predictorNames, drop = FALSE], stringsAsFactors = FALSE)
 
   for (varName in predictorNames) {
@@ -97,7 +99,7 @@ buildModelConfidenceIntervalData = function(
 
   addPredictedRow = function(label, newData, contextText) {
 
-    pred = predict(model, newdata = newData, se.fit = TRUE, type = "link")
+    pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
 
     eta = as.numeric(pred$fit)[1]
     seEta = as.numeric(pred$se.fit)[1]
