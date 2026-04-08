@@ -52,14 +52,6 @@ score.wmfmGrade = function(
     stop("`nLlm` must be an integer greater than or equal to 1.", call. = FALSE)
   }
 
-  dimensionMetrics = c(
-    "factualScore",
-    "inferenceScore",
-    "completenessScore",
-    "clarityScore",
-    "calibrationScore"
-  )
-
   scoreOneRecordDeterministic = function(record) {
     df = as.data.frame(record, stringsAsFactors = FALSE)
     scored = scoreWmfmRunRecordsCore(
@@ -87,38 +79,6 @@ score.wmfmGrade = function(
     out = as.data.frame(scoredRecord, stringsAsFactors = FALSE)
     out$primaryScoringMethod = "llm"
     out
-  }
-
-  deriveOverallFromDimensions = function(scoreDf, scoreScale) {
-    availableMetrics = intersect(dimensionMetrics, names(scoreDf))
-
-    if (length(availableMetrics) != length(dimensionMetrics)) {
-      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1]))
-      return(list(
-        overallScore = rawOverallScore,
-        mark = rawOverallScore / 100 * scoreScale,
-        derivedFromDimensions = FALSE
-      ))
-    }
-
-    dimensionValues = suppressWarnings(as.numeric(scoreDf[1, dimensionMetrics, drop = FALSE]))
-    if (any(is.na(dimensionValues))) {
-      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1]))
-      return(list(
-        overallScore = rawOverallScore,
-        mark = rawOverallScore / 100 * scoreScale,
-        derivedFromDimensions = FALSE
-      ))
-    }
-
-    maxDimensionTotal = 2 * length(dimensionMetrics)
-    derivedOverallScore = sum(dimensionValues) / maxDimensionTotal * 100
-
-    list(
-      overallScore = derivedOverallScore,
-      mark = derivedOverallScore / 100 * scoreScale,
-      derivedFromDimensions = TRUE
-    )
   }
 
   aggregateScoreDfs = function(scoreDfList) {
@@ -154,16 +114,13 @@ score.wmfmGrade = function(
   }
 
   summariseRunMetric = function(scoreDf) {
-    overallInfo = deriveOverallFromDimensions(
-      scoreDf = scoreDf,
-      scoreScale = x$scoreScale
-    )
+    rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1]))
 
     list(
-      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1])),
-      overallScore = overallInfo$overallScore,
-      mark = overallInfo$mark,
-      overallDerivedFromDimensions = isTRUE(overallInfo$derivedFromDimensions)
+      rawOverallScore = rawOverallScore,
+      overallScore = rawOverallScore,
+      mark = rawOverallScore / 100 * x$scoreScale,
+      overallDerivedFromDimensions = FALSE
     )
   }
 
@@ -270,14 +227,10 @@ score.wmfmGrade = function(
       method = method
     )
 
-    overallInfo = deriveOverallFromDimensions(
-      scoreDf = studentScoreDf,
-      scoreScale = x$scoreScale
-    )
     rawOverallScore = mean(vapply(runList, function(run) run$rawOverallScore, numeric(1)), na.rm = TRUE)
-    overallScore = overallInfo$overallScore
-    mark = overallInfo$mark
-    overallDerivedFromDimensions = isTRUE(overallInfo$derivedFromDimensions)
+    overallScore = rawOverallScore
+    mark = overallScore / 100 * x$scoreScale
+    overallDerivedFromDimensions = FALSE
 
     methodScore$runs = runList
     methodScore$elapsedSeconds = timing$elapsedSeconds

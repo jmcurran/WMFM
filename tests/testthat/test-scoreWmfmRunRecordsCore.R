@@ -1,16 +1,11 @@
 test_that("scoreWmfmRunRecordsCore matches repeated-run scoring for one record", {
-  m = runModel(
-    data = mtcars,
-    formula = mpg ~ wt,
-    modelType = "lm",
-    printOutput = FALSE
-  )
+  m = makeOfflineWmfmModel()
 
   record = buildWmfmGradeRunRecord(
     x = m,
     explanation = paste(
-      "Cars with greater weight tend to have lower expected miles per gallon.",
-      "The fitted relationship is negative and descriptive rather than causal."
+      "Higher x is associated with higher expected y.",
+      "The fitted relationship is descriptive rather than causal."
     )
   )
 
@@ -39,18 +34,13 @@ test_that("scoreWmfmRunRecordsCore matches repeated-run scoring for one record",
 
 
 test_that("score.wmfmGrade uses shared scoring core for student and model answers", {
-  m = runModel(
-    data = mtcars,
-    formula = mpg ~ wt,
-    modelType = "lm",
-    printOutput = FALSE
-  )
+  m = makeOfflineWmfmModel()
 
   g = grade(
     m,
-    explanation = "Heavier cars tend to have lower expected mpg.",
+    explanation = "Higher x tends to be associated with higher y.",
     modelAnswer = paste(
-      "Heavier cars tend to have lower expected miles per gallon.",
+      "Higher x tends to be associated with higher expected y.",
       "This is an association rather than a causal claim."
     ),
     score = FALSE

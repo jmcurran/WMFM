@@ -10,6 +10,7 @@
   modelAnswer = NULL,
   method = c("deterministic", "llm", "both"),
   autoScore = TRUE,
+  score = NULL,
   scoreScale = 10,
   nLlm = 1L,
   confirmLargeLlmJob = FALSE,
@@ -29,6 +30,10 @@ scalars giving the explanation(s) to grade.}
 
 \item{autoScore}{Logical. Should the returned object be scored immediately?
 Defaults to \code{TRUE}.}
+
+\item{score}{Deprecated logical alias for \code{autoScore}, retained for backward
+compatibility. When supplied, its logical value is used for
+\code{autoScore}.}
 
 \item{scoreScale}{Numeric scalar giving the displayed mark scale. Defaults to
 \code{10}.}
