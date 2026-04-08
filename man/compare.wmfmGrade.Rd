@@ -2,15 +2,18 @@
 % Please edit documentation in R/compare.wmfmGrade.R
 \name{compare.wmfmGrade}
 \alias{compare.wmfmGrade}
-\title{Compare grading methods for a wmfmGrade object}
+\title{Compare grading results for wmfmGrade objects}
 \usage{
-\method{compare}{wmfmGrade}(x, methods = c("deterministic", "llm"), ...)
+\method{compare}{wmfmGrade}(x, y = NULL, methods = c("deterministic", "llm"), ...)
 }
 \arguments{
 \item{x}{A scored \code{wmfmGrade} object.}
 
-\item{methods}{Character vector of length 2 naming the methods to compare.
-Defaults to \code{c("deterministic", "llm")}.}
+\item{y}{Optional second scored \code{wmfmGrade} object.}
+
+\item{methods}{Character vector of length 2 naming the methods to compare
+when comparing within a single object. Defaults to
+\code{c("deterministic", "llm")}.}
 
 \item{...}{Unused. Included for S3 compatibility.}
 }
@@ -18,6 +21,7 @@ Defaults to \code{c("deterministic", "llm")}.}
 An object of class \code{wmfmGradeComparison}.
 }
 \description{
-Compares two scoring methods already present on a \code{wmfmGrade} object,
-typically deterministic versus llm.
+Compares deterministic and llm grading either within a single \code{wmfmGrade}
+object that contains both methods, or across two separate \code{wmfmGrade}
+objects.
 }

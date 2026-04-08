@@ -8,7 +8,7 @@
   x,
   explanation,
   modelAnswer = NULL,
-  method = c("deterministic", "llm"),
+  method = c("deterministic", "llm", "both"),
   autoScore = TRUE,
   scoreScale = 10,
   ...
@@ -21,7 +21,7 @@
 
 \item{modelAnswer}{Optional character scalar giving a reference answer.}
 
-\item{method}{Character. One of \code{"deterministic"} or \code{"llm"}.}
+\item{method}{Character. One of \code{"deterministic"}, \code{"llm"}, or \code{"both"}.}
 
 \item{autoScore}{Logical. Should the returned \code{wmfmGrade} object be scored
 immediately? Defaults to \code{TRUE}.}

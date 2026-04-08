@@ -7,7 +7,7 @@
 #' @param x A `wmfmModel` object, typically created by `runModel()`.
 #' @param explanation Character scalar giving the explanation to grade.
 #' @param modelAnswer Optional character scalar giving a reference answer.
-#' @param method Character. One of `"deterministic"` or `"llm"`.
+#' @param method Character. One of `"deterministic"`, `"llm"`, or `"both"`.
 #' @param autoScore Logical. Should the returned `wmfmGrade` object be scored
 #'   immediately? Defaults to `TRUE`.
 #' @param scoreScale Numeric scalar giving the displayed mark scale. Defaults to
@@ -21,7 +21,7 @@ grade.wmfmModel = function(
     x,
     explanation,
     modelAnswer = NULL,
-    method = c("deterministic", "llm"),
+    method = c("deterministic", "llm", "both"),
     autoScore = TRUE,
     scoreScale = 10,
     ...
@@ -76,7 +76,12 @@ grade.wmfmModel = function(
   )
 
   if (isTRUE(autoScore)) {
-    out = score(out, method = method, ...)
+    if (identical(method, "both")) {
+      out = score(out, method = "deterministic", ...)
+      out = score(out, method = "llm", ...)
+    } else {
+      out = score(out, method = method, ...)
+    }
   }
 
   out
