@@ -125,6 +125,9 @@ print.wmfmGrade = function(
   mark = suppressWarnings(as.numeric(scoreBlock$mark))
   scale = x$scoreScale
   words = scoreBlock$student$wordCount[1] %||% NA
+  nRuns = scoreBlock$nRuns %||% 1L
+  elapsedSeconds = scoreBlock$elapsedSeconds %||% NA_real_
+  meanSecondsPerRun = scoreBlock$meanSecondsPerRun %||% NA_real_
 
   dims = buildDims(scoreBlock$metricSummary)
   strengths = buildLines(fb$strengths, "label", "comment")
@@ -176,8 +179,20 @@ print.wmfmGrade = function(
     cat("Method:", m, "\n")
     cat("Mark:", fmt(mark), "/", scale, "\n")
 
+    if (m == "llm" && nRuns > 1L) {
+      cat("LLM runs:", nRuns, "\n")
+    }
+
     if (!is.na(words)) {
       cat("Words:", words, "\n")
+    }
+
+    if (!is.na(elapsedSeconds)) {
+      cat("Elapsed time:", formatWmfmElapsedTime(elapsedSeconds), "\n")
+    }
+
+    if (!is.na(meanSecondsPerRun) && nRuns > 1L) {
+      cat("Mean time per run:", formatWmfmElapsedTime(meanSecondsPerRun), "\n")
     }
 
     if (length(dims)) {
@@ -247,10 +262,31 @@ print.wmfmGrade = function(
     tags$p(tags$strong("Mark: "), paste0(fmt(mark), " / ", scale))
   )
 
+  if (m == "llm" && nRuns > 1L) {
+    body = c(
+      body,
+      list(tags$p(tags$strong("LLM runs: "), as.character(nRuns)))
+    )
+  }
+
   if (!is.na(words)) {
     body = c(
       body,
       list(tags$p(tags$strong("Words: "), as.character(words)))
+    )
+  }
+
+  if (!is.na(elapsedSeconds)) {
+    body = c(
+      body,
+      list(tags$p(tags$strong("Elapsed time: "), formatWmfmElapsedTime(elapsedSeconds)))
+    )
+  }
+
+  if (!is.na(meanSecondsPerRun) && nRuns > 1L) {
+    body = c(
+      body,
+      list(tags$p(tags$strong("Mean time per run: "), formatWmfmElapsedTime(meanSecondsPerRun)))
     )
   }
 

@@ -15,6 +15,7 @@
   useCache = FALSE,
   showProgress = TRUE,
   verbose = FALSE,
+  nLlm = 1L,
   ...
 )
 }
@@ -39,6 +40,9 @@
 scoring?}
 
 \item{verbose}{Logical. Passed to LLM scoring.}
+
+\item{nLlm}{Integer. Number of repeated LLM gradings for the student
+explanation.}
 
 \item{...}{Additional arguments passed to the relevant scoring helper.}
 }

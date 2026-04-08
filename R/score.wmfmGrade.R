@@ -16,6 +16,8 @@
 #' @param showProgress Logical. Should progress messages be shown for LLM
 #'   scoring?
 #' @param verbose Logical. Passed to LLM scoring.
+#' @param nLlm Integer. Number of repeated LLM gradings for the student
+#'   explanation.
 #' @param ... Additional arguments passed to the relevant scoring helper.
 #'
 #' @return A scored `wmfmGrade` object.
@@ -31,6 +33,7 @@ score.wmfmGrade = function(
     useCache = FALSE,
     showProgress = TRUE,
     verbose = FALSE,
+    nLlm = 1L,
     ...
 ) {
 
@@ -43,6 +46,11 @@ score.wmfmGrade = function(
   }
 
   method = match.arg(method)
+  nLlm = as.integer(nLlm)[1]
+
+  if (is.na(nLlm) || nLlm < 1L) {
+    stop("`nLlm` must be an integer greater than or equal to 1.", call. = FALSE)
+  }
 
   dimensionMetrics = c(
     "factualScore",
@@ -113,6 +121,52 @@ score.wmfmGrade = function(
     )
   }
 
+  aggregateScoreDfs = function(scoreDfList) {
+    allCols = unique(unlist(lapply(scoreDfList, names)))
+    out = as.list(rep(NA, length(allCols)))
+    names(out) = allCols
+
+    for (col in allCols) {
+      values = lapply(scoreDfList, function(df) {
+        if (!col %in% names(df)) {
+          return(NA)
+        }
+        df[[col]][1]
+      })
+
+      numericValues = suppressWarnings(as.numeric(unlist(values)))
+
+      if (!all(is.na(numericValues))) {
+        out[[col]] = mean(numericValues, na.rm = TRUE)
+      } else {
+        firstValue = NULL
+        for (value in values) {
+          if (length(value) > 0 && !all(is.na(value))) {
+            firstValue = value[1]
+            break
+          }
+        }
+        out[[col]] = firstValue %||% NA
+      }
+    }
+
+    as.data.frame(out, stringsAsFactors = FALSE)
+  }
+
+  summariseRunMetric = function(scoreDf) {
+    overallInfo = deriveOverallFromDimensions(
+      scoreDf = scoreDf,
+      scoreScale = x$scoreScale
+    )
+
+    list(
+      rawOverallScore = suppressWarnings(as.numeric(scoreDf$overallScore[1])),
+      overallScore = overallInfo$overallScore,
+      mark = overallInfo$mark,
+      overallDerivedFromDimensions = isTRUE(overallInfo$derivedFromDimensions)
+    )
+  }
+
   if (identical(method, "llm") && is.null(chat)) {
     chat = tryCatch(
       getChatProvider(),
@@ -138,19 +192,68 @@ score.wmfmGrade = function(
 
   studentScoreDf = NULL
   modelAnswerScoreDf = NULL
+  feedback = NULL
 
   if (identical(method, "deterministic")) {
+    startedAt = Sys.time()
     studentScoreDf = scoreOneRecordDeterministic(x$records$student)
 
     if (!is.null(x$records$modelAnswer)) {
       modelAnswerScoreDf = scoreOneRecordDeterministic(x$records$modelAnswer)
     }
+
+    feedback = summariseWmfmGradeLosses(
+      studentScoreDf = studentScoreDf,
+      modelAnswerScoreDf = modelAnswerScoreDf,
+      method = method
+    )
+
+    rawOverallScore = suppressWarnings(as.numeric(studentScoreDf$overallScore[1]))
+    overallScore = rawOverallScore
+    mark = overallScore / 100 * x$scoreScale
+    overallDerivedFromDimensions = FALSE
+
+    methodScore$elapsedSeconds = as.numeric(difftime(Sys.time(), startedAt, units = "secs"))
+    methodScore$meanSecondsPerRun = methodScore$elapsedSeconds
+    methodScore$nRuns = 1L
   } else {
-    if (isTRUE(showProgress)) {
+    if (isTRUE(showProgress) && nLlm == 1L) {
       message("Scoring student explanation with LLM...")
     }
 
-    studentScoreDf = scoreOneRecordLlm(x$records$student, chat = chat)
+    tracker = newWmfmProgressTracker(
+      nSteps = nLlm,
+      showProgress = showProgress,
+      label = "LLM grading"
+    )
+
+    runList = vector("list", nLlm)
+
+    for (i in seq_len(nLlm)) {
+      startedAt = Sys.time()
+      runScoreDf = scoreOneRecordLlm(x$records$student, chat = chat)
+      runMetric = summariseRunMetric(runScoreDf)
+
+      runFeedback = summariseWmfmGradeLosses(
+        studentScoreDf = runScoreDf,
+        modelAnswerScoreDf = NULL,
+        method = method
+      )
+
+      runList[[i]] = list(
+        scoreDf = runScoreDf,
+        metricSummary = runFeedback$metricSummary,
+        feedback = runFeedback,
+        rawOverallScore = runMetric$rawOverallScore,
+        overallScore = runMetric$overallScore,
+        mark = runMetric$mark,
+        elapsedSeconds = as.numeric(difftime(Sys.time(), startedAt, units = "secs"))
+      )
+
+      updateWmfmProgressTracker(tracker, i, runList[[i]]$elapsedSeconds)
+    }
+
+    timing = closeWmfmProgressTracker(tracker)
 
     if (!is.null(x$records$modelAnswer)) {
       if (isTRUE(showProgress)) {
@@ -159,28 +262,28 @@ score.wmfmGrade = function(
 
       modelAnswerScoreDf = scoreOneRecordLlm(x$records$modelAnswer, chat = chat)
     }
-  }
 
-  feedback = summariseWmfmGradeLosses(
-    studentScoreDf = studentScoreDf,
-    modelAnswerScoreDf = modelAnswerScoreDf,
-    method = method
-  )
+    studentScoreDf = aggregateScoreDfs(lapply(runList, function(run) run$scoreDf))
+    feedback = summariseWmfmGradeLosses(
+      studentScoreDf = studentScoreDf,
+      modelAnswerScoreDf = modelAnswerScoreDf,
+      method = method
+    )
 
-  rawOverallScore = suppressWarnings(as.numeric(studentScoreDf$overallScore[1]))
-
-  if (identical(method, "llm")) {
     overallInfo = deriveOverallFromDimensions(
       scoreDf = studentScoreDf,
       scoreScale = x$scoreScale
     )
+    rawOverallScore = mean(vapply(runList, function(run) run$rawOverallScore, numeric(1)), na.rm = TRUE)
     overallScore = overallInfo$overallScore
     mark = overallInfo$mark
     overallDerivedFromDimensions = isTRUE(overallInfo$derivedFromDimensions)
-  } else {
-    overallScore = rawOverallScore
-    mark = overallScore / 100 * x$scoreScale
-    overallDerivedFromDimensions = FALSE
+
+    methodScore$runs = runList
+    methodScore$elapsedSeconds = timing$elapsedSeconds
+    methodScore$meanSecondsPerRun = timing$averageIterationSeconds
+    methodScore$iterationSeconds = timing$iterationSeconds
+    methodScore$nRuns = nLlm
   }
 
   methodScore$student = studentScoreDf
@@ -228,6 +331,11 @@ score.wmfmGrade = function(
   if (identical(method, "llm")) {
     x$meta$llmModel = safeWmfmScalar(class(chat)[1], naString = "")
     x$meta$llmUseCache = useCache
+    x$meta$nLlm = nLlm
+  }
+
+  if (identical(method, "llm")) {
+    x$scores$byMethod[[method]]$summary = summary(x, method = method)
   }
 
   x

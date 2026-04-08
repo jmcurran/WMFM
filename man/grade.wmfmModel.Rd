@@ -2,7 +2,7 @@
 % Please edit documentation in R/grade.wmfmModel.R
 \name{grade.wmfmModel}
 \alias{grade.wmfmModel}
-\title{Grade an explanation against a WMFM model}
+\title{Grade one or more explanations against a WMFM model}
 \usage{
 \method{grade}{wmfmModel}(
   x,
@@ -11,32 +11,45 @@
   method = c("deterministic", "llm", "both"),
   autoScore = TRUE,
   scoreScale = 10,
+  nLlm = 1L,
+  confirmLargeLlmJob = FALSE,
+  maxLlmJobsWithoutConfirmation = 20L,
   ...
 )
 }
 \arguments{
 \item{x}{A \code{wmfmModel} object, typically created by \code{runModel()}.}
 
-\item{explanation}{Character scalar giving the explanation to grade.}
+\item{explanation}{Character vector, character scalar, or list of character
+scalars giving the explanation(s) to grade.}
 
 \item{modelAnswer}{Optional character scalar giving a reference answer.}
 
 \item{method}{Character. One of \code{"deterministic"}, \code{"llm"}, or \code{"both"}.}
 
-\item{autoScore}{Logical. Should the returned \code{wmfmGrade} object be scored
-immediately? Defaults to \code{TRUE}.}
+\item{autoScore}{Logical. Should the returned object be scored immediately?
+Defaults to \code{TRUE}.}
 
 \item{scoreScale}{Numeric scalar giving the displayed mark scale. Defaults to
 \code{10}.}
 
-\item{...}{Additional arguments passed to \code{score.wmfmGrade()} when
-\code{autoScore = TRUE}.}
+\item{nLlm}{Integer. Number of repeated LLM gradings per explanation when
+\code{method} includes \code{"llm"}.}
+
+\item{confirmLargeLlmJob}{Logical. Set to \code{TRUE} to allow large LLM grading
+requests.}
+
+\item{maxLlmJobsWithoutConfirmation}{Integer. Maximum number of LLM grading
+calls allowed without explicit confirmation.}
+
+\item{...}{Additional arguments passed to \code{score()} when \code{autoScore = TRUE}.}
 }
 \value{
-An object of class \code{wmfmGrade}.
+An object of class \code{wmfmGrade} or \code{wmfmGradeListObj}.
 }
 \description{
-Creates a \code{wmfmGrade} object from a prepared \code{wmfmModel} object and a
-user-supplied explanation. By default the returned object is immediately
-scored using either the deterministic or LLM WMFM grading rubric.
+Creates either a \code{wmfmGrade} object for a single explanation or a
+\code{wmfmGradeListObj} when multiple explanations are supplied. By default the
+returned object is immediately scored using either the deterministic or LLM
+WMFM grading rubric.
 }
