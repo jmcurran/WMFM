@@ -117,6 +117,8 @@ appServer = function(input, output, session) {
 
   modelFit = reactiveVal(NULL)
 
+  registerModelOutputTabs(output, modelFit)
+
   contrastPairs = reactiveVal(character(0))
   contrastResultText = reactiveVal("")
 
