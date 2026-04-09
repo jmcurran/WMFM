@@ -14,8 +14,7 @@ validateBadExplanationResponse = function(parsed, plan) {
     )
   }
 
-  validated = lapply(seq_along(parsed), function(i) {
-    item = parsed[[i]]
+  parsed = lapply(parsed, function(item) {
 
     if (!is.list(item)) {
       stop("Each generated explanation must be a JSON object.", call. = FALSE)
@@ -34,59 +33,62 @@ validateBadExplanationResponse = function(parsed, plan) {
       )
     }
 
-    nameValue = safeWmfmScalar(item$name, naString = NA_character_)
-    textValue = safeWmfmScalar(item$text, naString = NA_character_)
-    severityValue = safeWmfmScalar(item$severity, naString = NA_character_)
+    itemName = safeWmfmScalar(item$name, naString = "")
+    itemText = safeWmfmScalar(item$text, naString = "")
+    itemSeverity = safeWmfmScalar(item$severity, naString = "")
 
-    errorTypesValue = item$errorTypes
+    errorTypes = item$errorTypes
 
-    if (is.list(errorTypesValue)) {
-      errorTypesValue = unlist(errorTypesValue, use.names = FALSE)
+    if (is.list(errorTypes)) {
+      errorTypes = unlist(errorTypes, use.names = FALSE)
     }
 
-    errorTypesValue = as.character(errorTypesValue)
-    errorTypesValue = errorTypesValue[!is.na(errorTypesValue)]
-    errorTypesValue = trimws(errorTypesValue)
-    errorTypesValue = errorTypesValue[nzchar(errorTypesValue)]
+    if (is.null(errorTypes)) {
+      errorTypes = character(0)
+    }
 
-    if (is.na(nameValue) || !nzchar(trimws(nameValue))) {
+    errorTypes = as.character(errorTypes)
+    errorTypes = errorTypes[!is.na(errorTypes)]
+    errorTypes = trimws(errorTypes)
+    errorTypes = errorTypes[nzchar(errorTypes)]
+
+    if (!nzchar(itemName)) {
       stop("Each generated explanation must have a valid `name` field.", call. = FALSE)
     }
 
-    if (is.na(textValue) || !nzchar(trimws(textValue))) {
+    if (!nzchar(itemText)) {
       stop("Each generated explanation must have non-empty `text`.", call. = FALSE)
     }
 
-    if (length(errorTypesValue) < 1L) {
+    if (length(errorTypes) < 1) {
       stop(
         "Each generated explanation must have at least one valid `errorTypes` entry.",
         call. = FALSE
       )
     }
 
-    if (is.na(severityValue) || !nzchar(trimws(severityValue))) {
+    if (!nzchar(itemSeverity)) {
       stop("Each generated explanation must have a valid `severity` field.", call. = FALSE)
     }
 
     list(
-      name = nameValue,
-      text = textValue,
-      errorTypes = errorTypesValue,
-      severity = severityValue
+      name = itemName,
+      text = itemText,
+      errorTypes = errorTypes,
+      severity = itemSeverity
     )
   })
 
-  responseNames = vapply(validated, function(item) item$name, character(1))
+  returnedNames = vapply(parsed, function(item) item$name, character(1))
 
-  if (!setequal(responseNames, plan$explanationNames)) {
+  if (!identical(returnedNames, plan$explanationNames)) {
     stop(
-      "Generated explanation names did not match the requested explanation names.",
+      paste(
+        "Generated explanation names did not match the requested plan names."
+      ),
       call. = FALSE
     )
   }
 
-  orderedIdx = match(plan$explanationNames, responseNames)
-  validated = validated[orderedIdx]
-
-  validated
+  parsed
 }
