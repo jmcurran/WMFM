@@ -29,52 +29,11 @@
 #' @importFrom bslib accordion accordion_panel bs_theme
 appUI = function() {
   fluidPage(
-    theme = bs_theme(),  # enable bslib components (Bootstrap 5)
+    theme = bs_theme(),
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("
-      .bucket-list .rank-list {
-        max-height: 8em;
-        overflow-y: auto;
-      }
-      body { font-size: 90%; }
-      .shiny-input-container { font-size: 90%; }
-      .nav-tabs > li > a { font-size: 90%; }
-      pre, code { font-size: 90%; }
-
-      h4 {
-        margin-top: 12px;
-        margin-bottom: 8px;
-      }
-
-      h5 {
-        margin-top: 6px;
-        margin-bottom: 4px;
-      }
-
-      hr {
-        margin: 8px 0;
-      }
-
-      .hr-tight {
-        margin: 6px 0;
-      }
-
-      .form-group {
-        margin-bottom: 8px;
-      }
-
-      .radio {
-        margin-top: 3px;
-        margin-bottom: 3px;
-      }
-
-      .shiny-html-output,
-      .shiny-text-output {
-        margin-bottom: 6px;
-      }
-    ")),
+    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      body { font-size: 90%; }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n    ")),
 
     tabsetPanel(
       id = "main_tabs",
@@ -87,7 +46,7 @@ appUI = function() {
           "data_source",
           label = "Data source:",
           choices = c(
-            "Upload file"               = "upload",
+            "Upload file" = "upload",
             "Data from installed package" = "package"
           ),
           selected = "package"
@@ -138,7 +97,6 @@ appUI = function() {
           paste("WMFM version", as.character(packageVersion("WMFM")))
         )
       ),
-
 
       tabPanel(
         "Model",
@@ -259,15 +217,27 @@ appUI = function() {
                 "Confidence intervals",
                 uiOutput("modelConfintNoteUi"),
                 tableOutput("modelConfintTable"),
-                hr(),
-
-                uiOutput("modelConfintSelectorUi"),
-                uiOutput("modelConfintSelectedRowUi"),
-
-                hr(),
-
-                uiOutput("modelConfintTeachingNoteUi"),
-                uiOutput("modelConfintVcovUi")
+                tags$div(
+                  class = "wmfm-ci-drilldown-box",
+                  tags$div(
+                    class = "wmfm-ci-section-label",
+                    "Explain one interval"
+                  ),
+                  tags$div(
+                    class = "wmfm-ci-secondary-note",
+                    "Choose a single row when you want to unpack how that interval was constructed."
+                  ),
+                  uiOutput("modelConfintSelectorUi"),
+                  uiOutput("modelConfintSelectedRowUi")
+                ),
+                tags$div(
+                  class = "wmfm-ci-collapsible-block",
+                  uiOutput("modelConfintTeachingNoteUi")
+                ),
+                tags$div(
+                  class = "wmfm-ci-collapsible-block",
+                  uiOutput("modelConfintVcovUi")
+                )
               )
             )
           ),
