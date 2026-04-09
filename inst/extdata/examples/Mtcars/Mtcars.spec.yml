@@ -1,0 +1,7 @@
+name: mtcars
+modelType: lm
+formula: mpg ~ wt + hp
+dataSource: package
+dataPackage: datasets
+dataObject: mtcars
+context: Mtcars.Rmd

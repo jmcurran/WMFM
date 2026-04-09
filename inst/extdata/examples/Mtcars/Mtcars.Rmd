@@ -1,0 +1,21 @@
+# Problem
+
+The `mtcars` data set contains measurements on a collection of cars, including
+fuel efficiency, weight, and horsepower.
+
+The variables of interest are:
+
+* `mpg`: Miles per gallon. This is the response variable.
+* `wt`: Vehicle weight, measured in units of 1000 pounds.
+* `hp`: Gross horsepower.
+
+## Question of Interest
+
+The question is whether fuel efficiency is associated with car weight and
+horsepower, and how the expected miles per gallon changes as these predictors
+change.
+
+## Notes for Interpretation
+
+This is an observational data set. Any explanation should describe associations
+in the fitted model rather than making strong causal claims.
