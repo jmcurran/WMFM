@@ -384,29 +384,45 @@ buildLinearCombinationText = function(nonZero) {
 #' @keywords internal
 buildLinearCombinationVarianceText = function(nonZero) {
 
-  if (length(nonZero) == 1) {
-    name = names(nonZero)[1]
-    if (identical(name, "(Intercept)")) {
-      name = "Intercept"
-    }
-    return(paste0("Var = Var(", name, ")"))
+  namesClean = ifelse(names(nonZero) == "(Intercept)", "Intercept", names(nonZero))
+  weights = as.numeric(nonZero)
+
+  if (length(weights) == 1) {
+    return(paste0("Var = Var(", namesClean[1], ")"))
   }
 
-  if (all(abs(nonZero - 1) < 1e-12)) {
-    namesClean = ifelse(names(nonZero) == "(Intercept)", "Intercept", names(nonZero))
+  varTerms = vapply(
+    seq_along(weights),
+    function(i) {
+      weight = weights[i]
+      name = namesClean[i]
 
-    varTerms = paste0("Var(", namesClean, ")")
-    covPairs = utils::combn(namesClean, 2, simplify = FALSE)
-    covTerms = vapply(
-      covPairs,
-      function(pair) {
-        paste0("2 Cov(", pair[1], ", ", pair[2], ")")
-      },
-      character(1)
-    )
+      if (abs(weight - 1) < 1e-12) {
+        paste0("Var(", name, ")")
+      } else {
+        paste0(format(round(weight^2, 3), trim = TRUE), " Var(", name, ")")
+      }
+    },
+    character(1)
+  )
 
-    return(paste(c(varTerms, covTerms), collapse = " + "))
-  }
+  covPairs = utils::combn(seq_along(weights), 2, simplify = FALSE)
+  covTerms = vapply(
+    covPairs,
+    function(idx) {
+      i = idx[1]
+      j = idx[2]
+      coeff = 2 * weights[i] * weights[j]
+      coeffText = format(round(coeff, 3), trim = TRUE)
 
-  "Var = x' V x for the displayed linear combination."
+      if (abs(coeff - 1) < 1e-12) {
+        paste0("Cov(", namesClean[i], ", ", namesClean[j], ")")
+      } else {
+        paste0(coeffText, " Cov(", namesClean[i], ", ", namesClean[j], ")")
+      }
+    },
+    character(1)
+  )
+
+  paste(c(varTerms, covTerms), collapse = " + ")
 }
