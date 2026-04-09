@@ -3,18 +3,32 @@
 #' Defines Shiny outputs used in the Fitted Model tab:
 #' - ANOVA / analysis of deviance
 #' - Confidence interval table
-#' - Teaching notes and derivations
+#' - Drill-down row explanation and optional teaching material
 #'
-#' @param output Shiny output object
-#' @param modelFit reactiveVal holding fitted model
+#' @param output Shiny output object.
+#' @param input Shiny input object.
+#' @param modelFit reactiveVal holding fitted model.
 #'
-#' @return None (called for side effects)
+#' @return None (called for side effects).
 #' @keywords internal
-registerModelOutputTabs = function(output, modelFit) {
+#'
+#' @importFrom shiny helpText renderPrint renderTable renderUI req selectInput tableOutput
+#' @importFrom shiny tagList tags verbatimTextOutput
+registerModelOutputTabs = function(output, input, modelFit) {
 
-  # -------------------------------------------------------------
-  # ANOVA / Analysis of deviance
-  # -------------------------------------------------------------
+  getCiData = function() {
+    m = modelFit()
+
+    if (is.null(m)) {
+      return(NULL)
+    }
+
+    buildModelConfidenceIntervalData(
+      model = m,
+      numericReference = "zero"
+    )
+  }
+
   output$model_anova = renderPrint({
     m = modelFit()
 
@@ -24,7 +38,6 @@ registerModelOutputTabs = function(output, modelFit) {
     }
 
     if (inherits(m, "glm")) {
-
       fam = m$family$family
 
       if (fam %in% c("poisson", "binomial")) {
@@ -38,60 +51,117 @@ registerModelOutputTabs = function(output, modelFit) {
     }
   })
 
-
-  # -------------------------------------------------------------
-  # Confidence interval note
-  # -------------------------------------------------------------
   output$modelConfintNoteUi = renderUI({
 
-    m = modelFit()
+    ciData = getCiData()
 
-    if (is.null(m)) {
+    if (is.null(ciData)) {
       return(helpText("Fit a model to see confidence intervals."))
     }
 
-    helpText(
-      "Confidence intervals are shown for model coefficients and for",
-      "quantities derived from combinations of coefficients.",
-      "For GLMs, intervals are computed on the link scale and",
-      "transformed back to the response scale."
+    noteText = ciData$note %||% paste(
+      "Use the table first. If you want to unpack one interval, choose a single row below to see how it was built."
     )
+
+    helpText(noteText)
   })
 
-
-  # -------------------------------------------------------------
-  # Confidence interval table
-  # -------------------------------------------------------------
   output$modelConfintTable = renderTable({
 
-    m = modelFit()
+    ciData = getCiData()
 
-    if (is.null(m)) {
+    if (is.null(ciData)) {
       return(NULL)
     }
 
-    buildModelConfidenceIntervalData(m)$table
+    ciData$table
 
   }, striped = TRUE, bordered = TRUE, spacing = "s")
 
+  output$modelConfintSelectorUi = renderUI({
 
-  # -------------------------------------------------------------
-  # Confidence interval derivations (teaching block)
-  # -------------------------------------------------------------
-  output$modelConfintDetailsUi = renderUI({
+    ciData = getCiData()
 
-    m = modelFit()
-
-    if (is.null(m)) {
+    if (is.null(ciData)) {
       return(NULL)
     }
 
-    details = buildModelConfidenceIntervalData(m)$details
+    selectInput(
+      inputId = "modelConfintSelectedRow",
+      label = "Explain this row",
+      choices = buildModelConfidenceIntervalRowChoices(ciData),
+      selected = ""
+    )
+  })
 
-    if (length(details) == 0) {
-      return(helpText("No additional derivations available for this model."))
+  output$modelConfintSelectedRowUi = renderUI({
+
+    ciData = getCiData()
+
+    if (is.null(ciData)) {
+      return(NULL)
     }
 
-    tagList(details)
+    detail = findModelConfidenceIntervalDetail(
+      ciData = ciData,
+      selectedLabel = input$modelConfintSelectedRow %||% ""
+    )
+
+    if (is.null(detail)) {
+      return(
+        helpText("Choose a row if you want to see how that interval was constructed.")
+      )
+    }
+
+    tagList(
+      tags$h5("Selected-row explanation"),
+      renderModelConfidenceIntervalDetailUi(detail)
+    )
   })
+
+  output$modelConfintTeachingNoteUi = renderUI({
+
+    ciData = getCiData()
+
+    if (is.null(ciData) || is.null(ciData$teachingNote) || !nzchar(ciData$teachingNote)) {
+      return(NULL)
+    }
+
+    tags$details(
+      tags$summary("Teaching note"),
+      tags$div(
+        style = "margin-top: 8px;",
+        helpText(ciData$teachingNote)
+      )
+    )
+  })
+
+  output$modelConfintVcovUi = renderUI({
+
+    ciData = getCiData()
+
+    if (is.null(ciData) || is.null(ciData$vcovTable)) {
+      return(NULL)
+    }
+
+    tags$details(
+      tags$summary("Variance-covariance matrix"),
+      tags$div(
+        style = "margin-top: 8px;",
+        tableOutput("modelConfintVcovTable")
+      )
+    )
+  })
+
+  output$modelConfintVcovTable = renderTable({
+
+    ciData = getCiData()
+
+    if (is.null(ciData) || is.null(ciData$vcovTable)) {
+      return(NULL)
+    }
+
+    as.data.frame(ciData$vcovTable)
+
+  }, striped = TRUE, bordered = TRUE, spacing = "s", rownames = TRUE)
 }

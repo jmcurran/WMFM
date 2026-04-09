@@ -4,9 +4,8 @@
 #' easier for students to interpret than a raw coefficient table. For models
 #' without interaction terms, the helper builds intervals for expected values
 #' at simple base settings and for one-unit changes in numeric predictors.
-#' It also records short derivation notes showing when a confidence interval is
-#' based on a linear combination of coefficients and therefore uses covariance
-#' terms.
+#' It also records row-by-row explanation material in a labelled structure that
+#' can be shown on demand in the app.
 #'
 #' When the model contains interaction terms, the helper falls back to a raw
 #' coefficient-interval table because simple marginal quantities depend on the
@@ -23,8 +22,10 @@
 #' @return A list with components:
 #' \describe{
 #'   \item{table}{A data frame ready for display in the confidence-interval tab.}
-#'   \item{details}{A list of derivation records for optional display.}
+#'   \item{details}{A list of labelled derivation records for drill-down display.}
 #'   \item{note}{Optional explanatory note for the UI.}
+#'   \item{teachingNote}{Optional short teaching note about variance and covariance.}
+#'   \item{vcovTable}{The variance-covariance matrix rounded for display.}
 #'   \item{mode}{Either `"derived"` or `"coefficient"`.}
 #' }
 #'
@@ -53,13 +54,18 @@ buildModelConfidenceIntervalData = function(
   }
   hasInteractions = any(grepl(":", termLabels, fixed = TRUE))
 
+  vcovTable = round(vcov(model), 3)
+  teachingNote = buildModelConfidenceIntervalTeachingNote(model = model)
+
   if (hasInteractions) {
     out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
     out$note = paste(
       "This model contains interaction terms, so simple one-row teaching summaries",
       "depend on the values chosen for the other predictors.",
-      "The table below therefore shows coefficient intervals rather than derived expected values."
+      "Use the table first, then drill down on a selected row if needed."
     )
+    out$teachingNote = teachingNote
+    out$vcovTable = vcovTable
     return(out)
   }
 
@@ -67,6 +73,8 @@ buildModelConfidenceIntervalData = function(
   if (length(predictorNames) == 0) {
     out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
     out$note = "This model has no predictors, so the confidence-interval table shows the intercept only."
+    out$teachingNote = teachingNote
+    out$vcovTable = vcovTable
     return(out)
   }
 
@@ -117,7 +125,7 @@ buildModelConfidenceIntervalData = function(
 
   formatBaseSetting = function(varName, value) {
     if (is.factor(mf[[varName]])) {
-      paste0(varName, " base level = ", as.character(value))
+      paste0(varName, " = ", as.character(value))
     } else if (is.numeric(mf[[varName]]) && identical(numericReference, "mean")) {
       paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE))
     } else {
@@ -144,7 +152,7 @@ buildModelConfidenceIntervalData = function(
         ),
         collapse = "; "
       )
-      pieces = c(pieces, paste0("other factors at their base levels: ", factorText))
+      pieces = c(pieces, paste0("Other factors fixed at base levels: ", factorText))
     }
 
     otherNumericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
@@ -167,17 +175,17 @@ buildModelConfidenceIntervalData = function(
           collapse = "; "
         )
       }
-      pieces = c(pieces, paste0("numeric predictors fixed at: ", numericText))
+      pieces = c(pieces, paste0("Other numeric predictors fixed at: ", numericText))
     }
 
     if (length(pieces) == 0) {
-      return("No additional predictor settings are needed for this quantity.")
+      return("No other predictor settings are needed for this quantity.")
     }
 
     paste(pieces, collapse = ". ")
   }
 
-  addPredictedRow = function(label, newData, contextText) {
+  addPredictedRow = function(label, newData, settingsText) {
 
     pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
 
@@ -198,18 +206,15 @@ buildModelConfidenceIntervalData = function(
       lower = lowerEta
       upper = upperEta
       scaleLabel = "response"
-      transformNote = "This interval is computed directly on the response scale."
+      scaleNote = "Computed directly on the response scale."
     } else {
       estimate = familyObj$linkinv(eta)
       lower = familyObj$linkinv(lowerEta)
       upper = familyObj$linkinv(upperEta)
       scaleLabel = getResponseScaleLabel()
-      transformNote = paste(
-        "This interval is first computed on the",
-        familyObj$link,
-        "link scale and then transformed back to the",
-        scaleLabel,
-        "scale using the inverse link function."
+      scaleNote = paste(
+        "Computed on the", familyObj$link, "scale, then transformed back to the",
+        scaleLabel, "scale using the inverse link function."
       )
     }
 
@@ -218,7 +223,6 @@ buildModelConfidenceIntervalData = function(
     names(xVec) = colnames(mm)
 
     nonZero = xVec[abs(xVec) > 1e-12]
-    varianceExpr = buildLinearCombinationVarianceText(nonZero)
 
     rows[[length(rows) + 1]] <<- data.frame(
       quantity = label,
@@ -231,42 +235,33 @@ buildModelConfidenceIntervalData = function(
 
     details[[length(details) + 1]] <<- list(
       label = label,
-      context = contextText,
-      combination = buildLinearCombinationText(nonZero),
-      variance = varianceExpr,
-      note = paste(
-        if (length(nonZero) > 1) {
-          paste(
-            "Because more than one coefficient contributes to this quantity,",
-            "the standard error depends on both the coefficient variances and the covariance terms."
-          )
-        } else {
-          "This quantity comes from a single coefficient, so its standard error comes directly from that coefficient variance."
-        },
-        transformNote
-      )
+      quantity = label,
+      settings = settingsText,
+      builtFrom = buildLinearCombinationText(nonZero),
+      varianceFormula = buildLinearCombinationVarianceText(nonZero),
+      scaleNote = scaleNote
     )
   }
 
   responseName = names(mf)[1]
   hasFactorPredictor = any(vapply(mf[predictorNames], is.factor, logical(1)))
 
-  baselineContext = paste(
-    "Base settings:",
-    paste(vapply(
+  baselineSettings = paste(
+    vapply(
       predictorNames,
       function(varName) {
         formatBaseSetting(varName, baseRow[[varName]][1])
       },
       character(1)
-    ), collapse = "; ")
+    ),
+    collapse = "; "
   )
 
   if (!hasFactorPredictor) {
     addPredictedRow(
       label = paste0("Expected ", responseName, " at base settings"),
       newData = baseRow,
-      contextText = baselineContext
+      settingsText = baselineSettings
     )
   }
 
@@ -279,7 +274,7 @@ buildModelConfidenceIntervalData = function(
         newData = baseRow
         newData[[varName]] = factor(lvl, levels = levs)
 
-        contextText = paste0(
+        settingsText = paste0(
           varName, " = ", lvl, ". ",
           buildOtherBaseLevelsText(excludeVarName = varName)
         )
@@ -287,7 +282,7 @@ buildModelConfidenceIntervalData = function(
         addPredictedRow(
           label = paste0("Expected ", responseName, " when ", varName, " = ", lvl),
           newData = newData,
-          contextText = contextText
+          settingsText = settingsText
         )
       }
     }
@@ -325,20 +320,14 @@ buildModelConfidenceIntervalData = function(
       lowerOut = exp(lower)
       upperOut = exp(upper)
       scaleLabel = "odds"
-      detailNote = paste(
-        "This interval comes from one coefficient.",
-        "It is computed on the logit scale and then exponentiated to the odds-multiplier scale."
-      )
+      scaleNote = "Computed from one coefficient on the logit scale, then exponentiated to the odds-multiplier scale."
     } else if (inherits(model, "glm") && identical(familyObj$family, "poisson") && identical(familyObj$link, "log")) {
       label = paste0("Expected-count multiplier for a 1-unit increase in ", varName)
       estimate = exp(est)
       lowerOut = exp(lower)
       upperOut = exp(upper)
       scaleLabel = "multiplier"
-      detailNote = paste(
-        "This interval comes from one coefficient.",
-        "It is computed on the log scale and then exponentiated to the expected-count multiplier scale."
-      )
+      scaleNote = "Computed from one coefficient on the log scale, then exponentiated to the expected-count multiplier scale."
     } else {
       label = paste0("Change in ", responseName, " for a 1-unit increase in ", varName)
       estimate = est
@@ -349,7 +338,7 @@ buildModelConfidenceIntervalData = function(
       } else {
         "link"
       }
-      detailNote = "This interval comes directly from one coefficient, so no covariance combination is needed."
+      scaleNote = "Computed directly from a single coefficient."
     }
 
     rows[[length(rows) + 1]] = data.frame(
@@ -363,10 +352,11 @@ buildModelConfidenceIntervalData = function(
 
     details[[length(details) + 1]] = list(
       label = label,
-      context = "Single-coefficient effect summary.",
-      combination = paste0(varName, " coefficient only"),
-      variance = paste0("Var = Var(", varName, ")"),
-      note = detailNote
+      quantity = label,
+      settings = "A 1-unit increase in the named numeric predictor, with no additional row-specific settings.",
+      builtFrom = buildLinearCombinationText(setNames(1, varName)),
+      varianceFormula = buildLinearCombinationVarianceText(setNames(1, varName)),
+      scaleNote = scaleNote
     )
   }
 
@@ -393,10 +383,9 @@ buildModelConfidenceIntervalData = function(
     }
 
     paste(
-      "Rows involving factor levels are expressed as expected values with other factors held at their base levels.",
+      "Rows involving factor levels are shown as expected values with other factors held at their base levels.",
       paste0("Base levels: ", factorBaseText, "."),
-      numericText,
-      "These rows can combine multiple coefficients, so their standard errors use both variances and covariance terms."
+      numericText
     )
   } else {
     NULL
@@ -406,6 +395,8 @@ buildModelConfidenceIntervalData = function(
     table = do.call(rbind, rows),
     details = details,
     note = note,
+    teachingNote = teachingNote,
+    vcovTable = vcovTable,
     mode = "derived"
   )
 }
@@ -444,10 +435,11 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
   details = lapply(names(coefVec), function(name) {
     list(
       label = name,
-      context = "Coefficient interval.",
-      combination = paste0(name, " coefficient only"),
-      variance = paste0("Var = Var(", name, ")"),
-      note = "This interval comes directly from one coefficient."
+      quantity = name,
+      settings = "Coefficient interval with no additional predictor settings.",
+      builtFrom = buildLinearCombinationText(setNames(1, name)),
+      varianceFormula = buildLinearCombinationVarianceText(setNames(1, name)),
+      scaleNote = "Computed directly from a single coefficient."
     )
   })
 
@@ -455,6 +447,8 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
     table = out,
     details = details,
     note = NULL,
+    teachingNote = buildModelConfidenceIntervalTeachingNote(model = model),
+    vcovTable = round(vcov(model), 3),
     mode = "coefficient"
   )
 }
@@ -502,7 +496,7 @@ buildLinearCombinationVarianceText = function(nonZero) {
   weights = as.numeric(nonZero)
 
   if (length(weights) == 1) {
-    return(paste0("Var = Var(", namesClean[1], ")"))
+    return(paste0("Var(", namesClean[1], ")"))
   }
 
   varTerms = vapply(
@@ -539,4 +533,25 @@ buildLinearCombinationVarianceText = function(nonZero) {
   )
 
   paste(c(varTerms, covTerms), collapse = " + ")
+}
+
+#' Build a short teaching note for confidence-interval drill-down
+#'
+#' @param model A fitted model object.
+#'
+#' @return A character scalar.
+#' @keywords internal
+buildModelConfidenceIntervalTeachingNote = function(model) {
+
+  if (inherits(model, "glm")) {
+    linkText = paste0("For this model, intervals are first computed on the ", model$family$link, " scale and then transformed back.")
+  } else {
+    linkText = "For this model, intervals are computed directly on the response scale unless a row says otherwise."
+  }
+
+  paste(
+    "Variance is the square of the standard error, so SE^2 gives the variance used inside each confidence interval calculation.",
+    "When a displayed quantity combines more than one coefficient, covariance terms appear because those coefficient estimates are not treated as independent.",
+    linkText
+  )
 }

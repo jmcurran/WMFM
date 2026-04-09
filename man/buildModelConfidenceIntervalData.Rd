@@ -25,8 +25,10 @@ explanations phrased at zero-valued numeric predictors.}
 A list with components:
 \describe{
 \item{table}{A data frame ready for display in the confidence-interval tab.}
-\item{details}{A list of derivation records for optional display.}
+\item{details}{A list of labelled derivation records for drill-down display.}
 \item{note}{Optional explanatory note for the UI.}
+\item{teachingNote}{Optional short teaching note about variance and covariance.}
+\item{vcovTable}{The variance-covariance matrix rounded for display.}
 \item{mode}{Either \code{"derived"} or \code{"coefficient"}.}
 }
 }
@@ -35,9 +37,8 @@ Creates a compact table of confidence intervals for quantities that are
 easier for students to interpret than a raw coefficient table. For models
 without interaction terms, the helper builds intervals for expected values
 at simple base settings and for one-unit changes in numeric predictors.
-It also records short derivation notes showing when a confidence interval is
-based on a linear combination of coefficients and therefore uses covariance
-terms.
+It also records row-by-row explanation material in a labelled structure that
+can be shown on demand in the app.
 }
 \details{
 When the model contains interaction terms, the helper falls back to a raw

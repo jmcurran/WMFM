@@ -4,22 +4,24 @@
 \alias{registerModelOutputTabs}
 \title{Register model output tabs (ANOVA + confidence intervals)}
 \usage{
-registerModelOutputTabs(output, modelFit)
+registerModelOutputTabs(output, input, modelFit)
 }
 \arguments{
-\item{output}{Shiny output object}
+\item{output}{Shiny output object.}
 
-\item{modelFit}{reactiveVal holding fitted model}
+\item{input}{Shiny input object.}
+
+\item{modelFit}{reactiveVal holding fitted model.}
 }
 \value{
-None (called for side effects)
+None (called for side effects).
 }
 \description{
 Defines Shiny outputs used in the Fitted Model tab:
 \itemize{
 \item ANOVA / analysis of deviance
 \item Confidence interval table
-\item Teaching notes and derivations
+\item Drill-down row explanation and optional teaching material
 }
 }
 \keyword{internal}
