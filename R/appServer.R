@@ -111,6 +111,8 @@ appServer = function(input, output, session) {
     bucketContinuous = character(0),
     isResetting = FALSE,
     activeChatBackend = "ollama",
+    activeOllamaModel = "gpt-oss",
+    availableOllamaModels = "gpt-oss",
     userDatasetContext = ""
   )
 
@@ -122,21 +124,87 @@ appServer = function(input, output, session) {
   contrastPairs = reactiveVal(character(0))
   contrastResultText = reactiveVal("")
 
-  output$chatProviderStatus = renderText({
-    backendLabel = switch(
-      rv$activeChatBackend %||% "ollama",
-      "claude" = "Claude",
-      "qwen" = "Qwen",
-      "ollama" = "Ollama",
-      "Ollama"
+  refreshOllamaModelChoices = function(selected = NULL) {
+
+    baseUrl = getOption(
+      "wmfm.ollama_base_url",
+      default = "http://corrin.stat.auckland.ac.nz:11434"
     )
-    paste0("Current provider: ", backendLabel)
+
+    modelIds = tryCatch({
+      res = ellmer::models_ollama(base_url = baseUrl)
+
+      ids = NULL
+      if (is.data.frame(res) && "id" %in% names(res)) {
+        ids = as.character(res$id)
+      } else if (is.atomic(res)) {
+        ids = as.character(res)
+      }
+
+      ids = ids[!is.na(ids) & nzchar(ids)]
+      ids = unique(ids)
+
+      if (length(ids) == 0) {
+        ids = "gpt-oss"
+      }
+
+      ids
+    }, error = function(e) {
+      showNotification(
+        paste0("Could not retrieve Ollama models. Using current/default choices. Details: ", conditionMessage(e)),
+        type = "warning",
+        duration = 8
+      )
+
+      fallback = rv$availableOllamaModels %||% "gpt-oss"
+      fallback = fallback[!is.na(fallback) & nzchar(fallback)]
+      if (length(fallback) == 0) {
+        fallback = "gpt-oss"
+      }
+      unique(as.character(fallback))
+    })
+
+    rv$availableOllamaModels = modelIds
+
+    target = selected %||% rv$activeOllamaModel %||% getOption("wmfm.ollama_model", default = "gpt-oss")
+    if (!(target %in% modelIds)) {
+      target = if ("gpt-oss" %in% modelIds) "gpt-oss" else modelIds[1]
+    }
+
+    updateSelectInput(
+      session,
+      "ollama_model",
+      choices = stats::setNames(modelIds, modelIds),
+      selected = target
+    )
+
+    invisible(target)
+  }
+
+  observe({
+    refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% "gpt-oss")
+  })
+
+  observeEvent(input$refreshOllamaModelsBtn, {
+    refreshOllamaModelChoices(selected = input$ollama_model %||% rv$activeOllamaModel %||% "gpt-oss")
+  }, ignoreInit = TRUE)
+
+  output$chatProviderStatus = renderText({
+    if (identical(rv$activeChatBackend %||% "ollama", "claude")) {
+      return("Current provider: Claude")
+    }
+
+    paste0(
+      "Current provider: Ollama (model: ",
+      rv$activeOllamaModel %||% "gpt-oss",
+      ")"
+    )
   })
 
   observeEvent(input$applyChatProviderBtn, {
     requested = tolower(trimws(input$chat_provider %||% "ollama"))
 
-    if (!requested %in% c("ollama", "qwen", "claude")) {
+    if (!requested %in% c("ollama", "claude")) {
       updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
       showNotification("Unknown provider selected.", type = "error", duration = 6)
       return(NULL)
@@ -159,19 +227,30 @@ appServer = function(input, output, session) {
       }
     }
 
+    selectedModel = input$ollama_model %||% rv$activeOllamaModel %||% "gpt-oss"
+    availableModels = rv$availableOllamaModels %||% "gpt-oss"
+    if (length(availableModels) == 0) {
+      availableModels = "gpt-oss"
+    }
+    if (!(selectedModel %in% availableModels)) {
+      selectedModel = if ("gpt-oss" %in% availableModels) "gpt-oss" else availableModels[1]
+    }
+
     rv$activeChatBackend = requested
+    if (identical(requested, "ollama")) {
+      rv$activeOllamaModel = selectedModel
+    }
+
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
 
-    providerLabel = switch(
-      requested,
-      "claude" = "Claude",
-      "qwen" = "Qwen",
-      "ollama" = "Ollama",
-      requested
-    )
+    msg = if (identical(requested, "claude")) {
+      "Chat provider set to Claude."
+    } else {
+      paste0("Chat provider set to Ollama using model '", rv$activeOllamaModel, "'.")
+    }
 
     showNotification(
-      paste0("Chat provider set to ", providerLabel, "."),
+      msg,
       type = "message",
       duration = 4
     )
@@ -2538,7 +2617,10 @@ $$")
 
     # Try to obtain a chat provider *now*, instead of at app startup
     chatProvider = tryCatch(
-      getChatProvider(backend = rv$activeChatBackend %||% "ollama"),
+      getChatProvider(
+        backend = rv$activeChatBackend %||% "ollama",
+        model = rv$activeOllamaModel %||% "gpt-oss"
+      ),
       error = function(e) {
         showNotification(
           paste(

@@ -1,14 +1,16 @@
 #' Create a safe chat provider for WMFM
 #'
 #' Constructs a chat provider used by WMFM, choosing between an Ollama-based
-#' provider, an Ollama-hosted Qwen provider, and an Anthropic Claude-based
-#' provider.
+#' provider and an Anthropic Claude-based provider.
 #'
 #' The backend is selected via the `backend` argument, or if omitted, from the
-#' `wmfm.chat_backend` option.
+#' `wmfm.chat_backend` option. When `backend = "ollama"`, the Ollama model can
+#' be supplied explicitly via `model`; otherwise `getOption("wmfm.ollama_model")`
+#' is used, with a default of `"gpt-oss"`.
 #'
 #' @param backend Character scalar giving the backend to use. Supported values
-#'   are `"ollama"`, `"qwen"`, and `"claude"`.
+#'   are `"ollama"` and `"claude"`.
+#' @param model Optional Ollama model name to use when `backend = "ollama"`.
 #'
 #' @return
 #' A chat provider object created by `ellmer::chat_ollama()` or
@@ -18,12 +20,13 @@
 #' @examples
 #' \dontrun{
 #'   provider = getChatProvider("ollama")
-#'   providerQwen = getChatProvider("qwen")
+#'   providerQwen = getChatProvider("ollama", model = "qwen3.5:35b-a3b-bf16")
 #'   providerClaude = getChatProvider("claude")
 #' }
 #'
 #' @keywords internal
-getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama")) {
+getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama"),
+                           model = NULL) {
 
   backend = tolower(trimws(backend %||% "ollama"))
 
@@ -38,11 +41,11 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     )
   }
 
-  if (!backend %in% c("ollama", "qwen", "claude")) {
+  if (!backend %in% c("ollama", "claude")) {
     return(makeDummyProvider(
       paste0(
         "Unsupported chat backend: ", backend,
-        ". Supported backends are 'ollama', 'qwen', and 'claude'."
+        ". Supported backends are 'ollama' and 'claude'."
       )
     ))
   }
@@ -95,7 +98,7 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
         "  - the Anthropic credentials are missing or invalid, or",
         "  - the server cannot reach the Anthropic API.",
         "",
-        "Check ANTHROPIC_API_KEY and network access, or switch back to Ollama or Qwen.",
+        "Check ANTHROPIC_API_KEY and network access, or switch back to Ollama.",
         sep = "\n"
       )
       return(makeDummyProvider(msg))
@@ -109,10 +112,10 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     default = "http://corrin.stat.auckland.ac.nz:11434"
   )
 
-  modelName = if (identical(backend, "qwen")) {
-    getOption("wmfm.qwen_model", default = "qwen")
-  } else {
-    getOption("wmfm.ollama_model", default = "gpt-oss")
+  modelName = model %||% getOption("wmfm.ollama_model", default = "gpt-oss")
+  modelName = trimws(modelName %||% "gpt-oss")
+  if (!nzchar(modelName)) {
+    modelName = "gpt-oss"
   }
 
   safeProvider = try(
@@ -124,22 +127,19 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
   )
 
   if (inherits(safeProvider, "try-error")) {
-    backendLabel = if (identical(backend, "qwen")) "Qwen" else "Ollama"
-    optionName = if (identical(backend, "qwen")) "wmfm.qwen_model" else "wmfm.ollama_model"
-
     msg = paste(
-      paste0("WMFM cannot contact the ", backendLabel, " backend."),
+      "WMFM cannot contact the Ollama backend.",
       "",
-      paste0("Backend: ", backend),
+      "Backend: ollama",
       paste0("Server: ", baseUrl),
       paste0("Model: ", modelName),
       "",
       "This usually means either:",
       "  - The Ollama server is not running or unreachable,",
-      paste0("  - The configured model name is wrong (check the ", optionName, " option), or"),
+      "  - The configured model name is wrong, or",
       "  - The wmfm.ollama_base_url option is incorrect.",
       "",
-      "You can either fix the Ollama server/model settings or switch to another provider.",
+      "You can either fix the Ollama server/model settings or switch to Claude.",
       sep = "\n"
     )
     return(makeDummyProvider(msg))

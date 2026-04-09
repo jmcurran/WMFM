@@ -4,11 +4,16 @@
 \alias{getChatProvider}
 \title{Create a safe chat provider for WMFM}
 \usage{
-getChatProvider(backend = getOption("wmfm.chat_backend", default = "ollama"))
+getChatProvider(
+  backend = getOption("wmfm.chat_backend", default = "ollama"),
+  model = NULL
+)
 }
 \arguments{
 \item{backend}{Character scalar giving the backend to use. Supported values
-are \code{"ollama"}, \code{"qwen"}, and \code{"claude"}.}
+are \code{"ollama"} and \code{"claude"}.}
+
+\item{model}{Optional Ollama model name to use when \code{backend = "ollama"}.}
 }
 \value{
 A chat provider object created by \code{ellmer::chat_ollama()} or
@@ -17,17 +22,18 @@ A chat provider object created by \code{ellmer::chat_ollama()} or
 }
 \description{
 Constructs a chat provider used by WMFM, choosing between an Ollama-based
-provider, an Ollama-hosted Qwen provider, and an Anthropic Claude-based
-provider.
+provider and an Anthropic Claude-based provider.
 }
 \details{
 The backend is selected via the \code{backend} argument, or if omitted, from the
-\code{wmfm.chat_backend} option.
+\code{wmfm.chat_backend} option. When \code{backend = "ollama"}, the Ollama model can
+be supplied explicitly via \code{model}; otherwise \code{getOption("wmfm.ollama_model")}
+is used, with a default of \code{"gpt-oss"}.
 }
 \examples{
 \dontrun{
   provider = getChatProvider("ollama")
-  providerQwen = getChatProvider("qwen")
+  providerQwen = getChatProvider("ollama", model = "qwen3.5:35b-a3b-bf16")
   providerClaude = getChatProvider("claude")
 }
 

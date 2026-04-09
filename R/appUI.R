@@ -321,10 +321,26 @@ appUI = function() {
           label = "Provider",
           choices = c(
             "Ollama" = "ollama",
-            "Qwen" = "qwen",
             "Claude" = "claude"
           ),
           selected = "ollama"
+        ),
+        conditionalPanel(
+          condition = "input.chat_provider == 'ollama'",
+          selectInput(
+            inputId = "ollama_model",
+            label = "Ollama model",
+            choices = c("gpt-oss"),
+            selected = "gpt-oss"
+          ),
+          actionButton(
+            inputId = "refreshOllamaModelsBtn",
+            label = "Refresh available models",
+            class = "btn btn-secondary btn-sm"
+          ),
+          helpText(
+            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available."
+          )
         ),
         passwordInput(
           inputId = "providerSwitchPassword",
@@ -339,7 +355,7 @@ appUI = function() {
         tags$br(), tags$br(),
         textOutput("chatProviderStatus"),
         helpText(
-          "Ollama and Qwen can be selected directly. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
+          "Ollama can be selected directly, with a specific Ollama model chosen from the server. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
         )
       )
 
