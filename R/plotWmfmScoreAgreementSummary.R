@@ -42,8 +42,6 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst", "registry")) {
     value = df$meanAbsoluteDifference
   )
 
-  library(ggplot2)
-
   # ---- agreement panel ----
   p1 = ggplot(agreementDf, aes(x = value, y = label, shape = statistic)) +
     geom_point(size = 3) +

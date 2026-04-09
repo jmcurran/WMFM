@@ -1,11 +1,23 @@
 #' Generate one or more deliberately bad model explanations
 #'
-#' Generates plausible but intentionally flawed explanations starting from a
+#' Generic for generating plausible but intentionally flawed explanations from
+#' a fitted model.
+#'
+#' @param x An object.
+#' @param ... Additional arguments passed to methods.
+#'
+#' @return Method-dependent output.
+#' @export
+generateBadExplanation = function(x, ...) {
+  UseMethod("generateBadExplanation")
+}
+
+#' @describeIn generateBadExplanation
+#' Generate plausible but intentionally flawed explanations starting from a
 #' good explanation, either supplied directly or stored in a `wmfmModel`
 #' object. The generated explanations are returned in a form that can be passed
 #' directly to `grade()`.
 #'
-#' @param x A `wmfmModel` object.
 #' @param explanation Optional character scalar giving the base good
 #'   explanation. If `NULL`, `x$explanation` is used.
 #' @param type Character vector of bad explanation types, or `"auto"`.
@@ -29,11 +41,6 @@
 #'
 #'   If `labelErrors = TRUE`, a named list containing explanations, error type
 #'   labels, and severity labels.
-#' @export
-generateBadExplanation = function(x, ...) {
-  UseMethod("generateBadExplanation")
-}
-
 #' @export
 generateBadExplanation.wmfmModel = function(
     x,

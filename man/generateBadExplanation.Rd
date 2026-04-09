@@ -2,12 +2,27 @@
 % Please edit documentation in R/generateBadExplanation.R
 \name{generateBadExplanation}
 \alias{generateBadExplanation}
+\alias{generateBadExplanation.wmfmModel}
 \title{Generate one or more deliberately bad model explanations}
 \usage{
 generateBadExplanation(x, ...)
+
+\method{generateBadExplanation}{wmfmModel}(
+  x,
+  explanation = NULL,
+  type = "auto",
+  severity = c("subtle", "moderate", "severe"),
+  n = 1,
+  mixTypes = FALSE,
+  labelErrors = FALSE,
+  provider = NULL,
+  showProgress = interactive(),
+  showTiming = interactive(),
+  ...
+)
 }
 \arguments{
-\item{x}{A \code{wmfmModel} object.}
+\item{x}{An object.}
 
 \item{...}{Additional arguments reserved for future use.}
 
@@ -36,6 +51,8 @@ Defaults to \code{interactive()}.}
 Defaults to \code{interactive()}.}
 }
 \value{
+Method-dependent output.
+
 If \code{n = 1} and \code{labelErrors = FALSE}, a character scalar.
 
 If \code{n > 1} and \code{labelErrors = FALSE}, a named character vector.
@@ -44,8 +61,14 @@ If \code{labelErrors = TRUE}, a named list containing explanations, error type
 labels, and severity labels.
 }
 \description{
-Generates plausible but intentionally flawed explanations starting from a
+Generic for generating plausible but intentionally flawed explanations from
+a fitted model.
+}
+\section{Methods (by class)}{
+\itemize{
+\item \code{generateBadExplanation(wmfmModel)}: Generate plausible but intentionally flawed explanations starting from a
 good explanation, either supplied directly or stored in a \code{wmfmModel}
 object. The generated explanations are returned in a form that can be passed
 directly to \code{grade()}.
-}
+
+}}

@@ -5,3 +5,4 @@ __MACOSX/
 .Rhistory*
 .RData
 .Ruserdata
+*Rcheck/

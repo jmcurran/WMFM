@@ -4,20 +4,19 @@
 #'
 #' @return A single character string with the Rd help text, or NULL if not found.
 #' @keywords internal
+#' @importFrom tools Rd2txt
+#' @importFrom utils capture.output
 getS20xDocText = function(dataset) {
-  if (!requireNamespace("s20x", quietly = TRUE)) {
+  rd = getInstalledPackageRd(
+    topic = dataset,
+    package = "s20x"
+  )
+
+  if (is.null(rd)) {
     return(NULL)
   }
 
-  hf = utils::help(dataset, package = "s20x")
-  if (length(hf) == 0L) {
-    return(NULL)
-  }
+  txt = capture.output(Rd2txt(rd, out = ""))
 
-  # Get Rd object from help file (using internal helper via getFromNamespace)
-  getHelpFile = getFromNamespace(".getHelpFile", "utils")
-  rd = getHelpFile(hf)
-
-  txt = utils::capture.output(tools::Rd2txt(rd, out = ""))
   paste(txt, collapse = "\n")
 }

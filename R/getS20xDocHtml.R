@@ -4,25 +4,21 @@
 #'
 #' @return A single character string containing HTML for the help page, or NULL if not found.
 #' @keywords internal
+#' @importFrom tools Rd2HTML
 getS20xDocHtml = function(dataset) {
-  if (!requireNamespace("s20x", quietly = TRUE)) {
+  rd = getInstalledPackageRd(
+    topic = dataset,
+    package = "s20x"
+  )
+
+  if (is.null(rd)) {
     return(NULL)
   }
 
-  hf = utils::help(dataset, package = "s20x")
-  if (length(hf) == 0L) {
-    return(NULL)
-  }
-
-  # Get Rd object from help file (using internal helper via getFromNamespace)
-  getHelpFile = getFromNamespace(".getHelpFile", "utils")
-  rd = getHelpFile(hf)
-
-  # Convert Rd to HTML file then read back
   tmpHtml = tempfile(fileext = ".html")
 
   ok = tryCatch({
-    tools::Rd2HTML(rd, out = tmpHtml)
+    Rd2HTML(rd, out = tmpHtml)
     TRUE
   }, error = function(e) {
     FALSE
