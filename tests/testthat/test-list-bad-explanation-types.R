@@ -1,9 +1,8 @@
 test_that("listBadExplanationTypes returns the locked v1 type set", {
-
   out = listBadExplanationTypes()
 
   expect_type(out, "character")
-  expect_false(anyDuplicated(out))
+  expect_equal(anyDuplicated(out), 0L)
 
   expect_identical(
     out,

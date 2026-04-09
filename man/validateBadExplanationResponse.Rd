@@ -9,10 +9,10 @@ validateBadExplanationResponse(parsed, plan)
 \arguments{
 \item{parsed}{Parsed JSON object.}
 
-\item{plan}{A plan object produced by \code{buildBadExplanationPlan()}.}
+\item{plan}{Plan object produced by \code{buildBadExplanationPlan()}.}
 }
 \value{
-A validated and reordered parsed object.
+Validated parsed object.
 }
 \description{
 Validate parsed bad explanation output

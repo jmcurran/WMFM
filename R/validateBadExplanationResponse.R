@@ -1,9 +1,9 @@
 #' Validate parsed bad explanation output
 #'
 #' @param parsed Parsed JSON object.
-#' @param plan A plan object produced by `buildBadExplanationPlan()`.
+#' @param plan Plan object produced by `buildBadExplanationPlan()`.
 #'
-#' @return A validated and reordered parsed object.
+#' @return Validated parsed object.
 #' @keywords internal
 validateBadExplanationResponse = function(parsed, plan) {
 
@@ -14,43 +14,7 @@ validateBadExplanationResponse = function(parsed, plan) {
     )
   }
 
-  itemNames = vapply(parsed, function(item) {
-    if (is.list(item) && !is.null(item$name) && is.character(item$name) && length(item$name) == 1L) {
-      item$name
-    } else {
-      NA_character_
-    }
-  }, character(1))
-
-  if (anyNA(itemNames)) {
-    stop("Each generated explanation must include a valid `name` field.", call. = FALSE)
-  }
-
-  missingNames = setdiff(plan$explanationNames, itemNames)
-  extraNames = setdiff(itemNames, plan$explanationNames)
-
-  if (length(missingNames) > 0L || length(extraNames) > 0L) {
-    stop(
-      paste0(
-        "Generated explanation names did not match the requested plan. ",
-        if (length(missingNames) > 0L) {
-          paste0("Missing: ", paste(missingNames, collapse = ", "), ". ")
-        } else {
-          ""
-        },
-        if (length(extraNames) > 0L) {
-          paste0("Unexpected: ", paste(extraNames, collapse = ", "), ".")
-        } else {
-          ""
-        }
-      ),
-      call. = FALSE
-    )
-  }
-
-  parsed = parsed[match(plan$explanationNames, itemNames)]
-
-  for (i in seq_along(parsed)) {
+  validated = lapply(seq_along(parsed), function(i) {
     item = parsed[[i]]
 
     if (!is.list(item)) {
@@ -60,7 +24,7 @@ validateBadExplanationResponse = function(parsed, plan) {
     requiredFields = c("name", "text", "errorTypes", "severity")
     missingFields = setdiff(requiredFields, names(item))
 
-    if (length(missingFields) > 0L) {
+    if (length(missingFields) > 0) {
       stop(
         paste0(
           "Generated explanation is missing required field(s): ",
@@ -70,44 +34,59 @@ validateBadExplanationResponse = function(parsed, plan) {
       )
     }
 
-    if (!is.character(item$text) || length(item$text) != 1L || is.na(item$text)) {
-      stop("Each generated explanation must have a valid `text` field.", call. = FALSE)
+    nameValue = safeWmfmScalar(item$name, naString = NA_character_)
+    textValue = safeWmfmScalar(item$text, naString = NA_character_)
+    severityValue = safeWmfmScalar(item$severity, naString = NA_character_)
+
+    errorTypesValue = item$errorTypes
+
+    if (is.list(errorTypesValue)) {
+      errorTypesValue = unlist(errorTypesValue, use.names = FALSE)
     }
 
-    if (!nzchar(trimws(item$text))) {
+    errorTypesValue = as.character(errorTypesValue)
+    errorTypesValue = errorTypesValue[!is.na(errorTypesValue)]
+    errorTypesValue = trimws(errorTypesValue)
+    errorTypesValue = errorTypesValue[nzchar(errorTypesValue)]
+
+    if (is.na(nameValue) || !nzchar(trimws(nameValue))) {
+      stop("Each generated explanation must have a valid `name` field.", call. = FALSE)
+    }
+
+    if (is.na(textValue) || !nzchar(trimws(textValue))) {
       stop("Each generated explanation must have non-empty `text`.", call. = FALSE)
     }
 
-    if (!is.character(item$errorTypes) || length(item$errorTypes) < 1L || anyNA(item$errorTypes)) {
+    if (length(errorTypesValue) < 1L) {
       stop(
         "Each generated explanation must have at least one valid `errorTypes` entry.",
         call. = FALSE
       )
     }
 
-    unsupportedTypes = setdiff(item$errorTypes, listBadExplanationTypes())
-
-    if (length(unsupportedTypes) > 0L) {
-      stop(
-        paste0(
-          "Generated explanation returned unsupported error type(s): ",
-          paste(unsupportedTypes, collapse = ", ")
-        ),
-        call. = FALSE
-      )
-    }
-
-    if (!is.character(item$severity) || length(item$severity) != 1L || is.na(item$severity)) {
+    if (is.na(severityValue) || !nzchar(trimws(severityValue))) {
       stop("Each generated explanation must have a valid `severity` field.", call. = FALSE)
     }
 
-    if (!item$severity %in% c("subtle", "moderate", "severe")) {
-      stop(
-        "Each generated explanation must have severity 'subtle', 'moderate', or 'severe'.",
-        call. = FALSE
-      )
-    }
+    list(
+      name = nameValue,
+      text = textValue,
+      errorTypes = errorTypesValue,
+      severity = severityValue
+    )
+  })
+
+  responseNames = vapply(validated, function(item) item$name, character(1))
+
+  if (!setequal(responseNames, plan$explanationNames)) {
+    stop(
+      "Generated explanation names did not match the requested explanation names.",
+      call. = FALSE
+    )
   }
 
-  parsed
+  orderedIdx = match(plan$explanationNames, responseNames)
+  validated = validated[orderedIdx]
+
+  validated
 }
