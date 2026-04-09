@@ -34,7 +34,7 @@ A list with components:
 Creates a compact table of confidence intervals for quantities that are
 easier for students to interpret than a raw coefficient table. For models
 without interaction terms, the helper builds intervals for expected values
-at simple reference settings and for one-unit changes in numeric predictors.
+at simple base settings and for one-unit changes in numeric predictors.
 It also records short derivation notes showing when a confidence interval is
 based on a linear combination of coefficients and therefore uses covariance
 terms.

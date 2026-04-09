@@ -23,7 +23,7 @@
 #' @importFrom shiny isolate validate need freezeReactiveValue
 #' @importFrom sortable bucket_list add_rank_list
 #' @importFrom tools file_ext
-#' @importFrom stats anova as.formula family formula lm glm binomial poisson model.frame terms
+#' @importFrom stats as.formula family formula lm glm binomial poisson model.frame terms
 #' @importFrom stats predict na.omit setNames
 #' @importFrom grDevices replayPlot
 #' @importFrom stats confint density median quantile sd var
@@ -3071,101 +3071,6 @@ $$")
     )
   })
 
-  modelConfintInfo = reactive({
-    m = modelFit()
-    req(m)
-
-    buildModelConfidenceIntervalData(
-      model = m,
-      level = 0.95,
-      numericReference = "mean"
-    )
-  })
-
-  output$modelConfintNoteUi = renderUI({
-    info = modelConfintInfo()
-
-    if (is.null(info$note) || !nzchar(info$note)) {
-      return(NULL)
-    }
-
-    tags$div(
-      class = "alert alert-info",
-      style = "margin-top: 10px; margin-bottom: 10px;",
-      info$note
-    )
-  })
-
-  output$modelConfintTable = renderTable({
-    info = modelConfintInfo()
-    info$table
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
-
-  output$modelCoefVarianceTable = renderTable({
-    m = modelFit()
-    req(m)
-
-    coefMat = summary(m)$coefficients
-    stdErrCol = grep("^Std\\. Error$", colnames(coefMat))
-
-    validate(need(length(stdErrCol) == 1, "Could not find the Std. Error column in the model summary."))
-
-    stdErr = as.numeric(coefMat[, stdErrCol])
-    termNames = rownames(coefMat)
-
-    data.frame(
-      term = termNames,
-      stdError = round(stdErr, 4),
-      variance = round(stdErr^2, 6),
-      stringsAsFactors = FALSE
-    )
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
-
-  output$modelVcovTable = renderTable({
-    m = modelFit()
-    req(m)
-
-    vc = vcov(m)
-    out = data.frame(
-      term = rownames(vc),
-      round(as.data.frame(vc, stringsAsFactors = FALSE), 6),
-      check.names = FALSE,
-      stringsAsFactors = FALSE
-    )
-
-    out
-  }, striped = TRUE, bordered = TRUE, spacing = "s")
-
-  output$modelConfintDetailsUi = renderUI({
-    info = modelConfintInfo()
-
-    tagList(
-      tags$div(
-        class = "alert alert-secondary",
-        style = "margin-top: 10px; margin-bottom: 10px;",
-        tags$p(
-          style = "margin-bottom: 8px;",
-          tags$strong("How do these calculations connect to the regression table?")
-        ),
-        tags$ul(
-          style = "margin-bottom: 8px;",
-          tags$li("The Std. Error column in the regression summary gives the standard error for each coefficient."),
-          tags$li("To get the variance of a coefficient, square that standard error."),
-          tags$li("When a quantity combines more than one coefficient, its variance also depends on covariance terms between coefficients."),
-          tags$li("Those covariance terms are not shown in the regression table. They come from the model's variance-covariance matrix.")
-        )
-      ),
-      h5("Coefficient standard errors and variances"),
-      helpText("The variance of each coefficient is the square of its Std. Error."),
-      tableOutput("modelCoefVarianceTable"),
-      h5("How the displayed confidence intervals are constructed"),
-      renderModelConfidenceIntervalDetailsUi(info$details),
-      h5("Coefficient variance-covariance matrix"),
-      helpText("Diagonal entries are variances. Off-diagonal entries are covariances."),
-      tableOutput("modelVcovTable")
-    )
-  })
-
   # -------------------------------------------------------------------
   # Display model summary (regression table)
   # -------------------------------------------------------------------
@@ -3178,30 +3083,11 @@ $$")
 
     out = capture.output(summary(m))
 
+    # Find first occurrence of "Coefficients:"
     idx = grep("^Coefficients:", out)
 
-    if (length(idx) == 0) {
-      cat(out, sep = "\n")
-      return()
-    }
-
+    # Keep that line and everything after it
     out = out[idx:length(out)]
-
-    cat(out, sep = "\n")
-  })
-
-  output$model_anova = renderPrint({
-    m = modelFit()
-    if (is.null(m)) {
-      cat("No model fitted yet.")
-      return()
-    }
-
-    out = if (inherits(m, "glm") && m$family$family %in% c("binomial", "poisson")) {
-      capture.output(anova(m, test = "Chisq"))
-    } else {
-      capture.output(anova(m))
-    }
 
     cat(out, sep = "\n")
   })
