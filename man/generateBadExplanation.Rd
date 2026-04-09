@@ -28,6 +28,12 @@ types?}
 severity metadata?}
 
 \item{provider}{Optional chat provider. If \code{NULL}, uses \code{getChatProvider()}.}
+
+\item{showProgress}{Logical. Should command-line progress messages be shown?
+Defaults to \code{interactive()}.}
+
+\item{showTiming}{Logical. Should command-line timing summaries be shown?
+Defaults to \code{interactive()}.}
 }
 \value{
 If \code{n = 1} and \code{labelErrors = FALSE}, a character scalar.

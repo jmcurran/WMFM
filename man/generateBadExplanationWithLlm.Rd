@@ -4,7 +4,13 @@
 \alias{generateBadExplanationWithLlm}
 \title{Generate bad explanations with an LLM}
 \usage{
-generateBadExplanationWithLlm(x, baseExplanation, plan, chat)
+generateBadExplanationWithLlm(
+  x,
+  baseExplanation,
+  plan,
+  chat,
+  showProgress = FALSE
+)
 }
 \arguments{
 \item{x}{A \code{wmfmModel} object.}
@@ -14,6 +20,9 @@ generateBadExplanationWithLlm(x, baseExplanation, plan, chat)
 \item{plan}{A plan object produced by \code{buildBadExplanationPlan()}.}
 
 \item{chat}{A chat provider object with a callable \verb{$chat()} method.}
+
+\item{showProgress}{Logical. Should a command-line status message be shown
+before awaiting the LLM response?}
 }
 \value{
 Raw character response from the LLM.

@@ -17,6 +17,10 @@
 #' @param labelErrors Logical. Should the return value include error labels and
 #'   severity metadata?
 #' @param provider Optional chat provider. If `NULL`, uses `getChatProvider()`.
+#' @param showProgress Logical. Should command-line progress messages be shown?
+#'   Defaults to `interactive()`.
+#' @param showTiming Logical. Should command-line timing summaries be shown?
+#'   Defaults to `interactive()`.
 #' @param ... Additional arguments reserved for future use.
 #'
 #' @return If `n = 1` and `labelErrors = FALSE`, a character scalar.
@@ -40,6 +44,8 @@ generateBadExplanation.wmfmModel = function(
     mixTypes = FALSE,
     labelErrors = FALSE,
     provider = NULL,
+    showProgress = interactive(),
+    showTiming = interactive(),
     ...
 ) {
 
@@ -53,39 +59,103 @@ generateBadExplanation.wmfmModel = function(
     labelErrors = labelErrors
   )
 
+  if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
+    stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (!is.logical(showTiming) || length(showTiming) != 1 || is.na(showTiming)) {
+    stop("`showTiming` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  cliTracker = newWmfmCliStageTracker(
+    showProgress = showProgress,
+    showTiming = showTiming,
+    taskLabel = "Bad explanation generation"
+  )
+
+  on.exit(
+    finishWmfmCliStageTracker(cliTracker),
+    add = TRUE
+  )
+
   severity = match.arg(severity)
 
-  baseExplanation = resolveBadExplanationSource(
-    x = x,
-    explanation = explanation
+  baseExplanation = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Resolving base explanation",
+    code = function() {
+      resolveBadExplanationSource(
+        x = x,
+        explanation = explanation
+      )
+    }
   )
 
-  plan = buildBadExplanationPlan(
-    x = x,
-    type = type,
-    severity = severity,
-    n = n,
-    mixTypes = mixTypes
+  plan = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Preparing generation plan",
+    code = function() {
+      buildBadExplanationPlan(
+        x = x,
+        type = type,
+        severity = severity,
+        n = n,
+        mixTypes = mixTypes
+      )
+    }
   )
 
-  chat = provider %||% getChatProvider()
-
-  rawResponse = generateBadExplanationWithLlm(
-    x = x,
-    baseExplanation = baseExplanation,
-    plan = plan,
-    chat = chat
+  chat = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Resolving chat provider",
+    code = function() {
+      provider %||% getChatProvider()
+    }
   )
 
-  parsed = parseBadExplanationResponse(rawResponse)
-
-  validated = validateBadExplanationResponse(
-    parsed = parsed,
-    plan = plan
+  rawResponse = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = paste0("Generating ", n, " bad explanation", if (n == 1) "" else "s"),
+    code = function() {
+      generateBadExplanationWithLlm(
+        x = x,
+        baseExplanation = baseExplanation,
+        plan = plan,
+        chat = chat,
+        showProgress = showProgress
+      )
+    }
   )
 
-  formatBadExplanationOutput(
-    parsed = validated,
-    labelErrors = labelErrors
+  parsed = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Parsing LLM response",
+    code = function() {
+      parseBadExplanationResponse(rawResponse)
+    }
   )
+
+  validated = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Validating generated explanations",
+    code = function() {
+      validateBadExplanationResponse(
+        parsed = parsed,
+        plan = plan
+      )
+    }
+  )
+
+  out = runWmfmCliStage(
+    cliTracker = cliTracker,
+    stageLabel = "Formatting output",
+    code = function() {
+      formatBadExplanationOutput(
+        parsed = validated,
+        labelErrors = labelErrors
+      )
+    }
+  )
+
+  out
 }
