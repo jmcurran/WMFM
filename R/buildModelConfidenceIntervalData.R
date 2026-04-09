@@ -17,6 +17,8 @@
 #' @param level Confidence level. Defaults to `0.95`.
 #' @param numericReference How numeric predictors should be fixed when building
 #'   expected-value rows. One of `"mean"` or `"zero"`. Defaults to `"mean"`.
+#'   The app UI uses `"zero"` so the displayed expected values line up with
+#'   explanations phrased at zero-valued numeric predictors.
 #'
 #' @return A list with components:
 #' \describe{
@@ -177,11 +179,15 @@ buildModelConfidenceIntervalData = function(
     ), collapse = "; ")
   )
 
-  addPredictedRow(
-    label = paste0("Expected ", responseName, " at reference settings"),
-    newData = baseRow,
-    contextText = baselineContext
-  )
+  hasFactorPredictor = any(vapply(mf[predictorNames], is.factor, logical(1)))
+
+  if (!hasFactorPredictor) {
+    addPredictedRow(
+      label = paste0("Expected ", responseName, " at reference settings"),
+      newData = baseRow,
+      contextText = baselineContext
+    )
+  }
 
   for (varName in predictorNames) {
     x = mf[[varName]]
@@ -280,10 +286,17 @@ buildModelConfidenceIntervalData = function(
   }
 
   note = if (length(Filter(function(x) is.factor(x), mf[predictorNames])) > 0) {
-    paste(
-      "Rows involving factor levels are expressed as expected values at simple reference settings.",
-      "These rows can combine multiple coefficients, so their standard errors use both variances and covariance terms."
-    )
+    if (identical(numericReference, "zero")) {
+      paste(
+        "Rows involving factor levels are expressed as expected values with numeric predictors fixed at 0.",
+        "These rows can combine multiple coefficients, so their standard errors use both variances and covariance terms."
+      )
+    } else {
+      paste(
+        "Rows involving factor levels are expressed as expected values at simple reference settings.",
+        "These rows can combine multiple coefficients, so their standard errors use both variances and covariance terms."
+      )
+    }
   } else {
     NULL
   }

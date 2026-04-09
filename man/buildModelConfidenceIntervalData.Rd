@@ -17,7 +17,9 @@ buildModelConfidenceIntervalData(
 \item{level}{Confidence level. Defaults to \code{0.95}.}
 
 \item{numericReference}{How numeric predictors should be fixed when building
-expected-value rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.}
+expected-value rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
+The app UI uses \code{"zero"} so the displayed expected values line up with
+explanations phrased at zero-valued numeric predictors.}
 }
 \value{
 A list with components:

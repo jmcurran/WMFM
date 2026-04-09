@@ -3078,7 +3078,7 @@ $$")
     buildModelConfidenceIntervalData(
       model = m,
       level = 0.95,
-      numericReference = "mean"
+      numericReference = "zero"
     )
   })
 
