@@ -260,10 +260,12 @@ appUI = function() {
                 uiOutput("modelConfintNoteUi"),
                 tableOutput("modelConfintTable"),
                 hr(),
-                uiOutput("modelConfintSelectorUi"),
-                uiOutput("modelConfintSelectedRowUi"),
-                uiOutput("modelConfintTeachingNoteUi"),
-                uiOutput("modelConfintVcovUi")
+                h5("How these intervals are computed"),
+                helpText(
+                  "Use these details when you want to show students how a displayed interval",
+                  "comes from either a single coefficient or a linear combination of coefficients."
+                ),
+                uiOutput("modelConfintDetailsUi")
               )
             )
           ),
