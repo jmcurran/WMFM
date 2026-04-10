@@ -43,8 +43,8 @@ plot.wmfmRuns = function(
         plotObj = ggplot(
             plotData,
             aes(
-                x = reorder(claim, proportionPresent),
-                y = proportionPresent
+                x = reorder(.data$claim, .data$proportionPresent),
+                y = .data$proportionPresent
             )
         ) +
             geom_col() +
@@ -87,8 +87,8 @@ plot.wmfmRuns = function(
     ggplot(
         plotDataLong,
         aes(
-            x = factor(runId),
-            y = value
+            x = factor(.data$runId),
+            y = .data$value
         )
     ) +
         geom_col() +

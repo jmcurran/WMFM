@@ -18,6 +18,7 @@
 #' @return A `ggplot2` object.
 #'
 #' @importFrom ggplot2 ggplot aes geom_tile scale_fill_manual labs theme_minimal theme element_text geom_segment
+#' @importFrom grDevices gray.colors
 #' @export
 plotWmfmExplanationClaimHeatmap = function(
     x,
@@ -65,9 +66,9 @@ plotWmfmExplanationClaimHeatmap = function(
   plotObj = ggplot(
     plotData,
     aes(
-      x = fieldLabel,
-      y = runId,
-      fill = value
+      x = .data$fieldLabel,
+      y = .data$runId,
+      fill = .data$value
     )
   ) +
     geom_tile(colour = "white", linewidth = 0.4) +
@@ -97,10 +98,10 @@ plotWmfmExplanationClaimHeatmap = function(
       geom_segment(
         data = missingDf,
         aes(
-          x = as.numeric(fieldLabel) - 0.42,
-          xend = as.numeric(fieldLabel) + 0.42,
-          y = as.numeric(runId) - 0.42,
-          yend = as.numeric(runId) + 0.42
+          x = as.numeric(.data$fieldLabel) - 0.42,
+          xend = as.numeric(.data$fieldLabel) + 0.42,
+          y = as.numeric(.data$runId) - 0.42,
+          yend = as.numeric(.data$runId) + 0.42
         ),
         inherit.aes = FALSE,
         linewidth = 0.4,
@@ -109,10 +110,10 @@ plotWmfmExplanationClaimHeatmap = function(
       geom_segment(
         data = missingDf,
         aes(
-          x = as.numeric(fieldLabel) - 0.42,
-          xend = as.numeric(fieldLabel) + 0.42,
-          y = as.numeric(runId) + 0.42,
-          yend = as.numeric(runId) - 0.42
+          x = as.numeric(.data$fieldLabel) - 0.42,
+          xend = as.numeric(.data$fieldLabel) + 0.42,
+          y = as.numeric(.data$runId) + 0.42,
+          yend = as.numeric(.data$runId) - 0.42
         ),
         inherit.aes = FALSE,
         linewidth = 0.4,

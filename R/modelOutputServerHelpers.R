@@ -14,6 +14,7 @@
 #'
 #' @importFrom shiny helpText renderPrint renderTable renderUI req selectInput tableOutput
 #' @importFrom shiny tagList tags verbatimTextOutput
+#' @importFrom stats anova
 registerModelOutputTabs = function(output, input, modelFit) {
 
   getCiData = function() {

@@ -85,6 +85,8 @@ listWMFMExamples = function(package = "WMFM") {
 #' }
 #'
 #' @export
+#' @importFrom utils read.csv read.table data capture.output
+#' @importFrom tools file_ext Rd2txt
 runWMFMPackageExample = function(
   name,
   package = "WMFM",
@@ -190,14 +192,14 @@ loadWMFMExampleData = function(spec, basePath) {
       stop("Data file not found: ", dataPath, call. = FALSE)
     }
 
-    extension = tolower(tools::file_ext(dataPath))
+    extension = tolower(file_ext(dataPath))
 
     if (identical(extension, "csv")) {
-      return(utils::read.csv(dataPath, stringsAsFactors = FALSE))
+      return(read.csv(dataPath, stringsAsFactors = FALSE))
     }
 
     if (identical(extension, "txt")) {
-      return(utils::read.table(dataPath, header = TRUE, stringsAsFactors = FALSE))
+      return(read.table(dataPath, header = TRUE, stringsAsFactors = FALSE))
     }
 
     if (extension %in% c("rda", "rdata")) {
@@ -249,7 +251,7 @@ loadWMFMExampleData = function(spec, basePath) {
 
     loadEnv = new.env(parent = emptyenv())
 
-    utils::data(
+    data(
       list = spec$dataObject,
       package = spec$dataPackage,
       envir = loadEnv
@@ -325,28 +327,17 @@ loadWMFMExampleContext = function(spec, basePath) {
     return(NULL)
   }
 
-  if (!requireNamespace(spec$dataPackage, quietly = TRUE)) {
-    return(NULL)
-  }
-
-  helpObject = utils::help(
+  rd = getInstalledPackageRd(
     topic = spec$dataObject,
     package = spec$dataPackage
   )
 
-  helpFile = tryCatch(
-    utils:::.getHelpFile(helpObject),
-    error = function(e) {
-      NULL
-    }
-  )
-
-  if (is.null(helpFile)) {
+  if (is.null(rd)) {
     return(NULL)
   }
 
   helpText = tryCatch(
-    paste(capture.output(tools::Rd2txt(helpFile)), collapse = "\n"),
+    paste(capture.output(Rd2txt(rd, out = "")), collapse = "\n"),
     error = function(e) {
       NULL
     }

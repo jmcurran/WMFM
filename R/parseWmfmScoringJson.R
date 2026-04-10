@@ -10,6 +10,7 @@
 #' @keywords internal
 #'
 #' @importFrom jsonlite fromJSON
+#' @importFrom utils tail
 parseWmfmScoringJson = function(rawResponse) {
 
   if (!is.character(rawResponse) || length(rawResponse) != 1 || is.na(rawResponse)) {

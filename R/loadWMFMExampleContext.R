@@ -12,6 +12,8 @@
 #'
 #' @keywords internal
 #' @noRd
+#' @importFrom tools Rd2txt
+#' @importFrom utils capture.output
 loadWMFMExampleContext = function(spec, basePath) {
   if (!is.null(spec$context) && nzchar(spec$context)) {
     contextPath = file.path(basePath, spec$context)
@@ -46,28 +48,17 @@ loadWMFMExampleContext = function(spec, basePath) {
     return(NULL)
   }
 
-  if (!requireNamespace(spec$dataPackage, quietly = TRUE)) {
-    return(NULL)
-  }
-
-  helpObject = utils::help(
+  rd = getInstalledPackageRd(
     topic = spec$dataObject,
     package = spec$dataPackage
   )
 
-  helpFile = tryCatch(
-    utils:::.getHelpFile(helpObject),
-    error = function(e) {
-      NULL
-    }
-  )
-
-  if (is.null(helpFile)) {
+  if (is.null(rd)) {
     return(NULL)
   }
 
   helpText = tryCatch(
-    paste(capture.output(tools::Rd2txt(helpFile)), collapse = "\n"),
+    paste(capture.output(Rd2txt(rd, out = "")), collapse = "\n"),
     error = function(e) {
       NULL
     }

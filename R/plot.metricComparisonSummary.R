@@ -73,9 +73,9 @@ plot.metricComparisonSummary = function(
       p = ggplot2::ggplot(
         df,
         ggplot2::aes(
-          x = modalProportionDeterministic,
-          y = meanAbsoluteDifference,
-          colour = isFlagged
+          x = .data$modalProportionDeterministic,
+          y = .data$meanAbsoluteDifference,
+          colour = .data$isFlagged
         )
       ) +
         ggplot2::geom_vline(xintercept = easeThreshold, linetype = 2, alpha = 0.5) +
@@ -100,8 +100,8 @@ plot.metricComparisonSummary = function(
       p = ggplot2::ggplot(
         df,
         ggplot2::aes(
-          x = modalProportionDeterministic,
-          y = meanAbsoluteDifference
+          x = .data$modalProportionDeterministic,
+          y = .data$meanAbsoluteDifference
         )
       ) +
         ggplot2::geom_point() +
@@ -131,9 +131,9 @@ plot.metricComparisonSummary = function(
         p = p + ggrepel::geom_text_repel(
           data = labelDf,
           ggplot2::aes(
-            x = modalProportionDeterministic,
-            y = meanAbsoluteDifference,
-            label = label
+            x = .data$modalProportionDeterministic,
+            y = .data$meanAbsoluteDifference,
+            label = .data$label
           ),
           inherit.aes = FALSE,
           size = 3,
@@ -158,9 +158,9 @@ plot.metricComparisonSummary = function(
 
   df$label = factor(df$label, levels = rev(df$label))
 
-  ggplot2::ggplot(df, ggplot2::aes(y = label, x = meanAbsoluteDifference)) +
+  ggplot2::ggplot(df, ggplot2::aes(y = .data$label, x = .data$meanAbsoluteDifference)) +
     ggplot2::geom_segment(
-      ggplot2::aes(yend = label, x = 0, xend = meanAbsoluteDifference)
+      ggplot2::aes(yend = .data$label, x = 0, xend = .data$meanAbsoluteDifference)
     ) +
     ggplot2::geom_point() +
     ggplot2::labs(

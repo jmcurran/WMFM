@@ -196,9 +196,9 @@ plotWmfmScoreHeatmap = function(
   p = ggplot2::ggplot(
     df,
     ggplot2::aes(
-      x = runId,
-      y = label,
-      fill = disagreementClass
+      x = .data$runId,
+      y = .data$label,
+      fill = .data$disagreementClass
     )
   ) +
     ggplot2::geom_tile(colour = "white", linewidth = 0.35) +

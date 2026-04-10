@@ -12,6 +12,7 @@
 #' @importFrom ggplot2 ggplot aes geom_tile geom_text scale_fill_gradient labs
 #'   theme_minimal theme element_text geom_segment geom_point scale_x_continuous
 #'   scale_y_continuous
+#' @importFrom rlang .data
 plot.metricComparisonData = function(
   x,
   type = c("confusion", "runs"),
@@ -60,10 +61,10 @@ plot.metricComparisonData = function(
     return(
       ggplot2::ggplot(
         plotDf,
-        ggplot2::aes(x = detValue, y = otherValue, fill = Freq)
+        ggplot2::aes(x = .data$detValue, y = .data$otherValue, fill = .data$Freq)
       ) +
         ggplot2::geom_tile(colour = "white") +
-        ggplot2::geom_text(ggplot2::aes(label = Freq)) +
+        ggplot2::geom_text(ggplot2::aes(label = .data$Freq)) +
         ggplot2::scale_fill_gradient(low = "grey90", high = "grey20") +
         ggplot2::labs(
           title = paste("Cross-tab for", metricName),
@@ -82,21 +83,21 @@ plot.metricComparisonData = function(
   df$runId = as.numeric(df$runId)
   df$otherValue = df[[otherValueCol]]
 
-  ggplot2::ggplot(df, ggplot2::aes(x = runId)) +
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$runId)) +
     ggplot2::geom_segment(
       ggplot2::aes(
-        xend = runId,
-        y = detValue,
-        yend = otherValue
+        xend = .data$runId,
+        y = .data$detValue,
+        yend = .data$otherValue
       ),
       colour = "grey60"
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(y = detValue),
+      ggplot2::aes(y = .data$detValue),
       size = 2
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(y = otherValue),
+      ggplot2::aes(y = .data$otherValue),
       shape = 17,
       size = 2
     ) +

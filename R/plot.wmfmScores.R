@@ -155,7 +155,7 @@ plot.wmfmScores = function(
     return(
       ggplot2::ggplot(
         longDf,
-        ggplot2::aes(x = metric, y = runId, fill = value)
+        ggplot2::aes(x = .data$metric, y = .data$runId, fill = .data$value)
       ) +
         ggplot2::geom_tile(colour = "white", linewidth = 0.35) +
         scale_fill_gradient2(
@@ -220,13 +220,13 @@ plot.wmfmScores = function(
     return(
       ggplot2::ggplot(
         summaryDf,
-        ggplot2::aes(y = metric, x = meanScore)
+        ggplot2::aes(y = .data$metric, x = .data$meanScore)
       ) +
         ggplot2::geom_segment(
           ggplot2::aes(
-            x = minScore,
-            xend = maxScore,
-            yend = metric
+            x = .data$minScore,
+            xend = .data$maxScore,
+            yend = .data$metric
           ),
           linewidth = 0.6
         ) +
@@ -260,7 +260,7 @@ plot.wmfmScores = function(
 
   ggplot2::ggplot(
     plotDf,
-    ggplot2::aes(x = runId, y = overallScore)
+    ggplot2::aes(x = .data$runId, y = .data$overallScore)
   ) +
     ggplot2::geom_line(linewidth = 0.4) +
     ggplot2::geom_point(size = 2.2) +

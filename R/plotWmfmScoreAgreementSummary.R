@@ -43,7 +43,7 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst", "registry")) {
   )
 
   # ---- agreement panel ----
-  p1 = ggplot(agreementDf, aes(x = value, y = label, shape = statistic)) +
+  p1 = ggplot(agreementDf, aes(x = .data$value, y = .data$label, shape = .data$statistic)) +
     geom_point(size = 3) +
     scale_x_continuous(limits = c(0, 1)) +
     geom_vline(xintercept = 0.8, linetype = "dashed", alpha = 0.3) +
@@ -63,7 +63,7 @@ plotWmfmScoreAgreementSummary = function(x, orderBy = c("worst", "registry")) {
     )
 
   # ---- MAD panel ----
-  p2 = ggplot(madDf, aes(x = value, y = label)) +
+  p2 = ggplot(madDf, aes(x = .data$value, y = .data$label)) +
     geom_point(shape = 3, size = 4) +
     geom_vline(xintercept = 1, linetype = "dashed", alpha = 0.3) +
     labs(

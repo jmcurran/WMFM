@@ -47,7 +47,7 @@ plot.wmfmScoreComparison = function(
     return(
       ggplot2::ggplot(
         df,
-        ggplot2::aes(x = meanOverallScore, y = differenceOverallScore)
+        ggplot2::aes(x = .data$meanOverallScore, y = .data$differenceOverallScore)
       ) +
         ggplot2::geom_point(size = 2.6, alpha = 0.85) +
         ggplot2::geom_hline(

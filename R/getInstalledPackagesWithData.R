@@ -7,7 +7,7 @@
 #'
 #' @return A character vector of installed package names that appear to
 #'   contain one or more datasets.
-#'
+#' @importFrom utils installed.packages
 #' @keywords internal
 getInstalledPackagesWithData = function() {
   pkgs = rownames(installed.packages())

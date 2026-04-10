@@ -107,7 +107,7 @@ plot.wmfmScoreStability = function(
     return(
       ggplot2::ggplot(
         plotDf,
-        ggplot2::aes(x = metric, y = plotValue, fill = method)
+        ggplot2::aes(x = metric, y = .data$plotValue, fill = .data$method)
       ) +
         ggplot2::geom_col(position = ggplot2::position_dodge(width = 0.8)) +
         ggplot2::coord_flip() +
@@ -125,7 +125,7 @@ plot.wmfmScoreStability = function(
     return(
       ggplot2::ggplot(
         plotDf,
-        ggplot2::aes(x = metric, y = plotValue, fill = method)
+        ggplot2::aes(x = .data$metric, y = .data$plotValue, fill = .data$method)
       ) +
         ggplot2::geom_col(position = ggplot2::position_dodge(width = 0.8)) +
         ggplot2::coord_flip() +
@@ -141,13 +141,13 @@ plot.wmfmScoreStability = function(
 
   ggplot2::ggplot(
     plotDf,
-    ggplot2::aes(x = metric, y = plotValue, fill = method)
+    ggplot2::aes(x = .data$metric, y = .data$plotValue, fill = .data$method)
   ) +
     ggplot2::geom_col(position = ggplot2::position_dodge(width = 0.8)) +
     ggplot2::coord_flip() +
     ggplot2::labs(
       x = NULL,
-      y = value,
+      y = .data$value,
       fill = "Method",
       title = paste("Binary score stability:", value)
     ) +

@@ -9,6 +9,7 @@
 #' @return A parsed list.
 #' @keywords internal
 #' @importFrom jsonlite fromJSON
+#' @importFrom utils tail
 parseBadExplanationResponse = function(rawResponse) {
 
   if (!is.character(rawResponse) || length(rawResponse) != 1L || is.na(rawResponse)) {
