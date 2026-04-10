@@ -7,3 +7,4 @@ __MACOSX/
 .Ruserdata
 *Rcheck/
 *.sh
+deferred*

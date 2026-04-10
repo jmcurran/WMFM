@@ -1,3 +1,115 @@
+#' Extract text from WMFM output objects
+#'
+#' Converts model explanation or equation objects into plain text.
+#'
+#' @param x Object returned by WMFM functions.
+#'
+#' @return Character string.
+#' @export
+extractWmfmText = function(x) {
+  if (is.null(x)) return(NA_character_)
+
+  if (is.character(x)) {
+    return(paste(x, collapse = "\n"))
+  }
+
+  tryCatch(
+    paste(capture.output(print(x)), collapse = "\n"),
+    error = function(e) NA_character_
+  )
+}
+#' Count words in text
+#'
+#' @param x Character text.
+#'
+#' @return Integer.
+#' @export
+countWmfmWords = function(x) {
+  if (is.na(x) || !nzchar(x)) return(0L)
+  length(strsplit(x, "[[:space:]]+")[[1]])
+}
+#' Count sentences in text
+#'
+#' @param x Character text.
+#'
+#' @return Integer.
+#' @export
+countWmfmSentences = function(x) {
+  if (is.na(x)) return(NA_integer_)
+  length(unlist(regmatches(x, gregexpr("[.!?]+", x))))
+}
+#' Parse a single assignment statement from text
+#'
+#' Parses user input and verifies it is exactly one assignment statement of the form
+#' \code{name = expr} or \code{name <- expr}. This is designed for validating a
+#' derived-variable input box in a Shiny app.
+#'
+#' @param txt A length-1 character string containing R code.
+#'
+#' @return A list with elements:
+#' \itemize{
+#'   \item \code{ok}: logical, whether parsing/validation succeeded.
+#'   \item \code{msg}: character message if \code{ok = FALSE}.
+#'   \item \code{name}: (if ok) the variable name on the LHS.
+#'   \item \code{rhs}: (if ok) the RHS expression (language object).
+#' }
+#'
+#' @examples
+#' parseSingleAssignment("t = 1:10")$ok
+#' parseSingleAssignment("1:10")$ok
+#' parseSingleAssignment("x = log(y)")$name
+#'
+#' @export
+parseSingleAssignment = function(txt) {
+  txt = trimws(txt)
+
+  if (txt == "") {
+    return(list(ok = FALSE, msg = "Enter an assignment like: t = 1:nrow(data)"))
+  }
+
+  if (!grepl("=", txt, fixed = TRUE) || grepl("~", txt, fixed = TRUE)) {
+    return(list(ok = FALSE, msg = "Enter a single assignment like: t = 1:nrow(data)"))
+  }
+
+  # Allow ":" for sequences; keep a conservative whitelist.
+  # Put "-" at the end of the character class to avoid invalid ranges in TRE.
+  if (!grepl("^[A-Za-z][A-Za-z0-9_]*\\s*=\\s*[0-9A-Za-z_:+*/^()., -]+$", txt)) {
+    return(list(ok = FALSE, msg = "Derived-variable expression contains illegal characters."))
+  }
+
+  expr = tryCatch(parse(text = txt), error = function(e) NULL)
+  if (is.null(expr) || length(expr) != 1) {
+    return(list(ok = FALSE, msg = "Derived-variable expression must be a single assignment."))
+  }
+
+  e1 = expr[[1]]
+  if (!is.call(e1) || as.character(e1[[1]]) != "=") {
+    return(list(ok = FALSE, msg = "Expression must be of the form: name = expression"))
+  }
+
+  lhs = e1[[2]]
+  if (!is.name(lhs)) {
+    return(list(ok = FALSE, msg = "Left-hand side must be a single variable name."))
+  }
+
+  list(ok = TRUE, name = as.character(lhs), rhs = e1[[3]])
+}
+
+#' Normalise text for comparison
+#'
+#' Lowercases and removes extra whitespace.
+#'
+#' @param x Character text.
+#'
+#' @return Character string.
+#' @export
+normaliseWmfmText = function(x) {
+  if (is.na(x)) return(NA_character_)
+
+  x = tolower(x)
+  x = gsub("[[:space:]]+", " ", x)
+  trimws(x)
+}
 #' Normalise common worded numeric expressions in WMFM text
 #'
 #' Applies a lightweight set of rule-based replacements to common language-model
@@ -157,4 +269,68 @@ normaliseNumericExpressions = function(text) {
   out = applyReplacementMap(out, percentMap)
 
   out
+}
+#' Normalise one or more WMFM explanations
+#'
+#' Internal helper that accepts a character vector or a list of character
+#' scalars and returns a named character vector suitable for batch grading.
+#'
+#' @param explanation Character vector or list of character scalars.
+#'
+#' @return A named character vector.
+#' @keywords internal
+normaliseWmfmExplanations = function(explanation) {
+
+  if (is.character(explanation)) {
+    explanationVec = explanation
+  } else if (is.list(explanation)) {
+    if (!all(vapply(explanation, function(x) {
+      is.character(x) && length(x) == 1 && !is.na(x)
+    }, logical(1)))) {
+      stop(
+        "When `explanation` is a list, each element must be a single non-missing character string.",
+        call. = FALSE
+      )
+    }
+
+    explanationVec = unlist(explanation, use.names = TRUE)
+  } else {
+    stop(
+      "`explanation` must be a character vector or a list of character scalars.",
+      call. = FALSE
+    )
+  }
+
+  if (length(explanationVec) < 1) {
+    stop("`explanation` must contain at least one explanation.", call. = FALSE)
+  }
+
+  if (anyNA(explanationVec) || any(!nzchar(explanationVec))) {
+    stop(
+      "All explanations must be non-missing, non-empty character strings.",
+      call. = FALSE
+    )
+  }
+
+  explanationNames = names(explanationVec)
+  missingNames = is.null(explanationNames) | !nzchar(explanationNames)
+
+  if (is.null(explanationNames)) {
+    explanationNames = rep("", length(explanationVec))
+    missingNames = rep(TRUE, length(explanationVec))
+  }
+
+  if (any(missingNames)) {
+    width = nchar(as.character(length(explanationVec)))
+    autoNames = paste0(
+      "explanation_",
+      formatC(seq_len(length(explanationVec)), width = width, flag = "0")
+    )
+    explanationNames[missingNames] = autoNames[missingNames]
+  }
+
+  explanationNames = make.unique(explanationNames, sep = "_")
+  names(explanationVec) = explanationNames
+
+  explanationVec
 }
