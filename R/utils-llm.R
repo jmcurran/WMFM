@@ -1,3 +1,26 @@
+#' Internal helpers and imports for LLM-based model output
+#'
+#' This file collects shared imports for the internal helper functions that
+#' talk to the language model, build prompts, and cache results.
+#'
+#' @name llmHelpers-internal
+#' @keywords internal
+#' @importFrom ellmer chat_ollama type_object type_array type_string
+#' @importFrom glue glue
+#' @importFrom tibble as_tibble
+#' @importFrom stats model.frame coef terms
+NULL
+
+
+#' Environment for caching LLM results
+#'
+#' Internal environment used to cache equations and explanations for
+#' previously fitted models.
+#'
+#' @keywords internal
+.env_cache = new.env(parent = emptyenv())
+
+
 #' Create a safe chat provider for WMFM
 #'
 #' Constructs a chat provider used by WMFM, choosing between an Ollama-based

@@ -559,3 +559,162 @@ buildWmfmRunRecord = function(
     uncertaintyTypeClaim = uncertaintyTypeClaim
   )
 }
+
+
+#' Build a single run record for WMFM grading
+#'
+#' Internal helper that converts a `wmfmModel` object and a supplied
+#' explanation into the same raw run-record structure used elsewhere in WMFM.
+#'
+#' @param x A `wmfmModel` object.
+#' @param explanation Character scalar.
+#' @param runId Integer run identifier.
+#' @param answerRole Character scalar describing the answer role.
+#'
+#' @return A named list containing one raw run record.
+#'
+#' @keywords internal
+#' @noRd
+buildWmfmGradeRunRecord = function(
+    x,
+    explanation,
+    runId = 1L,
+    answerRole = c("student", "modelAnswer")
+) {
+  answerRole = match.arg(answerRole)
+
+  if (!inherits(x, "wmfmModel")) {
+    stop("`x` must inherit from `wmfmModel`.", call. = FALSE)
+  }
+
+  if (!is.character(explanation) || length(explanation) != 1 || is.na(explanation)) {
+    stop("`explanation` must be a single non-missing character string.", call. = FALSE)
+  }
+
+  exampleName = x$meta$exampleName %||% NA_character_
+  packageName = x$meta$package %||% NA_character_
+
+  out = buildWmfmRunRecord(
+    runId = as.integer(runId),
+    exampleName = exampleName,
+    package = packageName,
+    modelType = x$modelType,
+    formula = paste(deparse(x$formula), collapse = " "),
+    equationsText = extractWmfmText(x$equations),
+    explanationText = explanation,
+    errorMessage = NA_character_,
+    interactionTerms = x$interactionTerms %||% character(0),
+    interactionMinPValue = x$interactionMinPValue %||% NA_real_,
+    interactionAlpha = x$meta$interactionAlpha %||% 0.05
+  )
+
+  out$answerRole = answerRole
+  out
+}
+
+
+#' Rebuild raw WMFM run records without rerunning the LLM
+#'
+#' Recomputes raw extracted fields for an existing `wmfmRuns` object by
+#' re-running `buildWmfmRunRecord()` on the stored run metadata and generated
+#' text. This is useful when extraction rules change and you want to refresh the
+#' raw run records without generating new LLM outputs.
+#'
+#' This function is intentionally limited to rebuilding raw run records. It does
+#' not rescore runs and does not compute summaries. If scoring is needed after
+#' rebuilding, call `score()` on the returned object.
+#'
+#' @param x A `wmfmRuns` object.
+#' @param preserveClass Logical. Should the class of `x` be preserved on the
+#'   returned object? Defaults to `TRUE`.
+#'
+#' @return A rebuilt `wmfmRuns` object with refreshed `runs` records.
+#' @export
+rebuildWmfmRunRecords = function(
+    x,
+    preserveClass = TRUE
+) {
+  splitInteractionTerms = function(x) {
+    if (length(x) == 0 || is.na(x) || !nzchar(trimws(x))) {
+      return(character(0))
+    }
+
+    parts = unlist(strsplit(as.character(x), "\\|", fixed = FALSE))
+    trimws(parts[nzchar(trimws(parts))])
+  }
+
+  getScalarField = function(runRecord, fieldName, default = NA) {
+    if (!(fieldName %in% names(runRecord))) {
+      return(default)
+    }
+
+    value = runRecord[[fieldName]]
+
+    if (length(value) == 0) {
+      return(default)
+    }
+
+    value[[1]]
+  }
+
+  rebuildOne = function(runRecord) {
+    buildWmfmRunRecord(
+      runId = getScalarField(runRecord, "runId"),
+      exampleName = getScalarField(runRecord, "exampleName"),
+      package = getScalarField(runRecord, "package"),
+      modelType = getScalarField(runRecord, "modelType"),
+      formula = getScalarField(runRecord, "formula"),
+      equationsText = getScalarField(runRecord, "equationsText"),
+      explanationText = getScalarField(runRecord, "explanationText"),
+      errorMessage = getScalarField(runRecord, "errorMessage", NA_character_),
+      interactionTerms = splitInteractionTerms(
+        getScalarField(runRecord, "interactionTerms", NA_character_)
+      ),
+      interactionMinPValue = getScalarField(
+        runRecord,
+        "interactionMinPValue",
+        NA_real_
+      ),
+      interactionAlpha = getScalarField(
+        runRecord,
+        "interactionAlpha",
+        0.05
+      )
+    )
+  }
+
+  if (!inherits(x, "wmfmRuns")) {
+    stop("`x` must inherit from `wmfmRuns`.", call. = FALSE)
+  }
+
+  if (!is.list(x$runs) || length(x$runs) == 0) {
+    stop("`x$runs` must be a non-empty list of run records.", call. = FALSE)
+  }
+
+  rebuiltRuns = lapply(
+    x$runs,
+    function(runRecord) {
+      if (!is.list(runRecord) || is.null(names(runRecord))) {
+        stop(
+          "Each element of `x$runs` must be a named run-record list.",
+          call. = FALSE
+        )
+      }
+
+      rebuildOne(runRecord)
+    }
+  )
+
+  out = x
+  out$runs = rebuiltRuns
+
+  if ("summary" %in% names(out)) {
+    out$summary = NULL
+  }
+
+  if (isTRUE(preserveClass)) {
+    class(out) = class(x)
+  }
+
+  out
+}

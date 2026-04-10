@@ -2,4 +2,5 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^.*\.sh$
-^deferred*\.md$
+^deferred\-refactors\-stage3\.md$
+^.*\.zip$
