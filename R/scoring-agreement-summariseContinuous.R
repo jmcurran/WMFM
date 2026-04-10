@@ -1,6 +1,6 @@
-#' Summarize agreement for a continuous metric
+#' Summarise agreement for a continuous metric
 #'
-#' Summarizes agreement between two continuous vectors using mean
+#' Summarises agreement between two continuous vectors using mean
 #' differences, absolute differences, correlation, and Bland-Altman
 #' limits of agreement.
 #'
@@ -10,7 +10,7 @@
 #'
 #' @return A one-row data frame, or `NULL` if no complete pairs are available.
 #' @keywords internal
-summarizeContinuousAgreement = function(leftVec, rightVec, metricRow) {
+summariseContinuousAgreement = function(leftVec, rightVec, metricRow) {
   ok = !(is.na(leftVec) | is.na(rightVec))
 
   if (sum(ok) == 0) {

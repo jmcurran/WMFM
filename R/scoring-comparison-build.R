@@ -72,9 +72,9 @@ buildWmfmScoreComparison = function(
     do.call(rbind, out)
   }
 
-  binaryAgreement = collect("binary", summarizeBinaryAgreement)
-  ordinalAgreement = collect("ordinal", summarizeOrdinalAgreement)
-  continuousAgreement = collect("continuous", summarizeContinuousAgreement)
+  binaryAgreement = collect("binary", summariseBinaryAgreement)
+  ordinalAgreement = collect("ordinal", summariseOrdinalAgreement)
+  continuousAgreement = collect("continuous", summariseContinuousAgreement)
 
   pairedOverallScores = data.frame()
   overallSummary = NULL

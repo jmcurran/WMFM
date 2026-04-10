@@ -1,6 +1,6 @@
-#' Summarize agreement for a binary metric
+#' Summarise agreement for a binary metric
 #'
-#' Summarizes agreement between two binary vectors.
+#' Summarises agreement between two binary vectors.
 #'
 #' @param leftVec Vector of left-side values.
 #' @param rightVec Vector of right-side values.
@@ -8,7 +8,7 @@
 #'
 #' @return A one-row data frame, or `NULL` if no complete pairs are available.
 #' @keywords internal
-summarizeBinaryAgreement = function(leftVec, rightVec, metricRow) {
+summariseBinaryAgreement = function(leftVec, rightVec, metricRow) {
   ok = !(is.na(leftVec) | is.na(rightVec))
 
   if (sum(ok) == 0) {

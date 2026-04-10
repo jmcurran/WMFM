@@ -1,6 +1,6 @@
-#' Summarize agreement for an ordinal metric
+#' Summarise agreement for an ordinal metric
 #'
-#' Summarizes agreement between two ordinal vectors using exact
+#' summarises agreement between two ordinal vectors using exact
 #' agreement, adjacent agreement, mean differences, and quadratic
 #' weighted kappa.
 #'
@@ -14,7 +14,7 @@
 #'
 #' @return A one-row data frame, or \code{NULL} if no complete pairs are available.
 #' @keywords internal
-summarizeOrdinalAgreement = function(leftVec, rightVec, metricRow) {
+summariseOrdinalAgreement = function(leftVec, rightVec, metricRow) {
   ok = !(is.na(leftVec) | is.na(rightVec))
 
   if (sum(ok) == 0) {
