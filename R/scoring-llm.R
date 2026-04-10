@@ -53,7 +53,6 @@ applyWmfmLlmScoresToRecord = function(
   scoreRecord
 }
 
-
 #' Compute the number of WMFM LLM grading jobs
 #'
 #' Internal helper for estimating how many LLM grading calls a request would
@@ -89,7 +88,6 @@ computeWmfmLlmJobCount = function(
 
   as.integer(nExplanations * nLlm)
 }
-
 
 #' Enforce the WMFM LLM grading job guard
 #'
@@ -147,7 +145,6 @@ enforceWmfmLlmJobGuard = function(
   invisible(TRUE)
 }
 
-
 #' Parse JSON returned by the LLM scorer
 #'
 #' Parses the raw text returned by a language model scoring call. The parser is
@@ -199,7 +196,6 @@ parseWmfmScoringJson = function(rawResponse) {
 
   parsed
 }
-
 
 #' Score a single WMFM run record using a language model
 #'
@@ -332,7 +328,6 @@ scoreWmfmRunWithLlm = function(
   scoreRecord
 }
 
-
 #' Score multiple WMFM runs using an LLM
 #'
 #' Scores each raw run record in a `wmfmRuns` object using an LLM-based scorer.
@@ -450,7 +445,6 @@ scoreWmfmRunsWithLlm = function(
   scoredRuns
 }
 
-
 #' Build the system prompt for WMFM explanation scoring
 #'
 #' Creates the fixed system prompt used when asking a language model to score a
@@ -490,7 +484,6 @@ buildWmfmLlmScoringSystemPrompt = function() {
     sep = "\n"
   )
 }
-
 
 #' Build a user prompt for WMFM explanation scoring
 #'
@@ -686,7 +679,6 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     sep = "\n"
   )
 }
-
 
 #' Validate parsed WMFM LLM scores
 #'
