@@ -2,5 +2,5 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^.*\.sh$
-^deferred\-refactors\-stage3\.md$
 ^.*\.zip$
+^dev($|/)

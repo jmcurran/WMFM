@@ -8,4 +8,5 @@ __MACOSX/
 .Ruserdata
 *Rcheck/
 *.sh
-deferred*
+dev*
+dev/*
