@@ -1,3 +1,4 @@
 ^WMFM\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^.*\.sh$

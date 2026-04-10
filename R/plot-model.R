@@ -401,3 +401,4 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
   p
 }
+

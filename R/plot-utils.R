@@ -1,0 +1,410 @@
+#' Make readable WMFM legend labels
+#'
+#' Converts raw semantic claim values into nicer display labels for plot
+#' legends.
+#'
+#' @param values Character vector of raw legend values.
+#'
+#' @return A character vector of display labels.
+#' @examples
+#' makeWmfmLegendLabels(c("TRUE", "mixed_or_unclear", "(missing)", ""))
+#' @export
+makeWmfmLegendLabels = function(values) {
+  labels = values
+
+  labels[labels == ""] = " "
+  labels = gsub("_", " ", labels, fixed = TRUE)
+  labels = ifelse(labels == "TRUE", "Present", labels)
+  labels = ifelse(labels == "FALSE", "Absent", labels)
+  labels = ifelse(labels == "(missing)", "Missing", labels)
+  labels
+}
+#' Order WMFM legend values
+#'
+#' Returns legend values in a semantic order rather than alphabetical order.
+#' This makes the legend easier to read by grouping related claim values
+#' together.
+#'
+#' If `includeBreaks = TRUE`, blank entries are inserted between groups so the
+#' legend displays with visual spacing.
+#'
+#' @param values Character vector of legend values to order.
+#' @param includeBreaks Logical. Should blank spacer rows be inserted between
+#'   semantic groups?
+#'
+#' @return A character vector of ordered legend values. If `includeBreaks =
+#'   TRUE`, the returned vector may contain empty strings used as spacer rows.
+#' @examples
+#' orderWmfmLegendValues(c("unclear", "TRUE", "appropriate", "(missing)"))
+#' orderWmfmLegendValues(
+#'   c("unclear", "TRUE", "appropriate", "(missing)"),
+#'   includeBreaks = TRUE
+#' )
+#' @export
+orderWmfmLegendValues = function(values,
+                                 includeBreaks = TRUE) {
+  preferredGroups = list(
+    c("TRUE", "FALSE"),
+    c("difference_claimed", "difference_claimed_strongly"),
+    c("appropriate", "too_weak", "overclaim", "overclaimed", "underclaim"),
+    c("inferential", "descriptive", "descriptive_only"),
+    c("mixed_or_both", "mixed_or_unclear", "unclear"),
+    c("not_mentioned", "(missing)")
+  )
+
+  orderedGroups = lapply(
+    preferredGroups,
+    function(groupValues) {
+      groupValues[groupValues %in% values]
+    }
+  )
+
+  ordered = character(0)
+
+  for (i in seq_along(orderedGroups)) {
+    groupValues = orderedGroups[[i]]
+
+    if (length(groupValues) == 0) {
+      next
+    }
+
+    if (includeBreaks && length(ordered) > 0) {
+      ordered = c(ordered, "")
+    }
+
+    ordered = c(ordered, groupValues)
+  }
+
+  extras = setdiff(values, unlist(preferredGroups, use.names = FALSE))
+
+  if (length(extras) > 0) {
+    if (includeBreaks && length(ordered) > 0) {
+      ordered = c(ordered, "")
+    }
+
+    ordered = c(ordered, sort(extras))
+  }
+
+  ordered
+}
+#' Plot response by factor predictors for factor-only models
+#'
+#' Produces a grouped plot for models with only factor predictors.
+#'
+#' * Uses boxplots when all groups have at least 10 observations
+#' * Uses jittered point plots when any group has fewer than 10 observations
+#' * Adds fitted means and 95% confidence intervals alongside each group
+#' * Supports standard (model-based) and robust (sandwich) confidence intervals
+#' * Applies a log(1 + y) scale when the model is Poisson
+#'
+#' For multiple factor predictors, groups are defined by their interaction.
+#'
+#' Robust confidence intervals are computed on the linear predictor scale using
+#' X V X^T, where V is either vcov(model) or sandwich::vcovHC(model, type = ...).
+#' For GLMs, intervals are then transformed back to the response scale using the
+#' inverse link function.
+#'
+#' @param model A fitted model object (e.g. \code{lm}, \code{glm}).
+#' @param data A data frame containing the variables used to fit the model.
+#' @param ciType Confidence-interval type. One of \code{"standard"} (model-based)
+#'   or \code{"sandwich"} (robust).
+#' @param hcType Heteroskedasticity-consistent estimator type for robust CIs.
+#'   One of \code{"HC0"} or \code{"HC3"}. Only used when \code{ciType="sandwich"}.
+#'
+#' @return A \code{ggplot} object.
+#'
+#' @importFrom stats coef vcov qnorm family model.matrix terms delete.response
+#' @importFrom ggplot2 ggplot aes labs theme_minimal theme element_text
+#' @importFrom ggplot2 geom_boxplot stat_boxplot geom_point geom_errorbar
+#' @importFrom ggplot2 position_jitter position_nudge
+#' @importFrom ggplot2 scale_y_continuous scale_x_discrete expansion
+#' @importFrom rlang .data
+#'
+#' @export
+makeFactorOnlyPlot = function(
+    model,
+    data,
+    ciType = c("standard", "sandwich"),
+    hcType = c("HC0", "HC3")
+) {
+  ciType = match.arg(ciType)
+  hcType = match.arg(hcType)
+
+  responseVar = all.vars(formula(model))[1]
+  factorPreds = getFactorPredictors(model, data)
+
+  if (length(factorPreds) == 0) {
+    stop("makeFactorOnlyPlot() requires at least one factor predictor.")
+  }
+
+  if (length(factorPreds) == 1) {
+    group = data[[factorPreds[1]]]
+    xLabel = factorPreds[1]
+  } else {
+    group = interaction(
+      data[, factorPreds, drop = FALSE],
+      drop = TRUE,
+      sep = " : "
+    )
+    xLabel = "Group"
+  }
+
+  plotDf = data.frame(
+    y = data[[responseVar]],
+    group = droplevels(group)
+  )
+
+  levs = levels(plotDf$group)
+
+  groupSizes = table(plotDf$group)
+  minGroupSize = min(as.integer(groupSizes))
+
+  isGlm = inherits(model, "glm")
+  isPoisson = isGlm && identical(family(model)$family, "poisson")
+
+  # --- newdata for fitted mean/CI (one row per group) ---
+  if (length(factorPreds) == 1) {
+    newData = data.frame(tmp = factor(levs, levels = levs))
+    names(newData) = factorPreds[1]
+  } else {
+    parts = strsplit(levs, " : ", fixed = TRUE)
+    partsMat = do.call(rbind, parts)
+
+    newData = as.data.frame(partsMat, stringsAsFactors = FALSE)
+    names(newData) = factorPreds
+
+    for (j in seq_along(factorPreds)) {
+      newData[[factorPreds[j]]] =
+        factor(newData[[factorPreds[j]]], levels = levels(data[[factorPreds[j]]]))
+    }
+  }
+
+  # --- fitted mean + 95% CI (standard or sandwich) via X V X' ---
+  xTerms = delete.response(terms(model))
+  X = model.matrix(xTerms, newData)
+  beta = coef(model)
+
+  if (ciType == "sandwich") {
+    if (!requireNamespace("sandwich", quietly = TRUE)) {
+      stop("Package 'sandwich' is required for robust CIs. Please install it.")
+    }
+    V = sandwich::vcovHC(model, type = hcType)
+  } else {
+    V = vcov(model)
+  }
+
+  eta = as.numeric(X %*% beta)
+  seEta = sqrt(as.numeric(diag(X %*% V %*% t(X))))
+
+  crit = qnorm(0.975)
+
+  lowerEta = eta - crit * seEta
+  upperEta = eta + crit * seEta
+
+  if (isGlm) {
+    invLink = family(model)$linkinv
+    fit = invLink(eta)
+    lower = invLink(lowerEta)
+    upper = invLink(upperEta)
+  } else {
+    fit = eta
+    lower = lowerEta
+    upper = upperEta
+  }
+
+  fitDf = data.frame(
+    group = factor(levs, levels = levs),
+    fit = fit,
+    lower = lower,
+    upper = upper
+  )
+
+  # --- plot ---
+  p = ggplot(plotDf, aes(x = .data$group, y = .data$y)) +
+    labs(x = xLabel, y = responseVar) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+    scale_x_discrete(expand = expansion(mult = c(0.04, 0.30)))
+
+  boxWidth = 0.45
+  whiskerCapWidth = 0.22
+
+  if (minGroupSize < 10) {
+    p = p + geom_point(
+      position = position_jitter(width = 0.15, height = 0),
+      alpha = 0.7
+    )
+  } else {
+    p = p +
+      geom_boxplot(
+        width = boxWidth,
+        fill = "lightblue",
+        alpha = 0.45,
+        outlier.alpha = 0.35,
+        linewidth = 0.8
+      ) +
+      stat_boxplot(
+        geom = "errorbar",
+        width = whiskerCapWidth,
+        linewidth = 0.8
+      )
+  }
+
+  nudge = position_nudge(x = 0.38)
+
+  p = p +
+    geom_errorbar(
+      data = fitDf,
+      mapping = aes(x = group, ymin = lower, ymax = upper),
+      inherit.aes = FALSE,
+      position = nudge,
+      width = 0.14,
+      linewidth = 0.9,
+      colour = "firebrick"
+    ) +
+    geom_point(
+      data = fitDf,
+      mapping = aes(x = group, y = fit),
+      inherit.aes = FALSE,
+      position = nudge,
+      size = 2.8,
+      colour = "firebrick"
+    )
+
+  ciLabel =
+    if (ciType == "sandwich") {
+      paste0("Robust (sandwich) ", hcType, " 95% CI")
+    } else {
+      "Standard (model-based) 95% CI"
+    }
+
+  if (isPoisson) {
+    p = p +
+      scale_y_continuous(trans = "log1p") +
+      labs(subtitle = paste(ciLabel, " | Poisson: log(1 + response) scale", sep = ""))
+  } else {
+    p = p + labs(subtitle = ciLabel)
+  }
+
+  p
+}
+#' Plot CI controls for the Plot tab
+#'
+#' UI controls for confidence intervals. The UI adapts to the plot type:
+#' \itemize{
+#'   \item \code{"factorOnly"}: show CI type (standard vs robust) and HC choice.
+#'   \item \code{"continuous"}: show an optional "Show confidence intervals"
+#'   checkbox; when enabled, show level, CI type, and HC choice.
+#' }
+#'
+#' Designed to be placed in the Plot tab sidebar / controls area.
+#'
+#' @param mode Either \code{"factorOnly"} or \code{"continuous"}.
+#' @param showCiInputId Input id for the "show confidence intervals" checkbox.
+#' @param ciLevelInputId Input id for the confidence level slider.
+#' @param ciTypeInputId Input id for CI type radio buttons.
+#' @param hcTypeInputId Input id for HC type dropdown.
+#'
+#' @return A Shiny tag list.
+#'
+#' @importFrom shiny tagList checkboxInput sliderInput radioButtons selectInput
+#' @importFrom shiny conditionalPanel tags icon
+#'
+#' @export
+plotCiControlsUi = function(
+    mode = c("factorOnly", "continuous"),
+    showCiInputId  = "plotShowCi",
+    ciLevelInputId = "plotCiLevel",
+    ciTypeInputId  = "plotCiType",
+    hcTypeInputId  = "plotHcType"
+) {
+
+  mode = match.arg(mode)
+
+  hcHelp = paste(
+    "HC0 is the basic heteroskedasticity/unequal variance-robust (sandwich) estimator.",
+    "HC3 applies a leverage adjustment and is often more conservative,",
+    "especially in smaller samples (typically wider intervals)."
+  )
+
+  ciHelp = paste(
+    "Standard CIs use the model's usual variance assumptions.",
+    "Robust (sandwich) CIs allow for heteroskedasticity/unequal variance;",
+    "HC0/HC3 choose the robust variance estimator used for the interval."
+  )
+
+  levelHelp = paste(
+    "The confidence level controls the width of the interval.",
+    "For example, 95% intervals will be wider than 90% intervals."
+  )
+
+  ciTypeBlock = tagList(
+    radioButtons(
+      inputId = ciTypeInputId,
+      label = tagList(
+        "Confidence interval type ",
+        tags$span(
+          icon("circle-info"),
+          title = ciHelp,
+          style = "cursor: help;"
+        )
+      ),
+      choices = c(
+        "Standard (model-based)" = "standard",
+        "Robust (sandwich)"      = "sandwich"
+      ),
+      selected = "standard",
+      inline   = TRUE
+    ),
+    conditionalPanel(
+      condition = sprintf("input.%s == 'sandwich'", ciTypeInputId),
+      selectInput(
+        inputId = hcTypeInputId,
+        label = tagList(
+          "Robust CI type (sandwich) ",
+          tags$span(
+            icon("circle-info"),
+            title = hcHelp,
+            style = "cursor: help;"
+          )
+        ),
+        choices  = c("HC0", "HC3"),
+        selected = "HC0",
+        width    = "200px"
+      )
+    )
+  )
+
+  if (identical(mode, "factorOnly")) {
+    return(tagList(ciTypeBlock))
+  }
+
+  # mode == "continuous"
+  tagList(
+    checkboxInput(
+      inputId = showCiInputId,
+      label   = "Show confidence intervals",
+      value   = FALSE
+    ),
+    conditionalPanel(
+      condition = sprintf("input.%s", showCiInputId),
+      sliderInput(
+        inputId = ciLevelInputId,
+        label = tagList(
+          "Confidence level ",
+          tags$span(
+            icon("circle-info"),
+            title = levelHelp,
+            style = "cursor: help;"
+          )
+        ),
+        min   = 0.80,
+        max   = 0.99,
+        value = 0.95,
+        step  = 0.01
+      ),
+      ciTypeBlock
+    )
+  )
+}
+
