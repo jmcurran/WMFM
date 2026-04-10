@@ -8,7 +8,7 @@
 #'
 #' @param field Character. Field name or plotted label (e.g. "Overclaim",
 #'   "Interaction evidence", "overallScore").
-#' @param x A repeated-runs object (output of runWMFMPackageExampleRepeated)
+#' @param x A repeated-runs object (output of runExample)
 #'   or a data.frame containing run records.
 #' @param runIndex Integer. Which run to explain.
 #'

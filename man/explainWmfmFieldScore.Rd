@@ -10,7 +10,7 @@ explainWmfmFieldScore(field, x, runIndex = 1L)
 \item{field}{Character. Field name or plotted label (e.g. "Overclaim",
 "Interaction evidence", "overallScore").}
 
-\item{x}{A repeated-runs object (output of runWMFMPackageExampleRepeated)
+\item{x}{A repeated-runs object (output of runExample)
 or a data.frame containing run records.}
 
 \item{runIndex}{Integer. Which run to explain.}
