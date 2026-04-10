@@ -68,7 +68,7 @@ grade.wmfmModel = function(
     stop("`nLlm` must be an integer greater than or equal to 1.", call. = FALSE)
   }
 
-  explanationVec = normalizeWmfmExplanations(explanation)
+  explanationVec = normaliseWmfmExplanations(explanation)
   nExplanations = length(explanationVec)
 
   totalLlmCalls = computeWmfmLlmJobCount(

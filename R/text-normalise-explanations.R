@@ -7,7 +7,7 @@
 #'
 #' @return A named character vector.
 #' @keywords internal
-normalizeWmfmExplanations = function(explanation) {
+normaliseWmfmExplanations = function(explanation) {
 
   if (is.character(explanation)) {
     explanationVec = explanation

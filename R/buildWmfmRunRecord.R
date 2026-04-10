@@ -331,7 +331,7 @@ buildWmfmRunRecord = function(
   nInteractionTerms = length(interactionTerms)
 
   explanationPresent = !is.na(explanationText) && nzchar(trimws(explanationText))
-  normalizedExplanation = normalizeWmfmText(explanationText)
+  normalizedExplanation = normaliseWmfmText(explanationText)
   wordCount = countWmfmWords(explanationText)
   sentenceCount = countWmfmSentences(explanationText)
 

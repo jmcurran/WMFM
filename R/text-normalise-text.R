@@ -1,4 +1,4 @@
-#' Normalize text for comparison
+#' Normalise text for comparison
 #'
 #' Lowercases and removes extra whitespace.
 #'
@@ -6,7 +6,7 @@
 #'
 #' @return Character string.
 #' @export
-normalizeWmfmText = function(x) {
+normaliseWmfmText = function(x) {
   if (is.na(x)) return(NA_character_)
 
   x = tolower(x)
