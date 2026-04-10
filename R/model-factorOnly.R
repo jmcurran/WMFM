@@ -126,3 +126,140 @@ computeFactorOnlyContrast = function(model,
 
   out
 }
+
+
+#' Check whether a fitted model has only factor predictors
+#'
+#' Determines whether all predictors in a fitted linear or generalised
+#' linear model are factors in the supplied data set.
+#'
+#' Intercept-only models are not considered factor-only.
+#'
+#' @param model A fitted model object (e.g. \code{lm}, \code{glm}).
+#' @param data A data frame containing the variables used to fit the model.
+#'
+#' @return Logical scalar. Returns \code{TRUE} if all predictors are factors,
+#'   otherwise \code{FALSE}.
+#'
+#' @examples
+#' df = data.frame(
+#'   y = rpois(20, 5),
+#'   site = factor(rep(c("A", "B"), each = 10))
+#' )
+#' mod = glm(y ~ site, family = poisson, data = df)
+#' isFactorOnlyModel(mod, df)
+#'
+#' @export
+isFactorOnlyModel = function(model, data) {
+  if (is.null(model) || is.null(data)) {
+    return(FALSE)
+  }
+
+  trm = terms(model)
+  termLabels = attr(trm, "term.labels")
+
+  if (length(termLabels) == 0) {
+    return(FALSE)
+  }
+
+  all(
+    vapply(termLabels, function(lbl) {
+      vars = all.vars(as.formula(paste("~", lbl)))
+      all(
+        vapply(vars, function(v) {
+          is.factor(data[[v]])
+        }, logical(1))
+      )
+    }, logical(1))
+  )
+}
+
+
+#' Detect factor-only predictor models
+#'
+#' Determines whether a fitted model has *only factor predictors* in its
+#' model frame (i.e., every predictor column is a factor). This is used to
+#' switch the "Fitted equations" view into an ANOVA-style "Fitted means" view.
+#'
+#' The response is not checked for being a factor; in typical "fitted means"
+#' usage the response is numeric and predictors are factors. Intercept-only
+#' models (no predictors) return \code{FALSE}.
+#'
+#' @param m A fitted model object, typically an \code{lm} or \code{glm}.
+#'
+#' @return A logical scalar. \code{TRUE} if all predictors in
+#'   \code{model.frame(m)} are factors; otherwise \code{FALSE}.
+#'
+#' @examples
+#' df = data.frame(y = rnorm(12), A = factor(rep(letters[1:3], each = 4)))
+#' mod = lm(y ~ A, data = df)
+#' isFactorOnlyPredictorModel(mod)
+#'
+#' @importFrom stats model.frame
+#'
+#' @export
+isFactorOnlyPredictorModel = function(m) {
+  if (is.null(m)) {
+    return(FALSE)
+  }
+
+  mf = stats::model.frame(m)
+
+  # Need at least one predictor column (response + >=1 predictor)
+  if (ncol(mf) < 2) {
+    return(FALSE)
+  }
+
+  preds = mf[, -1, drop = FALSE]
+  all(vapply(preds, is.factor, logical(1)))
+}
+
+
+#' Identify factor-only predictors in a fitted model
+#'
+#' Extracts the predictor variables from a fitted model that are factors,
+#' excluding the response variable. Predictor names are determined from the
+#' model terms and matched against the columns in the supplied model frame.
+#'
+#' This helper is primarily used to identify categorical predictors that are
+#' eligible for factor-only contrasts.
+#'
+#' @param m A fitted model object (e.g., from \code{lm()} or \code{glm()}).
+#' @param mf A model frame corresponding to \code{m}, typically obtained via
+#'   \code{model.frame(m)}.
+#'
+#' @return A character vector of predictor names that are factors in
+#'   \code{mf}. Returns an empty character vector if no such predictors exist.
+#'
+#' @importFrom stats terms
+#'
+#' @examples
+#' df = data.frame(
+#'   y = rnorm(10),
+#'   f = factor(rep(c("A", "B"), each = 5)),
+#'   x = rnorm(10)
+#' )
+#'
+#' m = lm(y ~ f + x, data = df)
+#' mf = model.frame(m)
+#'
+#' WMFM:::getFactorOnlyPredictors(m, mf)
+#'
+#' @keywords internal
+getFactorOnlyPredictors = function(m, mf) {
+
+  trm = terms(m)
+
+  preds = attr(trm, "term.labels")
+  preds = as.character(preds)
+
+  if (length(preds) == 0) {
+    return(character(0))
+  }
+
+  isFactor = function(v) {
+    is.factor(mf[[v]])
+  }
+
+  preds[sapply(preds, isFactor)]
+}
