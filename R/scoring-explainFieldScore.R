@@ -8,8 +8,8 @@
 #'
 #' @param field Character. Field name or plotted label (e.g. "Overclaim",
 #'   "Interaction evidence", "overallScore").
-#' @param x A repeated-runs object (output of runExample)
-#'   or a data.frame containing run records.
+#' @param x A `wmfmRuns` object, typically returned by `runExample()`,
+#'   or a `data.frame` containing run records.
 #' @param runIndex Integer. Which run to explain.
 #'
 #' @return Invisibly returns a character vector explanation. Also prints

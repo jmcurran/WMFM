@@ -27,7 +27,10 @@
 \item{...}{Unused. Included for S3 compatibility.}
 }
 \value{
-The output of \code{describeWmfmField()}.
+The result of \code{describeWmfmField()} in the requested format.
+This is a character scalar for \code{format = "text"}, a named list for
+\code{format = "list"}, or a one-row \code{data.frame} for
+\code{format = "data.frame"}.
 }
 \description{
 Describes a field that is present in a \code{wmfmScores} object. The method accepts

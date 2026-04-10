@@ -12,7 +12,10 @@
 #' @param includeAliases Logical. Should recognised aliases be included?
 #' @param ... Unused. Included for S3 compatibility.
 #'
-#' @return The output of `describeWmfmField()`.
+#' @return The result of `describeWmfmField()` in the requested format.
+#'   This is a character scalar for `format = "text"`, a named list for
+#'   `format = "list"`, or a one-row `data.frame` for
+#'   `format = "data.frame"`.
 #' @export
 describeField.wmfmRuns = function(
     x,
