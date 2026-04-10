@@ -1,3 +1,216 @@
+#' Generate bad explanations with an LLM
+#'
+#' @param x A `wmfmModel` object.
+#' @param baseExplanation Character scalar giving the good explanation.
+#' @param plan A plan object produced by `buildBadExplanationPlan()`.
+#' @param chat A chat provider object with a callable `$chat()` method.
+#' @param showProgress Logical. Should a command-line status message be shown
+#'   before awaiting the LLM response?
+#'
+#' @return Raw character response from the LLM.
+#' @keywords internal
+generateBadExplanationWithLlm = function(
+    x,
+    baseExplanation,
+    plan,
+    chat,
+    showProgress = FALSE
+) {
+
+  if (!is.logical(showProgress) || length(showProgress) != 1 || is.na(showProgress)) {
+    stop("`showProgress` must be TRUE or FALSE.", call. = FALSE)
+  }
+
+  if (is.null(chat)) {
+    stop("`chat` must not be NULL.", call. = FALSE)
+  }
+
+  chatMethod = tryCatch(
+    chat$chat,
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(chatMethod) || !is.function(chatMethod)) {
+    stop(
+      "`chat` must provide a callable `$chat()` method.",
+      call. = FALSE
+    )
+  }
+
+  prompt = buildBadExplanationPrompt(
+    x = x,
+    baseExplanation = baseExplanation,
+    plan = plan
+  )
+
+  if (isTRUE(showProgress)) {
+    cat("  Awaiting LLM response...\n")
+  }
+
+  rawResponse = chatMethod(prompt)
+  safeWmfmScalar(rawResponse, naString = "")
+}
+
+#' Parse JSON returned for bad explanation generation
+#'
+#' Parses the raw text returned by a language model generation call. The parser
+#' is tolerant of fenced code blocks and leading or trailing non-JSON text, but
+#' it expects either a single JSON object or a JSON array of objects.
+#'
+#' @param rawResponse Character scalar raw LLM response.
+#'
+#' @return A parsed list.
+#' @keywords internal
+#' @importFrom jsonlite fromJSON
+#' @importFrom utils tail
+parseBadExplanationResponse = function(rawResponse) {
+
+  if (!is.character(rawResponse) || length(rawResponse) != 1L || is.na(rawResponse)) {
+    stop("`rawResponse` must be a non-missing character scalar.", call. = FALSE)
+  }
+
+  jsonText = trimws(rawResponse)
+
+  if (!nzchar(jsonText)) {
+    stop("LLM returned an empty bad explanation response.", call. = FALSE)
+  }
+
+  jsonText = sub("^```json\\s*", "", jsonText)
+  jsonText = sub("^```\\s*", "", jsonText)
+  jsonText = sub("\\s*```$", "", jsonText)
+
+  startArray = regexpr("\\[", jsonText, perl = TRUE)[1]
+  endArray = tail(gregexpr("\\]", jsonText, perl = TRUE)[[1]], 1)
+  startObject = regexpr("\\{", jsonText, perl = TRUE)[1]
+  endObject = tail(gregexpr("\\}", jsonText, perl = TRUE)[[1]], 1)
+
+  if (startArray != -1L && endArray != -1L && endArray > startArray) {
+    jsonText = substr(jsonText, startArray, endArray)
+  } else if (startObject != -1L && endObject != -1L && endObject > startObject) {
+    jsonText = substr(jsonText, startObject, endObject)
+  } else {
+    stop("Could not locate JSON in the bad explanation response.", call. = FALSE)
+  }
+
+  parsed = tryCatch(
+    jsonlite::fromJSON(jsonText, simplifyVector = FALSE),
+    error = function(e) {
+      stop(
+        "Failed to parse bad explanation JSON: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+    }
+  )
+
+  if (is.list(parsed) && !is.null(names(parsed))) {
+    parsed = list(parsed)
+  }
+
+  if (!is.list(parsed)) {
+    stop("Parsed bad explanation response is not a JSON list.", call. = FALSE)
+  }
+
+  parsed
+}
+
+#' Validate parsed bad explanation output
+#'
+#' @param parsed Parsed JSON object.
+#' @param plan Plan object produced by `buildBadExplanationPlan()`.
+#'
+#' @return Validated parsed object.
+#' @keywords internal
+validateBadExplanationResponse = function(parsed, plan) {
+
+  if (!is.list(parsed) || length(parsed) != length(plan$explanationNames)) {
+    stop(
+      "Bad explanation response did not return the expected number of explanations.",
+      call. = FALSE
+    )
+  }
+
+  parsed = lapply(parsed, function(item) {
+
+    if (!is.list(item)) {
+      stop("Each generated explanation must be a JSON object.", call. = FALSE)
+    }
+
+    requiredFields = c("name", "text", "errorTypes", "severity")
+    missingFields = setdiff(requiredFields, names(item))
+
+    if (length(missingFields) > 0) {
+      stop(
+        paste0(
+          "Generated explanation is missing required field(s): ",
+          paste(missingFields, collapse = ", ")
+        ),
+        call. = FALSE
+      )
+    }
+
+    itemName = safeWmfmScalar(item$name, naString = "")
+    itemText = safeWmfmScalar(item$text, naString = "")
+    itemSeverity = safeWmfmScalar(item$severity, naString = "")
+
+    errorTypes = item$errorTypes
+
+    if (is.list(errorTypes)) {
+      errorTypes = unlist(errorTypes, use.names = FALSE)
+    }
+
+    if (is.null(errorTypes)) {
+      errorTypes = character(0)
+    }
+
+    errorTypes = as.character(errorTypes)
+    errorTypes = errorTypes[!is.na(errorTypes)]
+    errorTypes = trimws(errorTypes)
+    errorTypes = errorTypes[nzchar(errorTypes)]
+
+    if (!nzchar(itemName)) {
+      stop("Each generated explanation must have a valid `name` field.", call. = FALSE)
+    }
+
+    if (!nzchar(itemText)) {
+      stop("Each generated explanation must have non-empty `text`.", call. = FALSE)
+    }
+
+    if (length(errorTypes) < 1) {
+      stop(
+        "Each generated explanation must have at least one valid `errorTypes` entry.",
+        call. = FALSE
+      )
+    }
+
+    if (!nzchar(itemSeverity)) {
+      stop("Each generated explanation must have a valid `severity` field.", call. = FALSE)
+    }
+
+    list(
+      name = itemName,
+      text = itemText,
+      errorTypes = errorTypes,
+      severity = itemSeverity
+    )
+  })
+
+  returnedNames = vapply(parsed, function(item) item$name, character(1))
+
+  if (!identical(returnedNames, plan$explanationNames)) {
+    stop(
+      paste(
+        "Generated explanation names did not match the requested plan names."
+      ),
+      call. = FALSE
+    )
+  }
+
+  parsed
+}
+
 #' Audit whether bad explanations are being penalised by the current rubric
 #'
 #' Builds a compact audit summary around a set of already graded bad
