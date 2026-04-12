@@ -46,7 +46,7 @@
 #' @importFrom stats model.frame predict na.omit
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line geom_ribbon labs aes vars facet_wrap
-#' @importFrom ggplot2 scale_y_continuous
+#' @importFrom ggplot2 scale_y_continuous guides guide_legend
 #' @importFrom rlang .data
 #'
 #' @keywords internal
@@ -57,21 +57,17 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
   m = model
 
   modelFrame = model.frame(m)
-  response   = names(modelFrame)[1]
+  response = names(modelFrame)[1]
   predictors = names(modelFrame)[-1]
 
-  # Identify numeric predictors
-  numericMask  = sapply(modelFrame[predictors], is.numeric)
+  numericMask = vapply(modelFrame[predictors], is.numeric, logical(1))
   numericPreds = predictors[numericMask]
 
-  # If zero numeric predictors:
-  # - If predictors are factors, show grouped plot (boxplot or jitter)
-  # - Otherwise, show a message
   if (length(numericPreds) == 0) {
     if (isFactorOnlyModel(m, modelFrame)) {
       return(makeFactorOnlyPlot(
-        model  = m,
-        data   = modelFrame,
+        model = m,
+        data = modelFrame,
         ciType = ciType,
         hcType = hcType
       ))
@@ -79,18 +75,19 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
     plot.new()
     text(
-      0.5, 0.5,
+      0.5,
+      0.5,
       "No numeric predictors available to plot.",
       cex = 1.2
     )
     return(invisible())
   }
 
-  # If more than one numeric predictor: do not plot, show message
   if (length(numericPreds) > 1) {
     plot.new()
     text(
-      0.5, 0.5,
+      0.5,
+      0.5,
       "Plot is only available when there is a single numeric predictor in the model.",
       cex = 1.2
     )
@@ -99,11 +96,10 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
   xVar = numericPreds[1]
 
-  # Factor predictors: used for colour / faceting (for non-binomial)
-  factorMask  = sapply(modelFrame[predictors], is.factor)
+  factorMask = vapply(modelFrame[predictors], is.factor, logical(1))
   factorPreds = predictors[factorMask]
 
-  facetVar  = NULL
+  facetVar = NULL
   colourVar = NULL
 
   if (length(factorPreds) == 1) {
@@ -111,83 +107,69 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
   } else if (length(factorPreds) == 2) {
     levCounts = vapply(
       factorPreds,
-      function(v) nlevels(modelFrame[[v]]),
+      function(v) {
+        nlevels(modelFrame[[v]])
+      },
       FUN.VALUE = integer(1)
     )
 
     if (levCounts[1] < levCounts[2]) {
-      facetVar  = factorPreds[1]
+      facetVar = factorPreds[1]
       colourVar = factorPreds[2]
     } else if (levCounts[2] < levCounts[1]) {
-      facetVar  = factorPreds[2]
+      facetVar = factorPreds[2]
       colourVar = factorPreds[1]
     } else {
-      facetVar  = factorPreds[2]
+      facetVar = factorPreds[2]
       colourVar = factorPreds[1]
     }
   }
 
-  # --- Set up y for plotting (special handling for binomial glm) ---
-  y       = modelFrame[[response]]
-  isGlm   = inherits(m, "glm")
+  y = modelFrame[[response]]
+  isGlm = inherits(m, "glm")
   isBinom = isGlm && identical(m$family$family, "binomial")
-  yPlot   = y
+  yPlot = y
   yBreaks = NULL
   yLabels = NULL
 
-  # For binomial models, we build:
-  #  - .yPlot      : numeric 0/1 on the y-axis
-  #  - .respFactor : factor used for point colours
   if (isBinom) {
-    respFactor = NULL
-
     if (is.factor(y)) {
       levs = levels(y)
       if (length(levs) == 2) {
         eventLevel = levs[2]
-        yPlot      = as.numeric(y == eventLevel)
-        yBreaks    = c(0, 1)
-        yLabels    = levs
-        respFactor = y
+        yPlot = as.numeric(y == eventLevel)
+        yBreaks = c(0, 1)
+        yLabels = levs
       } else {
-        yPlot      = as.numeric(y)
-        respFactor = factor(y)
+        yPlot = as.numeric(y)
       }
     } else if (is.logical(y)) {
-      yPlot      = as.numeric(y)
-      yBreaks    = c(0, 1)
-      yLabels    = c("FALSE", "TRUE")
-      respFactor = factor(y, levels = c(FALSE, TRUE))
+      yPlot = as.numeric(y)
+      yBreaks = c(0, 1)
+      yLabels = c("FALSE", "TRUE")
     } else if (is.numeric(y)) {
       yPlot = y
-      uy    = sort(unique(na.omit(yPlot)))
+      uy = sort(unique(na.omit(yPlot)))
       if (identical(uy, c(0, 1))) {
-        yBreaks    = c(0, 1)
-        yLabels    = c("0", "1")
-        respFactor = factor(yPlot, levels = c(0, 1), labels = yLabels)
-      } else {
-        respFactor = factor(yPlot)
+        yBreaks = c(0, 1)
+        yLabels = c("0", "1")
       }
     } else {
-      fac  = factor(y)
+      fac = factor(y)
       levs = levels(fac)
       if (length(levs) == 2) {
         eventLevel = levs[2]
-        yPlot      = as.numeric(fac == eventLevel)
-        yBreaks    = c(0, 1)
-        yLabels    = levs
-        respFactor = fac
+        yPlot = as.numeric(fac == eventLevel)
+        yBreaks = c(0, 1)
+        yLabels = levs
       } else {
-        yPlot      = as.numeric(fac)
-        respFactor = fac
+        yPlot = as.numeric(fac)
       }
     }
 
-    modelFrame$.yPlot      = yPlot
-    modelFrame$.respFactor = respFactor
+    modelFrame$.yPlot = yPlot
   }
 
-  # Build grid for fitted lines
   xSeq = seq(
     min(modelFrame[[xVar]], na.rm = TRUE),
     max(modelFrame[[xVar]], na.rm = TRUE),
@@ -197,14 +179,12 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
   gridList = list()
   gridList[[xVar]] = xSeq
 
-  # Use all factor predictors in the grid (if any)
   if (length(factorPreds) > 0) {
     for (v in factorPreds) {
       gridList[[v]] = levels(modelFrame[[v]])
     }
   }
 
-  # For any other predictors, hold them at a typical value
   otherPreds = setdiff(predictors, c(xVar, factorPreds))
   for (v in otherPreds) {
     x = modelFrame[[v]]
@@ -217,14 +197,13 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
   newData = expand.grid(gridList, stringsAsFactors = FALSE)
 
-  # Predictions (and optional confidence intervals)
   if (isTRUE(showCi)) {
     newData = computeMeanCi(
-      model   = m,
+      model = m,
       newData = newData,
-      ciType  = ciType,
-      hcType  = hcType,
-      level   = level
+      ciType = ciType,
+      hcType = hcType,
+      level = level
     )
   } else {
     if (isGlm) {
@@ -234,24 +213,27 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
     }
   }
 
-  # ----- Build plot -----
-
   addCiRibbon = function(p, hasGroups = FALSE) {
     if (!isTRUE(showCi)) {
       return(p)
     }
+
     if (hasGroups) {
-      return(p + geom_ribbon(
-        data = newData,
-        mapping = aes(
-          x = .data[[xVar]],
-          ymin = .data[["lower"]],
-          ymax = .data[["upper"]],
-          group = .data[[colourVar]]
-        ),
-        alpha = 0.2,
-        inherit.aes = FALSE
-      ))
+      return(
+        p + geom_ribbon(
+          data = newData,
+          mapping = aes(
+            x = .data[[xVar]],
+            ymin = .data[["lower"]],
+            ymax = .data[["upper"]],
+            group = .data[[colourVar]],
+            fill = .data[[colourVar]]
+          ),
+          alpha = 0.2,
+          inherit.aes = FALSE,
+          show.legend = FALSE
+        )
+      )
     }
 
     p + geom_ribbon(
@@ -262,18 +244,18 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
         ymax = .data[["upper"]]
       ),
       alpha = 0.2,
-      inherit.aes = FALSE
+      inherit.aes = FALSE,
+      show.legend = FALSE
     )
   }
 
   if (isBinom) {
     if (is.null(colourVar)) {
       p = ggplot(
-        data    = modelFrame,
+        data = modelFrame,
         mapping = aes(
-          x      = .data[[xVar]],
-          y      = .data[[".yPlot"]],
-          colour = .data[[".respFactor"]]
+          x = .data[[xVar]],
+          y = .data[[".yPlot"]]
         )
       ) +
         geom_point(alpha = 0.6)
@@ -282,26 +264,26 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
       p = p +
         geom_line(
-          data    = newData,
+          data = newData,
           mapping = aes(
             x = .data[[xVar]],
             y = .data[["fit"]]
           ),
-          linewidth = 1
+          linewidth = 1,
+          inherit.aes = FALSE
         ) +
         labs(
-          x      = xVar,
-          y      = response,
-          colour = response
+          x = xVar,
+          y = response
         )
     } else {
       p = ggplot(
-        data    = modelFrame,
+        data = modelFrame,
         mapping = aes(
-          x      = .data[[xVar]],
-          y      = .data[[".yPlot"]],
-          colour = .data[[".respFactor"]],
-          shape  = .data[[colourVar]]
+          x = .data[[xVar]],
+          y = .data[[".yPlot"]],
+          colour = .data[[colourVar]],
+          shape = .data[[colourVar]]
         )
       ) +
         geom_point(alpha = 0.6)
@@ -310,31 +292,36 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
       p = p +
         geom_line(
-          data    = newData,
+          data = newData,
           mapping = aes(
-            x     = .data[[xVar]],
-            y     = .data[["fit"]],
-            group = .data[[colourVar]]
+            x = .data[[xVar]],
+            y = .data[["fit"]],
+            group = .data[[colourVar]],
+            colour = .data[[colourVar]]
           ),
-          linewidth = 1
+          linewidth = 1,
+          inherit.aes = FALSE,
+          show.legend = FALSE
         ) +
         labs(
-          x      = xVar,
-          y      = response,
-          colour = response,
-          shape  = colourVar
+          x = xVar,
+          y = response,
+          colour = colourVar,
+          shape = colourVar
+        ) +
+        guides(
+          colour = guide_legend(override.aes = list(linetype = 0)),
+          shape = "none"
         )
-    }
 
-    if (!is.null(facetVar)) {
-      p = p + facet_wrap(vars(.data[[facetVar]]))
+      if (!is.null(facetVar)) {
+        p = p + facet_wrap(vars(.data[[facetVar]]))
+      }
     }
-
   } else {
-
     if (is.null(colourVar)) {
       p = ggplot(
-        data    = modelFrame,
+        data = modelFrame,
         mapping = aes(
           x = .data[[xVar]],
           y = .data[[response]]
@@ -346,21 +333,23 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
       p = p +
         geom_line(
-          data    = newData,
+          data = newData,
           mapping = aes(
             x = .data[[xVar]],
             y = .data[["fit"]]
           ),
           linewidth = 1
         ) +
-        labs(x = xVar, y = response)
-
+        labs(
+          x = xVar,
+          y = response
+        )
     } else {
       p = ggplot(
-        data    = modelFrame,
+        data = modelFrame,
         mapping = aes(
-          x      = .data[[xVar]],
-          y      = .data[[response]],
+          x = .data[[xVar]],
+          y = .data[[response]],
           colour = .data[[colourVar]]
         )
       ) +
@@ -370,17 +359,17 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
       p = p +
         geom_line(
-          data    = newData,
+          data = newData,
           mapping = aes(
-            x      = .data[[xVar]],
-            y      = .data[["fit"]],
+            x = .data[[xVar]],
+            y = .data[["fit"]],
             colour = .data[[colourVar]]
           ),
           linewidth = 1
         ) +
         labs(
-          x      = xVar,
-          y      = response,
+          x = xVar,
+          y = response,
           colour = colourVar
         )
 
@@ -390,7 +379,6 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
     }
   }
 
-  # For binomial models, force y-scale to 0-1 with nice labels
   if (isBinom && !is.null(yBreaks) && !is.null(yLabels)) {
     p = p + scale_y_continuous(
       breaks = yBreaks,
@@ -401,4 +389,3 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
 
   p
 }
-
