@@ -14,8 +14,8 @@ A data frame ready for display.
 }
 \description{
 Adds a visible separator row before rows that describe non-zero covariate
-effects, such as one-unit changes and multiplicative effect rows. This keeps
-the student-facing table visually split between baseline fitted quantities
-and effect summaries without changing the underlying interval calculations.
+effects, such as one-unit changes and multiplicative effect rows. The
+returned table also carries a \code{ciSection} column so downstream code can
+group rows explicitly without relying on the separator alone.
 }
 \keyword{internal}

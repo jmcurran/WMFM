@@ -17,8 +17,8 @@ buildModelConfidenceIntervalData(
 \item{level}{Confidence level. Defaults to \code{0.95}.}
 
 \item{numericReference}{How numeric predictors should be fixed when building
-expected-value rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
-The app UI uses \code{"zero"} so the displayed expected values line up with
+fitted-quantity rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
+The app UI uses \code{"zero"} so the displayed fitted values line up with
 explanations phrased at zero-valued numeric predictors.}
 }
 \value{
@@ -34,15 +34,20 @@ A list with components:
 }
 \description{
 Creates a compact table of confidence intervals for quantities that are
-easier for students to interpret than a raw coefficient table. For models
-without interaction terms, the helper builds intervals for expected values
-at simple base settings and for one-unit changes in numeric predictors.
-It also records row-by-row explanation material in a labelled structure that
-can be shown on demand in the app.
+easier for students to interpret than a raw coefficient table. For supported
+models, the helper prefers derived teaching rows such as fitted quantities at
+simple reference settings and one-unit covariate effects on the most natural
+teaching scale. When the model structure is too complex for a stable derived
+summary, the helper falls back to a coefficient table.
 }
 \details{
-When the model contains interaction terms, the helper falls back to a raw
-coefficient-interval table because simple marginal quantities depend on the
-values of other predictors.
+Derived mode currently supports:
+\itemize{
+\item models with no interaction terms
+\item models with exactly one factor predictor, one numeric predictor, and one
+interaction term between them
+}
+
+All other interaction structures fall back to coefficient mode.
 }
 \keyword{internal}
