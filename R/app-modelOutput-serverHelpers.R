@@ -255,7 +255,7 @@ registerModelOutputTabs = function(output, input, modelFit) {
     }
   })
 
-  output$modelConfintScaleUi = renderUI({
+  output$modelConfintControlsUi = renderUI({
 
     ciData = getCiData()
 
@@ -269,32 +269,26 @@ registerModelOutputTabs = function(output, input, modelFit) {
       return(NULL)
     }
 
-    selectInput(
-      inputId = "modelConfintDisplayScale",
-      label = "Display scale",
-      choices = choices,
-      selected = getDefaultCiDisplayScale(ciData)
-    )
-  })
+    tagList(
+      selectInput(
+        inputId = "modelConfintDisplayScale",
+        label = "Display scale",
+        choices = choices,
+        selected = getDefaultCiDisplayScale(ciData)
+      ),
+      {
+        hasComplement = !is.null(ciData$table) &&
+          "isComplement" %in% names(ciData$table) &&
+          any(ciData$table$isComplement %in% TRUE, na.rm = TRUE)
 
-  output$modelConfintComplementUi = renderUI({
-
-    ciData = getCiData()
-
-    if (is.null(ciData) || is.null(ciData$table) || !("isComplement" %in% names(ciData$table))) {
-      return(NULL)
-    }
-
-    hasComplement = any(ciData$table$isComplement %in% TRUE, na.rm = TRUE)
-
-    if (!hasComplement) {
-      return(NULL)
-    }
-
-    checkboxInput(
-      inputId = "modelConfintShowComplement",
-      label = "Show complementary outcome rows",
-      value = FALSE
+        if (isTRUE(hasComplement)) {
+          checkboxInput(
+            inputId = "modelConfintShowComplement",
+            label = "Show complementary outcome rows",
+            value = FALSE
+          )
+        }
+      }
     )
   })
 
@@ -310,6 +304,17 @@ registerModelOutputTabs = function(output, input, modelFit) {
     noteText = buildCiDisplayNote(ciData = ciData, selectedScale = selectedScale)
 
     helpText(noteText)
+  })
+
+  output$modelConfintTableUi = renderUI({
+
+    ciData = getCiData()
+
+    if (is.null(ciData)) {
+      return(NULL)
+    }
+
+    tableOutput("modelConfintTable")
   })
 
   output$modelConfintTable = renderTable({
