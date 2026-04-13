@@ -23,7 +23,7 @@
 #' oneRow = data.frame(A = factor("b", levels = levels(df$A)))
 #' makeMeanEquation(mod, oneRow, "Mean(A=b)")
 #'
-#' @importFrom stats model.matrix terms coef delete.response family plogis
+#' @importFrom stats model.matrix terms coef delete.response family model.frame na.omit plogis
 #'
 #' @export
 makeMeanEquation = function(m, oneRowDf, label) {
@@ -75,31 +75,38 @@ makeMeanEquation = function(m, oneRowDf, label) {
 
   # Line 2: interpret eta + back-transform
   if (fam == "binomial" && link == "logit") {
-    successProbLabel = formatBinomialProbabilityLabel(m, outcome = "success")
-    failureProbLabel = formatBinomialProbabilityLabel(m, outcome = "failure")
-    successOddsLabel = formatBinomialOddsLabel(m, outcome = "success")
-    failureOddsLabel = formatBinomialOddsLabel(m, outcome = "failure")
-
-    successProb = plogis(eta)
-    failureProb = 1 - successProb
-    successOdds = exp(eta)
-    failureOdds = exp(-eta)
+    notation = buildGlmTeachingNotation(m)
+    pSuccess = plogis(eta)
+    pFailure = 1 - pSuccess
+    oddsSuccess = exp(eta)
+    oddsFailure = exp(-eta)
 
     line2 = paste0(
-      "eta = logit(", successProbLabel, ")  =>  ",
-      successOddsLabel, " = exp(eta) = ", fmt2dp(successOdds), " (\u2248 ", fmt3sf(successOdds), ")",
-      "\n",
-      failureOddsLabel, " = exp(-eta) = ", fmt2dp(failureOdds), " (\u2248 ", fmt3sf(failureOdds), ")",
-      "\n",
-      successProbLabel, " = exp(eta) / (1 + exp(eta)) = ", fmt2dp(successProb), " (\u2248 ", fmt3sf(successProb), ")",
-      "\n",
-      failureProbLabel, " = 1 / (1 + exp(eta)) = ", fmt2dp(failureProb), " (\u2248 ", fmt3sf(failureProb), ")"
+      "eta = ", notation$logitSuccess,
+      "  =>  ", notation$oddsSuccess, " = exp(eta) = ",
+      fmt2dp(oddsSuccess), " (\u2248 ", fmt3sf(oddsSuccess), ")"
     )
+    line3 = paste0(
+      notation$probabilitySuccess, " = exp(eta) / (1 + exp(eta)) = ",
+      fmt2dp(pSuccess), " (\u2248 ", fmt3sf(pSuccess), ")"
+    )
+    line4 = paste0(
+      notation$oddsFailure, " = exp(-eta) = ",
+      fmt2dp(oddsFailure), " (\u2248 ", fmt3sf(oddsFailure), ")"
+    )
+    line5 = paste0(
+      notation$probabilityFailure, " = 1 / (1 + exp(eta)) = ",
+      fmt2dp(pFailure), " (\u2248 ", fmt3sf(pFailure), ")"
+    )
+    return(paste(c(line1, line2, line3, line4, line5), collapse = "\n"))
   } else if (fam == "poisson" && link == "log") {
-    mu = invLink(eta)  # exp(eta)
+    notation = buildGlmTeachingNotation(m)
+    mu = invLink(eta)
     line2 = paste0(
-      "eta = log(mean)  =>  mean = exp(eta) = ", fmt2dp(mu), " (\u2248 ", fmt3sf(mu), ")"
+      "eta = ", notation$logMean, "  =>  ", notation$mean, " = exp(eta) = ",
+      fmt2dp(mu), " (\u2248 ", fmt3sf(mu), ")"
     )
+    return(paste(c(line1, line2), collapse = "\n"))
   } else {
     mu = invLink(eta)
     line2 = paste0(
@@ -110,3 +117,4 @@ makeMeanEquation = function(m, oneRowDf, label) {
 
   paste(c(line1, line2), collapse = "\n")
 }
+

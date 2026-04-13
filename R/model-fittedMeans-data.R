@@ -72,7 +72,7 @@ makeFittedMeansData = function(m) {
     if (isBinom) {
       grid$.prob = as.numeric(plogis(grid$.eta))
       grid$.fit = grid$.prob
-      scale = "probability"
+      scale = "Pr(Y = success)"
     } else {
       # For other GLMs, keep response-scale fit, but still retain eta
       grid$.prob = NA_real_

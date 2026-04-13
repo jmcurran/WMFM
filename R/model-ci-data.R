@@ -1,22 +1,24 @@
 #' Build interpretable confidence-interval output for a fitted model
 #'
 #' Creates a compact table of confidence intervals for quantities that are
-#' easier for students to interpret than a raw coefficient table. The helper
-#' builds intervals for fitted values at simple predictor settings and, where
-#' helpful, simple contrasts such as one-unit numeric changes or factor-level
-#' comparisons.
+#' easier for students to interpret than a raw coefficient table. For models
+#' without interaction terms, the helper builds intervals for expected values
+#' at simple base settings and for one-unit changes in numeric predictors.
+#' It also records row-by-row explanation material in a labelled structure that
+#' can be shown on demand in the app.
 #'
-#' For binomial logit models, the displayed rows use the probability and odds
-#' scales. For log-link count models, multiplicative count effects are shown.
-#' For identity-link models, rows stay on the response scale.
+#' When the model contains interaction terms, the helper falls back to a raw
+#' coefficient-interval table unless it matches a simple teaching pattern that
+#' can be summarised clearly: one factor predictor, one numeric predictor, and
+#' one interaction term in an lm/logistic/Poisson model.
 #'
 #' @param model A fitted model object, typically of class \code{"lm"} or
 #'   \code{"glm"}.
 #' @param level Confidence level. Defaults to `0.95`.
 #' @param numericReference How numeric predictors should be fixed when building
-#'   teaching rows. One of `"mean"` or `"zero"`. Defaults to `"mean"`.
-#'   The app UI uses `"zero"` so the displayed rows line up with explanations
-#'   phrased at zero-valued numeric predictors.
+#'   expected-value rows. One of `"mean"` or `"zero"`. Defaults to `"mean"`.
+#'   The app UI uses `"zero"` so the displayed expected values line up with
+#'   explanations phrased at zero-valued numeric predictors.
 #'
 #' @return A list with components:
 #' \describe{
@@ -32,6 +34,7 @@
 #'
 #' @importFrom stats coef delete.response family model.frame model.matrix
 #' @importFrom stats predict qnorm qt terms vcov
+#' @importFrom utils combn
 buildModelConfidenceIntervalData = function(
     model,
     level = 0.95,
@@ -45,10 +48,18 @@ buildModelConfidenceIntervalData = function(
   }
 
   mf = model.frame(model)
-  predictorNames = names(mf)[-1]
+  tt = terms(model)
+  termLabels = attr(tt, "term.labels")
+  if (is.null(termLabels)) {
+    termLabels = character(0)
+  }
+  interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
+  hasInteractions = length(interactionTerms) > 0
+
   vcovTable = round(vcov(model), 3)
   teachingNote = buildModelConfidenceIntervalTeachingNote(model = model)
 
+  predictorNames = names(mf)[-1]
   if (length(predictorNames) == 0) {
     out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
     out$note = "This model has no predictors, so the confidence-interval table shows the intercept only."
@@ -57,42 +68,120 @@ buildModelConfidenceIntervalData = function(
     return(out)
   }
 
-  factorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
-  numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
-
   familyObj = if (inherits(model, "glm")) {
     family(model)
   } else {
     NULL
   }
 
-  isBinomialLogit = inherits(model, "glm") &&
+  predType = if (inherits(model, "glm")) "link" else "response"
+  responseName = names(mf)[1]
+  responseValues = mf[[1]]
+
+  factorPredictorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
+  numericPredictorNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
+
+  isLogistic = inherits(model, "glm") &&
     identical(familyObj$family, "binomial") &&
     identical(familyObj$link, "logit")
 
-  isPoissonLog = inherits(model, "glm") &&
+  isPoisson = inherits(model, "glm") &&
     identical(familyObj$family, "poisson") &&
     identical(familyObj$link, "log")
 
-  outcomeLabels = if (isBinomialLogit) {
-    getBinomialOutcomeLabels(model)
-  } else {
-    NULL
+  getBinomialLabels = function() {
+    levs = levels(responseValues)
+    if (length(levs) >= 2) {
+      list(failure = levs[1], success = levs[2])
+    } else {
+      list(failure = "0", success = "1")
+    }
   }
 
-  tt = delete.response(terms(model))
-  crit = computeModelCriticalValue(model = model, level = level)
-  baseRow = buildModelBaseRow(
-    mf = mf,
-    predictorNames = predictorNames,
-    numericReference = numericReference
-  )
+  formatBaseSetting = function(varName, value) {
+    if (is.factor(mf[[varName]])) {
+      paste0(varName, " = ", as.character(value))
+    } else if (is.numeric(mf[[varName]]) && identical(numericReference, "mean")) {
+      paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE))
+    } else {
+      paste0(varName, " = ", format(round(as.numeric(value), 3), trim = TRUE))
+    }
+  }
+
+  baseRow = as.data.frame(mf[1, predictorNames, drop = FALSE], stringsAsFactors = FALSE)
+
+  for (varName in predictorNames) {
+    x = mf[[varName]]
+
+    if (is.factor(x)) {
+      baseRow[[varName]] = factor(levels(x)[1], levels = levels(x))
+    } else if (is.numeric(x)) {
+      if (identical(numericReference, "mean")) {
+        baseRow[[varName]] = mean(x, na.rm = TRUE)
+      } else {
+        baseRow[[varName]] = 0
+      }
+    } else {
+      baseRow[[varName]] = x[which(!is.na(x))[1]]
+    }
+  }
+
+  buildOtherBaseLevelsText = function(excludeVarName = NULL) {
+    otherFactorNames = factorPredictorNames
+    if (!is.null(excludeVarName)) {
+      otherFactorNames = setdiff(otherFactorNames, excludeVarName)
+    }
+
+    pieces = character(0)
+
+    if (length(otherFactorNames) > 0) {
+      factorText = paste(
+        vapply(
+          otherFactorNames,
+          function(varName) {
+            paste0(varName, " = ", as.character(baseRow[[varName]][1]))
+          },
+          character(1)
+        ),
+        collapse = "; "
+      )
+      pieces = c(pieces, paste0("Other factors fixed at base levels: ", factorText))
+    }
+
+    otherNumericNames = numericPredictorNames
+    if (!is.null(excludeVarName)) {
+      otherNumericNames = setdiff(otherNumericNames, excludeVarName)
+    }
+
+    if (length(otherNumericNames) > 0) {
+      if (identical(numericReference, "zero")) {
+        numericText = paste0(otherNumericNames, " = 0", collapse = "; ")
+      } else {
+        numericText = paste(
+          vapply(
+            otherNumericNames,
+            function(varName) {
+              paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(baseRow[[varName]][1]), 3), trim = TRUE))
+            },
+            character(1)
+          ),
+          collapse = "; "
+        )
+      }
+      pieces = c(pieces, paste0("Other numeric predictors fixed at: ", numericText))
+    }
+
+    if (length(pieces) == 0) {
+      return("No other predictor settings are needed for this quantity.")
+    }
+
+    paste(pieces, collapse = ". ")
+  }
 
   rows = list()
   details = list()
 
-  appendOutputRow = function(label, estimate, lower, upper, scaleLabel, settingsText, builtFrom, varianceFormula, scaleNote) {
-
+  addDisplayRow = function(label, estimate, lower, upper, scaleLabel, settingsText, nonZero, scaleNote) {
     rows[[length(rows) + 1]] <<- data.frame(
       quantity = label,
       estimate = round(estimate, 3),
@@ -106,365 +195,431 @@ buildModelConfidenceIntervalData = function(
       label = label,
       quantity = label,
       settings = settingsText,
-      builtFrom = builtFrom,
-      varianceFormula = varianceFormula,
+      builtFrom = buildLinearCombinationText(nonZero),
+      varianceFormula = buildLinearCombinationVarianceText(nonZero),
       scaleNote = scaleNote
     )
   }
 
-  addPredictionRows = function(newData, conditionLabel, settingsText) {
-
-    predType = if (inherits(model, "glm")) "link" else "response"
+  addPredictedRows = function(labelBase, newData, settingsText) {
     pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
 
     eta = as.numeric(pred$fit)[1]
     seEta = as.numeric(pred$se.fit)[1]
+
+    crit = if (inherits(model, "lm")) {
+      stats::qt(1 - (1 - level) / 2, df = model$df.residual)
+    } else {
+      qnorm(1 - (1 - level) / 2)
+    }
+
     lowerEta = eta - crit * seEta
     upperEta = eta + crit * seEta
 
-    mm = model.matrix(tt, data = newData)
+    mm = model.matrix(delete.response(tt), data = newData)
     xVec = as.numeric(mm[1, ])
     names(xVec) = colnames(mm)
     nonZero = xVec[abs(xVec) > 1e-12]
 
-    if (isBinomialLogit) {
-      successProbLabel = formatBinomialProbabilityLabel(model, outcome = "success")
-      successOddsLabel = formatBinomialOddsLabel(model, outcome = "success")
+    if (isLogistic) {
+      outcomeLabels = getBinomialLabels()
+      probSuccess = familyObj$linkinv(eta)
+      probLower = familyObj$linkinv(lowerEta)
+      probUpper = familyObj$linkinv(upperEta)
 
-      appendOutputRow(
-        label = paste0(successProbLabel, " ", conditionLabel),
-        estimate = familyObj$linkinv(eta),
-        lower = familyObj$linkinv(lowerEta),
-        upper = familyObj$linkinv(upperEta),
+      addDisplayRow(
+        label = paste0("Pr(", responseName, " = ", outcomeLabels$success, ") ", labelBase),
+        estimate = probSuccess,
+        lower = probLower,
+        upper = probUpper,
         scaleLabel = "probability",
         settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = "Computed on the logit scale for the chosen setting, then transformed to the probability scale."
+        nonZero = nonZero,
+        scaleNote = "Computed on the logit scale, then transformed to probability."
       )
 
-      appendOutputRow(
-        label = paste0(successOddsLabel, " ", conditionLabel),
+      addDisplayRow(
+        label = paste0("Pr(", responseName, " = ", outcomeLabels$failure, ") ", labelBase),
+        estimate = 1 - probSuccess,
+        lower = 1 - probUpper,
+        upper = 1 - probLower,
+        scaleLabel = "probability",
+        settingsText = settingsText,
+        nonZero = nonZero,
+        scaleNote = "Computed from the success-probability interval using Pr(failure) = 1 - Pr(success)."
+      )
+
+      addDisplayRow(
+        label = paste0("Odds(", responseName, " = ", outcomeLabels$success, ") ", labelBase),
         estimate = exp(eta),
         lower = exp(lowerEta),
         upper = exp(upperEta),
         scaleLabel = "odds",
         settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = "Computed on the logit scale for the chosen setting, then exponentiated to the odds scale."
+        nonZero = nonZero,
+        scaleNote = "Computed on the logit scale, then exponentiated to the odds scale."
+      )
+
+      addDisplayRow(
+        label = paste0("Odds(", responseName, " = ", outcomeLabels$failure, ") ", labelBase),
+        estimate = exp(-eta),
+        lower = exp(-upperEta),
+        upper = exp(-lowerEta),
+        scaleLabel = "odds",
+        settingsText = settingsText,
+        nonZero = nonZero,
+        scaleNote = "Computed from the success-odds interval using Odds(failure) = 1 / Odds(success)."
       )
 
       return(invisible(NULL))
     }
 
-    if (isPoissonLog) {
-      appendOutputRow(
-        label = paste0("Expected count ", conditionLabel),
-        estimate = familyObj$linkinv(eta),
-        lower = familyObj$linkinv(lowerEta),
-        upper = familyObj$linkinv(upperEta),
+    if (isPoisson) {
+      addDisplayRow(
+        label = paste0("E(Y) ", labelBase),
+        estimate = exp(eta),
+        lower = exp(lowerEta),
+        upper = exp(upperEta),
         scaleLabel = "expected count",
         settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = "Computed on the log scale for the chosen setting, then transformed back to the expected-count scale."
+        nonZero = nonZero,
+        scaleNote = "Computed on the log scale, then exponentiated back to the expected-count scale."
       )
-
       return(invisible(NULL))
     }
 
-    if (inherits(model, "glm") && !identical(familyObj$link, "identity")) {
-      appendOutputRow(
-        label = paste0("Expected response ", conditionLabel),
-        estimate = familyObj$linkinv(eta),
-        lower = familyObj$linkinv(lowerEta),
-        upper = familyObj$linkinv(upperEta),
-        scaleLabel = "response",
-        settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = paste(
-          "Computed on the", familyObj$link, "scale for the chosen setting,",
-          "then transformed back to the response scale."
-        )
-      )
+    estimate = if (is.null(familyObj) || identical(familyObj$link, "identity")) eta else familyObj$linkinv(eta)
+    lower = if (is.null(familyObj) || identical(familyObj$link, "identity")) lowerEta else familyObj$linkinv(lowerEta)
+    upper = if (is.null(familyObj) || identical(familyObj$link, "identity")) upperEta else familyObj$linkinv(upperEta)
+    scaleLabel = if (is.null(familyObj) || identical(familyObj$link, "identity")) "response" else "response"
 
-      return(invisible(NULL))
-    }
-
-    appendOutputRow(
-      label = paste0("Expected ", names(mf)[1], " ", conditionLabel),
-      estimate = eta,
-      lower = lowerEta,
-      upper = upperEta,
-      scaleLabel = "response",
-      settingsText = settingsText,
-      builtFrom = buildLinearCombinationText(nonZero),
-      varianceFormula = buildLinearCombinationVarianceText(nonZero),
-      scaleNote = "Computed directly on the response scale for the chosen setting."
-    )
-  }
-
-  addContrastRow = function(label, highData, lowData, settingsText) {
-
-    highMatrix = model.matrix(tt, data = highData)
-    lowMatrix = model.matrix(tt, data = lowData)
-
-    weightVec = as.numeric(highMatrix[1, ] - lowMatrix[1, ])
-    names(weightVec) = colnames(highMatrix)
-
-    interval = computeLinearCombinationInterval(
-      model = model,
-      weightVec = weightVec,
-      crit = crit
-    )
-
-    nonZero = weightVec[abs(weightVec) > 1e-12]
-
-    if (isBinomialLogit) {
-      appendOutputRow(
-        label = label,
-        estimate = exp(interval$estimate),
-        lower = exp(interval$lower),
-        upper = exp(interval$upper),
-        scaleLabel = "odds multiplier",
-        settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = "Computed as a contrast on the logit scale, then exponentiated to the odds-multiplier scale."
-      )
-
-      return(invisible(NULL))
-    }
-
-    if (isPoissonLog) {
-      appendOutputRow(
-        label = label,
-        estimate = exp(interval$estimate),
-        lower = exp(interval$lower),
-        upper = exp(interval$upper),
-        scaleLabel = "multiplier",
-        settingsText = settingsText,
-        builtFrom = buildLinearCombinationText(nonZero),
-        varianceFormula = buildLinearCombinationVarianceText(nonZero),
-        scaleNote = "Computed as a contrast on the log scale, then exponentiated to the expected-count multiplier scale."
-      )
-
-      return(invisible(NULL))
-    }
-
-    scaleLabel = if (inherits(model, "glm") && !identical(familyObj$link, "identity")) {
-      "link"
-    } else {
-      "response"
-    }
-
-    appendOutputRow(
-      label = label,
-      estimate = interval$estimate,
-      lower = interval$lower,
-      upper = interval$upper,
+    addDisplayRow(
+      label = paste0("Expected ", responseName, " ", labelBase),
+      estimate = estimate,
+      lower = lower,
+      upper = upper,
       scaleLabel = scaleLabel,
       settingsText = settingsText,
-      builtFrom = buildLinearCombinationText(nonZero),
-      varianceFormula = buildLinearCombinationVarianceText(nonZero),
-      scaleNote = "Computed directly from a linear combination of coefficients."
+      nonZero = nonZero,
+      scaleNote = "Computed directly on the response scale."
     )
   }
 
-  factorGrid = buildFactorSettingGrid(mf = mf, factorNames = factorNames)
+  addSlopeRow = function(label, weights, scaleLabel, scaleNote, settingsText) {
+    coefVec = coef(model)
+    vc = vcov(model)
 
-  if (nrow(factorGrid) == 0) {
-    factorGrid = data.frame(.placeholder = 1)
+    weights = weights[abs(weights) > 1e-12]
+    beta = sum(weights * coefVec[names(weights)])
+    varBeta = as.numeric(t(weights) %*% vc[names(weights), names(weights), drop = FALSE] %*% weights)
+    seBeta = sqrt(varBeta)
+
+    crit = if (inherits(model, "lm")) {
+      qt(1 - (1 - level) / 2, df = model$df.residual)
+    } else {
+      qnorm(1 - (1 - level) / 2)
+    }
+
+    lowerBeta = beta - crit * seBeta
+    upperBeta = beta + crit * seBeta
+
+    if (scaleLabel %in% c("odds", "multiplier")) {
+      estimate = exp(beta)
+      lower = exp(lowerBeta)
+      upper = exp(upperBeta)
+    } else {
+      estimate = beta
+      lower = lowerBeta
+      upper = upperBeta
+    }
+
+    addDisplayRow(
+      label = label,
+      estimate = estimate,
+      lower = lower,
+      upper = upper,
+      scaleLabel = scaleLabel,
+      settingsText = settingsText,
+      nonZero = weights,
+      scaleNote = scaleNote
+    )
   }
 
-  for (i in seq_len(nrow(factorGrid))) {
-    newData = baseRow
+  buildInteractionWeights = function(factorVarName, numericVarName, levelValue) {
+    coefNames = names(coef(model))
+    weights = numeric(0)
 
-    if (length(factorNames) > 0) {
-      for (varName in factorNames) {
-        newData[[varName]] = factor(
-          as.character(factorGrid[[varName]][i]),
-          levels = levels(mf[[varName]])
+    if (numericVarName %in% coefNames) {
+      weights[numericVarName] = 1
+    }
+
+    refLevel = levels(mf[[factorVarName]])[1]
+    if (identical(levelValue, refLevel)) {
+      return(weights)
+    }
+
+    candidates = c(
+      paste0(factorVarName, levelValue, ":", numericVarName),
+      paste0(numericVarName, ":", factorVarName, levelValue)
+    )
+    interactionName = candidates[candidates %in% coefNames][1]
+
+    if (!is.na(interactionName) && nzchar(interactionName)) {
+      weights[interactionName] = 1
+    }
+
+    weights
+  }
+
+  if (hasInteractions) {
+    simpleInteractionPattern = (
+      length(interactionTerms) == 1 &&
+      length(factorPredictorNames) == 1 &&
+      length(numericPredictorNames) == 1 &&
+      length(predictorNames) == 2
+    )
+
+    supportsDerivedInteraction = (
+      simpleInteractionPattern &&
+      (
+        isLogistic ||
+        isPoisson
+      )
+    )
+
+    if (!supportsDerivedInteraction) {
+      out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
+      out$note = paste(
+        "This model contains interaction terms, so simple one-row teaching summaries",
+        "depend on the values chosen for the other predictors.",
+        "Use the table first, then drill down on a selected row if needed."
+      )
+      out$teachingNote = teachingNote
+      out$vcovTable = vcovTable
+      return(out)
+    }
+
+    factorVarName = factorPredictorNames[1]
+    numericVarName = numericPredictorNames[1]
+    factorLevels = levels(mf[[factorVarName]])
+    numericBaseValue = as.numeric(baseRow[[numericVarName]][1])
+
+    for (lvl in factorLevels) {
+      newData = baseRow
+      newData[[factorVarName]] = factor(lvl, levels = factorLevels)
+      newData[[numericVarName]] = numericBaseValue
+
+      settingsText = paste0(
+        factorVarName, " = ", lvl, "; ",
+        numericVarName, " = ", format(round(numericBaseValue, 3), trim = TRUE)
+      )
+
+      addPredictedRows(
+        labelBase = paste0("when ", factorVarName, " = ", lvl),
+        newData = newData,
+        settingsText = settingsText
+      )
+    }
+
+    for (lvl in factorLevels) {
+      weights = buildInteractionWeights(factorVarName, numericVarName, lvl)
+      settingsText = paste0(
+        "A 1-unit increase in ", numericVarName, " when ",
+        factorVarName, " = ", lvl, "."
+      )
+
+      if (isLogistic) {
+        outcomeLabels = getBinomialLabels()
+        addSlopeRow(
+          label = paste0(
+            "Odds(", responseName, " = ", outcomeLabels$success,
+            ") multiplier for a 1-unit increase in ", numericVarName,
+            " when ", factorVarName, " = ", lvl
+          ),
+          weights = weights,
+          scaleLabel = "odds",
+          scaleNote = "Computed by combining the numeric main effect with the interaction term on the logit scale, then exponentiating.",
+          settingsText = settingsText
+        )
+      } else if (isPoisson) {
+        addSlopeRow(
+          label = paste0(
+            "E(Y) multiplier for a 1-unit increase in ", numericVarName,
+            " when ", factorVarName, " = ", lvl
+          ),
+          weights = weights,
+          scaleLabel = "multiplier",
+          scaleNote = "Computed by combining the numeric main effect with the interaction term on the log scale, then exponentiating.",
+          settingsText = settingsText
         )
       }
     }
 
-    conditionLabel = buildPredictionConditionLabel(
-      factorSettingRow = if (length(factorNames) > 0) factorGrid[i, factorNames, drop = FALSE] else NULL
+    out = list(
+      table = do.call(rbind, rows),
+      details = details,
+      note = paste(
+        "Rows are shown at", numericVarName, "=",
+        format(round(numericBaseValue, 3), trim = TRUE),
+        "within each level of", factorVarName, "."
+      ),
+      teachingNote = teachingNote,
+      vcovTable = vcovTable,
+      mode = "derived"
     )
+    return(out)
+  }
 
-    settingsText = buildPredictionSettingsText(
-      newData = newData,
-      predictorNames = predictorNames,
-      numericReference = numericReference,
-      responseName = names(mf)[1]
-    )
+  hasFactorPredictor = length(factorPredictorNames) > 0
+  baselineSettings = paste(
+    vapply(
+      predictorNames,
+      function(varName) {
+        formatBaseSetting(varName, baseRow[[varName]][1])
+      },
+      character(1)
+    ),
+    collapse = "; "
+  )
 
-    addPredictionRows(
-      newData = newData,
-      conditionLabel = conditionLabel,
-      settingsText = settingsText
+  if (!hasFactorPredictor) {
+    addPredictedRows(
+      labelBase = "at base settings",
+      newData = baseRow,
+      settingsText = baselineSettings
     )
   }
 
-  for (varName in factorNames) {
-    refLevel = levels(mf[[varName]])[1]
-    otherFactorNames = setdiff(factorNames, varName)
-    otherFactorGrid = buildFactorSettingGrid(mf = mf, factorNames = otherFactorNames)
+  for (varName in predictorNames) {
+    x = mf[[varName]]
 
-    if (nrow(otherFactorGrid) == 0) {
-      otherFactorGrid = data.frame(.placeholder = 1)
-    }
-
-    for (lvl in levels(mf[[varName]])[-1]) {
-      for (i in seq_len(nrow(otherFactorGrid))) {
-        lowData = baseRow
-        highData = baseRow
-
-        lowData[[varName]] = factor(refLevel, levels = levels(mf[[varName]]))
-        highData[[varName]] = factor(lvl, levels = levels(mf[[varName]]))
-
-        if (length(otherFactorNames) > 0) {
-          for (otherName in otherFactorNames) {
-            otherValue = as.character(otherFactorGrid[[otherName]][i])
-            lowData[[otherName]] = factor(otherValue, levels = levels(mf[[otherName]]))
-            highData[[otherName]] = factor(otherValue, levels = levels(mf[[otherName]]))
-          }
-        }
-
-        conditionSuffix = buildContrastConditionSuffix(
-          factorSettingRow = if (length(otherFactorNames) > 0) otherFactorGrid[i, otherFactorNames, drop = FALSE] else NULL
-        )
-
-        if (isBinomialLogit) {
-          label = paste0(
-            formatBinomialOddsLabel(model, outcome = "success"),
-            " multiplier for ", varName, " = ", lvl, " rather than ", refLevel,
-            conditionSuffix
-          )
-        } else if (isPoissonLog) {
-          label = paste0(
-            "Expected-count multiplier for ", varName, " = ", lvl,
-            " rather than ", refLevel,
-            conditionSuffix
-          )
-        } else {
-          label = paste0(
-            "Change in ", names(mf)[1], " for ", varName, " = ", lvl,
-            " rather than ", refLevel,
-            conditionSuffix
-          )
-        }
+    if (is.factor(x)) {
+      levs = levels(x)
+      for (lvl in levs) {
+        newData = baseRow
+        newData[[varName]] = factor(lvl, levels = levs)
 
         settingsText = paste0(
-          "Compare ", varName, " = ", lvl, " to ", varName, " = ", refLevel, ". ",
-          buildOtherPredictorSettingsText(
-            model = model,
-            newData = lowData,
-            excludePredictor = varName,
-            numericReference = numericReference
-          )
+          varName, " = ", lvl, ". ",
+          buildOtherBaseLevelsText(excludeVarName = varName)
         )
 
-        addContrastRow(
-          label = label,
-          highData = highData,
-          lowData = lowData,
+        addPredictedRows(
+          labelBase = paste0("when ", varName, " = ", lvl),
+          newData = newData,
           settingsText = settingsText
         )
       }
     }
   }
 
-  for (varName in numericNames) {
-    for (i in seq_len(nrow(factorGrid))) {
-      lowData = baseRow
-      highData = baseRow
+  coefVec = coef(model)
+  coefNames = names(coefVec)
+  vc = vcov(model)
 
-      if (length(factorNames) > 0) {
-        for (factorName in factorNames) {
-          factorValue = as.character(factorGrid[[factorName]][i])
-          lowData[[factorName]] = factor(factorValue, levels = levels(mf[[factorName]]))
-          highData[[factorName]] = factor(factorValue, levels = levels(mf[[factorName]]))
-        }
-      }
+  for (varName in predictorNames) {
+    x = mf[[varName]]
 
-      highData[[varName]] = as.numeric(lowData[[varName]]) + 1
-
-      conditionSuffix = buildContrastConditionSuffix(
-        factorSettingRow = if (length(factorNames) > 0) factorGrid[i, factorNames, drop = FALSE] else NULL
-      )
-
-      if (isBinomialLogit) {
-        label = paste0(
-          formatBinomialOddsLabel(model, outcome = "success"),
-          " multiplier for a 1-unit increase in ", varName,
-          conditionSuffix
-        )
-      } else if (isPoissonLog) {
-        label = paste0(
-          "Expected-count multiplier for a 1-unit increase in ", varName,
-          conditionSuffix
-        )
-      } else {
-        label = paste0(
-          "Change in ", names(mf)[1], " for a 1-unit increase in ", varName,
-          conditionSuffix
-        )
-      }
-
-      settingsText = paste0(
-        "Compare two otherwise identical settings that differ by 1 unit in ", varName, ". ",
-        buildOtherPredictorSettingsText(
-          model = model,
-          newData = lowData,
-          excludePredictor = varName,
-          numericReference = numericReference
-        )
-      )
-
-      addContrastRow(
-        label = label,
-        highData = highData,
-        lowData = lowData,
-        settingsText = settingsText
-      )
+    if (!is.numeric(x)) {
+      next
     }
-  }
 
-  termLabels = attr(terms(model), "term.labels")
-  hasInteractions = any(grepl(":", termLabels, fixed = TRUE))
+    if (!(varName %in% coefNames)) {
+      next
+    }
 
-  noteParts = character(0)
-
-  if (hasInteractions) {
-    noteParts = c(
-      noteParts,
-      "This model contains interaction terms, so several rows depend on the chosen settings for the other predictors."
-    )
-  }
-
-  if (length(factorNames) > 0) {
-    noteParts = c(
-      noteParts,
-      "Rows labelled with probabilities or odds are evaluated at the displayed factor settings."
-    )
-  }
-
-  if (length(numericNames) > 0) {
-    if (identical(numericReference, "zero")) {
-      noteParts = c(noteParts, "Numeric predictors not named in a row are fixed at 0.")
+    se = sqrt(vc[varName, varName])
+    crit = if (inherits(model, "lm")) {
+      qt(1 - (1 - level) / 2, df = model$df.residual)
     } else {
-      noteParts = c(noteParts, "Numeric predictors not named in a row are fixed at their means.")
+      qnorm(1 - (1 - level) / 2)
     }
+
+    est = coefVec[[varName]]
+    lower = est - crit * se
+    upper = est + crit * se
+
+    if (isLogistic) {
+      label = paste0("Odds multiplier for a 1-unit increase in ", varName)
+      estimate = exp(est)
+      lowerOut = exp(lower)
+      upperOut = exp(upper)
+      scaleLabel = "odds"
+      scaleNote = "Computed from one coefficient on the logit scale, then exponentiated to the odds-multiplier scale."
+    } else if (isPoisson) {
+      label = paste0("E(Y) multiplier for a 1-unit increase in ", varName)
+      estimate = exp(est)
+      lowerOut = exp(lower)
+      upperOut = exp(upper)
+      scaleLabel = "multiplier"
+      scaleNote = "Computed from one coefficient on the log scale, then exponentiated to the expected-count multiplier scale."
+    } else {
+      label = paste0("Change in ", responseName, " for a 1-unit increase in ", varName)
+      estimate = est
+      lowerOut = lower
+      upperOut = upper
+      scaleLabel = if (is.null(familyObj) || identical(familyObj$link, "identity")) {
+        "response"
+      } else {
+        "link"
+      }
+      scaleNote = "Computed directly from a single coefficient."
+    }
+
+    rows[[length(rows) + 1]] = data.frame(
+      quantity = label,
+      estimate = round(estimate, 3),
+      lower = round(lowerOut, 3),
+      upper = round(upperOut, 3),
+      scale = scaleLabel,
+      stringsAsFactors = FALSE
+    )
+
+    details[[length(details) + 1]] = list(
+      label = label,
+      quantity = label,
+      settings = "A 1-unit increase in the named numeric predictor, with no additional row-specific settings.",
+      builtFrom = buildLinearCombinationText(setNames(1, varName)),
+      varianceFormula = buildLinearCombinationVarianceText(setNames(1, varName)),
+      scaleNote = scaleNote
+    )
+  }
+
+  note = if (length(factorPredictorNames) > 0) {
+    factorBaseText = paste(
+      vapply(
+        factorPredictorNames,
+        function(varName) {
+          paste0(varName, " = ", as.character(baseRow[[varName]][1]))
+        },
+        character(1)
+      ),
+      collapse = "; "
+    )
+
+    numericText = if (length(numericPredictorNames) > 0) {
+      if (identical(numericReference, "zero")) {
+        "Numeric predictors are fixed at 0."
+      } else {
+        "Numeric predictors are fixed at their means."
+      }
+    } else {
+      NULL
+    }
+
+    paste(
+      "Rows involving factor levels are shown as expected values with other factors held at their base levels.",
+      paste0("Base levels: ", factorBaseText, "."),
+      numericText
+    )
+  } else {
+    NULL
   }
 
   list(
     table = do.call(rbind, rows),
     details = details,
-    note = if (length(noteParts) > 0) paste(noteParts, collapse = " ") else NULL,
+    note = note,
     teachingNote = teachingNote,
     vcovTable = vcovTable,
     mode = "derived"
@@ -483,7 +638,12 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
   coefVec = coef(model)
   vc = vcov(model)
   se = sqrt(diag(vc))
-  crit = computeModelCriticalValue(model = model, level = level)
+
+  crit = if (inherits(model, "lm")) {
+    qt(1 - (1 - level) / 2, df = model$df.residual)
+  } else {
+    qnorm(1 - (1 - level) / 2)
+  }
 
   lower = coefVec - crit * se
   upper = coefVec + crit * se
@@ -516,218 +676,6 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
     vcovTable = round(vcov(model), 3),
     mode = "coefficient"
   )
-}
-
-#' Compute the critical value used in model confidence intervals
-#'
-#' @param model A fitted model object.
-#' @param level Confidence level.
-#'
-#' @return A single numeric critical value.
-#' @keywords internal
-computeModelCriticalValue = function(model, level) {
-
-  if (inherits(model, "lm")) {
-    return(qt(1 - (1 - level) / 2, df = model$df.residual))
-  }
-
-  qnorm(1 - (1 - level) / 2)
-}
-
-#' Compute an interval for a linear combination of coefficients
-#'
-#' @param model A fitted model object.
-#' @param weightVec Named numeric vector of coefficient weights.
-#' @param crit Critical value for the desired confidence level.
-#'
-#' @return A list with `estimate`, `lower`, and `upper` on the linear-combination scale.
-#' @keywords internal
-computeLinearCombinationInterval = function(model, weightVec, crit) {
-
-  coefVec = coef(model)
-  vc = vcov(model)
-
-  fullWeights = rep(0, length(coefVec))
-  names(fullWeights) = names(coefVec)
-  fullWeights[names(weightVec)] = weightVec
-
-  estimate = sum(fullWeights * coefVec)
-  variance = as.numeric(t(fullWeights) %*% vc %*% fullWeights)
-  se = sqrt(pmax(variance, 0))
-
-  list(
-    estimate = estimate,
-    lower = estimate - crit * se,
-    upper = estimate + crit * se
-  )
-}
-
-#' Build a base predictor row for teaching summaries
-#'
-#' @param mf Model frame.
-#' @param predictorNames Character vector of predictor names.
-#' @param numericReference Either `"mean"` or `"zero"`.
-#'
-#' @return A one-row data frame.
-#' @keywords internal
-buildModelBaseRow = function(mf, predictorNames, numericReference) {
-
-  out = as.data.frame(mf[1, predictorNames, drop = FALSE], stringsAsFactors = FALSE)
-
-  for (varName in predictorNames) {
-    x = mf[[varName]]
-
-    if (is.factor(x)) {
-      out[[varName]] = factor(levels(x)[1], levels = levels(x))
-    } else if (is.numeric(x)) {
-      out[[varName]] = if (identical(numericReference, "mean")) {
-        mean(x, na.rm = TRUE)
-      } else {
-        0
-      }
-    } else {
-      out[[varName]] = x[which(!is.na(x))[1]]
-    }
-  }
-
-  out
-}
-
-#' Build a grid of factor settings for teaching rows
-#'
-#' @param mf Model frame.
-#' @param factorNames Character vector of factor predictor names.
-#'
-#' @return A data frame of factor settings.
-#' @keywords internal
-buildFactorSettingGrid = function(mf, factorNames) {
-
-  if (length(factorNames) == 0) {
-    return(data.frame())
-  }
-
-  gridList = lapply(
-    factorNames,
-    function(varName) {
-      factor(levels(mf[[varName]]), levels = levels(mf[[varName]]))
-    }
-  )
-  names(gridList) = factorNames
-
-  do.call(expand.grid, c(gridList, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE))
-}
-
-#' Build a short condition label for a fitted-value row
-#'
-#' @param factorSettingRow A one-row data frame of factor settings, or `NULL`.
-#'
-#' @return A character scalar beginning with `"when ..."` or `"at base settings"`.
-#' @keywords internal
-buildPredictionConditionLabel = function(factorSettingRow) {
-
-  if (is.null(factorSettingRow) || ncol(factorSettingRow) == 0) {
-    return("at base settings")
-  }
-
-  paste0(
-    "when ",
-    paste(
-      paste0(names(factorSettingRow), " = ", vapply(factorSettingRow, as.character, character(1))),
-      collapse = ", "
-    )
-  )
-}
-
-#' Build a short condition suffix for a contrast label
-#'
-#' @param factorSettingRow A one-row data frame of factor settings, or `NULL`.
-#'
-#' @return A character scalar that is either empty or begins with `" when ..."`.
-#' @keywords internal
-buildContrastConditionSuffix = function(factorSettingRow) {
-
-  if (is.null(factorSettingRow) || ncol(factorSettingRow) == 0) {
-    return("")
-  }
-
-  paste0(
-    " when ",
-    paste(
-      paste0(names(factorSettingRow), " = ", vapply(factorSettingRow, as.character, character(1))),
-      collapse = ", "
-    )
-  )
-}
-
-#' Build readable predictor-setting text for a fitted-value row
-#'
-#' @param newData One-row predictor data frame.
-#' @param predictorNames Character vector of predictor names.
-#' @param numericReference Either `"mean"` or `"zero"`.
-#' @param responseName Name of the response variable.
-#'
-#' @return A character scalar.
-#' @keywords internal
-buildPredictionSettingsText = function(newData, predictorNames, numericReference, responseName) {
-
-  pieces = vapply(
-    predictorNames,
-    function(varName) {
-      value = newData[[varName]][1]
-
-      if (is.factor(newData[[varName]])) {
-        return(paste0(varName, " = ", as.character(value)))
-      }
-
-      if (is.numeric(value) && identical(numericReference, "mean")) {
-        return(paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE)))
-      }
-
-      paste0(varName, " = ", format(round(as.numeric(value), 3), trim = TRUE))
-    },
-    character(1)
-  )
-
-  paste0("Fitted ", responseName, " evaluated at: ", paste(pieces, collapse = "; "))
-}
-
-#' Build readable text for fixed predictors in a contrast row
-#'
-#' @param model A fitted model object.
-#' @param newData One-row predictor data frame.
-#' @param excludePredictor Predictor being contrasted.
-#' @param numericReference Either `"mean"` or `"zero"`.
-#'
-#' @return A character scalar.
-#' @keywords internal
-buildOtherPredictorSettingsText = function(model, newData, excludePredictor, numericReference) {
-
-  mf = model.frame(model)
-  predictorNames = setdiff(names(mf)[-1], excludePredictor)
-
-  if (length(predictorNames) == 0) {
-    return("No other predictor settings are needed for this contrast.")
-  }
-
-  pieces = vapply(
-    predictorNames,
-    function(varName) {
-      value = newData[[varName]][1]
-
-      if (is.factor(mf[[varName]])) {
-        return(paste0(varName, " = ", as.character(value)))
-      }
-
-      if (identical(numericReference, "mean")) {
-        return(paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE)))
-      }
-
-      paste0(varName, " = ", format(round(as.numeric(value), 3), trim = TRUE))
-    },
-    character(1)
-  )
-
-  paste0("Other predictors fixed at: ", paste(pieces, collapse = "; "))
 }
 
 #' Build readable text for a linear combination of coefficients
@@ -821,7 +769,7 @@ buildLinearCombinationVarianceText = function(nonZero) {
 buildModelConfidenceIntervalTeachingNote = function(model) {
 
   if (inherits(model, "glm")) {
-    linkText = paste0("For this model, intervals are first computed on the ", model$family$link, " scale and then transformed back when needed.")
+    linkText = paste0("For this model, intervals are first computed on the ", model$family$link, " scale and then transformed back.")
   } else {
     linkText = "For this model, intervals are computed directly on the response scale unless a row says otherwise."
   }

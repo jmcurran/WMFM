@@ -3,8 +3,13 @@ testthat::test_that("buildModelConfidenceIntervalData builds derived rows for si
   d = data.frame(
     Exam = c(10, 12, 11, 20, 22, 21),
     Attend = factor(c("No", "No", "No", "Yes", "Yes", "Yes")),
-    Test = c(1, 2, 3, 1, 2, 3)
+    Test = c(1, 2, 3)
   )
+
+  d = d[rep(seq_len(nrow(d)), length.out = 6), ]
+  d$Exam = c(10, 12, 11, 20, 22, 21)
+  d$Attend = factor(c("No", "No", "No", "Yes", "Yes", "Yes"))
+  d$Test = c(1, 2, 3, 1, 2, 3)
 
   fit = lm(Exam ~ Attend + Test, data = d)
 
@@ -22,43 +27,64 @@ testthat::test_that("buildModelConfidenceIntervalData builds derived rows for si
   )))
 })
 
-testthat::test_that("buildModelConfidenceIntervalData gives odds-scale rows for logistic interactions", {
+testthat::test_that("buildModelConfidenceIntervalData falls back to coefficient mode for lm interactions", {
 
-  testthat::skip_if_not_installed("stats")
-
-  set.seed(123)
-
-  n = 300
   d = data.frame(
-    Attend = factor(sample(c("No", "Yes"), size = n, replace = TRUE)),
-    Test = stats::runif(n, min = 0, max = 10)
+    y = c(1, 2, 3, 4, 5, 6),
+    g = factor(c("a", "a", "b", "b", "a", "b")),
+    x = c(0, 1, 0, 1, 2, 2)
   )
 
-  eta = -4.71 - 5.13 * (d$Attend == "Yes") + 0.42 * d$Test + 0.76 * (d$Attend == "Yes") * d$Test
-  p = stats::plogis(eta)
+  fit = lm(y ~ g * x, data = d)
 
-  d$Result = factor(
-    ifelse(stats::rbinom(n, size = 1, prob = p) == 1, "Pass", "Fail"),
-    levels = c("Fail", "Pass")
+  out = buildModelConfidenceIntervalData(fit)
+
+  testthat::expect_identical(out$mode, "coefficient")
+  testthat::expect_true(any(grepl("interaction terms", out$note, fixed = TRUE)))
+})
+
+testthat::test_that("buildModelConfidenceIntervalData gives derived odds-scale rows for logistic interactions", {
+
+  d = data.frame(
+    Pass = factor(
+      c(
+        "No", "No", "Yes", "No", "Yes", "Yes",
+        "No", "Yes", "No", "Yes", "No", "Yes"
+      ),
+      levels = c("No", "Yes")
+    ),
+    Attend = factor(
+      c(
+        "No", "No", "No", "Yes", "Yes", "Yes",
+        "No", "No", "Yes", "Yes", "No", "Yes"
+      ),
+      levels = c("No", "Yes")
+    ),
+    Score = c(0, 1, 2, 0, 1, 2, 3, 4, 3, 4, 5, 5)
   )
 
-  fit = stats::glm(Result ~ Attend * Test, data = d, family = stats::binomial(link = "logit"))
+  fit = glm(Pass ~ Attend * Score, data = d, family = binomial())
 
   out = buildModelConfidenceIntervalData(fit, numericReference = "zero")
 
   testthat::expect_identical(out$mode, "derived")
-  testthat::expect_true(any(grepl("Pr(Pass) when Attend = No", out$table$quantity, fixed = TRUE)))
-  testthat::expect_true(any(grepl("Odds(Pass) when Attend = Yes", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Pr(Pass = Yes) when Attend = No", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Pr(Pass = No) when Attend = No", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Odds(Pass = Yes) when Attend = No", out$table$quantity, fixed = TRUE)))
   testthat::expect_true(any(grepl(
-    "Odds(Pass) multiplier for a 1-unit increase in Test when Attend = Yes",
+    "Odds(Pass = Yes) multiplier for a 1-unit increase in Score when Attend = Yes",
     out$table$quantity,
     fixed = TRUE
   )))
 
-  targetLabel = "Odds(Pass) multiplier for a 1-unit increase in Test when Attend = Yes"
-  detailIndex = which(vapply(out$details, function(x) identical(x$label, targetLabel), logical(1)))
+  detailIndex = which(vapply(
+    out$details,
+    function(x) {
+      identical(x$quantity, "Odds(Pass = Yes) multiplier for a 1-unit increase in Score when Attend = Yes")
+    },
+    logical(1)
+  ))
 
   testthat::expect_length(detailIndex, 1)
-  testthat::expect_match(out$details[[detailIndex]]$builtFrom, "AttendYes:Test")
   testthat::expect_match(out$details[[detailIndex]]$varianceFormula, "Cov", fixed = TRUE)
 })

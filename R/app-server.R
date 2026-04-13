@@ -1609,8 +1609,7 @@ appServer = function(input, output, session) {
       link = m$family$link
 
       if (fam == "binomial" && link == "logit") {
-        successLabel = getBinomialOutcomeLabels(m)$successLabel
-        lhs = glue("\\operatorname{{logit}}(\\Pr(\\text{{{successLabel}}}_i))")
+        lhs = "\\operatorname{logit}(p_i)"
       } else if (fam == "poisson" && link == "log") {
         lhs = "\\log(\\mu_i)"
       } else {
@@ -3081,7 +3080,9 @@ $$")
 
     if (!is.null(m) && isFactorOnlyPredictorModel(m)) {
       if (inherits(m, "glm") && identical(m$family$family, "binomial") && identical(m$family$link, "logit")) {
-        h4("Fitted probabilities")
+        h4("Fitted probabilities and odds")
+      } else if (inherits(m, "glm") && identical(m$family$family, "poisson") && identical(m$family$link, "log")) {
+        h4("Fitted expected counts")
       } else {
         h4("Fitted means")
       }
