@@ -3147,6 +3147,332 @@ $$")
   })
 
 
+
+  # -------------------------------------------------------------------
+  # Confidence interval tab outputs
+  # -------------------------------------------------------------------
+  ciOutput = reactive({
+    m = modelFit()
+    req(m)
+
+    buildModelConfidenceIntervalData(
+      model = m,
+      numericReference = "zero"
+    )
+  })
+
+  getConfidenceIntervalScaleLabel = function(scaleName) {
+    labels = c(
+      fittedValue = "Fitted value",
+      slope = "Slope",
+      probability = "Probability",
+      odds = "Odds",
+      oddsMultiplier = "Odds multiplier",
+      expectedValue = "Expected value",
+      expectedValueMultiplier = "Expected value multiplier",
+      coefficient = "Coefficient"
+    )
+
+    labels[[scaleName]] %||% scaleName
+  }
+
+  getConfidenceIntervalScaleChoices = function(ciTable) {
+    if (!is.data.frame(ciTable) || nrow(ciTable) == 0) {
+      return(setNames(character(0), character(0)))
+    }
+
+    displayScale = ciTable$displayScale %||% ciTable$scale %||% character(0)
+    displayScale = unique(displayScale[!is.na(displayScale) & nzchar(displayScale)])
+
+    setNames(
+      displayScale,
+      vapply(displayScale, getConfidenceIntervalScaleLabel, character(1))
+    )
+  }
+
+  getDefaultConfidenceIntervalScale = function(ciTable) {
+    choices = getConfidenceIntervalScaleChoices(ciTable)
+
+    if (length(choices) == 0) {
+      return("")
+    }
+
+    preferredOrder = c(
+      "fittedValue",
+      "probability",
+      "expectedValue",
+      "odds",
+      "slope",
+      "oddsMultiplier",
+      "expectedValueMultiplier",
+      "coefficient"
+    )
+
+    for (candidate in preferredOrder) {
+      if (candidate %in% unname(choices)) {
+        return(candidate)
+      }
+    }
+
+    unname(choices[[1]])
+  }
+
+  getConfidenceIntervalTableWithIds = reactive({
+    out = ciOutput()
+    tbl = out$table
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(data.frame())
+    }
+
+    tbl = as.data.frame(tbl, stringsAsFactors = FALSE)
+    tbl$.rowId = seq_len(nrow(tbl))
+
+    if (!("displayScale" %in% names(tbl))) {
+      tbl$displayScale = tbl$scale %||% rep("coefficient", nrow(tbl))
+    }
+
+    if (!("rowRole" %in% names(tbl))) {
+      tbl$rowRole = if ("ciSection" %in% names(tbl)) {
+        ifelse(tbl$ciSection %in% "effect", "covariateEffect", "fittedQuantity")
+      } else {
+        rep("coefficient", nrow(tbl))
+      }
+    }
+
+    if (!("isComplement" %in% names(tbl))) {
+      tbl$isComplement = FALSE
+    }
+
+    if (!("sortKey" %in% names(tbl))) {
+      tbl$sortKey = seq_len(nrow(tbl))
+    }
+
+    tbl
+  })
+
+  output$modelConfintControlsUi = renderUI({
+    tbl = getConfidenceIntervalTableWithIds()
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(NULL)
+    }
+
+    choices = getConfidenceIntervalScaleChoices(tbl)
+
+    if (length(choices) == 0) {
+      return(NULL)
+    }
+
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultConfidenceIntervalScale(tbl)
+    showComplementToggle = (
+      any(tbl$displayScale %in% c("probability", "odds"), na.rm = TRUE) &&
+        any(isTRUE(tbl$isComplement), na.rm = TRUE)
+    )
+
+    tagList(
+      selectInput(
+        inputId = "modelConfintDisplayScale",
+        label = "Display scale",
+        choices = choices,
+        selected = selectedScale
+      ),
+      if (showComplementToggle && (selectedScale %in% c("probability", "odds"))) {
+        checkboxInput(
+          inputId = "modelConfintShowComplement",
+          label = "Show complementary outcome as well",
+          value = FALSE
+        )
+      }
+    )
+  })
+
+  getFilteredConfidenceIntervalTable = reactive({
+    tbl = getConfidenceIntervalTableWithIds()
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(data.frame())
+    }
+
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultConfidenceIntervalScale(tbl)
+
+    if (nzchar(selectedScale) && (selectedScale %in% tbl$displayScale)) {
+      tbl = tbl[tbl$displayScale %in% selectedScale, , drop = FALSE]
+    }
+
+    showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
+    if (!showComplement && ("isComplement" %in% names(tbl))) {
+      tbl = tbl[!isTRUE(tbl$isComplement), , drop = FALSE]
+    }
+
+    if ("sortKey" %in% names(tbl)) {
+      tbl = tbl[order(tbl$sortKey, tbl$.rowId), , drop = FALSE]
+    }
+
+    rownames(tbl) = NULL
+    tbl
+  })
+
+  buildConfidenceIntervalDisplayTable = function(ciTable) {
+    if (!is.data.frame(ciTable) || nrow(ciTable) == 0) {
+      return(data.frame())
+    }
+
+    out = data.frame(
+      Quantity = ciTable$quantity,
+      Estimate = ciTable$estimate,
+      Lower = ciTable$lower,
+      Upper = ciTable$upper,
+      stringsAsFactors = FALSE
+    )
+
+    secondaryAvailable = (
+      ("secondaryEstimate" %in% names(ciTable)) &&
+        any(!is.na(ciTable$secondaryEstimate))
+    )
+
+    if (secondaryAvailable) {
+      secondaryScale = ciTable$secondaryScale %||% rep("", nrow(ciTable))
+      firstSecondary = secondaryScale[which(!is.na(secondaryScale) & nzchar(secondaryScale))[1]]
+      secondaryLabel = getConfidenceIntervalScaleLabel(firstSecondary %||% "alternate")
+
+      out[[paste0(secondaryLabel, " estimate")]] = ifelse(
+        is.na(ciTable$secondaryEstimate),
+        "",
+        format(round(ciTable$secondaryEstimate, 3), trim = TRUE)
+      )
+      out[[paste0(secondaryLabel, " lower")]] = ifelse(
+        is.na(ciTable$secondaryLower),
+        "",
+        format(round(ciTable$secondaryLower, 3), trim = TRUE)
+      )
+      out[[paste0(secondaryLabel, " upper")]] = ifelse(
+        is.na(ciTable$secondaryUpper),
+        "",
+        format(round(ciTable$secondaryUpper, 3), trim = TRUE)
+      )
+    }
+
+    out
+  }
+
+  output$modelConfintTable = renderTable({
+    tbl = getFilteredConfidenceIntervalTable()
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(NULL)
+    }
+
+    buildConfidenceIntervalDisplayTable(tbl)
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$modelConfintNoteUi = renderUI({
+    out = ciOutput()
+    tbl = getFilteredConfidenceIntervalTable()
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(NULL)
+    }
+
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultConfidenceIntervalScale(tbl)
+    scaleLabel = getConfidenceIntervalScaleLabel(selectedScale)
+
+    helpText(
+      paste0(
+        scaleLabel,
+        " view. ",
+        out$note %||% ""
+      )
+    )
+  })
+
+  output$modelConfintSelectorUi = renderUI({
+    tbl = getFilteredConfidenceIntervalTable()
+
+    if (!is.data.frame(tbl) || nrow(tbl) == 0) {
+      return(NULL)
+    }
+
+    choiceLabels = make.unique(tbl$quantity)
+    choices = stats::setNames(as.character(tbl$.rowId), choiceLabels)
+
+    selectInput(
+      inputId = "modelConfintSelectedRow",
+      label = "Choose a row",
+      choices = choices,
+      selected = choices[[1]]
+    )
+  })
+
+  output$modelConfintSelectedRowUi = renderUI({
+    out = ciOutput()
+    details = out$details %||% list()
+    selectedRowId = suppressWarnings(as.integer(input$modelConfintSelectedRow %||% NA_character_))
+
+    if (!is.finite(selectedRowId) || length(details) < selectedRowId || selectedRowId < 1) {
+      return(helpText("Choose a row to see how that interval was built."))
+    }
+
+    detail = details[[selectedRowId]]
+
+    if (is.null(detail) || !length(detail)) {
+      return(helpText("No drilldown details are available for this row."))
+    }
+
+    tagList(
+      tags$strong(detail$quantity %||% detail$label %||% "Selected interval"),
+      tags$p(detail$settings %||% ""),
+      if (!is.null(detail$builtFrom) && nzchar(detail$builtFrom)) {
+        tags$p(tags$strong("Built from: "), detail$builtFrom)
+      },
+      if (!is.null(detail$varianceFormula) && nzchar(detail$varianceFormula)) {
+        tags$p(tags$strong("Variance formula: "), detail$varianceFormula)
+      },
+      if (!is.null(detail$scaleNote) && nzchar(detail$scaleNote)) {
+        tags$p(tags$strong("Scale note: "), detail$scaleNote)
+      }
+    )
+  })
+
+  output$modelConfintTeachingNoteUi = renderUI({
+    out = ciOutput()
+    noteText = out$teachingNote %||% ""
+
+    if (!nzchar(noteText)) {
+      return(NULL)
+    }
+
+    tagList(
+      tags$div(
+        class = "wmfm-ci-section-label",
+        "Teaching note"
+      ),
+      helpText(noteText)
+    )
+  })
+
+  output$modelConfintVcovUi = renderUI({
+    out = ciOutput()
+    vcovTable = out$vcovTable
+
+    if (is.null(vcovTable)) {
+      return(NULL)
+    }
+
+    tagList(
+      tags$div(
+        class = "wmfm-ci-section-label",
+        "Variance-covariance matrix"
+      ),
+      tableOutput("modelConfintVcovTable")
+    )
+  })
+
+  output$modelConfintVcovTable = renderTable({
+    out = ciOutput()
+    out$vcovTable
+  }, rownames = TRUE, striped = TRUE, bordered = TRUE, spacing = "s")
+
   # -------------------------------------------------------------------
   # Model explanation
   # -------------------------------------------------------------------

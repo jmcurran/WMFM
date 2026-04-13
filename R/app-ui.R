@@ -216,6 +216,7 @@ appUI = function() {
               tabPanel(
                 "Confidence intervals",
                 uiOutput("modelConfintNoteUi"),
+                uiOutput("modelConfintControlsUi"),
                 tableOutput("modelConfintTable"),
                 tags$div(
                   class = "wmfm-ci-drilldown-box",
