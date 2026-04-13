@@ -42,8 +42,7 @@ can be shown on demand in the app.
 }
 \details{
 When the model contains interaction terms, the helper falls back to a raw
-coefficient-interval table unless it matches a simple teaching pattern that
-can be summarised clearly: one factor predictor, one numeric predictor, and
-one interaction term in an lm/logistic/Poisson model.
+coefficient-interval table because simple marginal quantities depend on the
+values of other predictors.
 }
 \keyword{internal}

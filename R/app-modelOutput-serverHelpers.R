@@ -61,7 +61,9 @@ registerModelOutputTabs = function(output, input, modelFit) {
     }
 
     noteText = ciData$note %||% paste(
-      "Use the table first. If you want to unpack one interval, choose a single row below to see how it was built."
+      "Use the table first. Rows above the divider describe fitted baseline quantities.",
+      "Rows below it describe non-zero covariate effects.",
+      "If you want to unpack one interval, choose a single row below to see how it was built."
     )
 
     helpText(noteText)

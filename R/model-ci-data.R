@@ -8,9 +8,8 @@
 #' can be shown on demand in the app.
 #'
 #' When the model contains interaction terms, the helper falls back to a raw
-#' coefficient-interval table unless it matches a simple teaching pattern that
-#' can be summarised clearly: one factor predictor, one numeric predictor, and
-#' one interaction term in an lm/logistic/Poisson model.
+#' coefficient-interval table because simple marginal quantities depend on the
+#' values of other predictors.
 #'
 #' @param model A fitted model object, typically of class \code{"lm"} or
 #'   \code{"glm"}.
@@ -53,11 +52,22 @@ buildModelConfidenceIntervalData = function(
   if (is.null(termLabels)) {
     termLabels = character(0)
   }
-  interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-  hasInteractions = length(interactionTerms) > 0
+  hasInteractions = any(grepl(":", termLabels, fixed = TRUE))
 
   vcovTable = round(vcov(model), 3)
   teachingNote = buildModelConfidenceIntervalTeachingNote(model = model)
+
+  if (hasInteractions) {
+    out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
+    out$note = paste(
+      "This model contains interaction terms, so simple one-row teaching summaries",
+      "depend on the values chosen for the other predictors.",
+      "Use the table first, then drill down on a selected row if needed."
+    )
+    out$teachingNote = teachingNote
+    out$vcovTable = vcovTable
+    return(out)
+  }
 
   predictorNames = names(mf)[-1]
   if (length(predictorNames) == 0) {
@@ -75,38 +85,6 @@ buildModelConfidenceIntervalData = function(
   }
 
   predType = if (inherits(model, "glm")) "link" else "response"
-  responseName = names(mf)[1]
-  responseValues = mf[[1]]
-
-  factorPredictorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
-  numericPredictorNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
-
-  isLogistic = inherits(model, "glm") &&
-    identical(familyObj$family, "binomial") &&
-    identical(familyObj$link, "logit")
-
-  isPoisson = inherits(model, "glm") &&
-    identical(familyObj$family, "poisson") &&
-    identical(familyObj$link, "log")
-
-  getBinomialLabels = function() {
-    levs = levels(responseValues)
-    if (length(levs) >= 2) {
-      list(failure = levs[1], success = levs[2])
-    } else {
-      list(failure = "0", success = "1")
-    }
-  }
-
-  formatBaseSetting = function(varName, value) {
-    if (is.factor(mf[[varName]])) {
-      paste0(varName, " = ", as.character(value))
-    } else if (is.numeric(mf[[varName]]) && identical(numericReference, "mean")) {
-      paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE))
-    } else {
-      paste0(varName, " = ", format(round(as.numeric(value), 3), trim = TRUE))
-    }
-  }
 
   baseRow = as.data.frame(mf[1, predictorNames, drop = FALSE], stringsAsFactors = FALSE)
 
@@ -126,8 +104,37 @@ buildModelConfidenceIntervalData = function(
     }
   }
 
+  rows = list()
+  details = list()
+
+  getResponseScaleLabel = function() {
+    if (is.null(familyObj) || identical(familyObj$link, "identity")) {
+      return("response")
+    }
+
+    if (identical(familyObj$family, "binomial")) {
+      return("probability")
+    }
+
+    if (identical(familyObj$family, "poisson")) {
+      return("expected count")
+    }
+
+    "response"
+  }
+
+  formatBaseSetting = function(varName, value) {
+    if (is.factor(mf[[varName]])) {
+      paste0(varName, " = ", as.character(value))
+    } else if (is.numeric(mf[[varName]]) && identical(numericReference, "mean")) {
+      paste0(varName, " = mean(", varName, ") = ", format(round(as.numeric(value), 3), trim = TRUE))
+    } else {
+      paste0(varName, " = ", format(round(as.numeric(value), 3), trim = TRUE))
+    }
+  }
+
   buildOtherBaseLevelsText = function(excludeVarName = NULL) {
-    otherFactorNames = factorPredictorNames
+    otherFactorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
     if (!is.null(excludeVarName)) {
       otherFactorNames = setdiff(otherFactorNames, excludeVarName)
     }
@@ -148,7 +155,7 @@ buildModelConfidenceIntervalData = function(
       pieces = c(pieces, paste0("Other factors fixed at base levels: ", factorText))
     }
 
-    otherNumericNames = numericPredictorNames
+    otherNumericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
     if (!is.null(excludeVarName)) {
       otherNumericNames = setdiff(otherNumericNames, excludeVarName)
     }
@@ -178,10 +185,45 @@ buildModelConfidenceIntervalData = function(
     paste(pieces, collapse = ". ")
   }
 
-  rows = list()
-  details = list()
+  addPredictedRow = function(label, newData, settingsText) {
 
-  addDisplayRow = function(label, estimate, lower, upper, scaleLabel, settingsText, nonZero, scaleNote) {
+    pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
+
+    eta = as.numeric(pred$fit)[1]
+    seEta = as.numeric(pred$se.fit)[1]
+
+    crit = if (inherits(model, "lm")) {
+      stats::qt(1 - (1 - level) / 2, df = model$df.residual)
+    } else {
+      qnorm(1 - (1 - level) / 2)
+    }
+
+    lowerEta = eta - crit * seEta
+    upperEta = eta + crit * seEta
+
+    if (is.null(familyObj) || identical(familyObj$link, "identity")) {
+      estimate = eta
+      lower = lowerEta
+      upper = upperEta
+      scaleLabel = "response"
+      scaleNote = "Computed directly on the response scale."
+    } else {
+      estimate = familyObj$linkinv(eta)
+      lower = familyObj$linkinv(lowerEta)
+      upper = familyObj$linkinv(upperEta)
+      scaleLabel = getResponseScaleLabel()
+      scaleNote = paste(
+        "Computed on the", familyObj$link, "scale, then transformed back to the",
+        scaleLabel, "scale using the inverse link function."
+      )
+    }
+
+    mm = model.matrix(delete.response(tt), data = newData)
+    xVec = as.numeric(mm[1, ])
+    names(xVec) = colnames(mm)
+
+    nonZero = xVec[abs(xVec) > 1e-12]
+
     rows[[length(rows) + 1]] <<- data.frame(
       quantity = label,
       estimate = round(estimate, 3),
@@ -201,276 +243,9 @@ buildModelConfidenceIntervalData = function(
     )
   }
 
-  addPredictedRows = function(labelBase, newData, settingsText) {
-    pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
+  responseName = names(mf)[1]
+  hasFactorPredictor = any(vapply(mf[predictorNames], is.factor, logical(1)))
 
-    eta = as.numeric(pred$fit)[1]
-    seEta = as.numeric(pred$se.fit)[1]
-
-    crit = if (inherits(model, "lm")) {
-      stats::qt(1 - (1 - level) / 2, df = model$df.residual)
-    } else {
-      qnorm(1 - (1 - level) / 2)
-    }
-
-    lowerEta = eta - crit * seEta
-    upperEta = eta + crit * seEta
-
-    mm = model.matrix(delete.response(tt), data = newData)
-    xVec = as.numeric(mm[1, ])
-    names(xVec) = colnames(mm)
-    nonZero = xVec[abs(xVec) > 1e-12]
-
-    if (isLogistic) {
-      outcomeLabels = getBinomialLabels()
-      probSuccess = familyObj$linkinv(eta)
-      probLower = familyObj$linkinv(lowerEta)
-      probUpper = familyObj$linkinv(upperEta)
-
-      addDisplayRow(
-        label = paste0("Pr(", responseName, " = ", outcomeLabels$success, ") ", labelBase),
-        estimate = probSuccess,
-        lower = probLower,
-        upper = probUpper,
-        scaleLabel = "probability",
-        settingsText = settingsText,
-        nonZero = nonZero,
-        scaleNote = "Computed on the logit scale, then transformed to probability."
-      )
-
-      addDisplayRow(
-        label = paste0("Pr(", responseName, " = ", outcomeLabels$failure, ") ", labelBase),
-        estimate = 1 - probSuccess,
-        lower = 1 - probUpper,
-        upper = 1 - probLower,
-        scaleLabel = "probability",
-        settingsText = settingsText,
-        nonZero = nonZero,
-        scaleNote = "Computed from the success-probability interval using Pr(failure) = 1 - Pr(success)."
-      )
-
-      addDisplayRow(
-        label = paste0("Odds(", responseName, " = ", outcomeLabels$success, ") ", labelBase),
-        estimate = exp(eta),
-        lower = exp(lowerEta),
-        upper = exp(upperEta),
-        scaleLabel = "odds",
-        settingsText = settingsText,
-        nonZero = nonZero,
-        scaleNote = "Computed on the logit scale, then exponentiated to the odds scale."
-      )
-
-      addDisplayRow(
-        label = paste0("Odds(", responseName, " = ", outcomeLabels$failure, ") ", labelBase),
-        estimate = exp(-eta),
-        lower = exp(-upperEta),
-        upper = exp(-lowerEta),
-        scaleLabel = "odds",
-        settingsText = settingsText,
-        nonZero = nonZero,
-        scaleNote = "Computed from the success-odds interval using Odds(failure) = 1 / Odds(success)."
-      )
-
-      return(invisible(NULL))
-    }
-
-    if (isPoisson) {
-      addDisplayRow(
-        label = paste0("E(Y) ", labelBase),
-        estimate = exp(eta),
-        lower = exp(lowerEta),
-        upper = exp(upperEta),
-        scaleLabel = "expected count",
-        settingsText = settingsText,
-        nonZero = nonZero,
-        scaleNote = "Computed on the log scale, then exponentiated back to the expected-count scale."
-      )
-      return(invisible(NULL))
-    }
-
-    estimate = if (is.null(familyObj) || identical(familyObj$link, "identity")) eta else familyObj$linkinv(eta)
-    lower = if (is.null(familyObj) || identical(familyObj$link, "identity")) lowerEta else familyObj$linkinv(lowerEta)
-    upper = if (is.null(familyObj) || identical(familyObj$link, "identity")) upperEta else familyObj$linkinv(upperEta)
-    scaleLabel = if (is.null(familyObj) || identical(familyObj$link, "identity")) "response" else "response"
-
-    addDisplayRow(
-      label = paste0("Expected ", responseName, " ", labelBase),
-      estimate = estimate,
-      lower = lower,
-      upper = upper,
-      scaleLabel = scaleLabel,
-      settingsText = settingsText,
-      nonZero = nonZero,
-      scaleNote = "Computed directly on the response scale."
-    )
-  }
-
-  addSlopeRow = function(label, weights, scaleLabel, scaleNote, settingsText) {
-    coefVec = coef(model)
-    vc = vcov(model)
-
-    weights = weights[abs(weights) > 1e-12]
-    beta = sum(weights * coefVec[names(weights)])
-    varBeta = as.numeric(t(weights) %*% vc[names(weights), names(weights), drop = FALSE] %*% weights)
-    seBeta = sqrt(varBeta)
-
-    crit = if (inherits(model, "lm")) {
-      qt(1 - (1 - level) / 2, df = model$df.residual)
-    } else {
-      qnorm(1 - (1 - level) / 2)
-    }
-
-    lowerBeta = beta - crit * seBeta
-    upperBeta = beta + crit * seBeta
-
-    if (scaleLabel %in% c("odds", "multiplier")) {
-      estimate = exp(beta)
-      lower = exp(lowerBeta)
-      upper = exp(upperBeta)
-    } else {
-      estimate = beta
-      lower = lowerBeta
-      upper = upperBeta
-    }
-
-    addDisplayRow(
-      label = label,
-      estimate = estimate,
-      lower = lower,
-      upper = upper,
-      scaleLabel = scaleLabel,
-      settingsText = settingsText,
-      nonZero = weights,
-      scaleNote = scaleNote
-    )
-  }
-
-  buildInteractionWeights = function(factorVarName, numericVarName, levelValue) {
-    coefNames = names(coef(model))
-    weights = numeric(0)
-
-    if (numericVarName %in% coefNames) {
-      weights[numericVarName] = 1
-    }
-
-    refLevel = levels(mf[[factorVarName]])[1]
-    if (identical(levelValue, refLevel)) {
-      return(weights)
-    }
-
-    candidates = c(
-      paste0(factorVarName, levelValue, ":", numericVarName),
-      paste0(numericVarName, ":", factorVarName, levelValue)
-    )
-    interactionName = candidates[candidates %in% coefNames][1]
-
-    if (!is.na(interactionName) && nzchar(interactionName)) {
-      weights[interactionName] = 1
-    }
-
-    weights
-  }
-
-  if (hasInteractions) {
-    simpleInteractionPattern = (
-      length(interactionTerms) == 1 &&
-      length(factorPredictorNames) == 1 &&
-      length(numericPredictorNames) == 1 &&
-      length(predictorNames) == 2
-    )
-
-    supportsDerivedInteraction = (
-      simpleInteractionPattern &&
-      (
-        isLogistic ||
-        isPoisson
-      )
-    )
-
-    if (!supportsDerivedInteraction) {
-      out = buildCoefficientOnlyConfidenceIntervalData(model = model, level = level)
-      out$note = paste(
-        "This model contains interaction terms, so simple one-row teaching summaries",
-        "depend on the values chosen for the other predictors.",
-        "Use the table first, then drill down on a selected row if needed."
-      )
-      out$teachingNote = teachingNote
-      out$vcovTable = vcovTable
-      return(out)
-    }
-
-    factorVarName = factorPredictorNames[1]
-    numericVarName = numericPredictorNames[1]
-    factorLevels = levels(mf[[factorVarName]])
-    numericBaseValue = as.numeric(baseRow[[numericVarName]][1])
-
-    for (lvl in factorLevels) {
-      newData = baseRow
-      newData[[factorVarName]] = factor(lvl, levels = factorLevels)
-      newData[[numericVarName]] = numericBaseValue
-
-      settingsText = paste0(
-        factorVarName, " = ", lvl, "; ",
-        numericVarName, " = ", format(round(numericBaseValue, 3), trim = TRUE)
-      )
-
-      addPredictedRows(
-        labelBase = paste0("when ", factorVarName, " = ", lvl),
-        newData = newData,
-        settingsText = settingsText
-      )
-    }
-
-    for (lvl in factorLevels) {
-      weights = buildInteractionWeights(factorVarName, numericVarName, lvl)
-      settingsText = paste0(
-        "A 1-unit increase in ", numericVarName, " when ",
-        factorVarName, " = ", lvl, "."
-      )
-
-      if (isLogistic) {
-        outcomeLabels = getBinomialLabels()
-        addSlopeRow(
-          label = paste0(
-            "Odds(", responseName, " = ", outcomeLabels$success,
-            ") multiplier for a 1-unit increase in ", numericVarName,
-            " when ", factorVarName, " = ", lvl
-          ),
-          weights = weights,
-          scaleLabel = "odds",
-          scaleNote = "Computed by combining the numeric main effect with the interaction term on the logit scale, then exponentiating.",
-          settingsText = settingsText
-        )
-      } else if (isPoisson) {
-        addSlopeRow(
-          label = paste0(
-            "E(Y) multiplier for a 1-unit increase in ", numericVarName,
-            " when ", factorVarName, " = ", lvl
-          ),
-          weights = weights,
-          scaleLabel = "multiplier",
-          scaleNote = "Computed by combining the numeric main effect with the interaction term on the log scale, then exponentiating.",
-          settingsText = settingsText
-        )
-      }
-    }
-
-    out = list(
-      table = do.call(rbind, rows),
-      details = details,
-      note = paste(
-        "Rows are shown at", numericVarName, "=",
-        format(round(numericBaseValue, 3), trim = TRUE),
-        "within each level of", factorVarName, "."
-      ),
-      teachingNote = teachingNote,
-      vcovTable = vcovTable,
-      mode = "derived"
-    )
-    return(out)
-  }
-
-  hasFactorPredictor = length(factorPredictorNames) > 0
   baselineSettings = paste(
     vapply(
       predictorNames,
@@ -483,8 +258,8 @@ buildModelConfidenceIntervalData = function(
   )
 
   if (!hasFactorPredictor) {
-    addPredictedRows(
-      labelBase = "at base settings",
+    addPredictedRow(
+      label = paste0("Expected ", responseName, " at base settings"),
       newData = baseRow,
       settingsText = baselineSettings
     )
@@ -504,8 +279,8 @@ buildModelConfidenceIntervalData = function(
           buildOtherBaseLevelsText(excludeVarName = varName)
         )
 
-        addPredictedRows(
-          labelBase = paste0("when ", varName, " = ", lvl),
+        addPredictedRow(
+          label = paste0("Expected ", responseName, " when ", varName, " = ", lvl),
           newData = newData,
           settingsText = settingsText
         )
@@ -539,15 +314,15 @@ buildModelConfidenceIntervalData = function(
     lower = est - crit * se
     upper = est + crit * se
 
-    if (isLogistic) {
+    if (inherits(model, "glm") && identical(familyObj$family, "binomial") && identical(familyObj$link, "logit")) {
       label = paste0("Odds multiplier for a 1-unit increase in ", varName)
       estimate = exp(est)
       lowerOut = exp(lower)
       upperOut = exp(upper)
       scaleLabel = "odds"
       scaleNote = "Computed from one coefficient on the logit scale, then exponentiated to the odds-multiplier scale."
-    } else if (isPoisson) {
-      label = paste0("E(Y) multiplier for a 1-unit increase in ", varName)
+    } else if (inherits(model, "glm") && identical(familyObj$family, "poisson") && identical(familyObj$link, "log")) {
+      label = paste0("Expected-count multiplier for a 1-unit increase in ", varName)
       estimate = exp(est)
       lowerOut = exp(lower)
       upperOut = exp(upper)
@@ -585,10 +360,10 @@ buildModelConfidenceIntervalData = function(
     )
   }
 
-  note = if (length(factorPredictorNames) > 0) {
+  note = if (length(Filter(function(x) is.factor(x), mf[predictorNames])) > 0) {
     factorBaseText = paste(
       vapply(
-        factorPredictorNames,
+        predictorNames[vapply(mf[predictorNames], is.factor, logical(1))],
         function(varName) {
           paste0(varName, " = ", as.character(baseRow[[varName]][1]))
         },
@@ -597,7 +372,7 @@ buildModelConfidenceIntervalData = function(
       collapse = "; "
     )
 
-    numericText = if (length(numericPredictorNames) > 0) {
+    numericText = if (length(predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]) > 0) {
       if (identical(numericReference, "zero")) {
         "Numeric predictors are fixed at 0."
       } else {
@@ -617,13 +392,58 @@ buildModelConfidenceIntervalData = function(
   }
 
   list(
-    table = do.call(rbind, rows),
+    table = insertCiSectionBreakRows(do.call(rbind, rows)),
     details = details,
     note = note,
     teachingNote = teachingNote,
     vcovTable = vcovTable,
     mode = "derived"
   )
+}
+
+#' Insert pedagogical section-break rows into a CI display table
+#'
+#' Adds a visible separator row before rows that describe non-zero covariate
+#' effects, such as one-unit changes and multiplicative effect rows. This keeps
+#' the student-facing table visually split between baseline fitted quantities
+#' and effect summaries without changing the underlying interval calculations.
+#'
+#' @param ciTable A confidence-interval display table.
+#'
+#' @return A data frame ready for display.
+#' @keywords internal
+insertCiSectionBreakRows = function(ciTable) {
+
+  if (is.null(ciTable) || !is.data.frame(ciTable) || nrow(ciTable) == 0) {
+    return(ciTable)
+  }
+
+  quantity = ciTable$quantity %||% rep("", nrow(ciTable))
+
+  isEffectRow = (
+    grepl("1-unit increase", quantity, fixed = TRUE) |
+      grepl("multiplier", quantity, fixed = TRUE) |
+      grepl("^Change in ", quantity)
+  )
+
+  if (!any(isEffectRow) || all(isEffectRow)) {
+    return(ciTable)
+  }
+
+  baselineTable = ciTable[!isEffectRow, , drop = FALSE]
+  effectTable = ciTable[isEffectRow, , drop = FALSE]
+
+  separatorRow = baselineTable[1, , drop = FALSE]
+  separatorRow[1, ] = NA
+  separatorRow$quantity = "--- Non-zero covariate effects ---"
+  separatorRow$estimate = NA
+  separatorRow$lower = NA
+  separatorRow$upper = NA
+  separatorRow$scale = ""
+
+  out = rbind(baselineTable, separatorRow, effectTable)
+  rownames(out) = NULL
+  out
 }
 
 #' Build a coefficient-only confidence-interval table
