@@ -75,9 +75,25 @@ makeMeanEquation = function(m, oneRowDf, label) {
 
   # Line 2: interpret eta + back-transform
   if (fam == "binomial" && link == "logit") {
-    p = plogis(eta)
+    successProbLabel = formatBinomialProbabilityLabel(m, outcome = "success")
+    failureProbLabel = formatBinomialProbabilityLabel(m, outcome = "failure")
+    successOddsLabel = formatBinomialOddsLabel(m, outcome = "success")
+    failureOddsLabel = formatBinomialOddsLabel(m, outcome = "failure")
+
+    successProb = plogis(eta)
+    failureProb = 1 - successProb
+    successOdds = exp(eta)
+    failureOdds = exp(-eta)
+
     line2 = paste0(
-      "eta = logit(p)  =>  p = 1 / (1 + exp(-eta)) = ", fmt2dp(p), " (\u2248 ", fmt3sf(p), ")"
+      "eta = logit(", successProbLabel, ")  =>  ",
+      successOddsLabel, " = exp(eta) = ", fmt2dp(successOdds), " (\u2248 ", fmt3sf(successOdds), ")",
+      "\n",
+      failureOddsLabel, " = exp(-eta) = ", fmt2dp(failureOdds), " (\u2248 ", fmt3sf(failureOdds), ")",
+      "\n",
+      successProbLabel, " = exp(eta) / (1 + exp(eta)) = ", fmt2dp(successProb), " (\u2248 ", fmt3sf(successProb), ")",
+      "\n",
+      failureProbLabel, " = 1 / (1 + exp(eta)) = ", fmt2dp(failureProb), " (\u2248 ", fmt3sf(failureProb), ")"
     )
   } else if (fam == "poisson" && link == "log") {
     mu = invLink(eta)  # exp(eta)

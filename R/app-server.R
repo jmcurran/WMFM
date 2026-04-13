@@ -1609,7 +1609,8 @@ appServer = function(input, output, session) {
       link = m$family$link
 
       if (fam == "binomial" && link == "logit") {
-        lhs = "\\operatorname{logit}(p_i)"
+        successLabel = getBinomialOutcomeLabels(m)$successLabel
+        lhs = glue("\\operatorname{{logit}}(\\Pr(\\text{{{successLabel}}}_i))")
       } else if (fam == "poisson" && link == "log") {
         lhs = "\\log(\\mu_i)"
       } else {

@@ -17,9 +17,9 @@ buildModelConfidenceIntervalData(
 \item{level}{Confidence level. Defaults to \code{0.95}.}
 
 \item{numericReference}{How numeric predictors should be fixed when building
-expected-value rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
-The app UI uses \code{"zero"} so the displayed expected values line up with
-explanations phrased at zero-valued numeric predictors.}
+teaching rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
+The app UI uses \code{"zero"} so the displayed rows line up with explanations
+phrased at zero-valued numeric predictors.}
 }
 \value{
 A list with components:
@@ -34,15 +34,14 @@ A list with components:
 }
 \description{
 Creates a compact table of confidence intervals for quantities that are
-easier for students to interpret than a raw coefficient table. For models
-without interaction terms, the helper builds intervals for expected values
-at simple base settings and for one-unit changes in numeric predictors.
-It also records row-by-row explanation material in a labelled structure that
-can be shown on demand in the app.
+easier for students to interpret than a raw coefficient table. The helper
+builds intervals for fitted values at simple predictor settings and, where
+helpful, simple contrasts such as one-unit numeric changes or factor-level
+comparisons.
 }
 \details{
-When the model contains interaction terms, the helper falls back to a raw
-coefficient-interval table because simple marginal quantities depend on the
-values of other predictors.
+For binomial logit models, the displayed rows use the probability and odds
+scales. For log-link count models, multiplicative count effects are shown.
+For identity-link models, rows stay on the response scale.
 }
 \keyword{internal}
