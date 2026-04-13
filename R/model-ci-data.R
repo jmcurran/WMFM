@@ -117,19 +117,18 @@ classifyModelConfidenceIntervalPlan = function(model, mf) {
     ))
   }
 
-  supportedFamily = (
-    inherits(model, "lm") ||
-      isSupportedLogisticModel(model = model) ||
+  supportedInteractionFamily = (
+    isSupportedLogisticModel(model = model) ||
       isSupportedPoissonModel(model = model)
   )
 
-  if (!supportedFamily) {
+  if (!supportedInteractionFamily) {
     return(list(
       mode = "coefficient",
       note = paste(
-        "This interaction structure is shown on the coefficient scale because",
-        "derived teaching rows are only supported for lm models, logistic GLMs,",
-        "and Poisson GLMs in the simple one-factor-plus-one-numeric interaction case."
+        "This model contains interaction terms, so the confidence-interval table is shown on the coefficient scale.",
+        "Derived interaction teaching rows are only supported for logistic GLMs and Poisson GLMs",
+        "in the simple one-factor-plus-one-numeric interaction case."
       )
     ))
   }
@@ -755,6 +754,62 @@ buildConfidenceIntervalBaseInfo = function(mf, numericReference, predictorNames)
   )
 }
 
+#' Complete one-row newdata for CI predictions
+#'
+#' Ensures that all predictors referenced by the fitted model are present in
+#' the one-row \code{newData} passed to \code{predict()}, filling any omitted
+#' columns from simple base settings taken from the model frame. This keeps the
+#' CI builder robust when a row constructor only changes the focal predictors
+#' for a teaching quantity.
+#'
+#' @param model A fitted model object.
+#' @param newData One-row new-data frame that may omit some predictors.
+#'
+#' @return A completed one-row data frame.
+#' @keywords internal
+completeConfidenceIntervalNewData = function(model, newData) {
+
+  mf = model.frame(model)
+  predictorNames = names(mf)[-1]
+
+  if (length(predictorNames) == 0) {
+    return(newData)
+  }
+
+  out = as.data.frame(newData, stringsAsFactors = FALSE)
+
+  for (varName in predictorNames) {
+    if (varName %in% names(out)) {
+      next
+    }
+
+    x = mf[[varName]]
+
+    if (is.factor(x)) {
+      out[[varName]] = factor(levels(x)[1], levels = levels(x))
+    } else if (is.numeric(x)) {
+      out[[varName]] = 0
+    } else {
+      firstNonMissing = x[which(!is.na(x))[1]]
+      out[[varName]] = firstNonMissing
+    }
+  }
+
+  out = out[, predictorNames, drop = FALSE]
+
+  for (varName in predictorNames) {
+    x = mf[[varName]]
+
+    if (is.factor(x)) {
+      out[[varName]] = factor(as.character(out[[varName]]), levels = levels(x))
+    } else if (is.numeric(x)) {
+      out[[varName]] = as.numeric(out[[varName]])
+    }
+  }
+
+  out
+}
+
 #' Build a prediction and CI on the linear predictor scale
 #'
 #' @param model A fitted model object.
@@ -765,14 +820,19 @@ buildConfidenceIntervalBaseInfo = function(mf, numericReference, predictorNames)
 #' @keywords internal
 buildConfidenceIntervalPrediction = function(model, newData, level) {
 
+  completedNewData = completeConfidenceIntervalNewData(
+    model = model,
+    newData = newData
+  )
+
   predType = if (inherits(model, "glm")) "link" else "response"
-  pred = predict(model, newdata = newData, se.fit = TRUE, type = predType)
+  pred = predict(model, newdata = completedNewData, se.fit = TRUE, type = predType)
 
   eta = as.numeric(pred$fit)[1]
   seEta = as.numeric(pred$se.fit)[1]
   crit = getConfidenceIntervalCriticalValue(model = model, level = level)
 
-  mm = model.matrix(delete.response(terms(model)), data = newData)
+  mm = model.matrix(delete.response(terms(model)), data = completedNewData)
   weights = as.numeric(mm[1, ])
   names(weights) = colnames(mm)
   weights = weights[abs(weights) > 1e-12]
