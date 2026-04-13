@@ -10,12 +10,10 @@ insertCiSectionBreakRows(ciTable)
 \item{ciTable}{A confidence-interval display table.}
 }
 \value{
-A data frame ready for display.
+The input data frame, unchanged apart from row names.
 }
 \description{
-Adds a visible separator row before rows that describe non-zero covariate
-effects, such as one-unit changes and multiplicative effect rows. The
-returned table also carries a \code{ciSection} column so downstream code can
-group rows explicitly without relying on the separator alone.
+This helper is retained for backward compatibility, but the Stage 4 display
+redesign no longer inserts visible separator rows into the returned table.
 }
 \keyword{internal}

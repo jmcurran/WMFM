@@ -172,7 +172,7 @@ classifyModelConfidenceIntervalPlan = function(model, mf) {
     numericName = numericName,
     interactionTerm = interactionTerms[[1]],
     note = paste(
-      "Rows are grouped into fitted quantities and non-zero covariate effects.",
+      "Rows are tagged internally as fitted quantities and predictor effects.",
       "For the interaction, fitted quantities are shown at the reference value of",
       numericName,
       "and slope rows are shown separately within each level of",
@@ -270,8 +270,14 @@ buildDerivedConfidenceIntervalData = function(
     )
   }
 
+  ciTable = do.call(rbind, rows)
+  ciTable = enrichConfidenceIntervalDisplayTable(
+    model = model,
+    ciTable = ciTable
+  )
+
   list(
-    table = insertCiSectionBreakRows(do.call(rbind, rows)),
+    table = ciTable,
     details = details,
     note = buildDerivedModeNote(mf = mf, numericReference = numericReference),
     teachingNote = NULL,
@@ -940,7 +946,7 @@ buildConfidenceIntervalNotation = function(model, mf) {
   if (isSupportedPoissonModel(model = model)) {
     return(list(
       mean = "E(Y)",
-      responseScale = "expected value"
+      responseScale = "response"
     ))
   }
 
@@ -1003,7 +1009,7 @@ buildDerivedModeNote = function(mf, numericReference) {
   numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
 
   pieces = c(
-    "Rows are grouped into baseline or fitted quantities first, then non-zero covariate effects."
+    "Rows are tagged internally as fitted quantities or predictor effects so the app can show one teaching scale at a time."
   )
 
   if (length(factorNames) > 0) {
@@ -1188,56 +1194,290 @@ isSupportedPoissonModel = function(model) {
     identical(model$family$link, "log")
 }
 
-#' Insert pedagogical section-break rows into a CI display table
+#' Enrich a CI table with framework-aware display metadata
 #'
-#' Adds a visible separator row before rows that describe non-zero covariate
-#' effects, such as one-unit changes and multiplicative effect rows. The
-#' returned table also carries a \code{ciSection} column so downstream code can
-#' group rows explicitly without relying on the separator alone.
+#' Adds internal columns that the app can use to filter and present
+#' confidence-interval rows by model framework, teaching role, and display
+#' scale. This keeps the calculation layer stable while making the returned
+#' table easier to drive from UI controls.
 #'
+#' @param model A fitted model object.
 #' @param ciTable A confidence-interval display table.
 #'
-#' @return A data frame ready for display.
+#' @return A data frame with additional metadata columns.
 #' @keywords internal
-insertCiSectionBreakRows = function(ciTable) {
+enrichConfidenceIntervalDisplayTable = function(model, ciTable) {
 
   if (is.null(ciTable) || !is.data.frame(ciTable) || nrow(ciTable) == 0) {
     return(ciTable)
   }
 
-  if (!("ciSection" %in% names(ciTable))) {
-    quantity = ciTable$quantity %||% rep("", nrow(ciTable))
-    isEffectRow = (
-      grepl("1-unit increase", quantity, fixed = TRUE) |
-        grepl("multiplier", quantity, fixed = TRUE) |
-        grepl("^Change in ", quantity)
-    )
-    ciTable$ciSection = ifelse(isEffectRow, "effect", "baseline")
+  out = ciTable
+  modelFramework = detectConfidenceIntervalModelFramework(model = model)
+
+  out$modelFramework = modelFramework
+  out$rowRole = ifelse(out$ciSection %in% "effect", "covariateEffect", ifelse(out$ciSection %in% "coefficient", "coefficient", "fittedQuantity"))
+  out$quantityType = ifelse(out$rowRole %in% "fittedQuantity", "Modelled outcome", ifelse(out$rowRole %in% "covariateEffect", "Predictor effect", "Coefficient"))
+  out$displayScale = vapply(out$scale, mapConfidenceIntervalDisplayScale, character(1), modelFramework = modelFramework)
+  out$outcomeLevel = vapply(out$quantity, extractConfidenceIntervalOutcomeLevel, character(1))
+  out$isComplement = FALSE
+
+  if (identical(modelFramework, "binomialLogit")) {
+    response = model.frame(model)[[1]]
+    if (is.factor(response) && length(levels(response)) >= 2) {
+      failureLevel = levels(response)[1]
+      out$isComplement = nzchar(out$outcomeLevel) & out$outcomeLevel %in% failureLevel
+    }
   }
 
-  isEffectRow = identical(ciTable$ciSection, "effect")
-  isEffectRow = ciTable$ciSection %in% "effect"
+  out$primaryScale = vapply(out$scale, mapConfidenceIntervalPrimaryScale, character(1), modelFramework = modelFramework)
+  out$secondaryScale = vapply(out$scale, mapConfidenceIntervalSecondaryScale, character(1), modelFramework = modelFramework)
+  out$primaryEstimate = out$estimate
+  out$primaryLower = out$lower
+  out$primaryUpper = out$upper
 
-  if (!any(isEffectRow) || all(isEffectRow)) {
-    rownames(ciTable) = NULL
+  secondary = buildSecondaryConfidenceIntervalColumns(modelFramework = modelFramework, ciTable = out)
+  out$secondaryEstimate = secondary$estimate
+  out$secondaryLower = secondary$lower
+  out$secondaryUpper = secondary$upper
+  out$sortKey = buildConfidenceIntervalSortKey(out)
+
+  rownames(out) = NULL
+  out
+}
+
+#' Detect the teaching framework for CI display metadata
+#'
+#' @param model A fitted model object.
+#'
+#' @return A character scalar.
+#' @keywords internal
+detectConfidenceIntervalModelFramework = function(model) {
+
+  if (isSupportedLogisticModel(model = model)) {
+    return("binomialLogit")
+  }
+
+  if (isSupportedPoissonModel(model = model)) {
+    return("poissonLog")
+  }
+
+  "lm"
+}
+
+#' Map a raw CI row scale to a display-scale identifier
+#'
+#' @param scale A raw row scale label.
+#' @param modelFramework Teaching framework identifier.
+#'
+#' @return A character scalar.
+#' @keywords internal
+mapConfidenceIntervalDisplayScale = function(scale, modelFramework) {
+
+  if (identical(modelFramework, "binomialLogit")) {
+    return(switch(
+      scale,
+      probability = "probability",
+      odds = "odds",
+      "odds multiplier" = "oddsMultiplier",
+      coefficient = "coefficient",
+      scale
+    ))
+  }
+
+  if (identical(modelFramework, "poissonLog")) {
+    return(switch(
+      scale,
+      "expected value" = "expectedValue",
+      "E(Y) multiplier" = "expectedValueMultiplier",
+      coefficient = "coefficient",
+      scale
+    ))
+  }
+
+  switch(
+    scale,
+    response = "fittedValue",
+    coefficient = "coefficient",
+    "fittedValue"
+  )
+}
+
+#' Map a raw CI row scale to a primary teaching scale label
+#'
+#' @param scale A raw row scale label.
+#' @param modelFramework Teaching framework identifier.
+#'
+#' @return A character scalar.
+#' @keywords internal
+mapConfidenceIntervalPrimaryScale = function(scale, modelFramework) {
+
+  if (identical(modelFramework, "binomialLogit")) {
+    return(switch(
+      scale,
+      probability = "probability",
+      odds = "odds",
+      "odds multiplier" = "odds multiplier",
+      coefficient = "log-odds coefficient",
+      scale
+    ))
+  }
+
+  if (identical(modelFramework, "poissonLog")) {
+    return(switch(
+      scale,
+      "expected value" = "expected value",
+      "E(Y) multiplier" = "E(Y) multiplier",
+      coefficient = "log-mean coefficient",
+      scale
+    ))
+  }
+
+  switch(
+    scale,
+    response = "response",
+    coefficient = "coefficient",
+    scale
+  )
+}
+
+#' Map a raw CI row scale to a secondary teaching scale label
+#'
+#' @param scale A raw row scale label.
+#' @param modelFramework Teaching framework identifier.
+#'
+#' @return A character scalar.
+#' @keywords internal
+mapConfidenceIntervalSecondaryScale = function(scale, modelFramework) {
+
+  if (identical(modelFramework, "binomialLogit")) {
+    return(switch(
+      scale,
+      probability = "odds",
+      odds = "log-odds",
+      "odds multiplier" = "log-odds coefficient",
+      coefficient = "odds multiplier",
+      ""
+    ))
+  }
+
+  if (identical(modelFramework, "poissonLog")) {
+    return(switch(
+      scale,
+      "expected value" = "log mean",
+      "E(Y) multiplier" = "log multiplier",
+      coefficient = "E(Y) multiplier",
+      ""
+    ))
+  }
+
+  ""
+}
+
+#' Extract the outcome level named in a CI quantity label
+#'
+#' @param quantity A quantity label.
+#'
+#' @return A character scalar.
+#' @keywords internal
+extractConfidenceIntervalOutcomeLevel = function(quantity) {
+
+  match = regexec("= ([^)]+)\\)", quantity)
+  pieces = regmatches(quantity, match)[[1]]
+
+  if (length(pieces) >= 2) {
+    return(pieces[2])
+  }
+
+  ""
+}
+
+#' Build secondary-scale columns for a CI table
+#'
+#' @param modelFramework Teaching framework identifier.
+#' @param ciTable Confidence-interval table with primary values.
+#'
+#' @return A list of numeric vectors.
+#' @keywords internal
+buildSecondaryConfidenceIntervalColumns = function(modelFramework, ciTable) {
+
+  n = nrow(ciTable)
+  estimate = rep(NA_real_, n)
+  lower = rep(NA_real_, n)
+  upper = rep(NA_real_, n)
+
+  if (identical(modelFramework, "binomialLogit")) {
+    isProbability = ciTable$scale %in% "probability"
+    isOdds = ciTable$scale %in% "odds"
+    isOddsMultiplier = ciTable$scale %in% "odds multiplier"
+    isCoefficient = ciTable$scale %in% "coefficient"
+
+    estimate[isProbability] = ciTable$estimate[isProbability] / (1 - ciTable$estimate[isProbability])
+    lower[isProbability] = ciTable$lower[isProbability] / (1 - ciTable$lower[isProbability])
+    upper[isProbability] = ciTable$upper[isProbability] / (1 - ciTable$upper[isProbability])
+
+    estimate[isOdds | isOddsMultiplier] = log(ciTable$estimate[isOdds | isOddsMultiplier])
+    lower[isOdds | isOddsMultiplier] = log(ciTable$lower[isOdds | isOddsMultiplier])
+    upper[isOdds | isOddsMultiplier] = log(ciTable$upper[isOdds | isOddsMultiplier])
+
+    estimate[isCoefficient] = exp(ciTable$estimate[isCoefficient])
+    lower[isCoefficient] = exp(ciTable$lower[isCoefficient])
+    upper[isCoefficient] = exp(ciTable$upper[isCoefficient])
+  }
+
+  if (identical(modelFramework, "poissonLog")) {
+    isExpected = ciTable$scale %in% "expected value"
+    isMultiplier = ciTable$scale %in% "E(Y) multiplier"
+    isCoefficient = ciTable$scale %in% "coefficient"
+
+    estimate[isExpected | isMultiplier] = log(ciTable$estimate[isExpected | isMultiplier])
+    lower[isExpected | isMultiplier] = log(ciTable$lower[isExpected | isMultiplier])
+    upper[isExpected | isMultiplier] = log(ciTable$upper[isExpected | isMultiplier])
+
+    estimate[isCoefficient] = exp(ciTable$estimate[isCoefficient])
+    lower[isCoefficient] = exp(ciTable$lower[isCoefficient])
+    upper[isCoefficient] = exp(ciTable$upper[isCoefficient])
+  }
+
+  list(
+    estimate = round(estimate, 3),
+    lower = round(lower, 3),
+    upper = round(upper, 3)
+  )
+}
+
+#' Build a stable sort key for a CI display table
+#'
+#' @param ciTable Confidence-interval table with metadata columns.
+#'
+#' @return An integer vector.
+#' @keywords internal
+buildConfidenceIntervalSortKey = function(ciTable) {
+
+  rowBase = ifelse(ciTable$rowRole %in% "fittedQuantity", 1000L, ifelse(ciTable$rowRole %in% "covariateEffect", 2000L, 3000L))
+  scaleOffset = match(ciTable$displayScale, unique(ciTable$displayScale))
+  scaleOffset[is.na(scaleOffset)] = 99L
+
+  rowBase + (scaleOffset * 100L) + seq_len(nrow(ciTable))
+}
+
+#' Insert pedagogical section-break rows into a CI display table
+#'
+#' This helper is retained for backward compatibility, but the Stage 4 display
+#' redesign no longer inserts visible separator rows into the returned table.
+#'
+#' @param ciTable A confidence-interval display table.
+#'
+#' @return The input data frame, unchanged apart from row names.
+#' @keywords internal
+insertCiSectionBreakRows = function(ciTable) {
+
+  if (is.null(ciTable) || !is.data.frame(ciTable)) {
     return(ciTable)
   }
 
-  baselineTable = ciTable[!isEffectRow, , drop = FALSE]
-  effectTable = ciTable[isEffectRow, , drop = FALSE]
-
-  separatorRow = baselineTable[1, , drop = FALSE]
-  separatorRow[1, ] = NA
-  separatorRow$ciSection = "separator"
-  separatorRow$quantity = "--- Non-zero covariate effects ---"
-  separatorRow$estimate = NA
-  separatorRow$lower = NA
-  separatorRow$upper = NA
-  separatorRow$scale = ""
-
-  out = rbind(baselineTable, separatorRow, effectTable)
-  rownames(out) = NULL
-  out
+  rownames(ciTable) = NULL
+  ciTable
 }
 
 #' Build a coefficient-only confidence-interval table
@@ -1265,6 +1505,10 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
     upper = round(as.numeric(upper), 3),
     scale = "coefficient",
     stringsAsFactors = FALSE
+  )
+  out = enrichConfidenceIntervalDisplayTable(
+    model = model,
+    ciTable = out
   )
 
   details = lapply(names(coefVec), function(name) {
