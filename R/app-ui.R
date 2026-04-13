@@ -215,9 +215,9 @@ appUI = function() {
               ),
               tabPanel(
                 "Confidence intervals",
-                uiOutput("modelConfintNoteUi"),
                 uiOutput("modelConfintControlsUi"),
-                tableOutput("modelConfintTable"),
+                uiOutput("modelConfintNoteUi"),
+                uiOutput("modelConfintTableUi"),
                 tags$div(
                   class = "wmfm-ci-drilldown-box",
                   tags$div(
@@ -231,13 +231,20 @@ appUI = function() {
                   uiOutput("modelConfintSelectorUi"),
                   uiOutput("modelConfintSelectedRowUi")
                 ),
-                tags$div(
-                  class = "wmfm-ci-collapsible-block",
-                  uiOutput("modelConfintTeachingNoteUi")
-                ),
-                tags$div(
-                  class = "wmfm-ci-collapsible-block",
-                  uiOutput("modelConfintVcovUi")
+                accordion(
+                  id = "model_confint_extras",
+                  multiple = TRUE,
+                  open = NULL,
+                  accordion_panel(
+                    "Teaching note",
+                    value = "model_confint_teaching_note",
+                    uiOutput("modelConfintTeachingNoteUi")
+                  ),
+                  accordion_panel(
+                    "Variance-covariance matrix",
+                    value = "model_confint_vcov",
+                    uiOutput("modelConfintVcovUi")
+                  )
                 )
               )
             )

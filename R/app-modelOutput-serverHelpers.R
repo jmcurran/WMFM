@@ -12,9 +12,9 @@
 #' @return None (called for side effects).
 #' @keywords internal
 #'
-#' @importFrom shiny checkboxInput helpText renderPrint renderTable renderUI req selectInput
-#' @importFrom shiny tagList tags tableOutput uiOutput
-#' @importFrom stats anova
+#' @importFrom shiny helpText renderPrint renderTable renderUI req selectInput tableOutput checkboxInput
+#' @importFrom shiny tagList tags
+#' @importFrom stats anova setNames
 registerModelOutputTabs = function(output, input, modelFit) {
 
   getCiData = function() {
@@ -30,25 +30,24 @@ registerModelOutputTabs = function(output, input, modelFit) {
     )
   }
 
-  getDisplayScaleChoices = function(ciTable) {
+  getCiDisplayChoices = function(ciData) {
 
-    if (is.null(ciTable) || !is.data.frame(ciTable) || !("displayScale" %in% names(ciTable))) {
+    if (is.null(ciData) || is.null(ciData$table) || nrow(ciData$table) == 0) {
       return(character(0))
     }
 
-    scaleOrder = c(
-      "fittedValue",
-      "slope",
-      "probability",
-      "odds",
-      "oddsMultiplier",
-      "expectedValue",
-      "expectedValueMultiplier"
-    )
+    tbl = ciData$table
 
-    present = unique(as.character(ciTable$displayScale))
-    present = present[!is.na(present) & nzchar(present)]
-    present = intersect(scaleOrder, present)
+    if (!("displayScale" %in% names(tbl))) {
+      return(character(0))
+    }
+
+    displayScales = unique(tbl$displayScale)
+    displayScales = displayScales[!is.na(displayScales) & nzchar(displayScales)]
+
+    if (length(displayScales) == 0) {
+      return(character(0))
+    }
 
     labelMap = c(
       fittedValue = "Fitted value",
@@ -57,274 +56,180 @@ registerModelOutputTabs = function(output, input, modelFit) {
       odds = "Odds",
       oddsMultiplier = "Odds multiplier",
       expectedValue = "Expected value",
-      expectedValueMultiplier = "Expected value multiplier"
+      expectedValueMultiplier = "Expected value multiplier",
+      coefficient = "Coefficient"
     )
 
-    stats::setNames(present, labelMap[present])
+    labels = ifelse(
+      displayScales %in% names(labelMap),
+      unname(labelMap[displayScales]),
+      displayScales
+    )
+
+    stats::setNames(displayScales, labels)
   }
 
-  getSelectedDisplayScale = function(ciData) {
+  getDefaultCiDisplayScale = function(ciData) {
 
-    if (is.null(ciData) || is.null(ciData$table)) {
+    choices = getCiDisplayChoices(ciData)
+
+    if (length(choices) == 0) {
+      return("")
+    }
+
+    values = unname(choices)
+
+    preferred = c(
+      "probability",
+      "expectedValue",
+      "fittedValue",
+      "odds",
+      "oddsMultiplier",
+      "expectedValueMultiplier",
+      "slope",
+      "coefficient"
+    )
+
+    matchValue = preferred[preferred %in% values][1]
+
+    if (!is.na(matchValue) && nzchar(matchValue)) {
+      return(matchValue)
+    }
+
+    values[1]
+  }
+
+  buildCiDisplayNote = function(ciData, selectedScale) {
+
+    scalePrefix = switch(
+      selectedScale,
+      probability = "Probability view.",
+      odds = "Odds view.",
+      oddsMultiplier = "Odds multiplier view.",
+      expectedValue = "Expected value view.",
+      expectedValueMultiplier = "Expected value multiplier view.",
+      fittedValue = "Fitted value view.",
+      slope = "Slope view.",
+      coefficient = "Coefficient view.",
+      NULL
+    )
+
+    pieces = c(scalePrefix, ciData$note %||% NULL)
+    pieces = pieces[!is.na(pieces) & nzchar(pieces)]
+
+    paste(pieces, collapse = " ")
+  }
+
+  filterCiTableForDisplay = function(ciData, selectedScale, showComplement = FALSE) {
+
+    if (is.null(ciData) || is.null(ciData$table) || nrow(ciData$table) == 0) {
       return(NULL)
     }
 
-    choices = getDisplayScaleChoices(ciData$table)
-    choiceValues = unname(choices)
+    tbl = ciData$table
 
-    if (length(choiceValues) == 0) {
-      return(NULL)
+    if (!("displayScale" %in% names(tbl))) {
+      return(tbl)
     }
-
-    requested = input$modelConfintDisplayScale %||% ""
-
-    if (nzchar(requested) && requested %in% choiceValues) {
-      return(requested)
-    }
-
-    choiceValues[1]
-  }
-
-  isFittedQuantityScale = function(displayScale) {
-    displayScale %in% c("fittedValue", "probability", "odds", "expectedValue")
-  }
-
-  getDisplayedCiTable = function(ciData) {
-
-    if (is.null(ciData) || is.null(ciData$table) || !is.data.frame(ciData$table)) {
-      return(NULL)
-    }
-
-    tableDf = ciData$table
-
-    if (!("displayScale" %in% names(tableDf))) {
-      return(tableDf)
-    }
-
-    selectedScale = getSelectedDisplayScale(ciData)
 
     if (is.null(selectedScale) || !nzchar(selectedScale)) {
-      return(tableDf)
+      selectedScale = getDefaultCiDisplayScale(ciData)
     }
 
-    isComplement = rep(FALSE, nrow(tableDf))
-    if ("isComplement" %in% names(tableDf)) {
-      isComplement = isTRUE(tableDf$isComplement) | identical(tableDf$isComplement, TRUE)
-      isComplement = as.logical(tableDf$isComplement)
-      isComplement[is.na(isComplement)] = FALSE
-    }
+    fittedScales = c("probability", "odds", "expectedValue", "fittedValue")
+    effectScales = c("oddsMultiplier", "expectedValueMultiplier", "slope")
 
-    rowRole = if ("rowRole" %in% names(tableDf)) {
-      as.character(tableDf$rowRole)
+    if (selectedScale %in% fittedScales) {
+      keep = tbl$displayScale %in% c(selectedScale, effectScales)
     } else {
-      rep(NA_character_, nrow(tableDf))
+      keep = tbl$displayScale %in% selectedScale
     }
 
-    showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
+    out = tbl[keep, , drop = FALSE]
 
-    if (identical(selectedScale, "probability") || identical(selectedScale, "odds")) {
-      if (!showComplement) {
-        fittedKeep = tableDf$displayScale %in% selectedScale & !isComplement
-      } else {
-        fittedKeep = tableDf$displayScale %in% selectedScale
-      }
-    } else {
-      fittedKeep = tableDf$displayScale %in% selectedScale
-    }
-
-    effectScaleMap = c(
-      fittedValue = "slope",
-      probability = "oddsMultiplier",
-      odds = "oddsMultiplier",
-      expectedValue = "expectedValueMultiplier"
-    )
-
-    keep = fittedKeep
-
-    if (isFittedQuantityScale(selectedScale) && !all(is.na(rowRole))) {
-      mappedEffectScale = effectScaleMap[[selectedScale]]
-      effectKeep = rowRole %in% "covariateEffect"
-
-      if (!is.null(mappedEffectScale) && nzchar(mappedEffectScale)) {
-        effectKeep = effectKeep & tableDf$displayScale %in% mappedEffectScale
-      }
-
-      keep = fittedKeep | effectKeep
-    }
-
-    out = tableDf[keep, , drop = FALSE]
-
-    if (nrow(out) == 0) {
-      return(out)
+    if ("isComplement" %in% names(out) && !isTRUE(showComplement)) {
+      keepComplement = is.na(out$isComplement) | !as.logical(out$isComplement)
+      out = out[keepComplement, , drop = FALSE]
     }
 
     if ("sortKey" %in% names(out)) {
-      out = out[order(out$sortKey, out$quantity), , drop = FALSE]
+      out = out[order(out$sortKey), , drop = FALSE]
     }
 
     rownames(out) = NULL
     out
   }
 
-  buildCiDisplayNote = function(ciData) {
+  buildDisplayedCiTable = function(tbl, selectedScale) {
 
-    if (is.null(ciData)) {
+    if (is.null(tbl) || !is.data.frame(tbl) || nrow(tbl) == 0) {
       return(NULL)
     }
 
-    selectedScale = getSelectedDisplayScale(ciData)
+    display = tbl[, c("quantity", "estimate", "lower", "upper"), drop = FALSE]
+    names(display) = c("Quantity", "Estimate", "Lower", "Upper")
 
-    prefix = switch(
-      selectedScale,
-      fittedValue = "Fitted value view.",
-      slope = "Slope view.",
-      probability = "Probability view.",
-      odds = "Odds view.",
-      oddsMultiplier = "Odds multiplier view.",
-      expectedValue = "Expected value view.",
-      expectedValueMultiplier = "Expected value multiplier view.",
-      NULL
-    )
-
-    suffix = ciData$note %||% NULL
-
-    paste(c(prefix, suffix), collapse = " ")
+    rownames(display) = NULL
+    display
   }
 
-  getPrimarySecondaryColumns = function(displayedTable) {
+  buildModelConfidenceIntervalRowChoices = function(ciData, displayedTable = NULL) {
 
-    secondaryPresent = (
-      !is.null(displayedTable) &&
-        is.data.frame(displayedTable) &&
-        nrow(displayedTable) > 0 &&
-        all(c("secondaryScale", "secondaryEstimate", "secondaryLower", "secondaryUpper") %in% names(displayedTable))
-    )
+    tbl = displayedTable %||% ciData$table
 
-    if (!secondaryPresent) {
-      return(list(
-        primaryLabels = c("Estimate", "Lower", "Upper"),
-        secondaryLabels = NULL
-      ))
+    if (is.null(tbl) || nrow(tbl) == 0) {
+      return(stats::setNames("", ""))
     }
 
-    secondaryScaleValues = unique(as.character(displayedTable$secondaryScale))
-    secondaryScaleValues = secondaryScaleValues[!is.na(secondaryScaleValues) & nzchar(secondaryScaleValues)]
+    labels = tbl$quantity %||% character(0)
+    labels = labels[!is.na(labels) & nzchar(labels)]
 
-    if (length(secondaryScaleValues) != 1) {
-      return(list(
-        primaryLabels = c("Estimate", "Lower", "Upper"),
-        secondaryLabels = NULL
-      ))
+    if (length(labels) == 0) {
+      return(stats::setNames("", ""))
     }
 
-    secondaryLabelBase = switch(
-      secondaryScaleValues[[1]],
-      odds = "Odds",
-      oddsMultiplier = "Odds multiplier",
-      logOdds = "Log-odds",
-      logMean = "Log mean",
-      expectedValue = "Expected value",
-      expectedValueMultiplier = "Expected value multiplier",
-      coefficient = "Coefficient",
-      NULL
-    )
-
-    if (is.null(secondaryLabelBase)) {
-      return(list(
-        primaryLabels = c("Estimate", "Lower", "Upper"),
-        secondaryLabels = NULL
-      ))
-    }
-
-    list(
-      primaryLabels = c("Estimate", "Lower", "Upper"),
-      secondaryLabels = c(
-        paste0(secondaryLabelBase, " estimate"),
-        paste0(secondaryLabelBase, " lower"),
-        paste0(secondaryLabelBase, " upper")
-      )
-    )
+    stats::setNames(labels, labels)
   }
 
-  formatCiNumber = function(x) {
+  findModelConfidenceIntervalDetail = function(ciData, selectedLabel) {
 
-    if (length(x) == 0 || is.na(x)) {
-      return("")
+    if (
+      is.null(ciData) ||
+      is.null(ciData$details) ||
+      length(ciData$details) == 0 ||
+      is.null(selectedLabel) ||
+      !nzchar(selectedLabel)
+    ) {
+      return(NULL)
     }
 
-    if (is.infinite(x)) {
-      return(if (x > 0) "Inf" else "-Inf")
+    detailIndex = which(vapply(
+      ciData$details,
+      function(x) {
+        identical(x$label %||% "", selectedLabel)
+      },
+      logical(1)
+    ))
+
+    if (length(detailIndex) != 1) {
+      return(NULL)
     }
 
-    sprintf("%.3f", as.numeric(x))
+    ciData$details[[detailIndex]]
   }
 
-  buildCiHtmlTable = function(displayedTable) {
+  renderModelConfidenceIntervalDetailUi = function(detail) {
 
-    if (is.null(displayedTable) || !is.data.frame(displayedTable) || nrow(displayedTable) == 0) {
-      return(helpText("No confidence-interval rows are available for the selected display scale."))
+    if (is.null(detail)) {
+      return(helpText("Choose a row if you want to see how that interval was constructed."))
     }
 
-    labels = getPrimarySecondaryColumns(displayedTable)
-
-    secondaryPresent = !is.null(labels$secondaryLabels)
-
-    effectStart = NA_integer_
-    if ("rowRole" %in% names(displayedTable)) {
-      effectIndex = which(as.character(displayedTable$rowRole) %in% "covariateEffect")
-      if (length(effectIndex) > 0) {
-        effectStart = effectIndex[1]
-      }
-    }
-
-    headerCells = c(
-      tags$th("Quantity", style = "text-align: left;"),
-      tags$th(labels$primaryLabels[1]),
-      tags$th(labels$primaryLabels[2]),
-      tags$th(labels$primaryLabels[3])
-    )
-
-    if (secondaryPresent) {
-      headerCells = c(
-        headerCells,
-        tags$th(labels$secondaryLabels[1]),
-        tags$th(labels$secondaryLabels[2]),
-        tags$th(labels$secondaryLabels[3])
-      )
-    }
-
-    bodyRows = lapply(seq_len(nrow(displayedTable)), function(i) {
-      row = displayedTable[i, , drop = FALSE]
-
-      rowStyle = if (!is.na(effectStart) && identical(i, effectStart)) {
-        "border-top: 1px solid #000;"
-      } else {
-        NULL
-      }
-
-      cells = c(
-        tags$td(as.character(row$quantity[[1]]), style = "text-align: left;"),
-        tags$td(formatCiNumber(row$estimate[[1]])),
-        tags$td(formatCiNumber(row$lower[[1]])),
-        tags$td(formatCiNumber(row$upper[[1]]))
-      )
-
-      if (secondaryPresent) {
-        cells = c(
-          cells,
-          tags$td(formatCiNumber(row$secondaryEstimate[[1]])),
-          tags$td(formatCiNumber(row$secondaryLower[[1]])),
-          tags$td(formatCiNumber(row$secondaryUpper[[1]]))
-        )
-      }
-
-      tags$tr(style = rowStyle, cells)
-    })
-
-    tags$table(
-      class = "table table-striped table-bordered table-condensed",
-      tags$thead(tags$tr(headerCells)),
-      tags$tbody(bodyRows)
+    tagList(
+      tags$p(tags$strong(detail$label %||% "")),
+      tags$p(detail$settings %||% ""),
+      tags$p(tags$strong("Built from: "), detail$builtFrom %||% ""),
+      tags$p(tags$strong("Variance formula: "), detail$varianceFormula %||% ""),
+      tags$p(tags$strong("Scale note: "), detail$scaleNote %||% "")
     )
   }
 
@@ -350,38 +255,46 @@ registerModelOutputTabs = function(output, input, modelFit) {
     }
   })
 
-  output$modelConfintControlsUi = renderUI({
+  output$modelConfintScaleUi = renderUI({
 
     ciData = getCiData()
 
-    if (is.null(ciData) || is.null(ciData$table)) {
+    if (is.null(ciData)) {
       return(NULL)
     }
 
-    choices = getDisplayScaleChoices(ciData$table)
+    choices = getCiDisplayChoices(ciData)
 
     if (length(choices) == 0) {
       return(NULL)
     }
 
-    selectedScale = getSelectedDisplayScale(ciData)
-    isLogisticScale = selectedScale %in% c("probability", "odds")
-    hasComplement = any(as.logical(ciData$table$isComplement %||% FALSE))
+    selectInput(
+      inputId = "modelConfintDisplayScale",
+      label = "Display scale",
+      choices = choices,
+      selected = getDefaultCiDisplayScale(ciData)
+    )
+  })
 
-    tagList(
-      selectInput(
-        inputId = "modelConfintDisplayScale",
-        label = "Display scale",
-        choices = choices,
-        selected = selectedScale
-      ),
-      if (isLogisticScale && hasComplement) {
-        checkboxInput(
-          inputId = "modelConfintShowComplement",
-          label = "Also show the complementary outcome",
-          value = FALSE
-        )
-      }
+  output$modelConfintComplementUi = renderUI({
+
+    ciData = getCiData()
+
+    if (is.null(ciData) || is.null(ciData$table) || !("isComplement" %in% names(ciData$table))) {
+      return(NULL)
+    }
+
+    hasComplement = any(ciData$table$isComplement %in% TRUE, na.rm = TRUE)
+
+    if (!hasComplement) {
+      return(NULL)
+    }
+
+    checkboxInput(
+      inputId = "modelConfintShowComplement",
+      label = "Show complementary outcome rows",
+      value = FALSE
     )
   })
 
@@ -393,60 +306,65 @@ registerModelOutputTabs = function(output, input, modelFit) {
       return(helpText("Fit a model to see confidence intervals."))
     }
 
-    helpText(buildCiDisplayNote(ciData))
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultCiDisplayScale(ciData)
+    noteText = buildCiDisplayNote(ciData = ciData, selectedScale = selectedScale)
+
+    helpText(noteText)
   })
 
-  output$modelConfintTableUi = renderUI({
+  output$modelConfintTable = renderTable({
 
     ciData = getCiData()
-    displayedTable = getDisplayedCiTable(ciData)
 
-    buildCiHtmlTable(displayedTable)
-  })
+    if (is.null(ciData)) {
+      return(NULL)
+    }
+
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultCiDisplayScale(ciData)
+    displayed = filterCiTableForDisplay(
+      ciData = ciData,
+      selectedScale = selectedScale,
+      showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
+    )
+
+    buildDisplayedCiTable(displayed, selectedScale = selectedScale)
+
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
 
   output$modelConfintSelectorUi = renderUI({
 
     ciData = getCiData()
-    displayedTable = getDisplayedCiTable(ciData)
 
-    if (is.null(ciData) || is.null(displayedTable) || nrow(displayedTable) == 0) {
+    if (is.null(ciData)) {
       return(NULL)
     }
 
-    displayedLabels = as.character(displayedTable$quantity)
-    allChoices = buildModelConfidenceIntervalRowChoices(ciData)
-    matchingChoices = allChoices[names(allChoices) %in% displayedLabels]
-
-    if (length(matchingChoices) == 0) {
-      return(NULL)
-    }
+    selectedScale = input$modelConfintDisplayScale %||% getDefaultCiDisplayScale(ciData)
+    displayed = filterCiTableForDisplay(
+      ciData = ciData,
+      selectedScale = selectedScale,
+      showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
+    )
 
     selectInput(
       inputId = "modelConfintSelectedRow",
       label = "Choose a row",
-      choices = matchingChoices,
-      selected = matchingChoices[[1]]
+      choices = buildModelConfidenceIntervalRowChoices(ciData, displayedTable = displayed),
+      selected = ""
     )
   })
 
   output$modelConfintSelectedRowUi = renderUI({
 
     ciData = getCiData()
-    displayedTable = getDisplayedCiTable(ciData)
 
-    if (is.null(ciData) || is.null(displayedTable) || nrow(displayedTable) == 0) {
+    if (is.null(ciData)) {
       return(NULL)
-    }
-
-    selectedLabel = input$modelConfintSelectedRow %||% ""
-
-    if (!nzchar(selectedLabel) || !(selectedLabel %in% displayedTable$quantity)) {
-      selectedLabel = displayedTable$quantity[[1]]
     }
 
     detail = findModelConfidenceIntervalDetail(
       ciData = ciData,
-      selectedLabel = selectedLabel
+      selectedLabel = input$modelConfintSelectedRow %||% ""
     )
 
     if (is.null(detail)) {
@@ -455,10 +373,7 @@ registerModelOutputTabs = function(output, input, modelFit) {
       )
     }
 
-    tagList(
-      tags$h5("Selected-row explanation"),
-      renderModelConfidenceIntervalDetailUi(detail)
-    )
+    renderModelConfidenceIntervalDetailUi(detail)
   })
 
   output$modelConfintTeachingNoteUi = renderUI({
