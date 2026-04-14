@@ -10,3 +10,5 @@ __MACOSX/
 *.sh
 dev*
 dev/*
+build*
+build/*

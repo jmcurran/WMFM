@@ -4,12 +4,25 @@
 \alias{completeConfidenceIntervalNewData}
 \title{Complete one-row newdata for CI predictions}
 \usage{
-completeConfidenceIntervalNewData(model, newData)
+completeConfidenceIntervalNewData(
+  model,
+  newData,
+  numericReference = NULL,
+  mf = NULL,
+  predictorNames = NULL
+)
 }
 \arguments{
 \item{model}{A fitted model object.}
 
 \item{newData}{One-row new-data frame that may omit some predictors.}
+
+\item{numericReference}{Optional numeric reference choice. If omitted,
+it is chosen with \code{chooseModelNumericReference()}.}
+
+\item{mf}{Optional model frame.}
+
+\item{predictorNames}{Optional predictor names.}
 }
 \value{
 A completed one-row data frame.

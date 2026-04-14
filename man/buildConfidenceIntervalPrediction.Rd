@@ -4,7 +4,12 @@
 \alias{buildConfidenceIntervalPrediction}
 \title{Build a prediction and CI on the linear predictor scale}
 \usage{
-buildConfidenceIntervalPrediction(model, newData, level)
+buildConfidenceIntervalPrediction(
+  model,
+  newData,
+  level,
+  numericReference = NULL
+)
 }
 \arguments{
 \item{model}{A fitted model object.}
@@ -12,6 +17,9 @@ buildConfidenceIntervalPrediction(model, newData, level)
 \item{newData}{One-row new-data frame.}
 
 \item{level}{Confidence level.}
+
+\item{numericReference}{Numeric reference choice used if
+\code{newData} omits a numeric predictor.}
 }
 \value{
 A list with fit, interval bounds, and non-zero weights.

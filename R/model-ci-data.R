@@ -321,6 +321,7 @@ buildNoInteractionConfidenceIntervalRows = function(
       newData = baseInfo$baseRow,
       labelContext = list(type = "baseline", responseName = responseName),
       settings = baseInfo$baselineSettings,
+      numericReference = baseInfo$numericReference,
       appendRow = appendRow
     )
   }
@@ -353,6 +354,7 @@ buildNoInteractionConfidenceIntervalRows = function(
         newData = newData,
         labelContext = list(type = "factorLevel", factorName = factorName, level = lvl),
         settings = settings,
+        numericReference = baseInfo$numericReference,
         appendRow = appendRow
       )
     }
@@ -423,6 +425,7 @@ buildSimpleInteractionConfidenceIntervalRows = function(
       newData = newData,
       labelContext = list(type = "factorLevel", factorName = factorName, level = lvl),
       settings = settings,
+      numericReference = baseInfo$numericReference,
       appendRow = appendRow
     )
   }
@@ -459,6 +462,8 @@ buildSimpleInteractionConfidenceIntervalRows = function(
 #' @param newData One-row new-data frame.
 #' @param labelContext Context used to build row labels.
 #' @param settings Human-readable settings text.
+#' @param numericReference Numeric reference choice used when completing
+#'   any omitted numeric predictors in \code{newData}.
 #' @param appendRow Row appender closure.
 #'
 #' @return Invisibly returns \code{NULL}.
@@ -471,13 +476,15 @@ addFittedQuantityRows = function(
     newData,
     labelContext,
     settings,
+    numericReference,
     appendRow
 ) {
 
   prediction = buildConfidenceIntervalPrediction(
     model = model,
     newData = newData,
-    level = level
+    level = level,
+    numericReference = numericReference
   )
 
   weights = prediction$weights
@@ -771,17 +778,46 @@ buildConfidenceIntervalBaseInfo = function(mf, numericReference, predictorNames)
 #'
 #' @param model A fitted model object.
 #' @param newData One-row new-data frame that may omit some predictors.
+#' @param numericReference Optional numeric reference choice. If omitted,
+#'   it is chosen with \code{chooseModelNumericReference()}.
+#' @param mf Optional model frame.
+#' @param predictorNames Optional predictor names.
 #'
 #' @return A completed one-row data frame.
 #' @keywords internal
-completeConfidenceIntervalNewData = function(model, newData) {
+completeConfidenceIntervalNewData = function(
+    model,
+    newData,
+    numericReference = NULL,
+    mf = NULL,
+    predictorNames = NULL
+) {
 
-  mf = model.frame(model)
-  predictorNames = names(mf)[-1]
+  if (is.null(mf)) {
+    mf = model.frame(model)
+  }
+
+  if (is.null(predictorNames)) {
+    predictorNames = names(mf)[-1]
+  }
 
   if (length(predictorNames) == 0) {
     return(newData)
   }
+
+  if (is.null(numericReference)) {
+    numericReference = chooseModelNumericReference(
+      model = model,
+      mf = mf,
+      predictorNames = predictorNames
+    )
+  }
+
+  baseInfo = buildConfidenceIntervalBaseInfo(
+    mf = mf,
+    numericReference = numericReference,
+    predictorNames = predictorNames
+  )
 
   out = as.data.frame(newData, stringsAsFactors = FALSE)
 
@@ -790,16 +826,7 @@ completeConfidenceIntervalNewData = function(model, newData) {
       next
     }
 
-    x = mf[[varName]]
-
-    if (is.factor(x)) {
-      out[[varName]] = factor(levels(x)[1], levels = levels(x))
-    } else if (is.numeric(x)) {
-      out[[varName]] = 0
-    } else {
-      firstNonMissing = x[which(!is.na(x))[1]]
-      out[[varName]] = firstNonMissing
-    }
+    out[[varName]] = baseInfo$baseRow[[varName]][1]
   }
 
   out = out[, predictorNames, drop = FALSE]
@@ -822,14 +849,22 @@ completeConfidenceIntervalNewData = function(model, newData) {
 #' @param model A fitted model object.
 #' @param newData One-row new-data frame.
 #' @param level Confidence level.
+#' @param numericReference Numeric reference choice used if 
+#'   \code{newData} omits a numeric predictor.
 #'
 #' @return A list with fit, interval bounds, and non-zero weights.
 #' @keywords internal
-buildConfidenceIntervalPrediction = function(model, newData, level) {
+buildConfidenceIntervalPrediction = function(
+    model,
+    newData,
+    level,
+    numericReference = NULL
+) {
 
   completedNewData = completeConfidenceIntervalNewData(
     model = model,
-    newData = newData
+    newData = newData,
+    numericReference = numericReference
   )
 
   predType = if (inherits(model, "glm")) "link" else "response"

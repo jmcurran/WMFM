@@ -12,6 +12,7 @@ addFittedQuantityRows(
   newData,
   labelContext,
   settings,
+  numericReference,
   appendRow
 )
 }
@@ -29,6 +30,9 @@ addFittedQuantityRows(
 \item{labelContext}{Context used to build row labels.}
 
 \item{settings}{Human-readable settings text.}
+
+\item{numericReference}{Numeric reference choice used when completing
+any omitted numeric predictors in \code{newData}.}
 
 \item{appendRow}{Row appender closure.}
 }
