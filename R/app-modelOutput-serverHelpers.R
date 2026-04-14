@@ -253,9 +253,9 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
       pieces[[length(pieces) + 1]] = data.frame(
         Quantity = fittedTitle,
-        Estimate = NA_real_,
-        Lower = NA_real_,
-        Upper = NA_real_,
+        Estimate = "",
+        Lower = "",
+        Upper = "",
         stringsAsFactors = FALSE
       )
       pieces[[length(pieces) + 1]] = makeDisplayBlock(fittedRows)
@@ -286,9 +286,9 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
       pieces[[length(pieces) + 1]] = data.frame(
         Quantity = effectTitle,
-        Estimate = NA_real_,
-        Lower = NA_real_,
-        Upper = NA_real_,
+        Estimate = "",
+        Lower = "",
+        Upper = "",
         stringsAsFactors = FALSE
       )
       pieces[[length(pieces) + 1]] = makeDisplayBlock(effectRows)
