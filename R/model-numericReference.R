@@ -196,3 +196,54 @@ buildModelNumericAnchorInfo = function(model = NULL, mf = NULL, predictorNames =
     cacheKey = paste(c(numericReference, cacheParts), collapse = "|")
   )
 }
+
+
+#' Build a short UI note about numeric interpretation anchors
+#'
+#' Returns a concise note for student-facing UI sections when a fitted model
+#' has numeric predictors. The note explains whether baseline fitted values are
+#' being described at 0 or at sample means.
+#'
+#' @param model Optional fitted model object. Used only when \code{mf}
+#'   is not supplied.
+#' @param mf Optional model frame. If omitted, it is computed from
+#'   \code{model}.
+#' @param predictorNames Optional character vector of predictor names.
+#'
+#' @return A character scalar. Returns \code{""} when no numeric predictors are
+#'   present.
+#' @keywords internal
+#'
+#' @importFrom stats model.frame
+buildNumericAnchorUiNote = function(model = NULL, mf = NULL, predictorNames = NULL) {
+
+  if (is.null(mf)) {
+    if (is.null(model)) {
+      stop("Supply either `model` or `mf`.", call. = FALSE)
+    }
+
+    mf = model.frame(model)
+  }
+
+  if (is.null(predictorNames)) {
+    predictorNames = names(mf)[-1]
+  }
+
+  numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
+
+  if (length(numericNames) == 0) {
+    return("")
+  }
+
+  numericReference = chooseModelNumericReference(
+    model = model,
+    mf = mf,
+    predictorNames = predictorNames
+  )
+
+  if (identical(numericReference, "zero")) {
+    return("For numeric predictors, baseline fitted values are described at 0 because 0 lies inside the observed data range.")
+  }
+
+  "For numeric predictors, baseline fitted values are described at their sample means unless stated otherwise."
+}
