@@ -152,20 +152,31 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
   buildCiDisplayNote = function(ciData, selectedScale, displayedTable = NULL) {
 
+    fittedTitle = NULL
+    if (!is.null(displayedTable) && is.data.frame(displayedTable) && nrow(displayedTable) > 0) {
+      fittedTitle = buildFittedSectionTitle(ciData = ciData, ciTable = displayedTable)
+    }
+
     scalePrefix = switch(
       selectedScale,
-      probability = "Probability view.",
-      odds = "Odds view.",
-      oddsMultiplier = "Odds multiplier view.",
-      expectedValue = "Expected value view.",
-      expectedValueMultiplier = "Expected value multiplier view.",
-      fittedValue = "Fitted value view.",
-      slope = "Slope view.",
+      probability = "Fitted values are shown on the probability scale. Predictor effects are shown as multiplicative changes in the odds.",
+      odds = "Fitted values are shown on the odds scale. Predictor effects are shown as multiplicative changes in the odds.",
+      oddsMultiplier = "Predictor effects are shown as multiplicative changes in the odds.",
+      expectedValue = "Fitted values are shown on the expected-value scale. Predictor effects are shown as multiplicative changes in E(Y).",
+      expectedValueMultiplier = "Predictor effects are shown as multiplicative changes in E(Y).",
+      fittedValue = "Fitted values are shown on the response scale. Predictor effects are shown as one-unit changes on the response scale.",
+      slope = "Predictor effects are shown as one-unit changes on the response scale.",
       coefficient = "Coefficient view.",
       NULL
     )
 
-    pieces = c(scalePrefix, ciData$note %||% NULL)
+    pieces = c(
+      if (!is.null(fittedTitle) && selectedScale %in% c("probability", "odds", "expectedValue", "fittedValue")) {
+        paste0(fittedTitle, ".")
+      },
+      scalePrefix,
+      ciData$note %||% NULL
+    )
     pieces = pieces[!is.na(pieces) & nzchar(pieces)]
 
     paste(pieces, collapse = " ")
@@ -211,15 +222,83 @@ registerModelOutputTabs = function(output, input, modelFit) {
     out
   }
 
-  buildDisplayedCiTable = function(tbl, selectedScale) {
+  buildDisplayedCiTable = function(tbl, selectedScale, ciData = NULL) {
 
     if (is.null(tbl) || !is.data.frame(tbl) || nrow(tbl) == 0) {
       return(NULL)
     }
 
-    display = tbl[, c("quantity", "estimate", "lower", "upper"), drop = FALSE]
-    names(display) = c("Quantity", "Estimate", "Lower", "Upper")
+    makeDisplayBlock = function(oneTbl) {
+      if (!is.data.frame(oneTbl) || nrow(oneTbl) == 0) {
+        return(NULL)
+      }
 
+      out = oneTbl[, c("quantity", "estimate", "lower", "upper"), drop = FALSE]
+      names(out) = c("Quantity", "Estimate", "Lower", "Upper")
+      out
+    }
+
+    fittedRows = tbl[tbl$rowRole %in% "fittedQuantity", , drop = FALSE]
+    effectRows = tbl[tbl$rowRole %in% "covariateEffect", , drop = FALSE]
+    coefficientRows = tbl[tbl$rowRole %in% "coefficient", , drop = FALSE]
+
+    pieces = list()
+
+    if (nrow(fittedRows) > 0) {
+      fittedTitle = if (!is.null(ciData)) {
+        buildFittedSectionTitle(ciData = ciData, ciTable = fittedRows)
+      } else {
+        "Fitted values"
+      }
+
+      pieces[[length(pieces) + 1]] = data.frame(
+        Quantity = fittedTitle,
+        Estimate = NA_real_,
+        Lower = NA_real_,
+        Upper = NA_real_,
+        stringsAsFactors = FALSE
+      )
+      pieces[[length(pieces) + 1]] = makeDisplayBlock(fittedRows)
+    }
+
+    if (nrow(effectRows) > 0) {
+      if (length(pieces) > 0) {
+        pieces[[length(pieces) + 1]] = data.frame(
+          Quantity = "----------------",
+          Estimate = NA_real_,
+          Lower = NA_real_,
+          Upper = NA_real_,
+          stringsAsFactors = FALSE
+        )
+      }
+
+      effectTitle = switch(
+        selectedScale,
+        probability = "Predictor effects (odds multipliers)",
+        odds = "Predictor effects (odds multipliers)",
+        oddsMultiplier = "Predictor effects (odds multipliers)",
+        expectedValue = "Predictor effects (E(Y) multipliers)",
+        expectedValueMultiplier = "Predictor effects (E(Y) multipliers)",
+        fittedValue = "Predictor effects",
+        slope = "Predictor effects",
+        "Predictor effects"
+      )
+
+      pieces[[length(pieces) + 1]] = data.frame(
+        Quantity = effectTitle,
+        Estimate = NA_real_,
+        Lower = NA_real_,
+        Upper = NA_real_,
+        stringsAsFactors = FALSE
+      )
+      pieces[[length(pieces) + 1]] = makeDisplayBlock(effectRows)
+    }
+
+    if (nrow(coefficientRows) > 0) {
+      pieces[[length(pieces) + 1]] = makeDisplayBlock(coefficientRows)
+    }
+
+    display = do.call(rbind, pieces)
     rownames(display) = NULL
     display
   }
@@ -392,7 +471,11 @@ registerModelOutputTabs = function(output, input, modelFit) {
       showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
     )
 
-    buildDisplayedCiTable(displayed, selectedScale = selectedScale)
+    buildDisplayedCiTable(
+      displayed,
+      selectedScale = selectedScale,
+      ciData = ciData
+    )
 
   }, striped = TRUE, bordered = TRUE, spacing = "s")
 
