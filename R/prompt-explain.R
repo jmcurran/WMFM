@@ -47,6 +47,13 @@ lmToExplanationPrompt = function(model) {
     "The outcome is continuous, so the model describes how the mean response changes."
   }
 
+  predictors = names(modelFrame)[-1]
+  numericAnchorInfo = buildModelNumericAnchorInfo(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors
+  )
+
   # Optional: extra context from dataset documentation (e.g. s20x)
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -88,6 +95,14 @@ Number of observations: {n}
 {r2Text}
 If an R-squared value is shown above, briefly explain what it says about how well
 the model explains variation in the response.
+
+{numericAnchorInfo$promptText}
+
+Interpretation rules for numeric predictors:
+- When discussing a baseline fitted value, expected count, mean response, odds, or probability, use the chosen anchor value for each numeric predictor rather than automatically using 0.
+- If 0 lies outside the observed range for a numeric predictor, do not describe the intercept as if it were directly meaningful at 0.
+- For interaction models, explain conditional comparisons at the chosen anchor value unless another value is explicitly being discussed.
+- It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
 
 Coefficient table:
 {coefText}

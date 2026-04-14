@@ -61,3 +61,138 @@ chooseModelNumericReference = function(model = NULL, mf = NULL, predictorNames =
 
   "mean"
 }
+
+#' Build numeric-anchor metadata for model prompts and cache keys
+#'
+#' Summarises the observed range and the chosen teaching anchor for each
+#' numeric predictor so prompt builders can avoid interpreting model quantities
+#' at meaningless values such as 0 when 0 lies well outside the data.
+#'
+#' @param model Optional fitted model object. Used only when \code{mf}
+#'   is not supplied.
+#' @param mf Optional model frame. If omitted, it is computed from
+#'   \code{model}.
+#' @param predictorNames Optional character vector of predictor names.
+#'
+#' @return A list with elements \code{numericReference}, \code{promptText},
+#'   and \code{cacheKey}.
+#' @keywords internal
+#'
+#' @importFrom stats model.frame
+buildModelNumericAnchorInfo = function(model = NULL, mf = NULL, predictorNames = NULL) {
+
+  if (is.null(mf)) {
+    if (is.null(model)) {
+      stop("Supply either `model` or `mf`.", call. = FALSE)
+    }
+
+    mf = model.frame(model)
+  }
+
+  if (is.null(predictorNames)) {
+    predictorNames = names(mf)[-1]
+  }
+
+  numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
+  numericReference = chooseModelNumericReference(
+    model = model,
+    mf = mf,
+    predictorNames = predictorNames
+  )
+
+  if (length(numericNames) == 0) {
+    return(list(
+      numericReference = numericReference,
+      promptText = paste(
+        "Numeric interpretation anchor:",
+        "- There are no numeric predictors, so no special numeric anchor is needed."
+      ),
+      cacheKey = "no_numeric"
+    ))
+  }
+
+  fmtValue = function(x) {
+    format(round(x, 4), trim = TRUE, scientific = FALSE)
+  }
+
+  anchorLines = vapply(
+    numericNames,
+    function(varName) {
+      x = mf[[varName]]
+      x = x[!is.na(x)]
+
+      if (length(x) == 0) {
+        rangeText = "all values missing"
+        anchorValue = if (identical(numericReference, "zero")) 0 else NA_real_
+        reasonText = if (identical(numericReference, "zero")) {
+          "0 is used because there are no observed non-missing values."
+        } else {
+          "the sample mean would usually be used, but all values are missing."
+        }
+      } else {
+        rangeText = paste0("[", fmtValue(min(x)), ", ", fmtValue(max(x)), "]")
+        if (identical(numericReference, "zero")) {
+          anchorValue = 0
+          reasonText = "0 lies inside the observed range."
+        } else {
+          anchorValue = mean(x)
+          reasonText = "0 lies outside the observed range, so use the sample mean instead."
+        }
+      }
+
+      anchorLabel = if (is.na(anchorValue)) {
+        "NA"
+      } else {
+        fmtValue(anchorValue)
+      }
+
+      paste0(
+        "- ", varName,
+        ": observed range = ", rangeText,
+        "; chosen anchor = ", anchorLabel,
+        " (", reasonText, ")"
+      )
+    },
+    character(1)
+  )
+
+  cacheParts = vapply(
+    numericNames,
+    function(varName) {
+      x = mf[[varName]]
+      x = x[!is.na(x)]
+
+      if (length(x) == 0) {
+        anchorValue = if (identical(numericReference, "zero")) "0" else "NA"
+        rangeText = "NA:NA"
+      } else {
+        anchorValue = if (identical(numericReference, "zero")) {
+          "0"
+        } else {
+          fmtValue(mean(x))
+        }
+        rangeText = paste0(fmtValue(min(x)), ":", fmtValue(max(x)))
+      }
+
+      paste(varName, rangeText, anchorValue, sep = "=")
+    },
+    character(1)
+  )
+
+  promptText = paste(
+    c(
+      "Numeric interpretation anchor:",
+      anchorLines,
+      "Use these anchor values for narrative interpretation of baseline fitted values and comparisons involving numeric predictors.",
+      "Do not interpret an intercept or baseline fitted value at 0 when 0 lies outside the observed range.",
+      "Formal fitted equations may still be written as functions of the numeric predictor itself."
+    ),
+    collapse = "\n"
+  )
+
+  list(
+    numericReference = numericReference,
+    promptText = promptText,
+    cacheKey = paste(c(numericReference, cacheParts), collapse = "|")
+  )
+}

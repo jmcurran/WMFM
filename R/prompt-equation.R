@@ -24,6 +24,11 @@ lmToPrompt = function(model) {
   }
 
   predictors = setdiff(names(mf), response)
+  numericAnchorInfo = buildModelNumericAnchorInfo(
+    model = model,
+    mf = mf,
+    predictorNames = predictors
+  )
 
   predInfo = vapply(
     predictors,
@@ -147,6 +152,8 @@ Response: {response}
 Predictors:
 {paste(predInfo, collapse = '\\n')}
 
+{numericAnchorInfo$promptText}
+
 Coefficient table (rounded for display):
 {coefText}
 
@@ -190,6 +197,8 @@ General rules:
   Pr(Y = Success) = exp(...) / (1 + exp(...)) for the same condition.
 - When writing the transformed equation on the original scale, use the simplified form
   of the linear predictor inside exp(...), not the unsimplified combination.
+- Do not add narrative commentary about intercept interpretation.
+- Do not describe an intercept or baseline fitted value as being 'when X = 0' unless 0 lies inside the observed range for that numeric predictor.
 
 {extraRules}
 

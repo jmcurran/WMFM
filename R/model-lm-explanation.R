@@ -18,6 +18,7 @@
 #' @return A character scalar containing the explanation text returned by the
 #'   language model.
 #' @keywords internal
+#' @importFrom stats formula model.frame
 lmExplanation = function(model, chat, useCache = TRUE) {
 
   if (!is.logical(useCache) || length(useCache) != 1 || is.na(useCache)) {
@@ -26,7 +27,21 @@ lmExplanation = function(model, chat, useCache = TRUE) {
 
   formulaStr = paste(deparse(formula(model)), collapse = " ")
   coefStr = paste(coef(model), collapse = ";")
-  key = paste("expl", formulaStr, coefStr)
+  mf = stats::model.frame(model)
+  predictors = names(mf)[-1]
+  numericAnchorInfo = buildModelNumericAnchorInfo(
+    model = model,
+    mf = mf,
+    predictorNames = predictors
+  )
+
+  key = paste(
+    "expl",
+    "v2-numeric-anchor",
+    formulaStr,
+    coefStr,
+    numericAnchorInfo$cacheKey
+  )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {
     return(.env_cache[[key]])

@@ -16,15 +16,24 @@
 #'   or a character vector with raw text from the language model.
 #' @keywords internal
 #'
-#' @importFrom stats formula
+#' @importFrom stats formula model.frame
 lmEquations = function(model, chat) {
   formulaStr = paste(deparse(formula(model)), collapse = " ")
-  coefStr    = paste(coef(model), collapse = ";")
+  coefStr = paste(coef(model), collapse = ";")
+  mf = stats::model.frame(model)
+  predictors = names(mf)[-1]
+  numericAnchorInfo = buildModelNumericAnchorInfo(
+    model = model,
+    mf = mf,
+    predictorNames = predictors
+  )
 
   key = paste(
     "eq",
+    "v2-numeric-anchor",
     formulaStr,
-    coefStr
+    coefStr,
+    numericAnchorInfo$cacheKey
   )
 
   if (!is.null(.env_cache[[key]])) {
