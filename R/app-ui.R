@@ -83,6 +83,10 @@ appUI = function() {
           ),
           helpText(
             "Packages listed here are installed packages that appear to contain datasets."
+          ),
+          div(
+            style = "font-size: 0.85em; color: #666;",
+            textOutput("packageScanStatus")
           )
         ),
 

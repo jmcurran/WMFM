@@ -36,37 +36,86 @@
 #' @importFrom htmltools htmlEscape
 appServer = function(input, output, session) {
   # -------------------------------------------------------------------
-  # Pre-populate installed package + dataset dropdowns once per session
+  # Pre-populate the package selector immediately, then broaden it after
+  # the first UI flush so the app feels responsive on startup.
   # -------------------------------------------------------------------
+  packageChoices = reactiveVal(character(0))
+  packageScanStatus = reactiveVal(NULL)
+
+  initialPackageChoices = if (requireNamespace("s20x", quietly = TRUE)) {
+    "s20x"
+  } else {
+    character(0)
+  }
+
+  packageChoices(initialPackageChoices)
+
+  if (length(initialPackageChoices) > 0) {
+    packageScanStatus("Showing s20x now while other installed packages are checked.")
+  } else {
+    packageScanStatus("Checking installed packages for datasets.")
+  }
+
+  output$packageScanStatus = renderText({
+    packageScanStatus() %||% ""
+  })
+
   observe({
+    choices = packageChoices()
+    selected = isolate(input$data_package %||% "")
 
-    packageNames = getInstalledPackagesWithData()
+    if (!nzchar(selected) || !(selected %in% choices)) {
+      if ("s20x" %in% choices) {
+        selected = "s20x"
+      } else if (length(choices) > 0) {
+        selected = choices[1]
+      } else {
+        selected = ""
+      }
+    }
 
-    if (length(packageNames) == 0) {
-      updateSelectInput(
-        session,
-        "data_package",
-        choices = character(0),
-        selected = character(0)
-      )
+    updateSelectInput(
+      session,
+      "data_package",
+      choices = choices,
+      selected = selected
+    )
+
+    if (length(choices) == 0) {
       updateSelectInput(
         session,
         "package_dataset",
         choices = character(0),
         selected = character(0)
       )
+    }
+  })
+
+  session$onFlushed(function() {
+    packageNames = getInstalledPackagesWithData()
+
+    if (length(packageNames) == 0) {
+      packageChoices(character(0))
+      packageScanStatus("No installed packages with datasets were found.")
       return(NULL)
     }
 
-    defaultPkg = if ("s20x" %in% packageNames) "s20x" else packageNames[1]
+    packageChoices(packageNames)
 
-    updateSelectInput(
-      session,
-      "data_package",
-      choices = packageNames,
-      selected = defaultPkg
-    )
-  })
+    if (length(setdiff(packageNames, initialPackageChoices)) > 0) {
+      packageScanStatus(
+        paste0(
+          "Found ",
+          length(packageNames),
+          " installed package",
+          if (length(packageNames) == 1) "" else "s",
+          " with datasets."
+        )
+      )
+    } else {
+      packageScanStatus(NULL)
+    }
+  }, once = TRUE)
 
   observeEvent(input$data_package, {
     req(input$data_source == "package")

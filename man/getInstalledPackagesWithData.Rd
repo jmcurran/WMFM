@@ -2,18 +2,23 @@
 % Please edit documentation in R/utils-packageData.R
 \name{getInstalledPackagesWithData}
 \alias{getInstalledPackagesWithData}
-\title{List installed packages that contain datasets}
+\title{List installed packages that appear to contain datasets}
 \usage{
 getInstalledPackagesWithData()
 }
 \value{
-A character vector of installed package names that appear to
-contain one or more datasets.
+A character vector of installed package names that appear to contain
+one or more datasets.
 }
 \description{
-Returns the names of installed packages for which
-\code{utils::data(package = ...)} reports at least one dataset.
-The result is sorted alphabetically and is useful for populating
-a package selector in the app's Load Data tab.
+Returns the names of installed packages whose installed metadata indicates
+that they contain datasets. This avoids calling \code{utils::data(package = ...)}
+for every installed package during app startup, which can be slow on shared
+systems and on Shiny Server.
+}
+\details{
+The result is sorted alphabetically and is useful for populating a package
+selector in the app's Load Data tab. Dataset names are still resolved lazily
+for the selected package via \code{getPackageDatasetNames()}.
 }
 \keyword{internal}

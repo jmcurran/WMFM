@@ -1,34 +1,30 @@
-#' List installed packages that contain datasets
+#' List installed packages that appear to contain datasets
 #'
-#' Returns the names of installed packages for which
-#' `utils::data(package = ...)` reports at least one dataset.
-#' The result is sorted alphabetically and is useful for populating
-#' a package selector in the app's Load Data tab.
+#' Returns the names of installed packages whose installed metadata indicates
+#' that they contain datasets. This avoids calling `utils::data(package = ...)`
+#' for every installed package during app startup, which can be slow on shared
+#' systems and on Shiny Server.
 #'
-#' @return A character vector of installed package names that appear to
-#'   contain one or more datasets.
+#' The result is sorted alphabetically and is useful for populating a package
+#' selector in the app's Load Data tab. Dataset names are still resolved lazily
+#' for the selected package via `getPackageDatasetNames()`.
+#'
+#' @return A character vector of installed package names that appear to contain
+#'   one or more datasets.
 #' @keywords internal
 #' @importFrom tools Rd2HTML Rd2txt Rd_db
 #' @importFrom utils installed.packages data capture.output
 getInstalledPackagesWithData = function() {
-  pkgs = rownames(installed.packages())
+  pkgMatrix = installed.packages()
 
-  hasData = vapply(
-    pkgs,
-    function(pkg) {
-      out = tryCatch(
-        data(package = pkg),
-        error = function(e) {
-          NULL
-        }
-      )
+  if (nrow(pkgMatrix) == 0) {
+    return(character(0))
+  }
 
-      !is.null(out) &&
-        !is.null(out$results) &&
-        nrow(out$results) > 0
-    },
-    logical(1)
-  )
+  pkgs = pkgMatrix[, "Package"]
+  libPaths = pkgMatrix[, "LibPath"]
+
+  hasData = file.exists(file.path(libPaths, pkgs, "Meta", "data.rds"))
 
   sort(unique(pkgs[hasData]))
 }
