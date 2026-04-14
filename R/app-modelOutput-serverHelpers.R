@@ -265,9 +265,9 @@ registerModelOutputTabs = function(output, input, modelFit) {
       if (length(pieces) > 0) {
         pieces[[length(pieces) + 1]] = data.frame(
           Quantity = "----------------",
-          Estimate = NA_real_,
-          Lower = NA_real_,
-          Upper = NA_real_,
+          Estimate = "",
+          Lower = "",
+          Upper = "",
           stringsAsFactors = FALSE
         )
       }
