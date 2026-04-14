@@ -234,7 +234,7 @@ appUI = function() {
                 accordion(
                   id = "model_confint_extras",
                   multiple = TRUE,
-                  open = NULL,
+                  open = FALSE,
                   accordion_panel(
                     "Teaching note",
                     value = "model_confint_teaching_note",

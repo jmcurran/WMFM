@@ -99,7 +99,58 @@ registerModelOutputTabs = function(output, input, modelFit) {
     values[1]
   }
 
-  buildCiDisplayNote = function(ciData, selectedScale) {
+  buildFittedSectionTitle = function(ciData, ciTable) {
+
+    if (is.null(ciTable) || !is.data.frame(ciTable) || nrow(ciTable) == 0) {
+      return("Fitted values")
+    }
+
+    fittedRows = ciTable[ciTable$rowRole %in% "fittedQuantity", , drop = FALSE]
+
+    if (nrow(fittedRows) == 0) {
+      return("Fitted values")
+    }
+
+    framework = fittedRows$modelFramework[which(!is.na(fittedRows$modelFramework))[1]] %||% ""
+    quantityBase = switch(
+      framework,
+      binomialLogit = "Fitted probabilities",
+      poissonLog = "Fitted expected values",
+      lm = "Fitted values",
+      "Fitted values"
+    )
+
+    settingsText = NULL
+    detailIndex = which(vapply(
+      ciData$details %||% list(),
+      function(oneDetail) {
+        identical(oneDetail$label %||% "", fittedRows$quantity[[1]] %||% "")
+      },
+      logical(1)
+    ))
+
+    if (length(detailIndex) >= 1) {
+      settingsText = ciData$details[[detailIndex[1]]]$settings %||% ""
+    }
+
+    if (!nzchar(settingsText)) {
+      return(quantityBase)
+    }
+
+    numericPieces = regmatches(
+      settingsText,
+      gregexpr("[A-Za-z][A-Za-z0-9._]* = -?[0-9]+(?:\\.[0-9]+)?", settingsText, perl = TRUE)
+    )[[1]]
+
+    if (length(numericPieces) == 0) {
+      return(quantityBase)
+    }
+
+    numericText = paste(numericPieces, collapse = "; ")
+    paste0(quantityBase, " (when ", numericText, ")")
+  }
+
+  buildCiDisplayNote = function(ciData, selectedScale, displayedTable = NULL) {
 
     scalePrefix = switch(
       selectedScale,
@@ -301,7 +352,16 @@ registerModelOutputTabs = function(output, input, modelFit) {
     }
 
     selectedScale = input$modelConfintDisplayScale %||% getDefaultCiDisplayScale(ciData)
-    noteText = buildCiDisplayNote(ciData = ciData, selectedScale = selectedScale)
+    displayed = filterCiTableForDisplay(
+      ciData = ciData,
+      selectedScale = selectedScale,
+      showComplement = isTRUE(input$modelConfintShowComplement %||% FALSE)
+    )
+    noteText = buildCiDisplayNote(
+      ciData = ciData,
+      selectedScale = selectedScale,
+      displayedTable = displayed
+    )
 
     helpText(noteText)
   })
