@@ -241,9 +241,60 @@ buildNumericAnchorUiNote = function(model = NULL, mf = NULL, predictorNames = NU
     predictorNames = predictorNames
   )
 
-  if (identical(numericReference, "zero")) {
-    return("For numeric predictors, baseline fitted values are described at 0 because 0 lies inside the observed data range.")
+  fmtValue = function(x) {
+    format(round(x, 4), trim = TRUE, scientific = FALSE)
   }
 
-  "For numeric predictors, baseline fitted values are described at their sample means unless stated otherwise."
+  detailText = vapply(
+    numericNames,
+    function(varName) {
+      x = mf[[varName]]
+      x = x[!is.na(x)]
+
+      if (length(x) == 0) {
+        if (identical(numericReference, "zero")) {
+          return(paste0(varName, " = 0 (all values missing)"))
+        }
+
+        return(paste0(varName, " = NA (all values missing)"))
+      }
+
+      if (identical(numericReference, "zero")) {
+        return(paste0(
+          varName,
+          " observed range [",
+          fmtValue(min(x)),
+          ", ",
+          fmtValue(max(x)),
+          "]"
+        ))
+      }
+
+      paste0(
+        varName,
+        " = ",
+        fmtValue(mean(x)),
+        " (observed range [",
+        fmtValue(min(x)),
+        ", ",
+        fmtValue(max(x)),
+        "])"
+      )
+    },
+    character(1)
+  )
+
+  if (identical(numericReference, "zero")) {
+    return(paste0(
+      "For numeric predictors, baseline fitted values are described at 0 because 0 lies inside the observed data range: ",
+      paste(detailText, collapse = "; "),
+      "."
+    ))
+  }
+
+  paste0(
+    "For numeric predictors, baseline fitted values are described at their sample means unless stated otherwise: ",
+    paste(detailText, collapse = "; "),
+    "."
+  )
 }
