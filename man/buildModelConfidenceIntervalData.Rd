@@ -18,8 +18,9 @@ buildModelConfidenceIntervalData(
 
 \item{numericReference}{How numeric predictors should be fixed when building
 fitted-quantity rows. One of \code{"mean"} or \code{"zero"}. Defaults to \code{"mean"}.
-The app UI uses \code{"zero"} so the displayed fitted values line up with
-explanations phrased at zero-valued numeric predictors.}
+The app may override this with a data-aware helper so that fitted-value
+summaries are anchored at sample means when 0 lies outside the observed
+numeric range.}
 }
 \value{
 A list with components:

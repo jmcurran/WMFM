@@ -1,3 +1,25 @@
+#' Ensure that the s20x package is installed
+#'
+#' Confirms that the teaching-data dependency \pkg{s20x} is installed before
+#' app features that rely on package datasets continue.
+#'
+#' @return Invisibly returns `TRUE` when \pkg{s20x} is installed.
+#' @keywords internal
+#' @import s20x
+ensureS20xInstalled = function() {
+  if (!requireNamespace("s20x", quietly = TRUE)) {
+    stop(
+      paste(
+        "The s20x package must be installed to use the built-in teaching datasets.",
+        "Please install it and restart the app."
+      ),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
 #' List installed packages that appear to contain datasets
 #'
 #' Returns the names of installed packages whose installed metadata indicates

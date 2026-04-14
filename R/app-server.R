@@ -42,11 +42,15 @@ appServer = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
 
-  initialPackageChoices = if (requireNamespace("s20x", quietly = TRUE)) {
-    "s20x"
-  } else {
-    character(0)
-  }
+  initialPackageChoices = tryCatch(
+    {
+      ensureS20xInstalled()
+      "s20x"
+    },
+    error = function(e) {
+      character(0)
+    }
+  )
 
   packageChoices(initialPackageChoices)
 
@@ -121,6 +125,30 @@ appServer = function(input, output, session) {
     req(input$data_source == "package")
 
     pkg = input$data_package %||% ""
+
+    if (identical(pkg, "s20x")) {
+      s20xOk = tryCatch(
+        {
+          ensureS20xInstalled()
+          TRUE
+        },
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error")
+          FALSE
+        }
+      )
+
+      if (!isTRUE(s20xOk)) {
+        updateSelectInput(
+          session,
+          "package_dataset",
+          choices = c("s20x is not installed" = ""),
+          selected = ""
+        )
+        return(NULL)
+      }
+    }
+
     dsNames = getPackageDatasetNames(pkg)
 
     if (length(dsNames) == 0) {
@@ -1872,6 +1900,23 @@ $$")
 
     pkg = input$data_package %||% ""
     dsName = input$package_dataset
+
+    if (identical(pkg, "s20x")) {
+      s20xOk = tryCatch(
+        {
+          ensureS20xInstalled()
+          TRUE
+        },
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error")
+          FALSE
+        }
+      )
+
+      if (!isTRUE(s20xOk)) {
+        return(NULL)
+      }
+    }
 
     if (is.null(dsName) || dsName == "") {
       return(NULL)

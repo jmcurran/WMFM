@@ -26,7 +26,7 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
     buildModelConfidenceIntervalData(
       model = m,
-      numericReference = "zero"
+      numericReference = chooseModelNumericReference(model = m)
     )
   }
 

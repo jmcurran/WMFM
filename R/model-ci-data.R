@@ -19,8 +19,9 @@
 #' @param level Confidence level. Defaults to `0.95`.
 #' @param numericReference How numeric predictors should be fixed when building
 #'   fitted-quantity rows. One of `"mean"` or `"zero"`. Defaults to `"mean"`.
-#'   The app UI uses `"zero"` so the displayed fitted values line up with
-#'   explanations phrased at zero-valued numeric predictors.
+#'   The app may override this with a data-aware helper so that fitted-value
+#'   summaries are anchored at sample means when 0 lies outside the observed
+#'   numeric range.
 #'
 #' @return A list with components:
 #' \describe{

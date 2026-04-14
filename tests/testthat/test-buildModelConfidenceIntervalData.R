@@ -88,3 +88,25 @@ testthat::test_that("buildModelConfidenceIntervalData gives derived odds-scale r
   testthat::expect_length(detailIndex, 1)
   testthat::expect_match(out$details[[detailIndex]]$varianceFormula, "Cov", fixed = TRUE)
 })
+
+
+testthat::test_that("buildModelConfidenceIntervalData reports mean anchoring when numericReference is mean", {
+
+  d = data.frame(
+    Freq = c(32, 27, 10, 9, 6, 6, 3, 2, 2, 13, 6, 2, 1, 0, 0, 1, 0, 0),
+    Locn = factor(
+      c(rep("SC", 9), rep("WA", 9)),
+      levels = c("SC", "WA")
+    ),
+    Magnitude = c(5.25, 5.50, 5.75, 6.00, 6.25, 6.50, 6.75, 7.00, 7.25,
+      5.25, 5.50, 5.75, 6.00, 6.25, 6.50, 6.75, 7.00, 7.25)
+  )
+
+  fit = glm(Freq ~ Locn * Magnitude, data = d, family = poisson())
+
+  out = buildModelConfidenceIntervalData(fit, numericReference = "mean")
+
+  testthat::expect_identical(out$mode, "derived")
+  testthat::expect_match(out$note, "Numeric predictors are fixed at their means", fixed = TRUE)
+  testthat::expect_true(any(grepl("Magnitude = 6.25", vapply(out$details, `[[`, character(1), "settings"), fixed = TRUE)))
+})
