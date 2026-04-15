@@ -130,6 +130,7 @@ normaliseNumericExpressions = function(text) {
   }
 
   out = text
+  out = gsub("[\u2010\u2011\u2012\u2013\u2014\u2015]", "-", out, perl = TRUE)
 
   decimalMap = c(
     "zero and a half" = "0.5",
@@ -248,6 +249,109 @@ normaliseNumericExpressions = function(text) {
     "ninety-nine percent" = "99 percent"
   )
 
+  buildMalformedNumberMap = function() {
+    unitWords = c(
+      "zero" = "0",
+      "one" = "1",
+      "two" = "2",
+      "three" = "3",
+      "four" = "4",
+      "five" = "5",
+      "six" = "6",
+      "seven" = "7",
+      "eight" = "8",
+      "nine" = "9"
+    )
+
+    tensWords = c(
+      "twenty" = "2",
+      "thirty" = "3",
+      "forty" = "4",
+      "fifty" = "5",
+      "sixty" = "6",
+      "seventy" = "7",
+      "eighty" = "8",
+      "ninety" = "9"
+    )
+
+    outMap = c()
+
+    for (prefixName in names(unitWords)) {
+      for (suffixName in names(unitWords)) {
+        outMap[paste0(prefixName, "-", suffixName)] = paste0(unitWords[[prefixName]], unitWords[[suffixName]])
+      }
+
+      for (digit in 0:9) {
+        outMap[paste0(prefixName, "-", digit)] = paste0(unitWords[[prefixName]], digit)
+      }
+    }
+
+    for (prefixName in names(tensWords)) {
+      for (suffixName in names(unitWords)) {
+        outMap[paste0(prefixName, "-", suffixName)] = paste0(tensWords[[prefixName]], unitWords[[suffixName]])
+      }
+
+      for (digit in 0:9) {
+        outMap[paste0(prefixName, "-", digit)] = paste0(tensWords[[prefixName]], digit)
+      }
+    }
+
+    outMap
+  }
+
+  buildMalformedPercentMap = function() {
+    unitWords = c(
+      "zero" = "0",
+      "one" = "1",
+      "two" = "2",
+      "three" = "3",
+      "four" = "4",
+      "five" = "5",
+      "six" = "6",
+      "seven" = "7",
+      "eight" = "8",
+      "nine" = "9"
+    )
+
+    tensWords = c(
+      "twenty" = "2",
+      "thirty" = "3",
+      "forty" = "4",
+      "fifty" = "5",
+      "sixty" = "6",
+      "seventy" = "7",
+      "eighty" = "8",
+      "ninety" = "9"
+    )
+
+    outMap = c()
+
+    for (prefixName in names(unitWords)) {
+      for (suffixName in names(unitWords)) {
+        outMap[paste0(prefixName, "-", suffixName, " percent")] = paste0(unitWords[[prefixName]], unitWords[[suffixName]], " percent")
+      }
+
+      for (digit in 0:9) {
+        outMap[paste0(prefixName, "-", digit, " percent")] = paste0(unitWords[[prefixName]], digit, " percent")
+      }
+    }
+
+    for (prefixName in names(tensWords)) {
+      for (suffixName in names(unitWords)) {
+        outMap[paste0(prefixName, "-", suffixName, " percent")] = paste0(tensWords[[prefixName]], unitWords[[suffixName]], " percent")
+      }
+
+      for (digit in 0:9) {
+        outMap[paste0(prefixName, "-", digit, " percent")] = paste0(tensWords[[prefixName]], digit, " percent")
+      }
+    }
+
+    outMap
+  }
+
+  malformedNumberMap = buildMalformedNumberMap()
+  malformedPercentMap = buildMalformedPercentMap()
+
   applyReplacementMap = function(x, replacementMap) {
     orderedNames = names(replacementMap)[order(nchar(names(replacementMap)), decreasing = TRUE)]
 
@@ -266,6 +370,8 @@ normaliseNumericExpressions = function(text) {
   }
 
   out = applyReplacementMap(out, decimalMap)
+  out = applyReplacementMap(out, malformedPercentMap)
+  out = applyReplacementMap(out, malformedNumberMap)
   out = applyReplacementMap(out, percentMap)
 
   out
