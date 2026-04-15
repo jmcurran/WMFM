@@ -1063,10 +1063,53 @@ buildDerivedModeNote = function(mf, numericReference) {
   }
 
   if (length(numericNames) > 0 && !identical(numericReference, "context-dependent")) {
+    numericText = paste(
+      vapply(
+        numericNames,
+        function(varName) {
+          x = mf[[varName]]
+          x = x[!is.na(x)]
+
+          if (length(x) == 0) {
+            if (identical(numericReference, "zero")) {
+              return(paste0(varName, " = 0 (all values missing)"))
+            }
+
+            return(paste0(varName, " = mean(", varName, ") = NA (all values missing)"))
+          }
+
+          rangeText = paste0(
+            "[",
+            formatConfidenceIntervalNumber(min(x)),
+            ", ",
+            formatConfidenceIntervalNumber(max(x)),
+            "]"
+          )
+
+          if (identical(numericReference, "zero")) {
+            paste0(varName, " = 0 (observed range ", rangeText, ")")
+          } else {
+            paste0(
+              varName,
+              " = mean(",
+              varName,
+              ") = ",
+              formatConfidenceIntervalNumber(mean(x)),
+              " (observed range ",
+              rangeText,
+              ")"
+            )
+          }
+        },
+        character(1)
+      ),
+      collapse = "; "
+    )
+
     if (identical(numericReference, "zero")) {
-      pieces = c(pieces, "Numeric predictors are fixed at 0 for fitted-quantity rows.")
+      pieces = c(pieces, paste0("Numeric predictors are fixed at 0 for fitted-quantity rows: ", numericText, "."))
     } else {
-      pieces = c(pieces, "Numeric predictors are fixed at their means for fitted-quantity rows.")
+      pieces = c(pieces, paste0("Numeric predictors are fixed at their means for fitted-quantity rows: ", numericText, "."))
     }
   }
 
@@ -1115,32 +1158,54 @@ buildOtherBaseSettingsText = function(mf, baseRow, excludeVarName = NULL, numeri
   }
 
   if (length(numericNames) > 0) {
-    if (identical(numericReference, "zero")) {
-      pieces = c(pieces, paste0("Other numeric predictors fixed at: ", paste0(numericNames, " = 0", collapse = "; ")))
-    } else {
-      pieces = c(
-        pieces,
-        paste0(
-          "Other numeric predictors fixed at: ",
-          paste(
-            vapply(
-              numericNames,
-              function(varName) {
-                paste0(
+    pieces = c(
+      pieces,
+      paste0(
+        "Other numeric predictors fixed at: ",
+        paste(
+          vapply(
+            numericNames,
+            function(varName) {
+              x = mf[[varName]]
+              x = x[!is.na(x)]
+
+              if (identical(numericReference, "zero")) {
+                if (length(x) == 0) {
+                  return(paste0(varName, " = 0 (all values missing)"))
+                }
+
+                return(paste0(
                   varName,
-                  " = mean(",
-                  varName,
-                  ") = ",
-                  formatConfidenceIntervalNumber(baseRow[[varName]][1])
+                  " = 0 (observed range [",
+                  formatConfidenceIntervalNumber(min(x)),
+                  ", ",
+                  formatConfidenceIntervalNumber(max(x)),
+                  "])")
                 )
-              },
-              character(1)
-            ),
-            collapse = "; "
-          )
+              }
+
+              if (length(x) == 0) {
+                return(paste0(varName, " = mean(", varName, ") = NA (all values missing)"))
+              }
+
+              paste0(
+                varName,
+                " = mean(",
+                varName,
+                ") = ",
+                formatConfidenceIntervalNumber(baseRow[[varName]][1]),
+                " (observed range [",
+                formatConfidenceIntervalNumber(min(x)),
+                ", ",
+                formatConfidenceIntervalNumber(max(x)),
+                "])")
+            },
+            character(1)
+          ),
+          collapse = "; "
         )
       )
-    }
+    )
   }
 
   if (length(pieces) == 0) {
