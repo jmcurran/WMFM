@@ -5,14 +5,21 @@
 \title{Build the shared language contract for WMFM explanations}
 \usage{
 buildWmfmLanguageContractText(context = c("summary", "contrast"))
+
+buildWmfmLanguageContractText(context = c("summary", "contrast"))
 }
 \arguments{
 \item{context}{One of "summary" or "contrast".}
 }
 \value{
 A character scalar containing the shared language contract text.
+
+A character scalar containing the shared language contract text.
 }
 \description{
+Central shared rules used by both overall model summaries and contrasts.
+Only the opening context lines vary; the core rules stay identical.
+
 Central shared rules used by both overall model summaries and contrasts.
 Only the opening context lines vary; the core rules stay identical.
 }

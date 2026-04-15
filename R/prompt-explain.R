@@ -27,13 +27,13 @@ lmToExplanationPrompt = function(model) {
     link = model$family$link
     modelSummary = summary(model)
     r2Text = "" ## R^2 meaningless here. Pseudo R^2 is unhelpful
-    modelDesc = glue(
+    modelDesc = glue::glue(
       "This is a generalised linear model with {fam} family and {link} link."
     )
   } else {
     modelSummary = summary(model)
     r2 = round(modelSummary$r.squared, 3)
-    r2Text = glue("Approximate proportion of variation explained by the model: {r2}")
+    r2Text = glue::glue("Approximate proportion of variation explained by the model: {r2}")
     modelDesc = "This is a linear regression model with Gaussian errors and identity link."
     fam = "gaussian"
     link = "identity"
@@ -53,18 +53,21 @@ lmToExplanationPrompt = function(model) {
     mf = modelFrame,
     predictorNames = predictors
   )
+  anchoredBaselineBlock = buildAnchoredBaselinePromptBlock(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors
+  )
 
-  # Optional: extra context from dataset documentation (e.g. s20x)
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
 
   if (!is.null(dsDoc)) {
-    # Truncate to something reasonable so we do not blow the context window
     dsLines = strsplit(dsDoc, "\n", fixed = TRUE)[[1]]
-    dsLines = dsLines[seq_len(min(length(dsLines), 40L))]  # first ~40 lines
+    dsLines = dsLines[seq_len(min(length(dsLines), 40L))]
     dsDocShort = paste(dsLines, collapse = "\n")
 
-    dataset_block = glue::glue("
+    datasetBlock = glue::glue("
 Additional information about the data set (from its R documentation):
 
 Data set name: {dsName}
@@ -76,19 +79,17 @@ Do not repeat the documentation verbatim; instead, summarise it briefly
 and connect it to the model results.
 ")
   } else {
-    dataset_block = ""
+    datasetBlock = ""
   }
 
-  languageContract = buildWmfmLanguageContractText()
-
-  contextPayload = glue("
+  contextPayload = glue::glue("
 You are a friendly statistics tutor.
 Explain the model summary below (including the estimated effects and their uncertainty)
 in clear, non-technical language.
 
 {modelDesc}
 {outcomeDesc}
-{dataset_block}
+{datasetBlock}
 
 Response variable: {response}
 Number of observations: {n}
@@ -104,13 +105,13 @@ Interpretation rules for numeric predictors:
 - For interaction models, explain conditional comparisons at the chosen anchor value unless another value is explicitly being discussed.
 - It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
 
+{anchoredBaselineBlock}
+
 Coefficient table:
 {coefText}
 
 Confidence intervals (95%):
 {ciText}
-
-{languageContract}
 ")
 
   prompt = composeWmfmPrompt(

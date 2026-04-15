@@ -9,6 +9,12 @@ composeWmfmPrompt(
   contextPayload,
   scaleRules = NULL
 )
+
+composeWmfmPrompt(
+  context = c("summary", "contrast"),
+  contextPayload,
+  scaleRules = NULL
+)
 }
 \arguments{
 \item{context}{"summary" or "contrast".}
@@ -21,8 +27,12 @@ rules (e.g., additive vs multiplicative vs odds multipliers).}
 }
 \value{
 A character scalar prompt.
+
+A character scalar prompt.
 }
 \description{
+Assemble a WMFM prompt from common pieces
+
 Assemble a WMFM prompt from common pieces
 }
 \keyword{internal}
