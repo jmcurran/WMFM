@@ -5,8 +5,8 @@
 #' language. The prompt includes basic model information, an R-squared or
 #' pseudo R-squared, and the coefficient table.
 #'
-#' @param model A fitted model object, typically of class \code{"lm"} or
-#'   \code{"glm"}.
+#' @param model A fitted model object, typically of class \code{\"lm\"} or
+#'   \code{\"glm\"}.
 #'
 #' @return A character scalar containing the prompt text to send to the
 #'   language model for a narrative explanation.
@@ -104,6 +104,8 @@ Interpretation rules for numeric predictors:
 - If 0 lies outside the observed range for a numeric predictor, do not describe the intercept as if it were directly meaningful at 0.
 - For interaction models, explain conditional comparisons at the chosen anchor value unless another value is explicitly being discussed.
 - It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
+- For multiplicative effects on counts or odds, describe confidence intervals relative to the no-change value of 1, or say they correspond to a decrease throughout the interval.
+- Do not say that a multiplicative confidence interval lies below zero.
 
 {anchoredBaselineBlock}
 

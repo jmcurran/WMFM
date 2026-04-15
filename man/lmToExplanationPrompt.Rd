@@ -7,8 +7,8 @@
 lmToExplanationPrompt(model)
 }
 \arguments{
-\item{model}{A fitted model object, typically of class \code{"lm"} or
-\code{"glm"}.}
+\item{model}{A fitted model object, typically of class \code{\"lm\"} or
+\code{\"glm\"}.}
 }
 \value{
 A character scalar containing the prompt text to send to the
