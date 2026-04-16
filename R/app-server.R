@@ -2736,8 +2736,12 @@ $$")
 
     if (is.null(chatProvider)) {
       showNotification(
-        "No language model is available at the moment. The model is still fitted, but no equations/explanation can be generated.",
-        type     = "error",
+        paste(
+          "No language model is available at the moment.",
+          "The model will still be fitted and deterministic equations will be shown,",
+          "but no narrative explanation can be generated."
+        ),
+        type     = "message",
         duration = 10
       )
     } else {
@@ -2969,26 +2973,17 @@ $$")
 
     modelFit(m)
 
-    # If there is no chat provider, skip the LLM bits entirely
+    # If there is no chat provider, use deterministic equations only
     if (is.null(chatProvider)) {
-      rv$modelEquations   = NULL
-      rv$modelExplanation = NULL
-
-      # Still switch to the fitted model tab to show summary/plot
-      updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
-      return(NULL)
-    }
-
-    # Talk to the LLM with a progress bar
-    withProgress(message = "Talking to the language model...", value = 0, {
-
-      incProgress(0.05, detail = "Preparing equation request...")
-      eq = tryCatch(
-        lmEquations(m, chatProvider),
+      outputs = tryCatch(
+        buildAppModelOutputs(
+          model = m,
+          chatProvider = NULL
+        ),
         error = function(e) {
           showNotification(
             paste(
-              "The language model request for equations failed.",
+              "Deterministic equation generation failed.",
               "You can still use the fitted model and plots.",
               "\nDetails:", conditionMessage(e)
             ),
@@ -2999,34 +2994,44 @@ $$")
         }
       )
 
-      incProgress(0.45, detail = "Equations received. Preparing explanation request...")
+      rv$modelEquations = outputs$equations
+      rv$modelExplanation = outputs$explanation
 
-      if (is.null(eq)) {
-        rv$modelEquations   = NULL
-        rv$modelExplanation = NULL
-        return(NULL)
-      }
+      updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
+      return(NULL)
+    }
 
-      expl = tryCatch(
-        lmExplanation(m, chatProvider),
-        error = function(e) {
-          showNotification(
-            paste(
-              "The language model request for the explanation failed.",
-              "Equations are available; explanation is omitted.",
-              "\nDetails:", conditionMessage(e)
-            ),
-            type     = "error",
-            duration = 10
-          )
-          return(NULL)
-        }
+    # Talk to the language model with a progress bar
+    withProgress(message = "Preparing fitted-model outputs...", value = 0, {
+
+      incProgress(0.10, detail = "Requesting equations...")
+
+      outputs = buildAppModelOutputs(
+        model = m,
+        chatProvider = chatProvider
       )
 
-      incProgress(0.40, detail = "Explanation received. Updating app...")
+      if (identical(outputs$equationMethodUsed, "deterministic")) {
+        showNotification(
+          paste(
+            "The language model request for equations failed.",
+            "WMFM fell back to deterministic equations; the explanation may still be available."
+          ),
+          type     = "warning",
+          duration = 10
+        )
+      }
 
-      rv$modelEquations   = eq
-      rv$modelExplanation = expl
+      incProgress(0.60, detail = "Updating app...")
+
+      rv$modelEquations = outputs$equations
+      rv$modelExplanation = outputs$explanation
+
+      if (is.null(outputs$explanation)) {
+        incProgress(0.20, detail = "Explanation unavailable. Finishing...")
+      } else {
+        incProgress(0.20, detail = "Explanation received. Finishing...")
+      }
 
       incProgress(0.10, detail = "Done.")
     })
