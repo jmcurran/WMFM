@@ -6,7 +6,7 @@
 \usage{
 getModelEquations(
   model,
-  method = c("llm", "deterministic"),
+  method = c("deterministic", "llm"),
   chat = NULL,
   digits = 2
 )
@@ -15,7 +15,7 @@ getModelEquations(
 \item{model}{A fitted model object, typically of class \code{lm} or \code{glm}.}
 
 \item{method}{Character string giving the equation engine. Must be one of
-\code{"llm"} or \code{"deterministic"}.}
+\code{"deterministic"} or \code{"llm"}.}
 
 \item{chat}{Optional chat provider object. Required when \code{method = "llm"}.}
 
@@ -23,10 +23,11 @@ getModelEquations(
 the deterministic path. Defaults to \code{2}.}
 }
 \value{
-Either the existing language-model equation object or a deterministic
-equation table.
+Either a deterministic equation table or the existing language-model
+equation object.
 }
 \description{
-Provides a single entry point for equation generation. This can either use
-the existing language-model path or the new deterministic renderer.
+Provides a single entry point for equation generation. Deterministic
+equations are now the default. The older LLM equation path remains available
+as an opt-in compatibility route during the transition.
 }

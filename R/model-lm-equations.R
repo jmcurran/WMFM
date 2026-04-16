@@ -1,8 +1,8 @@
-#' Get fitted-model equations using either the language model or the deterministic engine
+#' Get fitted-model equations using either the deterministic engine or the language model
 #'
-#' Uses the existing language-model equation path by default, with caching based
-#' on the fitted model. A deterministic rendering path can also be selected for
-#' development and transition work.
+#' Uses the legacy language-model path by default for backward compatibility.
+#' Higher-level entry points such as `getModelEquations()` and `runModel()` now
+#' explicitly request deterministic equations by default.
 #'
 #' @param model A fitted model object, typically of class \code{"lm"} or
 #'   \code{"glm"}.
@@ -13,8 +13,8 @@
 #' @param digits Integer number of decimal places for displayed coefficients in
 #'   the deterministic path. Defaults to \code{2}.
 #'
-#' @return Either the existing language-model equation object or a deterministic
-#'   equation table.
+#' @return Either a deterministic equation table or the existing language-model
+#'   equation object.
 #' @keywords internal
 #'
 #' @importFrom stats formula model.frame
@@ -31,9 +31,15 @@ lmEquations = function(
     return(buildDeterministicEquationTable(model = model, digits = digits))
   }
 
+  warning(
+    "LLM-based equation generation is deprecated; deterministic equations are now the default.",
+    call. = FALSE
+  )
+
   if (is.null(chat)) {
     stop("`chat` must be supplied when `method = \"llm\"`.", call. = FALSE)
   }
+
   formulaStr = paste(deparse(formula(model)), collapse = " ")
   coefStr = paste(coef(model), collapse = ";")
   mf = stats::model.frame(model)

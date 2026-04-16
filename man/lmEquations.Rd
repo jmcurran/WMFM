@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-lm-equations.R
 \name{lmEquations}
 \alias{lmEquations}
-\title{Get fitted-model equations using either the language model or the deterministic engine}
+\title{Get fitted-model equations using either the deterministic engine or the language model}
 \usage{
 lmEquations(model, chat = NULL, method = c("llm", "deterministic"), digits = 2)
 }
@@ -20,12 +20,12 @@ lmEquations(model, chat = NULL, method = c("llm", "deterministic"), digits = 2)
 the deterministic path. Defaults to \code{2}.}
 }
 \value{
-Either the existing language-model equation object or a deterministic
-equation table.
+Either a deterministic equation table or the existing language-model
+equation object.
 }
 \description{
-Uses the existing language-model equation path by default, with caching based
-on the fitted model. A deterministic rendering path can also be selected for
-development and transition work.
+Uses the legacy language-model path by default for backward compatibility.
+Higher-level entry points such as \code{getModelEquations()} and \code{runModel()} now
+explicitly request deterministic equations by default.
 }
 \keyword{internal}

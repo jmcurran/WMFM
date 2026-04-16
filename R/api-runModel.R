@@ -30,7 +30,7 @@
 #' @param useExplanationCache Logical. Should cached explanation text be reused
 #'   when the same fitted model is encountered? Defaults to `TRUE`.
 #' @param equationMethod Character string giving the equation engine. Must be
-#'   one of `"llm"` or `"deterministic"`. Defaults to `"llm"`.
+#'   one of `"deterministic"` or `"llm"`. Defaults to `"deterministic"`.
 #'
 #' @return Invisibly returns an object of class `wmfmModel`.
 #' @export
@@ -42,7 +42,7 @@ runModel = function(
     ollamaBaseUrl = NULL,
     printOutput = TRUE,
     useExplanationCache = TRUE,
-    equationMethod = c("llm", "deterministic")
+    equationMethod = c("deterministic", "llm")
 ) {
 
   extractInteractionInfo = function(model) {
@@ -261,30 +261,31 @@ runModel = function(
 
   equations = NULL
   explanation = NULL
+  equationMethodUsed = equationMethod
 
-  equations = tryCatch(
-    getModelEquations(
-      model = model,
-      method = equationMethod
-    ),
-    error = function(e) {
-      if (identical(equationMethod, "deterministic")) {
+  if (identical(equationMethod, "deterministic")) {
+    equations = tryCatch(
+      getModelEquations(
+        model = model,
+        method = "deterministic"
+      ),
+      error = function(e) {
         warning(
           "Deterministic equation generation failed: ",
           conditionMessage(e),
           call. = FALSE
         )
-      }
 
-      NULL
-    }
-  )
+        NULL
+      }
+    )
+  }
 
   chatProvider = tryCatch(
     getChatProvider(),
     error = function(e) {
       warning(
-        "Could not connect to the language model server. Returning fitted model only. Details: ",
+        "Could not connect to the language model server. Returning deterministic equations without an explanation. Details: ",
         conditionMessage(e),
         call. = FALSE
       )
@@ -292,8 +293,25 @@ runModel = function(
     }
   )
 
-  if (!is.null(chatProvider)) {
-    if (identical(equationMethod, "llm")) {
+  if (identical(equationMethod, "llm")) {
+    if (is.null(chatProvider)) {
+      equations = tryCatch(
+        getModelEquations(
+          model = model,
+          method = "deterministic"
+        ),
+        error = function(e) {
+          warning(
+            "Deterministic equation generation failed after LLM equation fallback: ",
+            conditionMessage(e),
+            call. = FALSE
+          )
+
+          NULL
+        }
+      )
+      equationMethodUsed = "deterministic"
+    } else {
       equations = tryCatch(
         getModelEquations(
           model = model,
@@ -301,12 +319,38 @@ runModel = function(
           chat = chatProvider
         ),
         error = function(e) {
-          warning("Equation generation failed: ", conditionMessage(e), call. = FALSE)
+          warning(
+            "LLM equation generation failed. Falling back to deterministic equations. Details: ",
+            conditionMessage(e),
+            call. = FALSE
+          )
+
           NULL
         }
       )
-    }
 
+      if (is.null(equations)) {
+        equations = tryCatch(
+          getModelEquations(
+            model = model,
+            method = "deterministic"
+          ),
+          error = function(e) {
+            warning(
+              "Deterministic equation generation failed after LLM equation fallback: ",
+              conditionMessage(e),
+              call. = FALSE
+            )
+
+            NULL
+          }
+        )
+        equationMethodUsed = "deterministic"
+      }
+    }
+  }
+
+  if (!is.null(chatProvider)) {
     explanation = tryCatch(
       lmExplanation(
         model = model,
@@ -334,7 +378,8 @@ runModel = function(
       useExplanationCache = useExplanationCache,
       ollamaBaseUrl = ollamaBaseUrl,
       sourceFunction = "runModel",
-      equationMethod = equationMethod
+      equationMethod = equationMethod,
+      equationMethodUsed = equationMethodUsed
     )
   )
 

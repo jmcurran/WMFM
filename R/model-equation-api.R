@@ -62,22 +62,23 @@ buildDeterministicEquationTable = function(model, digits = 2) {
 
 #' Get fitted-model equations using the selected equation engine
 #'
-#' Provides a single entry point for equation generation. This can either use
-#' the existing language-model path or the new deterministic renderer.
+#' Provides a single entry point for equation generation. Deterministic
+#' equations are now the default. The older LLM equation path remains available
+#' as an opt-in compatibility route during the transition.
 #'
 #' @param model A fitted model object, typically of class `lm` or `glm`.
 #' @param method Character string giving the equation engine. Must be one of
-#'   `"llm"` or `"deterministic"`.
+#'   `"deterministic"` or `"llm"`.
 #' @param chat Optional chat provider object. Required when `method = "llm"`.
 #' @param digits Integer number of decimal places for displayed coefficients in
 #'   the deterministic path. Defaults to `2`.
 #'
-#' @return Either the existing language-model equation object or a deterministic
-#'   equation table.
+#' @return Either a deterministic equation table or the existing language-model
+#'   equation object.
 #' @export
 getModelEquations = function(
     model,
-    method = c("llm", "deterministic"),
+    method = c("deterministic", "llm"),
     chat = NULL,
     digits = 2
 ) {

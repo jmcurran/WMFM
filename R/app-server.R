@@ -3011,7 +3011,7 @@ $$")
         chatProvider = chatProvider
       )
 
-      if (identical(outputs$equationMethodUsed, "deterministic")) {
+      if (isTRUE(outputs$equationFallbackUsed)) {
         showNotification(
           paste(
             "The language model request for equations failed.",
