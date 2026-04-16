@@ -1,23 +1,39 @@
-#' Get fitted-model equations via the language model (with caching)
+#' Get fitted-model equations using either the language model or the deterministic engine
 #'
-#' Calls the chat provider with a prompt constructed from a fitted model and
-#' returns the fitted-model equations. Results are cached based on the model
-#' formula and coefficients to avoid repeated calls for the same model.
-#'
-#' If the provider supports structured output (e.g. OpenAI via ellmer),
-#' the result is converted to a tibble with \code{condition} and
-#' \code{equation} columns. Otherwise, a character vector is returned.
+#' Uses the existing language-model equation path by default, with caching based
+#' on the fitted model. A deterministic rendering path can also be selected for
+#' development and transition work.
 #'
 #' @param model A fitted model object, typically of class \code{"lm"} or
 #'   \code{"glm"}.
-#' @param chat A chat provider object as returned by \code{getChatProvider()}.
+#' @param chat Optional chat provider object as returned by
+#'   \code{getChatProvider()}. Required when \code{method = "llm"}.
+#' @param method Character string giving the equation engine. Must be one of
+#'   \code{"llm"} or \code{"deterministic"}.
+#' @param digits Integer number of decimal places for displayed coefficients in
+#'   the deterministic path. Defaults to \code{2}.
 #'
-#' @return Either a tibble with columns \code{condition} and \code{equation},
-#'   or a character vector with raw text from the language model.
+#' @return Either the existing language-model equation object or a deterministic
+#'   equation table.
 #' @keywords internal
 #'
 #' @importFrom stats formula model.frame
-lmEquations = function(model, chat) {
+lmEquations = function(
+    model,
+    chat = NULL,
+    method = c("llm", "deterministic"),
+    digits = 2
+) {
+
+  method = match.arg(method)
+
+  if (identical(method, "deterministic")) {
+    return(buildDeterministicEquationTable(model = model, digits = digits))
+  }
+
+  if (is.null(chat)) {
+    stop("`chat` must be supplied when `method = \"llm\"`.", call. = FALSE)
+  }
   formulaStr = paste(deparse(formula(model)), collapse = " ")
   coefStr = paste(coef(model), collapse = ";")
   mf = stats::model.frame(model)

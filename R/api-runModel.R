@@ -29,6 +29,8 @@
 #'   equations, and explanation to the console.
 #' @param useExplanationCache Logical. Should cached explanation text be reused
 #'   when the same fitted model is encountered? Defaults to `TRUE`.
+#' @param equationMethod Character string giving the equation engine. Must be
+#'   one of `"llm"` or `"deterministic"`. Defaults to `"llm"`.
 #'
 #' @return Invisibly returns an object of class `wmfmModel`.
 #' @export
@@ -39,7 +41,8 @@ runModel = function(
     dataContext = NULL,
     ollamaBaseUrl = NULL,
     printOutput = TRUE,
-    useExplanationCache = TRUE
+    useExplanationCache = TRUE,
+    equationMethod = c("llm", "deterministic")
 ) {
 
   extractInteractionInfo = function(model) {
@@ -94,6 +97,7 @@ runModel = function(
   }
 
   modelType = match.arg(modelType)
+  equationMethod = match.arg(equationMethod)
 
   if (!is.data.frame(data)) {
     stop("`data` must be a data.frame.", call. = FALSE)
@@ -255,6 +259,27 @@ runModel = function(
 
   interactionInfo = extractInteractionInfo(model)
 
+  equations = NULL
+  explanation = NULL
+
+  equations = tryCatch(
+    getModelEquations(
+      model = model,
+      method = equationMethod
+    ),
+    error = function(e) {
+      if (identical(equationMethod, "deterministic")) {
+        warning(
+          "Deterministic equation generation failed: ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+      }
+
+      NULL
+    }
+  )
+
   chatProvider = tryCatch(
     getChatProvider(),
     error = function(e) {
@@ -267,17 +292,20 @@ runModel = function(
     }
   )
 
-  equations = NULL
-  explanation = NULL
-
   if (!is.null(chatProvider)) {
-    equations = tryCatch(
-      lmEquations(model, chatProvider),
-      error = function(e) {
-        warning("Equation generation failed: ", conditionMessage(e), call. = FALSE)
-        NULL
-      }
-    )
+    if (identical(equationMethod, "llm")) {
+      equations = tryCatch(
+        getModelEquations(
+          model = model,
+          method = "llm",
+          chat = chatProvider
+        ),
+        error = function(e) {
+          warning("Equation generation failed: ", conditionMessage(e), call. = FALSE)
+          NULL
+        }
+      )
+    }
 
     explanation = tryCatch(
       lmExplanation(
@@ -305,7 +333,8 @@ runModel = function(
     meta = list(
       useExplanationCache = useExplanationCache,
       ollamaBaseUrl = ollamaBaseUrl,
-      sourceFunction = "runModel"
+      sourceFunction = "runModel",
+      equationMethod = equationMethod
     )
   )
 

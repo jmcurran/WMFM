@@ -11,7 +11,8 @@ runModel(
   dataContext = NULL,
   ollamaBaseUrl = NULL,
   printOutput = TRUE,
-  useExplanationCache = TRUE
+  useExplanationCache = TRUE,
+  equationMethod = c("llm", "deterministic")
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ equations, and explanation to the console.}
 
 \item{useExplanationCache}{Logical. Should cached explanation text be reused
 when the same fitted model is encountered? Defaults to \code{TRUE}.}
+
+\item{equationMethod}{Character string giving the equation engine. Must be
+one of \code{"llm"} or \code{"deterministic"}. Defaults to \code{"llm"}.}
 }
 \value{
 Invisibly returns an object of class \code{wmfmModel}.

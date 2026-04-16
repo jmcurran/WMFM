@@ -2,28 +2,30 @@
 % Please edit documentation in R/model-lm-equations.R
 \name{lmEquations}
 \alias{lmEquations}
-\title{Get fitted-model equations via the language model (with caching)}
+\title{Get fitted-model equations using either the language model or the deterministic engine}
 \usage{
-lmEquations(model, chat)
+lmEquations(model, chat = NULL, method = c("llm", "deterministic"), digits = 2)
 }
 \arguments{
 \item{model}{A fitted model object, typically of class \code{"lm"} or
 \code{"glm"}.}
 
-\item{chat}{A chat provider object as returned by \code{getChatProvider()}.}
+\item{chat}{Optional chat provider object as returned by
+\code{getChatProvider()}. Required when \code{method = "llm"}.}
+
+\item{method}{Character string giving the equation engine. Must be one of
+\code{"llm"} or \code{"deterministic"}.}
+
+\item{digits}{Integer number of decimal places for displayed coefficients in
+the deterministic path. Defaults to \code{2}.}
 }
 \value{
-Either a tibble with columns \code{condition} and \code{equation},
-or a character vector with raw text from the language model.
+Either the existing language-model equation object or a deterministic
+equation table.
 }
 \description{
-Calls the chat provider with a prompt constructed from a fitted model and
-returns the fitted-model equations. Results are cached based on the model
-formula and coefficients to avoid repeated calls for the same model.
-}
-\details{
-If the provider supports structured output (e.g. OpenAI via ellmer),
-the result is converted to a tibble with \code{condition} and
-\code{equation} columns. Otherwise, a character vector is returned.
+Uses the existing language-model equation path by default, with caching based
+on the fitted model. A deterministic rendering path can also be selected for
+development and transition work.
 }
 \keyword{internal}
