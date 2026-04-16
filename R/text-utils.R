@@ -13,6 +13,15 @@ extractWmfmText = function(x) {
     return(paste(x, collapse = "\n"))
   }
 
+  if (inherits(x, "wmfmEquationTable")) {
+    return(
+      paste(
+        formatWmfmEquationTableLines(x),
+        collapse = "\n"
+      )
+    )
+  }
+
   tryCatch(
     paste(capture.output(print(x)), collapse = "\n"),
     error = function(e) NA_character_
