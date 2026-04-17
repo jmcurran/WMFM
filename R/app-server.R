@@ -2973,12 +2973,20 @@ $$")
 
     modelFit(m)
 
-    # If there is no chat provider, use deterministic equations only
-    if (is.null(chatProvider)) {
-      outputs = tryCatch(
-        buildAppModelOutputs(
+    outputMessages = buildAppOutputMessages(
+      equationMethod = "deterministic",
+      explanationAvailable = FALSE,
+      explanationRequested = !is.null(chatProvider)
+    )
+
+    withProgress(message = outputMessages$progressMessage, value = 0, {
+
+      incProgress(0.10, detail = outputMessages$equationDetail)
+
+      equationResults = tryCatch(
+        buildAppEquations(
           model = m,
-          chatProvider = NULL
+          chatProvider = chatProvider
         ),
         error = function(e) {
           showNotification(
@@ -2994,31 +3002,15 @@ $$")
         }
       )
 
-      rv$modelEquations = outputs$equations
-      rv$modelExplanation = outputs$explanation
+      if (is.null(equationResults)) {
+        return(NULL)
+      }
 
-      updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
-      return(NULL)
-    }
-
-    outputMessages = buildAppOutputMessages(
-      equationMethod = "deterministic",
-      explanationAvailable = FALSE
-    )
-
-    withProgress(message = outputMessages$progressMessage, value = 0, {
-
-      incProgress(0.10, detail = outputMessages$equationDetail)
-
-      outputs = buildAppModelOutputs(
-        model = m,
-        chatProvider = chatProvider
-      )
-
-      if (isTRUE(outputs$equationFallbackUsed)) {
+      if (isTRUE(equationResults$equationFallbackUsed)) {
         fallbackMessages = buildAppOutputMessages(
           equationMethod = "llm",
-          explanationAvailable = !is.null(outputs$explanation)
+          explanationAvailable = FALSE,
+          explanationRequested = !is.null(chatProvider)
         )
 
         showNotification(
@@ -3028,17 +3020,33 @@ $$")
         )
       }
 
-      incProgress(0.60, detail = outputMessages$updateDetail)
+      incProgress(0.25, detail = outputMessages$equationCompleteDetail)
 
-      rv$modelEquations = outputs$equations
-      rv$modelExplanation = outputs$explanation
-
-      finishMessages = buildAppOutputMessages(
-        equationMethod = outputs$equationMethodUsed %||% "deterministic",
-        explanationAvailable = !is.null(outputs$explanation)
+      explanationMessages = buildAppOutputMessages(
+        equationMethod = equationResults$equationMethodUsed %||% "deterministic",
+        explanationAvailable = FALSE,
+        explanationRequested = !is.null(chatProvider)
       )
 
-      incProgress(0.20, detail = finishMessages$finishDetail)
+      incProgress(0.10, detail = explanationMessages$explanationDetail)
+
+      explanation = buildAppExplanation(
+        model = m,
+        chatProvider = chatProvider
+      )
+
+      incProgress(0.35, detail = outputMessages$updateDetail)
+
+      rv$modelEquations = equationResults$equations
+      rv$modelExplanation = explanation
+
+      finishMessages = buildAppOutputMessages(
+        equationMethod = equationResults$equationMethodUsed %||% "deterministic",
+        explanationAvailable = !is.null(explanation),
+        explanationRequested = !is.null(chatProvider)
+      )
+
+      incProgress(0.10, detail = finishMessages$finishDetail)
       incProgress(0.10, detail = finishMessages$doneDetail)
     })
     # After fitting and LLM completion, switch to the "Fitted Model" tab

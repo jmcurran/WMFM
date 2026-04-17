@@ -8,12 +8,15 @@
 #' @param equationMethod Character string. One of `"deterministic"` or `"llm"`.
 #' @param explanationAvailable Logical indicating whether a narrative explanation
 #'   is available.
+#' @param explanationRequested Logical indicating whether the app is attempting
+#'   to generate an explanation.
 #'
 #' @return A named list of character strings for progress and notification text.
 #' @keywords internal
 buildAppOutputMessages = function(
     equationMethod = c("deterministic", "llm"),
-    explanationAvailable = FALSE
+    explanationAvailable = FALSE,
+    explanationRequested = FALSE
 ) {
 
   equationMethod = match.arg(equationMethod)
@@ -24,10 +27,24 @@ buildAppOutputMessages = function(
     "Requesting equations from the language model..."
   }
 
-  finishDetail = if (isTRUE(explanationAvailable)) {
-    "Explanation received. Finishing..."
+  equationCompleteDetail = if (identical(equationMethod, "deterministic")) {
+    "Deterministic equations built."
   } else {
+    "Equation response received."
+  }
+
+  explanationDetail = if (isTRUE(explanationRequested)) {
+    "Generating narrative explanation..."
+  } else {
+    "Skipping narrative explanation..."
+  }
+
+  finishDetail = if (isTRUE(explanationRequested) && isTRUE(explanationAvailable)) {
+    "Explanation received. Finishing..."
+  } else if (isTRUE(explanationRequested)) {
     "Explanation unavailable. Finishing..."
+  } else {
+    "No explanation requested. Finishing..."
   }
 
   fallbackNotification = if (identical(equationMethod, "llm")) {
@@ -42,6 +59,8 @@ buildAppOutputMessages = function(
   list(
     progressMessage = "Building fitted-model outputs...",
     equationDetail = equationDetail,
+    equationCompleteDetail = equationCompleteDetail,
+    explanationDetail = explanationDetail,
     updateDetail = "Updating app...",
     finishDetail = finishDetail,
     doneDetail = "Done.",

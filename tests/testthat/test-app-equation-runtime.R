@@ -1,3 +1,38 @@
+test_that("buildAppEquations falls back to deterministic equations without chat", {
+
+  df = data.frame(
+    y = c(1, 2, 3, 4, 5),
+    x = c(0, 1, 2, 3, 4)
+  )
+
+  model = lm(y ~ x, data = df)
+
+  out = buildAppEquations(
+    model = model,
+    chatProvider = NULL
+  )
+
+  expect_s3_class(out$equations, "wmfmEquationTable")
+  expect_identical(out$equationMethodUsed, "deterministic")
+})
+
+test_that("buildAppExplanation returns NULL without chat", {
+
+  df = data.frame(
+    y = c(1, 2, 3, 4, 5),
+    x = c(0, 1, 2, 3, 4)
+  )
+
+  model = lm(y ~ x, data = df)
+
+  out = buildAppExplanation(
+    model = model,
+    chatProvider = NULL
+  )
+
+  expect_null(out)
+})
+
 test_that("buildAppModelOutputs falls back to deterministic equations without chat", {
 
   df = data.frame(
