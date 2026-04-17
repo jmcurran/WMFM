@@ -93,9 +93,12 @@ and connect it to the model results.
 Research question supplied by the user:
 {researchQuestion}
 
-Use the research question to help frame the explanation.
-- It is fine to restate the question more naturally if that improves readability.
-- Near the end, explicitly try to answer the research question in plain language.
+Use the research question to structure the explanation.
+- Start with a short opening paragraph that briefly restates the research question in clear, natural language.
+- Do not skip that opening restatement when a research question is present.
+- Then explain the model results as usual in a separate middle paragraph or paragraphs.
+- End with a short final paragraph that directly answers the research question in plain language.
+- The final paragraph should summarise the answer in one or two sentences rather than repeating the full explanation.
 - Ground that answer in the fitted model results and their uncertainty.
 - Stay cautious: avoid causal claims unless the model and study design justify them.
 - If the model does not fully answer the question, say what the model does and does not support.

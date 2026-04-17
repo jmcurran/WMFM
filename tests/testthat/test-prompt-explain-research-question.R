@@ -15,7 +15,16 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
     "Does Exam tend to increase as Test increases\\?",
     perl = TRUE
   )
-  testthat::expect_match(prompt, "answer the research question", fixed = TRUE)
+  testthat::expect_match(
+    prompt,
+    "Start with a short opening paragraph that briefly restates the research question in clear, natural language.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "End with a short final paragraph that directly answers the research question in plain language.",
+    fixed = TRUE
+  )
 })
 
 testthat::test_that("lmToExplanationPrompt omits research question block when absent", {
@@ -29,5 +38,14 @@ testthat::test_that("lmToExplanationPrompt omits research question block when ab
   prompt = lmToExplanationPrompt(model)
 
   testthat::expect_no_match(prompt, "Research question supplied by the user", fixed = TRUE)
-  testthat::expect_no_match(prompt, "answer the research question", fixed = TRUE)
+  testthat::expect_no_match(
+    prompt,
+    "Start with a short opening paragraph that briefly restates the research question in clear, natural language.",
+    fixed = TRUE
+  )
+  testthat::expect_no_match(
+    prompt,
+    "End with a short final paragraph that directly answers the research question in plain language.",
+    fixed = TRUE
+  )
 })
