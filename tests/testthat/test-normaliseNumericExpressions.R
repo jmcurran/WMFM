@@ -56,3 +56,18 @@ test_that("normaliseNumericExpressions rewrites malformed hyphenated percentages
     "The effect was about 42 percent."
   )
 })
+
+
+test_that("normaliseNumericExpressions strips redundant trailing zeros", {
+  expect_equal(
+    normaliseNumericExpressions("The 95% confidence interval runs from 3.0 to 4.0 points."),
+    "The 95% confidence interval runs from 3 to 4 points."
+  )
+})
+
+test_that("normaliseNumericExpressions removes simple markdown emphasis", {
+  expect_equal(
+    normaliseNumericExpressions("Students who did **not** attend class scored lower."),
+    "Students who did not attend class scored lower."
+  )
+})

@@ -3083,12 +3083,6 @@ $$")
   output$model_equations = renderUI({
 
     m = modelFit()
-    numericAnchorNote = if (!is.null(m)) {
-      buildNumericAnchorUiNote(model = m)
-    } else {
-      ""
-    }
-
     # ---------------------------------------------------------------
     # If predictors are all factors, show "fitted means" equations
     # constructed from the regression coefficients
@@ -3140,9 +3134,6 @@ $$")
       return(div(
         style = scrollStyle,
         tagList(
-          if (nzchar(numericAnchorNote)) {
-            helpText(numericAnchorNote)
-          },
           tags$p(
             tags$strong("How are the means constructed from the regression table?")
           ),
@@ -3210,9 +3201,6 @@ $$")
     div(
       style = scrollStyle,
       tagList(
-        if (nzchar(numericAnchorNote)) {
-          helpText(numericAnchorNote)
-        },
         content
       )
     )
@@ -3304,16 +3292,7 @@ $$")
       return(helpText("Fit a model to see a textual explanation."))
     }
 
-    numericAnchorNote = if (!is.null(m)) {
-      buildNumericAnchorUiNote(model = m)
-    } else {
-      ""
-    }
-
     tagList(
-      if (nzchar(numericAnchorNote)) {
-        helpText(numericAnchorNote)
-      },
       tags$pre(
         style = "white-space: pre-wrap; word-wrap: break-word;",
         expl
