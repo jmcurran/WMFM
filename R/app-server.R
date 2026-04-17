@@ -190,7 +190,8 @@ appServer = function(input, output, session) {
     activeChatBackend = "ollama",
     activeOllamaModel = "gpt-oss",
     availableOllamaModels = "gpt-oss",
-    userDatasetContext = ""
+    userDatasetContext = "",
+    researchQuestion = ""
   )
 
 
@@ -463,6 +464,7 @@ appServer = function(input, output, session) {
 
     updateTextInput(session, "formula_text", value = "")
     updateSelectInput(session, "interactions", selected = character(0))
+    updateTextInput(session, "researchQuestion", value = rv$researchQuestion %||% "")
 
     # Reset response var to first column of new data (optional)
     if (resetResponse && !is.null(rv$data) && length(rv$allVars) > 0) {
@@ -1794,9 +1796,11 @@ $$")
       return(NULL)
     }
 
-    rv$data             = df
-    rv$allVars          = names(df)
+    rv$data = df
+    rv$allVars = names(df)
     rv$userDatasetContext = ""
+    rv$researchQuestion = ""
+    updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
   }
 
@@ -1824,9 +1828,11 @@ $$")
 
       df = e[[dfNames[1]]]
 
-      rv$data             = df
-      rv$allVars          = names(df)
+      rv$data = df
+      rv$allVars = names(df)
       rv$userDatasetContext = ""
+      rv$researchQuestion = ""
+      updateTextInput(session, "researchQuestion", value = "")
       resetModelPage(resetResponse = TRUE)
 
       return(NULL)
@@ -1946,9 +1952,11 @@ $$")
       return(NULL)
     }
 
-    rv$data               = df
-    rv$allVars            = names(df)
+    rv$data = df
+    rv$allVars = names(df)
     rv$userDatasetContext = ""
+    rv$researchQuestion = ""
+    updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading a package data set
@@ -2257,7 +2265,9 @@ $$")
     }
   }, ignoreInit = TRUE)
 
-
+  observeEvent(input$researchQuestion, {
+    rv$researchQuestion = trimws(input$researchQuestion %||% "")
+  }, ignoreInit = FALSE)
 
 
   # -------------------------------------------------------------------
@@ -2970,6 +2980,13 @@ $$")
       }
     }
 
+
+    researchQuestionRaw = trimws(input$researchQuestion %||% rv$researchQuestion %||% "")
+
+    if (nzchar(researchQuestionRaw)) {
+      researchQuestion = gsub("\"", "\\\"", researchQuestionRaw, fixed = TRUE)
+      attr(m, "wmfm_research_question") = researchQuestion
+    }
 
     modelFit(m)
 

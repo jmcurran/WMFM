@@ -9,6 +9,8 @@
 #' @param modelType Character string giving the model family.
 #' @param data A `data.frame` used to fit the model.
 #' @param dataContext Optional character string giving dataset context.
+#' @param researchQuestion Optional character string giving the research
+#'   question associated with the fitted model.
 #' @param equations Generated equations object, or `NULL`.
 #' @param explanation Generated explanation text, or `NULL`.
 #' @param interactionTerms Character vector of fitted interaction-term names.
@@ -24,6 +26,7 @@ newWmfmModel = function(
     modelType,
     data,
     dataContext = NULL,
+    researchQuestion = NULL,
     equations = NULL,
     explanation = NULL,
     interactionTerms = character(0),
@@ -51,6 +54,14 @@ newWmfmModel = function(
     dataContext = NA_character_
   }
 
+  if (is.null(researchQuestion)) {
+    researchQuestion = NA_character_
+  }
+
+  if (!is.character(researchQuestion) || length(researchQuestion) != 1) {
+    stop("`researchQuestion` must be a single character string or NULL.", call. = FALSE)
+  }
+
   if (!is.character(interactionTerms)) {
     stop("`interactionTerms` must be a character vector.", call. = FALSE)
   }
@@ -72,6 +83,7 @@ newWmfmModel = function(
     modelType = modelType,
     data = data,
     dataContext = dataContext,
+    researchQuestion = researchQuestion,
     equations = equations,
     explanation = explanation,
     interactionTerms = interactionTerms,

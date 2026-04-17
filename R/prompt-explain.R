@@ -61,6 +61,7 @@ lmToExplanationPrompt = function(model) {
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
+  researchQuestion = attr(model, "wmfm_research_question", exact = TRUE)
 
   if (!is.null(dsDoc)) {
     dsLines = strsplit(dsDoc, "\n", fixed = TRUE)[[1]]
@@ -82,6 +83,26 @@ and connect it to the model results.
     datasetBlock = ""
   }
 
+  researchQuestionBlock = ""
+
+  if (!is.null(researchQuestion)) {
+    researchQuestion = trimws(researchQuestion)
+
+    if (nzchar(researchQuestion)) {
+      researchQuestionBlock = glue::glue("
+Research question supplied by the user:
+{researchQuestion}
+
+Use the research question to help frame the explanation.
+- It is fine to restate the question more naturally if that improves readability.
+- Near the end, explicitly try to answer the research question in plain language.
+- Ground that answer in the fitted model results and their uncertainty.
+- Stay cautious: avoid causal claims unless the model and study design justify them.
+- If the model does not fully answer the question, say what the model does and does not support.
+")
+    }
+  }
+
   contextPayload = glue::glue("
 You are a friendly statistics tutor.
 Explain the model summary below (including the estimated effects and their uncertainty)
@@ -90,6 +111,7 @@ in clear, non-technical language.
 {modelDesc}
 {outcomeDesc}
 {datasetBlock}
+{researchQuestionBlock}
 
 Response variable: {response}
 Number of observations: {n}

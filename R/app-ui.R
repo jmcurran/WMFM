@@ -124,6 +124,20 @@ appUI = function() {
 
           tags$hr(class = "hr-tight"),
 
+          h5("Research question"),
+          textInput(
+            "researchQuestion",
+            label = "Research question (optional)",
+            value = "",
+            width = "100%"
+          ),
+          helpText(
+            "Briefly state the question you want the fitted model to help answer. ",
+            "WMFM will use this when generating the plain-language explanation."
+          ),
+
+          tags$hr(class = "hr-tight"),
+
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
           div(

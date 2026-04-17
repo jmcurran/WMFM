@@ -10,6 +10,7 @@ newWmfmModel(
   modelType,
   data,
   dataContext = NULL,
+  researchQuestion = NULL,
   equations = NULL,
   explanation = NULL,
   interactionTerms = character(0),
@@ -27,6 +28,9 @@ newWmfmModel(
 \item{data}{A \code{data.frame} used to fit the model.}
 
 \item{dataContext}{Optional character string giving dataset context.}
+
+\item{researchQuestion}{Optional character string giving the research
+question associated with the fitted model.}
 
 \item{equations}{Generated equations object, or \code{NULL}.}
 
