@@ -3001,10 +3001,14 @@ $$")
       return(NULL)
     }
 
-    # Talk to the language model with a progress bar
-    withProgress(message = "Preparing fitted-model outputs...", value = 0, {
+    outputMessages = buildAppOutputMessages(
+      equationMethod = "deterministic",
+      explanationAvailable = FALSE
+    )
 
-      incProgress(0.10, detail = "Requesting equations...")
+    withProgress(message = outputMessages$progressMessage, value = 0, {
+
+      incProgress(0.10, detail = outputMessages$equationDetail)
 
       outputs = buildAppModelOutputs(
         model = m,
@@ -3012,28 +3016,30 @@ $$")
       )
 
       if (isTRUE(outputs$equationFallbackUsed)) {
+        fallbackMessages = buildAppOutputMessages(
+          equationMethod = "llm",
+          explanationAvailable = !is.null(outputs$explanation)
+        )
+
         showNotification(
-          paste(
-            "The language model request for equations failed.",
-            "WMFM fell back to deterministic equations; the explanation may still be available."
-          ),
+          fallbackMessages$fallbackNotification,
           type     = "warning",
           duration = 10
         )
       }
 
-      incProgress(0.60, detail = "Updating app...")
+      incProgress(0.60, detail = outputMessages$updateDetail)
 
       rv$modelEquations = outputs$equations
       rv$modelExplanation = outputs$explanation
 
-      if (is.null(outputs$explanation)) {
-        incProgress(0.20, detail = "Explanation unavailable. Finishing...")
-      } else {
-        incProgress(0.20, detail = "Explanation received. Finishing...")
-      }
+      finishMessages = buildAppOutputMessages(
+        equationMethod = outputs$equationMethodUsed %||% "deterministic",
+        explanationAvailable = !is.null(outputs$explanation)
+      )
 
-      incProgress(0.10, detail = "Done.")
+      incProgress(0.20, detail = finishMessages$finishDetail)
+      incProgress(0.10, detail = finishMessages$doneDetail)
     })
     # After fitting and LLM completion, switch to the "Fitted Model" tab
     updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
