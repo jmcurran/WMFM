@@ -99,8 +99,11 @@ Use the research question to structure the explanation.
 - Then explain the model results as usual in a separate middle paragraph or paragraphs.
 - End with a short final paragraph that directly answers the research question in plain language.
 - The final paragraph should summarise the answer in one or two sentences rather than repeating the full explanation.
+- In the final paragraph, make it clear that the conclusion is about average or expected outcomes rather than certain outcomes for each individual case.
+- Prefer wording such as \"on average\", \"tend to\", \"is associated with\", or \"is consistent with\" when answering the research question.
 - Ground that answer in the fitted model results and their uncertainty.
 - Stay cautious: avoid causal claims unless the model and study design justify them.
+- Avoid phrasing that sounds fully predictive, deterministic, or guaranteed for individual cases.
 - If the model does not fully answer the question, say what the model does and does not support.
 ")
     }
