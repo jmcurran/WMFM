@@ -3,3 +3,4 @@ modelType: poisson
 formula: Freq ~ Magnitude * Locn
 data: Quakes.df.rda
 context: Quakes.Rmd
+researchQuestion: How quickly does expected earthquake frequency decrease as magnitude increases in California and Washington, and do those rates of decrease appear to differ between the two locations?

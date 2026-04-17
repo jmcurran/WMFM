@@ -9,6 +9,7 @@ runModel(
   formula,
   modelType = c("lm", "logistic", "poisson"),
   dataContext = NULL,
+  researchQuestion = NULL,
   ollamaBaseUrl = NULL,
   printOutput = TRUE,
   useExplanationCache = TRUE,
@@ -26,6 +27,9 @@ of \code{"lm"}, \code{"logistic"}, or \code{"poisson"}.}
 
 \item{dataContext}{Optional character string giving additional context
 about the dataset, study, variables, coding, or research aim.}
+
+\item{researchQuestion}{Optional character string giving the research
+question the user wants the fitted model to help answer.}
 
 \item{ollamaBaseUrl}{Optional character string giving the base URL for the
 language model service.}

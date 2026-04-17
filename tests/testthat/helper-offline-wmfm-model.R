@@ -11,6 +11,7 @@ makeOfflineWmfmModel = function() {
     formula = y ~ x,
     modelType = "lm",
     data = df,
+    researchQuestion = "Does x help explain y?",
     equations = "y = 1.00 + 1.00 * x",
     explanation = paste(
       "The fitted model shows that y increases by about one unit",

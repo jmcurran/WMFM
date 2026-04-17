@@ -3,3 +3,4 @@ formula: Exam ~ Attend + Test
 dataSource: package
 dataPackage: s20x
 dataObject: course.df
+researchQuestion: Do students who attend class regularly and score higher on the mid-term test tend to get better final exam marks?

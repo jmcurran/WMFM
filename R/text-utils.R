@@ -383,6 +383,10 @@ normaliseNumericExpressions = function(text) {
   out = applyReplacementMap(out, malformedNumberMap)
   out = applyReplacementMap(out, percentMap)
 
+  out = gsub("\\*\\*([^*]+)\\*\\*", "\\1", out, perl = TRUE)
+  out = gsub("__([^_]+)__", "\\1", out, perl = TRUE)
+  out = gsub("(?<![0-9])(-?[0-9]+)\\.0(?![0-9])", "\\1", out, perl = TRUE)
+
   out
 }
 #' Normalise one or more WMFM explanations

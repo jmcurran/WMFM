@@ -35,12 +35,15 @@ lmExplanation = function(model, chat, useCache = TRUE) {
     predictorNames = predictors
   )
 
+  researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% ""
+
   key = paste(
     "expl",
-    "v2-numeric-anchor",
+    "v3-numeric-anchor-research-question",
     formulaStr,
     coefStr,
-    numericAnchorInfo$cacheKey
+    numericAnchorInfo$cacheKey,
+    trimws(researchQuestion)
   )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {

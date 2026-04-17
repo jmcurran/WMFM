@@ -23,6 +23,8 @@
 #'   of `"lm"`, `"logistic"`, or `"poisson"`.
 #' @param dataContext Optional character string giving additional context
 #'   about the dataset, study, variables, coding, or research aim.
+#' @param researchQuestion Optional character string giving the research
+#'   question the user wants the fitted model to help answer.
 #' @param ollamaBaseUrl Optional character string giving the base URL for the
 #'   language model service.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
@@ -39,6 +41,7 @@ runModel = function(
     formula,
     modelType = c("lm", "logistic", "poisson"),
     dataContext = NULL,
+    researchQuestion = NULL,
     ollamaBaseUrl = NULL,
     printOutput = TRUE,
     useExplanationCache = TRUE,
@@ -112,6 +115,12 @@ runModel = function(
       "`formula` must be a formula or a character string that can be converted to one.",
       call. = FALSE
     )
+  }
+
+  if (!is.null(researchQuestion)) {
+    if (!is.character(researchQuestion) || length(researchQuestion) != 1 || is.na(researchQuestion)) {
+      stop("`researchQuestion` must be NULL or a single non-missing character string.", call. = FALSE)
+    }
   }
 
   if (!is.logical(printOutput) || length(printOutput) != 1 || is.na(printOutput)) {
@@ -253,6 +262,15 @@ runModel = function(
     }
   }
 
+  if (!is.null(researchQuestion)) {
+    researchQuestion = trimws(researchQuestion)
+
+    if (nzchar(researchQuestion)) {
+      researchQuestionEscaped = gsub("\"", "\\\"", researchQuestion, fixed = TRUE)
+      attr(model, "wmfm_research_question") = researchQuestionEscaped
+    }
+  }
+
   if (!is.null(ollamaBaseUrl)) {
     options(wmfm.ollama_base_url = ollamaBaseUrl)
   }
@@ -370,6 +388,7 @@ runModel = function(
     modelType = modelType,
     data = dataModel,
     dataContext = attr(model, "wmfm_dataset_doc", exact = TRUE),
+    researchQuestion = attr(model, "wmfm_research_question", exact = TRUE),
     equations = equations,
     explanation = explanation,
     interactionTerms = interactionInfo$interactionTerms,

@@ -46,6 +46,7 @@ An object of class \code{wmfmRuns} with elements:
 \item{package}{Package name.}
 \item{spec}{Parsed example specification.}
 \item{dataContext}{Optional example context text.}
+\item{researchQuestion}{Optional example research question text.}
 \item{runs}{List of raw run records.}
 \item{meta}{Metadata about the run set, including elapsed time, average
 per-run time, and per-run timing details.}

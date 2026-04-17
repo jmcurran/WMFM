@@ -68,6 +68,7 @@ listWMFMExamples = function(package = "WMFM") {
 #'   \item{spec}{Parsed example specification.}
 #'   \item{data}{Loaded example data.}
 #'   \item{dataContext}{Optional example context text, or `NULL`.}
+#'   \item{researchQuestion}{Optional research question text, or `NULL`.}
 #' }
 #'
 #' @keywords internal
@@ -125,6 +126,25 @@ loadExampleSpec = function(name, package = "WMFM") {
     )
   }
 
+  researchQuestion = NULL
+
+  if (!is.null(spec$researchQuestion)) {
+    if (!is.character(spec$researchQuestion) ||
+        length(spec$researchQuestion) != 1 ||
+        is.na(spec$researchQuestion)) {
+      stop(
+        "If supplied, `researchQuestion` must be a single non-missing character string.",
+        call. = FALSE
+      )
+    }
+
+    researchQuestion = trimws(spec$researchQuestion)
+
+    if (!nzchar(researchQuestion)) {
+      researchQuestion = NULL
+    }
+  }
+
   data = loadWMFMExampleData(spec = spec, basePath = basePath)
 
   if (!is.data.frame(data)) {
@@ -137,7 +157,8 @@ loadExampleSpec = function(name, package = "WMFM") {
     basePath = basePath,
     spec = spec,
     data = data,
-    dataContext = dataContext
+    dataContext = dataContext,
+    researchQuestion = researchQuestion
   )
 }
 
@@ -368,6 +389,7 @@ loadWMFMExampleContext = function(spec, basePath) {
 #'   \item{package}{Package name.}
 #'   \item{spec}{Parsed example specification.}
 #'   \item{dataContext}{Optional example context text.}
+#'   \item{researchQuestion}{Optional example research question text.}
 #'   \item{runs}{List of raw run records.}
 #'   \item{meta}{Metadata about the run set, including elapsed time, average
 #'   per-run time, and per-run timing details.}
@@ -443,6 +465,7 @@ runExample = function(
         formula = as.formula(exampleInfo$spec$formula),
         modelType = exampleInfo$spec$modelType,
         dataContext = exampleInfo$dataContext,
+        researchQuestion = exampleInfo$researchQuestion,
         printOutput = printOutput,
         useExplanationCache = useExplanationCache,
         ...
@@ -498,6 +521,7 @@ runExample = function(
     package = package,
     spec = exampleInfo$spec,
     dataContext = exampleInfo$dataContext,
+    researchQuestion = exampleInfo$researchQuestion,
     runs = runs,
     meta = list(
       nRuns = nRuns,

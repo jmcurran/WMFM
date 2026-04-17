@@ -61,6 +61,7 @@ lmToExplanationPrompt = function(model) {
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
+  researchQuestion = attr(model, "wmfm_research_question", exact = TRUE)
 
   if (!is.null(dsDoc)) {
     dsLines = strsplit(dsDoc, "\n", fixed = TRUE)[[1]]
@@ -82,6 +83,32 @@ and connect it to the model results.
     datasetBlock = ""
   }
 
+  researchQuestionBlock = ""
+
+  if (!is.null(researchQuestion)) {
+    researchQuestion = trimws(researchQuestion)
+
+    if (nzchar(researchQuestion)) {
+      researchQuestionBlock = glue::glue("
+Research question supplied by the user:
+{researchQuestion}
+
+Use the research question to structure the explanation.
+- Start with a short opening paragraph that briefly restates the research question in clear, natural language.
+- Do not skip that opening restatement when a research question is present.
+- Then explain the model results as usual in a separate middle paragraph or paragraphs.
+- End with a short final paragraph that directly answers the research question in plain language.
+- The final paragraph should summarise the answer in one or two sentences rather than repeating the full explanation.
+- In the final paragraph, make it clear that the conclusion is about average or expected outcomes rather than certain outcomes for each individual case.
+- Prefer wording such as \"on average\", \"tend to\", \"is associated with\", or \"is consistent with\" when answering the research question.
+- Ground that answer in the fitted model results and their uncertainty.
+- Stay cautious: avoid causal claims unless the model and study design justify them.
+- Avoid phrasing that sounds fully predictive, deterministic, or guaranteed for individual cases.
+- If the model does not fully answer the question, say what the model does and does not support.
+")
+    }
+  }
+
   contextPayload = glue::glue("
 You are a friendly statistics tutor.
 Explain the model summary below (including the estimated effects and their uncertainty)
@@ -90,6 +117,7 @@ in clear, non-technical language.
 {modelDesc}
 {outcomeDesc}
 {datasetBlock}
+{researchQuestionBlock}
 
 Response variable: {response}
 Number of observations: {n}
