@@ -1,13 +1,12 @@
 #' Render the explanation-audit panel for the app
 #'
-#' Creates a student-facing accordion that explains how the model explanation
-#' was constructed from deterministic inputs and model-derived evidence.
+#' Creates a student-facing note explaining that the app now shows a teaching
+#' summary rather than the raw audit structure directly.
 #'
 #' @param audit A `wmfmExplanationAudit` object, or `NULL`.
 #'
 #' @return A Shiny UI object.
 #' @keywords internal
-#' @importFrom bslib accordion accordion_panel
 #' @importFrom htmltools tagList tags
 renderModelExplanationAuditUi = function(audit) {
 
@@ -17,89 +16,51 @@ renderModelExplanationAuditUi = function(audit) {
 
   tagList(
     tags$p(
-      "The raw explanation audit is still available for internal QA and testing, but the student-facing app now uses the teaching summary instead of showing these internals directly."
+      "The raw explanation audit is still kept for internal QA and testing, but the student-facing app now shows a teaching summary instead of exposing these internal details directly."
     )
   )
 }
 
-#' Build a styled inline code chip
+#' Convert backticked names into code-style chips for UI display
 #'
-#' @param text Character string to show inside the chip.
+#' @param text A single character string.
 #'
-#' @return A Shiny tag.
+#' @return A Shiny UI paragraph tag.
 #' @keywords internal
-makeExplanationTeachingCodeChip = function(text) {
+#' @importFrom htmltools HTML htmlEscape
+renderTeachingSummaryText = function(text) {
 
-  tags$code(
-    style = paste(
-      "font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;",
-      "background-color: #f1f3f5;",
-      "border: 1px solid #d9dee3;",
-      "border-radius: 4px;",
-      "padding: 0.12em 0.35em;",
-      "color: #495057;"
-    ),
-    text
-  )
-}
+  text = as.character(text %||% "")
 
-#' Convert backtick-marked teaching text into HTML tags
-#'
-#' @param text Character scalar using backticks around variable names.
-#'
-#' @return A tag list.
-#' @keywords internal
-renderExplanationTeachingInlineText = function(text) {
+  if (!grepl("`", text, fixed = TRUE)) {
+    return(tags$p(text))
+  }
 
-  text = text %||% ""
   parts = strsplit(text, "`", fixed = TRUE)[[1]]
+  nodes = vector("list", length(parts))
 
-  children = lapply(seq_along(parts), function(i) {
+  for (i in seq_along(parts)) {
     part = parts[[i]]
 
     if (i %% 2 == 0) {
-      return(makeExplanationTeachingCodeChip(part))
+      nodes[[i]] = tags$code(
+        style = paste(
+          "background-color: #f1f3f5;",
+          "border: 1px solid #d0d7de;",
+          "border-radius: 0.35rem;",
+          "padding: 0.1rem 0.35rem;",
+          "font-size: 0.95em;"
+        ),
+        part
+      )
+    } else if (nzchar(part)) {
+      nodes[[i]] = htmltools::HTML(htmltools::htmlEscape(part))
+    } else {
+      nodes[[i]] = ""
     }
-
-    part
-  })
-
-  do.call(tagList, children)
-}
-
-#' Build a paragraph for teaching-summary text
-#'
-#' @param text Character scalar using backticks around variable names.
-#'
-#' @return A Shiny tag.
-#' @keywords internal
-makeExplanationTeachingParagraph = function(text) {
-
-  tags$p(renderExplanationTeachingInlineText(text))
-}
-
-#' Build a student-facing evidence list
-#'
-#' @param df A data frame with `section` and `summary` columns.
-#'
-#' @return A Shiny tag.
-#' @keywords internal
-makeExplanationTeachingEvidenceList = function(df) {
-
-  if (!is.data.frame(df) || nrow(df) == 0) {
-    return(tags$p("No extra details were needed for this explanation."))
   }
 
-  tags$ul(
-    style = "margin-bottom: 0; padding-left: 1.2rem;",
-    lapply(seq_len(nrow(df)), function(i) {
-      tags$li(
-        tags$strong(df$section[[i]]),
-        ": ",
-        renderExplanationTeachingInlineText(df$summary[[i]])
-      )
-    })
-  )
+  do.call(tags$p, nodes)
 }
 
 #' Render the explanation teaching summary for the app
@@ -119,44 +80,58 @@ renderExplanationTeachingSummaryUi = function(summary) {
     return(NULL)
   }
 
-  tagList(
-    tags$p(
-      "This panel gives a short teaching summary of the choices the app made when it turned the fitted model into words."
-    ),
-    do.call(
-      accordion,
-      list(
-        id = "model_explanation_teaching_summary",
-        multiple = TRUE,
-        open = FALSE,
-        accordion_panel(
-          title = "How the outcome was described",
-          makeExplanationTeachingParagraph(summary$interpretationScale)
-        ),
-        accordion_panel(
-          title = "What starting point was used",
-          makeExplanationTeachingParagraph(summary$baselineChoice)
-        ),
-        accordion_panel(
-          title = "What change was being described",
-          makeExplanationTeachingParagraph(summary$xChangeDescription)
-        ),
-        accordion_panel(
-          title = "How the main result was explained",
-          makeExplanationTeachingParagraph(summary$mainEffectDescription)
-        ),
-        accordion_panel(
-          title = "How uncertainty was shown",
-          makeExplanationTeachingParagraph(summary$uncertaintySummary)
-        ),
-        accordion_panel(
-          title = "What information the app used",
-          makeExplanationTeachingEvidenceList(summary$evidenceTable)
-        ),
-        accordion_panel(
-          title = "How this links to the research question",
-          makeExplanationTeachingParagraph(summary$researchQuestionLink)
-        )
+  makeParagraph = function(text) {
+    renderTeachingSummaryText(text %||% "")
+  }
+
+  makeEvidenceList = function(df) {
+    if (!is.data.frame(df) || nrow(df) == 0) {
+      return(tags$p("No extra teaching notes were needed for this explanation."))
+    }
+
+    items = lapply(seq_len(nrow(df)), function(i) {
+      tags$li(
+        tags$strong(paste0(df$section[[i]], ": ")),
+        df$summary[[i]]
+      )
+    })
+
+    do.call(tags$ul, items)
+  }
+
+  do.call(
+    accordion,
+    list(
+      id = "model_explanation_teaching_summary",
+      multiple = TRUE,
+      open = FALSE,
+      accordion_panel(
+        title = "Scale used for the explanation",
+        makeParagraph(summary$interpretationScale)
+      ),
+      accordion_panel(
+        title = "Starting values and comparison groups",
+        makeParagraph(summary$baselineChoice)
+      ),
+      accordion_panel(
+        title = "What change is being described",
+        makeParagraph(summary$xChangeDescription)
+      ),
+      accordion_panel(
+        title = "How the main result was described",
+        makeParagraph(summary$mainEffectDescription)
+      ),
+      accordion_panel(
+        title = "How uncertainty was described",
+        makeParagraph(summary$uncertaintySummary)
+      ),
+      accordion_panel(
+        title = "Main pieces of information used",
+        makeEvidenceList(summary$evidenceTable)
+      ),
+      accordion_panel(
+        title = "Connection to the research question",
+        makeParagraph(summary$researchQuestionLink)
       )
     )
   )

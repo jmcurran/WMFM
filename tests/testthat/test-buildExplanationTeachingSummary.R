@@ -3,6 +3,8 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
 
   model = stats::lm(Exam ~ Test, data = df)
   attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_dataset_doc") = "Exam: exam mark\nTest: test mark"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
 
   audit = buildModelExplanationAudit(model)
   out = buildExplanationTeachingSummary(audit = audit, model = model)
@@ -25,9 +27,10 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
   testthat::expect_true(is.data.frame(out$evidenceTable))
   testthat::expect_true(nrow(out$evidenceTable) >= 4)
   testthat::expect_true(all(c("section", "summary") %in% names(out$evidenceTable)))
-  testthat::expect_match(out$baselineChoice, "pretending every variable begins at 0|starting value")
-  testthat::expect_match(out$xChangeDescription, "goes up by 1 unit")
-  testthat::expect_match(out$xChangeDescription, "`Test`")
+  testthat::expect_match(out$baselineChoice, "sample mean|pretending every variable begins at zero")
+  testthat::expect_match(out$baselineChoice, "11\\.57")
+  testthat::expect_match(out$baselineChoice, "Zero lies outside the observed range")
+  testthat::expect_match(out$xChangeDescription, "marks")
   testthat::expect_match(out$researchQuestionLink, "Does Test help explain Exam\\?")
 })
 
@@ -35,6 +38,7 @@ testthat::test_that("buildExplanationTeachingSummary fills all fields when no re
   df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
   audit = buildModelExplanationAudit(model)
   out = buildExplanationTeachingSummary(audit = audit, model = model, researchQuestion = NULL)
 
@@ -50,17 +54,21 @@ testthat::test_that("buildExplanationTeachingSummary fills all fields when no re
   testthat::expect_false(any(vapply(out, is.null, logical(1))))
 })
 
-testthat::test_that("renderExplanationTeachingSummaryUi returns a UI object with code-style variable chips", {
+testthat::test_that("renderExplanationTeachingSummaryUi returns a UI object", {
   df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
   audit = buildModelExplanationAudit(model)
   summary = buildExplanationTeachingSummary(audit = audit, model = model)
   ui = renderExplanationTeachingSummaryUi(summary)
-  rendered = htmltools::renderTags(ui)$html
 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
-  testthat::expect_match(rendered, "<code")
-  testthat::expect_match(rendered, "Test")
-  testthat::expect_match(rendered, "How the outcome was described")
+})
+
+testthat::test_that("renderTeachingSummaryText turns backticked names into code tags", {
+  ui = renderTeachingSummaryText("The predictor `Test` is shown as a chip.")
+
+  testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
+  testthat::expect_true(any(vapply(ui$children, function(x) inherits(x, "shiny.tag") && identical(x$name, "code"), logical(1))))
 })

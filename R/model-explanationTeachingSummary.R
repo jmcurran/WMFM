@@ -36,11 +36,13 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
   predictorNames = names(mf)[-1]
   numericPredictors = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
   factorPredictors = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
+  responseNounPhrase = attr(model, "wmfm_response_noun_phrase", exact = TRUE) %||% responseName
+  outcomeLabel = buildExplanationTeachingOutcomeLabel(responseNounPhrase = responseNounPhrase)
 
   out = list(
     interpretationScale = buildExplanationTeachingInterpretationScale(
       audit = audit,
-      responseName = responseName
+      outcomeLabel = outcomeLabel
     ),
     baselineChoice = buildExplanationTeachingBaselineChoice(
       audit = audit,
@@ -48,24 +50,25 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
       factorPredictors = factorPredictors
     ),
     xChangeDescription = buildExplanationTeachingXChangeDescription(
-      responseName = responseName,
       numericPredictors = numericPredictors,
       factorPredictors = factorPredictors,
-      audit = audit
+      outcomeLabel = outcomeLabel
     ),
     mainEffectDescription = buildExplanationTeachingMainEffectDescription(
       audit = audit,
       responseName = responseName,
+      outcomeLabel = outcomeLabel,
       numericPredictors = numericPredictors,
       factorPredictors = factorPredictors
     ),
     uncertaintySummary = buildExplanationTeachingUncertaintySummary(
       audit = audit,
-      responseName = responseName
+      outcomeLabel = outcomeLabel
     ),
     evidenceTable = buildExplanationTeachingEvidenceTable(
       audit = audit,
       responseName = responseName,
+      outcomeLabel = outcomeLabel,
       numericPredictors = numericPredictors,
       factorPredictors = factorPredictors,
       researchQuestion = researchQuestion
@@ -73,7 +76,7 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
     researchQuestionLink = buildExplanationTeachingResearchQuestionLink(
       researchQuestion = researchQuestion,
       responseName = responseName,
-      predictorNames = predictorNames
+      outcomeLabel = outcomeLabel
     )
   )
 
@@ -81,32 +84,117 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
   out
 }
 
-#' Format a variable name for student-facing inline display
+#' Build a student-friendly outcome label
 #'
-#' @param x A variable name.
-#'
-#' @return A single character string wrapped in backticks.
-#' @keywords internal
-formatExplanationTeachingVariable = function(x) {
-
-  paste0("`", x, "`")
-}
-
-#' Collapse variable names into a readable list
-#'
-#' @param x Character vector of variable names.
+#' @param responseNounPhrase Character scalar describing the response.
 #'
 #' @return A single character string.
 #' @keywords internal
-collapseExplanationTeachingVariables = function(x) {
+buildExplanationTeachingOutcomeLabel = function(responseNounPhrase) {
 
+  phrase = trimws(as.character(responseNounPhrase %||% ""))
+  phraseLower = tolower(phrase)
+
+  if (!nzchar(phrase)) {
+    return("the outcome")
+  }
+
+  if (grepl("\\bmark(s)?\\b", phraseLower)) {
+    return("marks")
+  }
+
+  if (grepl("\\bscore(s)?\\b", phraseLower)) {
+    return("scores")
+  }
+
+  phrase
+}
+
+#' Format a teaching number for inline prose
+#'
+#' @param x A numeric-like value.
+#' @param digits Number of decimal places to show when needed.
+#'
+#' @return A single character string.
+#' @keywords internal
+buildExplanationTeachingNumber = function(x, digits = 2) {
+
+  value = suppressWarnings(as.numeric(x))[1]
+
+  if (is.na(value)) {
+    return(as.character(x)[1] %||% "")
+  }
+
+  roundedValue = round(value, digits)
+
+  if (isTRUE(all.equal(roundedValue, round(roundedValue)))) {
+    return(as.character(as.integer(round(roundedValue))))
+  }
+
+  out = formatC(roundedValue, format = "f", digits = digits)
+  out = sub("0+$", "", out)
+  out = sub("\\.$", "", out)
+  out
+}
+
+#' Convert sentence-opening digits into words when simple
+#'
+#' @param text A single character string.
+#'
+#' @return A single character string.
+#' @keywords internal
+spellOutSentenceStartNumber = function(text) {
+
+  text = as.character(text %||% "")
+
+  replacements = c(
+    "0" = "Zero",
+    "1" = "One",
+    "2" = "Two",
+    "3" = "Three",
+    "4" = "Four",
+    "5" = "Five",
+    "6" = "Six",
+    "7" = "Seven",
+    "8" = "Eight",
+    "9" = "Nine",
+    "10" = "Ten"
+  )
+
+  for (digit in names(replacements)) {
+    pattern = paste0("^", digit, "\\b")
+    if (grepl(pattern, text)) {
+      return(sub(pattern, replacements[[digit]], text))
+    }
+  }
+
+  text
+}
+
+#' Wrap variable names in backticks for UI display
+#'
+#' @param x Character vector.
+#'
+#' @return Character vector.
+#' @keywords internal
+backtickNames = function(x) {
+  paste0("`", x, "`")
+}
+
+#' Build a natural language list from names
+#'
+#' @param x Character vector.
+#'
+#' @return A single character string.
+#' @keywords internal
+collapseTeachingNames = function(x) {
+
+  x = as.character(x)
   x = x[!is.na(x) & nzchar(x)]
 
   if (length(x) == 0) {
     return("")
   }
-
-  x = vapply(x, formatExplanationTeachingVariable, character(1))
 
   if (length(x) == 1) {
     return(x)
@@ -119,131 +207,50 @@ collapseExplanationTeachingVariables = function(x) {
   paste0(paste(x[-length(x)], collapse = ", "), ", and ", x[length(x)])
 }
 
-#' Translate audit scale labels into plainer student language
-#'
-#' @param x Scale label from the audit.
-#'
-#' @return A single character string.
-#' @keywords internal
-translateExplanationTeachingScaleLabel = function(x) {
-
-  x = trimws(x %||% "")
-
-  if (!nzchar(x)) {
-    return("a student-friendly set of outcome statements")
-  }
-
-  lookup = c(
-    "response scale" = "the original outcome units",
-    "probability and odds" = "chance of the outcome happening, with odds used only when needed",
-    "expected count" = "predicted counts",
-    "odds multipliers" = "changes in the odds",
-    "expected-count multipliers" = "multiplicative changes in the predicted count",
-    "additive response-scale differences" = "changes in the original outcome units"
-  )
-
-  if (x %in% names(lookup)) {
-    return(unname(lookup[[x]]))
-  }
-
-  if (grepl("^additive differences on the ", x)) {
-    return(sub("^additive differences on the ", "changes on the ", x))
-  }
-
-  x
-}
-
-#' Simplify the audit note about the explanation scale
-#'
-#' @param x Explanation-scale note from the audit.
-#'
-#' @return A single character string.
-#' @keywords internal
-translateExplanationTeachingScaleNote = function(x) {
-
-  x = trimws(x %||% "")
-
-  if (!nzchar(x)) {
-    return("")
-  }
-
-  lookup = c(
-    "The narrative is instructed to describe effects on the odds scale rather than as raw log-odds coefficients." = "So the app talks about changes in odds rather than leaving the result on the harder log-odds scale.",
-    "The narrative is instructed to describe multiplicative changes in the expected count rather than raw log coefficients." = "So the app explains how the predicted count is multiplied, rather than leaving the result on the harder log scale.",
-    "The narrative is instructed to describe additive changes on the response scale." = "So the app keeps the wording in the original outcome units.",
-    "The narrative is instructed to stay on the detected transformed scale rather than inventing an unsupported back-transformation." = "So the app stays on the transformed outcome scale used in the model instead of pretending it can safely convert everything back."
-  )
-
-  if (x %in% names(lookup)) {
-    return(unname(lookup[[x]]))
-  }
-
-  x
-}
-
-#' Make a sentence start from a lower-case audit reason
-#'
-#' @param x Reason text from the audit.
-#'
-#' @return A single character string.
-#' @keywords internal
-sentenceCaseExplanationTeachingReason = function(x) {
-
-  x = trimws(x %||% "")
-
-  if (!nzchar(x)) {
-    return("")
-  }
-
-  paste0(toupper(substr(x, 1, 1)), substring(x, 2))
-}
-
-#' Build the interpretation-scale teaching text
+#' Build the interpretation teaching text
 #'
 #' @param audit A `wmfmExplanationAudit` object.
-#' @param responseName Name of the response variable.
+#' @param outcomeLabel Student-friendly outcome label.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationTeachingInterpretationScale = function(audit, responseName) {
+buildExplanationTeachingInterpretationScale = function(audit, outcomeLabel) {
 
-  fittedScale = translateExplanationTeachingScaleLabel(audit$interpretationScale$fittedValueScale)
-  effectScale = translateExplanationTeachingScaleLabel(audit$interpretationScale$effectScale)
-  backTransformation = trimws(audit$interpretationScale$backTransformation %||% "")
-  scaleNote = translateExplanationTeachingScaleNote(audit$interpretationScale$explanationScaleNote)
-  responseLabel = formatExplanationTeachingVariable(responseName)
+  effectScale = tolower(audit$interpretationScale$effectScale %||% "")
+  backTransformation = audit$interpretationScale$backTransformation %||% ""
 
-  parts = c(
-    paste0(
-      "The app explains ",
-      responseLabel,
-      " in a way that stays close to what students would naturally talk about in class. ",
-      "Here that means using ",
-      fittedScale,
-      " for fitted values and ",
-      effectScale,
-      " for describing change."
+  if (grepl("odds", effectScale)) {
+    text = paste(
+      "The explanation was written in language students can read more easily.",
+      "Instead of leaving results on the raw coefficient scale, the app described changes using odds so the model could be discussed in more familiar terms."
     )
-  )
+  } else if (grepl("multiplicative", effectScale) || grepl("multiplier", effectScale)) {
+    text = paste(
+      "The explanation was written in language students can read more easily.",
+      "Instead of leaving results on the raw coefficient scale, the app described how the expected",
+      outcomeLabel,
+      "changes in multiplicative terms."
+    )
+  } else {
+    text = paste(
+      "The explanation was written in language students can read more easily.",
+      "Instead of leaving results on the raw coefficient scale, the app described how the expected",
+      outcomeLabel,
+      "changes in the original outcome wording."
+    )
+  }
 
   if (nzchar(backTransformation) && !identical(backTransformation, "No back-transformation is required.")) {
-    parts = c(
-      parts,
-      paste0(
-        "Some calculations happen on a less direct model scale first, then are translated into the more readable form used in the explanation. ",
-        backTransformation
-      )
+    text = paste(
+      text,
+      "Where needed, the app also converted fitted values back into a form that matches the explanation students see."
     )
   }
 
-  if (nzchar(scaleNote)) {
-    parts = c(parts, scaleNote)
-  }
-
-  paste(parts, collapse = " ")
+  text
 }
 
-#' Build the baseline-choice teaching text
+#' Build the starting-values teaching text
 #'
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param numericPredictors Character vector of numeric predictor names.
@@ -256,41 +263,53 @@ buildExplanationTeachingBaselineChoice = function(audit, numericPredictors, fact
   parts = character(0)
 
   if (length(numericPredictors) > 0 && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
-    numericText = apply(audit$numericAnchor$table, 1, function(row) {
-      predictorLabel = formatExplanationTeachingVariable(as.character(row[["predictor"]]))
-      reasonText = sentenceCaseExplanationTeachingReason(as.character(row[["reason"]]))
+    numericText = vapply(seq_len(nrow(audit$numericAnchor$table)), function(i) {
+      row = audit$numericAnchor$table[i, , drop = FALSE]
+      predictor = paste0("`", row$predictor[[1]], "`")
+      anchorValue = buildExplanationTeachingNumber(row$anchor[[1]])
+      reasonText = trimws(as.character(row$reason[[1]] %||% ""))
 
-      paste0(
-        "When the app needed a typical starting value for ",
-        predictorLabel,
-        ", it used ",
-        as.character(row[["anchor"]]),
-        ". ",
-        reasonText
-      )
-    })
+      if (grepl("outside the observed range", reasonText, ignore.case = TRUE)) {
+        paste(
+          "When the app needed a typical starting value for",
+          predictor,
+          ", it used",
+          anchorValue,
+          ".",
+          spellOutSentenceStartNumber("0 lies outside the observed range, so the sample mean was used.")
+        )
+      } else {
+        paste(
+          "When the app needed a typical starting value for",
+          predictor,
+          ", it used",
+          anchorValue,
+          ".",
+          if (nzchar(reasonText)) reasonText else "This gave the explanation a realistic place to start."
+        )
+      }
+    }, character(1))
 
     parts = c(
       parts,
       paste(
-        "For number-valued predictors, the app chose realistic starting values instead of automatically pretending every variable begins at 0.",
+        "For number-valued predictors, the app chose realistic starting values instead of automatically pretending every variable begins at zero.",
         paste(numericText, collapse = " ")
       )
     )
   }
 
   if (length(factorPredictors) > 0 && is.data.frame(audit$referenceLevels) && nrow(audit$referenceLevels) > 0) {
-    factorText = apply(audit$referenceLevels, 1, function(row) {
-      predictorLabel = formatExplanationTeachingVariable(as.character(row[["predictor"]]))
-
+    factorText = vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
+      row = audit$referenceLevels[i, , drop = FALSE]
       paste0(
-        "For the group variable ",
-        predictorLabel,
-        ", the app used ",
-        sQuote(as.character(row[["referenceLevel"]])),
-        " as the starting comparison group."
+        "For the group variable `",
+        row$predictor[[1]],
+        "`, the app used '",
+        row$referenceLevel[[1]],
+        "' as the starting comparison group."
       )
-    })
+    }, character(1))
 
     parts = c(
       parts,
@@ -302,7 +321,7 @@ buildExplanationTeachingBaselineChoice = function(audit, numericPredictors, fact
   }
 
   if (length(parts) == 0) {
-    return("No special starting values were needed here, so the explanation could be written without extra comparison settings.")
+    return("No special starting values were needed because there were no number-valued or group predictors that required them.")
   }
 
   paste(parts, collapse = " ")
@@ -310,62 +329,52 @@ buildExplanationTeachingBaselineChoice = function(audit, numericPredictors, fact
 
 #' Build the x-change teaching text
 #'
-#' @param responseName Name of the response variable.
 #' @param numericPredictors Character vector of numeric predictor names.
 #' @param factorPredictors Character vector of factor predictor names.
-#' @param audit A `wmfmExplanationAudit` object.
+#' @param outcomeLabel Student-friendly outcome label.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationTeachingXChangeDescription = function(responseName, numericPredictors, factorPredictors, audit) {
+buildExplanationTeachingXChangeDescription = function(numericPredictors, factorPredictors, outcomeLabel) {
 
   parts = character(0)
-  responseLabel = formatExplanationTeachingVariable(responseName)
 
   if (length(numericPredictors) > 0) {
-    predictorText = collapseExplanationTeachingVariables(numericPredictors)
-
+    numericText = collapseTeachingNames(backtickNames(numericPredictors))
     parts = c(
       parts,
       paste0(
         "For number-valued predictors such as ",
-        predictorText,
-        ", the explanation reads the main effect as what happens to ",
-        responseLabel,
-        " when that predictor goes up by 1 unit, while the other predictors are held at their chosen starting values."
+        numericText,
+        ", the explanation reads the main effect as what happens to the outcome when that predictor goes up by one unit, while the other predictors are held at their chosen starting values."
       )
     )
   }
 
   if (length(factorPredictors) > 0) {
-    predictorText = collapseExplanationTeachingVariables(factorPredictors)
-
+    factorText = collapseTeachingNames(backtickNames(factorPredictors))
     parts = c(
       parts,
       paste0(
         "For group predictors such as ",
-        predictorText,
-        ", the explanation reads the effect as a group comparison, not as a 1-unit increase."
+        factorText,
+        ", the explanation reads the effect as a group comparison, not as a one-unit increase."
       )
     )
   }
 
   if (length(parts) == 0) {
-    parts = c(
-      parts,
-      paste0(
-        "The explanation focuses on how the fitted model changes ",
-        responseLabel,
-        ", but there were no special predictor changes that needed to be highlighted here."
-      )
+    parts = c(parts, "This explanation did not need any special discussion of predictor changes.")
+  }
+
+  parts = c(
+    parts,
+    paste(
+      "So the app keeps the wording in the original outcome wording, here",
+      outcomeLabel,
+      "."
     )
-  }
-
-  scaleNote = translateExplanationTeachingScaleNote(audit$interpretationScale$explanationScaleNote)
-
-  if (nzchar(scaleNote)) {
-    parts = c(parts, scaleNote)
-  }
+  )
 
   paste(parts, collapse = " ")
 }
@@ -374,12 +383,13 @@ buildExplanationTeachingXChangeDescription = function(responseName, numericPredi
 #'
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param responseName Name of the response variable.
+#' @param outcomeLabel Student-friendly outcome label.
 #' @param numericPredictors Character vector of numeric predictor names.
 #' @param factorPredictors Character vector of factor predictor names.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationTeachingMainEffectDescription = function(audit, responseName, numericPredictors, factorPredictors) {
+buildExplanationTeachingMainEffectDescription = function(audit, responseName, outcomeLabel, numericPredictors, factorPredictors) {
 
   effectQuantities = character(0)
 
@@ -387,93 +397,65 @@ buildExplanationTeachingMainEffectDescription = function(audit, responseName, nu
     effectQuantities = unique(stats::na.omit(as.character(audit$effectEvidence$quantity)))
   }
 
-  responseLabel = formatExplanationTeachingVariable(responseName)
-  predictorText = collapseExplanationTeachingVariables(c(numericPredictors, factorPredictors))
-
   if (length(effectQuantities) > 0) {
-    shownExamples = paste(utils::head(effectQuantities, 2), collapse = " and ")
-
-    return(paste0(
-      "The main result was not written by copying the coefficient table straight into words. ",
-      "Instead, the app used calculated results from the fitted model, such as ",
-      shownExamples,
-      ", to show what the model says about ",
-      responseLabel,
-      ". ",
-      if (nzchar(predictorText)) {
-        paste0(
-          "This helps students see the effect of ",
-          predictorText,
-          " in terms of predicted outcomes rather than table entries."
-        )
-      } else {
-        "This keeps the focus on predicted outcomes rather than table entries."
-      }
+    return(paste(
+      "The main effect explanation was built from model-based quantities, not from the raw regression table alone.",
+      "That helped the app explain what changes in",
+      outcomeLabel,
+      "mean in practice."
     ))
   }
 
   if (length(numericPredictors) > 0 || length(factorPredictors) > 0) {
-    return(paste0(
-      "The main result was built by translating the fitted model into plain language. ",
-      "Instead of repeating technical table language, the app summarised what changes in the predictors mean for ",
-      responseLabel,
-      "."
+    return(paste(
+      "The main effect explanation was built by translating the fitted model into plain language.",
+      "Instead of repeating technical coefficient wording, the app focused on how the predictors relate to",
+      outcomeLabel,
+      "in a way students can read more easily."
     ))
   }
 
-  paste0(
-    "The main result was built from the fitted model in plain language so the explanation stays focused on what happens to ",
-    responseLabel,
-    " rather than on technical model output."
+  paste(
+    "The main effect explanation was built from the fitted model in plain language so that the explanation stays focused on what happens to",
+    responseName,
+    "rather than on technical coefficient details."
   )
 }
 
 #' Build the uncertainty teaching text
 #'
 #' @param audit A `wmfmExplanationAudit` object.
-#' @param responseName Name of the response variable.
+#' @param outcomeLabel Student-friendly outcome label.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationTeachingUncertaintySummary = function(audit, responseName) {
+buildExplanationTeachingUncertaintySummary = function(audit, outcomeLabel) {
 
   confidenceLevel = round((audit$confidenceIntervals$level %||% 0.95) * 100)
-  displayedScales = audit$confidenceIntervals$displayedScales %||% character(0)
-  displayedScales = displayedScales[!is.na(displayedScales) & nzchar(displayedScales)]
-  responseLabel = formatExplanationTeachingVariable(responseName)
 
-  summaryText = paste0(
-    "The app showed uncertainty using ",
+  summaryText = paste(
+    "Uncertainty was handled using",
     confidenceLevel,
-    "% confidence intervals. ",
-    "These intervals help students see a range of values that are still reasonably consistent with the fitted model, rather than treating the model as exact. ",
-    "So statements about ",
-    responseLabel,
-    " can stay careful about both direction and size."
+    "% confidence intervals.",
+    "These were used to support careful statements about the likely direction and size of changes in",
+    outcomeLabel,
+    ", rather than presenting the model as exact."
   )
 
-  if (length(displayedScales) > 0) {
-    summaryText = paste0(
-      summaryText,
-      " Where possible, those ranges were shown in the same easy-to-read form used in the explanation: ",
-      paste(vapply(displayedScales, translateExplanationTeachingScaleLabel, character(1)), collapse = ", "),
-      "."
-    )
-  }
+  teachingNote = trimws(as.character(audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% ""))
 
-  teachingNote = trimws(audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% "")
-
-  if (nzchar(teachingNote)) {
+  if (nzchar(teachingNote) && !identical(teachingNote, "coefficient.")) {
     summaryText = paste(summaryText, teachingNote)
   }
 
   summaryText
 }
 
-#' Build the teaching evidence table
+#' Build the teaching evidence list
 #'
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param responseName Name of the response variable.
+#' @param outcomeLabel Student-friendly outcome label.
 #' @param numericPredictors Character vector of numeric predictor names.
 #' @param factorPredictors Character vector of factor predictor names.
 #' @param researchQuestion Optional research question string.
@@ -483,6 +465,7 @@ buildExplanationTeachingUncertaintySummary = function(audit, responseName) {
 buildExplanationTeachingEvidenceTable = function(
     audit,
     responseName,
+    outcomeLabel,
     numericPredictors,
     factorPredictors,
     researchQuestion
@@ -490,41 +473,36 @@ buildExplanationTeachingEvidenceTable = function(
 
   rows = list(
     data.frame(
-      section = "Outcome wording",
-      summary = paste0(
-        "The app explained ",
-        formatExplanationTeachingVariable(responseName),
-        " using ",
-        translateExplanationTeachingScaleLabel(audit$interpretationScale$fittedValueScale),
-        " so the wording stays readable for students."
-      ),
-      stringsAsFactors = FALSE
-    ),
-    data.frame(
-      section = "Starting values",
-      summary = paste0(
-        "When a typical starting value was needed, the app used realistic settings for ",
-        if (length(numericPredictors) > 0) collapseExplanationTeachingVariables(numericPredictors) else "number-valued predictors",
-        " and starting comparison groups for ",
-        if (length(factorPredictors) > 0) collapseExplanationTeachingVariables(factorPredictors) else "group predictors",
+      section = "Scale used",
+      summary = paste(
+        "Explain the model in student-friendly language using the original outcome wording for",
+        outcomeLabel,
         "."
       ),
       stringsAsFactors = FALSE
     ),
     data.frame(
-      section = "Type of change",
+      section = "Starting values",
       summary = paste(
-        "Number-valued predictors were read as 1-unit increases, while group predictors were read as comparisons against a chosen group.",
-        "That lets the app explain what changes in the model mean in everyday terms."
+        "Choose realistic starting values for number-valued predictors and starting comparison groups for group predictors."
       ),
       stringsAsFactors = FALSE
     ),
     data.frame(
-      section = "Range of likely values",
+      section = "Main comparison",
+      summary = if (length(numericPredictors) > 0 || length(factorPredictors) > 0) {
+        "Describe number-valued predictors as one-unit changes and group predictors as comparisons between groups."
+      } else {
+        paste("Use the fitted model to describe changes in", responseName, "in plain language.")
+      },
+      stringsAsFactors = FALSE
+    ),
+    data.frame(
+      section = "Uncertainty",
       summary = paste0(
-        "The explanation used ",
+        "Use ",
         round((audit$confidenceIntervals$level %||% 0.95) * 100),
-        "% confidence intervals so the wording stays cautious about how much uncertainty remains."
+        "% confidence intervals to describe uncertainty carefully."
       ),
       stringsAsFactors = FALSE
     )
@@ -533,7 +511,7 @@ buildExplanationTeachingEvidenceTable = function(
   if (nzchar(researchQuestion)) {
     rows[[length(rows) + 1]] = data.frame(
       section = "Research question",
-      summary = "The explanation was tied back to the supplied research question so the model output answers the question the student cares about, not just the regression table.",
+      summary = "Use the research question to frame the explanation and return to it at the end.",
       stringsAsFactors = FALSE
     )
   }
@@ -545,31 +523,23 @@ buildExplanationTeachingEvidenceTable = function(
 #'
 #' @param researchQuestion Optional research question string.
 #' @param responseName Name of the response variable.
-#' @param predictorNames Character vector of predictor names.
+#' @param outcomeLabel Student-friendly outcome label.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationTeachingResearchQuestionLink = function(researchQuestion, responseName, predictorNames) {
-
-  responseLabel = formatExplanationTeachingVariable(responseName)
-  predictorText = collapseExplanationTeachingVariables(predictorNames)
+buildExplanationTeachingResearchQuestionLink = function(researchQuestion, responseName, outcomeLabel) {
 
   if (!nzchar(trimws(researchQuestion))) {
-    return(paste0(
-      "No separate research question was supplied, so the explanation stays focused on what the predictors tell us about ",
-      responseLabel,
-      ". ",
-      if (nzchar(predictorText)) {
-        paste0("In practice, that means linking changes in ", predictorText, " back to the outcome.")
-      } else {
-        ""
-      }
+    return(paste(
+      "No separate research question was supplied, so the explanation stays focused on how the predictors relate to",
+      outcomeLabel,
+      "."
     ))
   }
 
   paste(
-    "The explanation is linked back to the research question so the model output answers a teaching question, not just a statistical one.",
-    "Here the model explanation should help the student respond to:",
+    "The explanation is linked back to the research question so that the model output answers a teaching goal, not just a statistical one.",
+    "Here, the explanation should help the student judge what the fitted model says about this question:",
     researchQuestion
   )
 }

@@ -13,7 +13,7 @@ renderModelExplanationAuditUi(audit)
 A Shiny UI object.
 }
 \description{
-Creates a student-facing accordion that explains how the model explanation
-was constructed from deterministic inputs and model-derived evidence.
+Creates a student-facing note explaining that the app now shows a teaching
+summary rather than the raw audit structure directly.
 }
 \keyword{internal}

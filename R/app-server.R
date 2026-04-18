@@ -3353,6 +3353,13 @@ $$")
     }
 
     tagList(
+      if (!is.null(teachingSummary)) {
+        tagList(
+          tags$h5("How this explanation was constructed"),
+          renderExplanationTeachingSummaryUi(teachingSummary),
+          tags$hr()
+        )
+      },
       if (!is.null(expl)) {
         tags$pre(
           style = "white-space: pre-wrap; word-wrap: break-word;",
@@ -3360,13 +3367,6 @@ $$")
         )
       } else {
         helpText("No LLM explanation was generated, but the teaching summary is still available below.")
-      },
-      if (!is.null(teachingSummary)) {
-        tagList(
-          tags$hr(),
-          tags$h5("How this explanation was constructed"),
-          renderExplanationTeachingSummaryUi(teachingSummary)
-        )
       }
     )
   })
