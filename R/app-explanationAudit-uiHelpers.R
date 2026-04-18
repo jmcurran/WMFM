@@ -9,113 +9,100 @@
 #' @keywords internal
 #' @importFrom bslib accordion accordion_panel
 #' @importFrom htmltools tagList tags
-#' @importFrom shiny tableOutput
 renderModelExplanationAuditUi = function(audit) {
 
   if (is.null(audit)) {
     return(NULL)
   }
 
-  makeKv = function(label, value) {
-    tags$div(
-      tags$strong(paste0(label, ": ")),
-      as.character(value)
+  tagList(
+    tags$p(
+      "The raw explanation audit is available for internal QA and testing, but the student-facing app now uses the teaching summary instead of exposing these details directly."
     )
-  }
-
-  numericAnchorItems = list()
-  if (nzchar(audit$numericAnchor$note %||% "")) {
-    numericAnchorItems[[length(numericAnchorItems) + 1]] = tags$p(audit$numericAnchor$note)
-  }
-  if (is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
-    numericAnchorItems[[length(numericAnchorItems) + 1]] = tags$h5("Numeric predictors")
-    numericAnchorItems[[length(numericAnchorItems) + 1]] = tableOutput("model_explanation_audit_numeric_anchor")
-  }
-  if (is.data.frame(audit$referenceLevels) && nrow(audit$referenceLevels) > 0) {
-    numericAnchorItems[[length(numericAnchorItems) + 1]] = tags$h5("Factor reference levels")
-    numericAnchorItems[[length(numericAnchorItems) + 1]] = tableOutput("model_explanation_audit_reference_levels")
-  }
-
-  ciEvidenceItems = list(
-    makeKv("Confidence level", "95%"),
-    makeKv("CI summary mode", audit$confidenceIntervals$mode %||% "")
   )
-  if (length(audit$confidenceIntervals$displayedScales %||% character(0)) > 0) {
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = makeKv(
-      "Displayed scales",
-      paste(audit$confidenceIntervals$displayedScales, collapse = ", ")
-    )
-  }
-  if (nzchar(audit$confidenceIntervals$note %||% "")) {
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = tags$p(audit$confidenceIntervals$note)
-  }
-  if (is.data.frame(audit$baselineEvidence) && nrow(audit$baselineEvidence) > 0) {
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = tags$h5("Baseline quantities")
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = tableOutput("model_explanation_audit_baseline")
-  }
-  if (is.data.frame(audit$effectEvidence) && nrow(audit$effectEvidence) > 0) {
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = tags$h5("Effect quantities")
-    ciEvidenceItems[[length(ciEvidenceItems) + 1]] = tableOutput("model_explanation_audit_effects")
+}
+
+#' Render the explanation teaching summary for the app
+#'
+#' Creates a student-facing accordion that explains, in plain language, how the
+#' explanation was constructed from the deterministic audit.
+#'
+#' @param summary A `wmfmExplanationTeachingSummary` object, or `NULL`.
+#'
+#' @return A Shiny UI object.
+#' @keywords internal
+#' @importFrom bslib accordion accordion_panel
+#' @importFrom htmltools tagList tags
+renderExplanationTeachingSummaryUi = function(summary) {
+
+  if (is.null(summary)) {
+    return(NULL)
   }
 
-  promptItems = list(
-    makeKv("Response", audit$promptInputs$response %||% ""),
-    makeKv("Response description", audit$promptInputs$responseNounPhrase %||% ""),
-    makeKv("Predictors", paste(audit$promptInputs$predictors %||% character(0), collapse = ", ")),
-    makeKv("Dataset context used", if (isTRUE(audit$promptInputs$datasetContextUsed)) "Yes" else "No"),
-    makeKv("Research question used", if (isTRUE(audit$promptInputs$researchQuestionUsed)) "Yes" else "No")
-  )
-  if (isTRUE(audit$promptInputs$researchQuestionUsed)) {
-    promptItems[[length(promptItems) + 1]] = makeKv(
-      "Research question",
-      audit$promptInputs$researchQuestion %||% ""
-    )
+  makeParagraph = function(text) {
+    tags$p(text %||% "")
   }
 
-  panels = list(
-    accordion_panel(
-      title = "What this panel is showing",
-      do.call(tagList, list(tags$p(audit$transparencyNote)))
-    ),
-    accordion_panel(
-      title = "Prompt ingredients",
-      do.call(tagList, promptItems)
-    ),
-    accordion_panel(
-      title = "Interpretation rules applied",
-      tags$ul(
-        lapply(audit$promptRules %||% character(0), tags$li)
+  makeEvidenceTable = function(df) {
+    if (!is.data.frame(df) || nrow(df) == 0) {
+      return(tags$p("No extra evidence details were needed for this explanation."))
+    }
+
+    header = tags$tr(
+      lapply(names(df), function(name) {
+        tags$th(name)
+      })
+    )
+
+    body = lapply(seq_len(nrow(df)), function(i) {
+      tags$tr(
+        lapply(df[i, , drop = FALSE], function(value) {
+          tags$td(as.character(value))
+        })
       )
-    ),
-    accordion_panel(
-      title = "Interpretation scale and back-transformation",
-      tagList(
-        makeKv("Response expression", audit$interpretationScale$responseExpression %||% ""),
-        makeKv("Fitted-value scale", audit$interpretationScale$fittedValueScale %||% ""),
-        makeKv("Effect scale", audit$interpretationScale$effectScale %||% ""),
-        makeKv("Back-transformation", audit$interpretationScale$backTransformation %||% ""),
-        tags$p(audit$interpretationScale$explanationScaleNote %||% "")
-      )
-    ),
-    accordion_panel(
-      title = "Numeric anchors and reference levels",
-      do.call(tagList, numericAnchorItems)
-    ),
-    accordion_panel(
-      title = "Confidence-interval evidence used",
-      do.call(tagList, ciEvidenceItems)
+    })
+
+    tags$table(
+      class = "table table-sm table-striped",
+      tags$thead(header),
+      tags$tbody(body)
     )
-  )
+  }
 
   do.call(
     accordion,
-    c(
-      list(
-        id = "model_explanation_audit",
-        multiple = TRUE,
-        open = FALSE
+    list(
+      id = "model_explanation_teaching_summary",
+      multiple = TRUE,
+      open = FALSE,
+      accordion_panel(
+        title = "Interpretation scale",
+        makeParagraph(summary$interpretationScale)
       ),
-      panels
+      accordion_panel(
+        title = "Reference and baseline choices",
+        makeParagraph(summary$baselineChoice)
+      ),
+      accordion_panel(
+        title = "What change is being interpreted",
+        makeParagraph(summary$xChangeDescription)
+      ),
+      accordion_panel(
+        title = "Main effect interpretation",
+        makeParagraph(summary$mainEffectDescription)
+      ),
+      accordion_panel(
+        title = "How uncertainty was handled",
+        makeParagraph(summary$uncertaintySummary)
+      ),
+      accordion_panel(
+        title = "Summary of evidence used",
+        makeEvidenceTable(summary$evidenceTable)
+      ),
+      accordion_panel(
+        title = "Connection to the research question",
+        makeParagraph(summary$researchQuestionLink)
+      )
     )
   )
 }

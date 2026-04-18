@@ -3337,6 +3337,21 @@ $$")
       return(helpText("Fit a model to see a textual explanation."))
     }
 
+    teachingSummary = NULL
+
+    if (!is.null(audit) && !is.null(m)) {
+      teachingSummary = tryCatch(
+        buildExplanationTeachingSummary(
+          audit = audit,
+          model = m,
+          researchQuestion = rv$researchQuestion %||% NULL
+        ),
+        error = function(e) {
+          NULL
+        }
+      )
+    }
+
     tagList(
       if (!is.null(expl)) {
         tags$pre(
@@ -3344,13 +3359,13 @@ $$")
           expl
         )
       } else {
-        helpText("No LLM explanation was generated, but the explanation audit is still available below.")
+        helpText("No LLM explanation was generated, but the teaching summary is still available below.")
       },
-      if (!is.null(audit)) {
+      if (!is.null(teachingSummary)) {
         tagList(
           tags$hr(),
           tags$h5("How this explanation was constructed"),
-          renderModelExplanationAuditUi(audit)
+          renderExplanationTeachingSummaryUi(teachingSummary)
         )
       }
     )
