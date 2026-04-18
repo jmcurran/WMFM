@@ -178,6 +178,7 @@ appServer = function(input, output, session) {
     modelEquations = NULL,
     modelExplanation = NULL,
     modelExplanationAudit = NULL,
+    modelExplanationTutor = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
     lastFactors = character(0),
@@ -439,6 +440,7 @@ appServer = function(input, output, session) {
     rv$modelEquations = NULL
     rv$modelExplanation = NULL
     rv$modelExplanationAudit = NULL
+    rv$modelExplanationTutor = NULL
     rv$modelContext = NULL
 
     # Reset tracking + factor prompt state
@@ -3060,6 +3062,7 @@ $$")
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
       rv$modelExplanationAudit = explanationAudit
+      rv$modelExplanationTutor = NULL
 
       finishMessages = buildAppOutputMessages(
         equationMethod = equationResults$equationMethodUsed %||% "deterministic",
@@ -3070,8 +3073,8 @@ $$")
       incProgress(0.10, detail = finishMessages$finishDetail)
       incProgress(0.10, detail = finishMessages$doneDetail)
     })
-    # After fitting and LLM completion, switch to the "Fitted Model" tab
-    updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
+    # After fitting and LLM completion, switch to the explanation tab
+    updateTabsetPanel(session, "main_tabs", selected = "Model Explanation")
   })
 
   # -------------------------------------------------------------------
@@ -3331,6 +3334,7 @@ $$")
   output$model_explanation = renderUI({
     expl = rv$modelExplanation
     audit = rv$modelExplanationAudit
+    tutorText = rv$modelExplanationTutor
     m = modelFit()
 
     if (is.null(expl) && is.null(audit)) {
@@ -3353,22 +3357,112 @@ $$")
     }
 
     tagList(
-      if (!is.null(teachingSummary)) {
-        tagList(
-          tags$h5("How this explanation was constructed"),
-          renderExplanationTeachingSummaryUi(teachingSummary),
-          tags$hr()
-        )
-      },
       if (!is.null(expl)) {
-        tags$pre(
-          style = "white-space: pre-wrap; word-wrap: break-word;",
-          expl
+        tags$div(
+          class = "wmfm-explanation-box",
+          tags$pre(
+            style = "white-space: pre-wrap; word-wrap: break-word; margin-bottom: 0;",
+            expl
+          )
         )
       } else {
         helpText("No LLM explanation was generated, but the teaching summary is still available below.")
+      },
+      if (!is.null(teachingSummary)) {
+        tagList(
+          tags$hr(),
+          tags$div(
+            class = "wmfm-explanation-helper-box",
+            tags$div(
+              class = "wmfm-explanation-helper-note",
+              "Want a more conversational explanation? You can optionally ask the app for a tutor-style explanation that is guided by the information already shown here."
+            ),
+            actionButton(
+              inputId = "modelExplanationTutorBtn",
+              label = "Explain this more simply with AI",
+              class = "btn btn-secondary btn-sm"
+            ),
+            tags$br(),
+            tags$br(),
+            renderExplanationTutorUi(
+              text = tutorText,
+              available = !is.null(rv$chatProvider)
+            )
+          ),
+          tags$h5("How this explanation was constructed"),
+          renderExplanationTeachingSummaryUi(teachingSummary)
+        )
       }
     )
+  })
+
+  observeEvent(input$modelExplanationTutorBtn, {
+    audit = rv$modelExplanationAudit
+    m = modelFit()
+
+    if (is.null(audit) || is.null(m)) {
+      showNotification(
+        "Fit a model first so the app has something to explain.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
+
+    if (is.null(rv$chatProvider)) {
+      showNotification(
+        "An active chat provider is needed for the tutor-style explanation.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
+
+    teachingSummary = tryCatch(
+      buildExplanationTeachingSummary(
+        audit = audit,
+        model = m,
+        researchQuestion = rv$researchQuestion %||% NULL
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+
+    if (is.null(teachingSummary)) {
+      showNotification(
+        "The teaching summary could not be built for this model.",
+        type = "error",
+        duration = 8
+      )
+      return(NULL)
+    }
+
+    withProgress(message = "Generating tutor-style explanation...", value = 0, {
+      incProgress(0.25, detail = "Preparing the teaching summary")
+
+      tutorText = buildAppTeachingTutorExplanation(
+        teachingSummary = teachingSummary,
+        chatProvider = rv$chatProvider,
+        modelExplanation = rv$modelExplanation,
+        researchQuestion = rv$researchQuestion %||% NULL
+      )
+
+      incProgress(0.60, detail = "Waiting for the chat provider")
+      incProgress(0.15, detail = "Updating the explanation tab")
+
+      rv$modelExplanationTutor = tutorText
+
+      incProgress(0.00, detail = "Done")
+    })
+
+    if (is.null(rv$modelExplanationTutor) || !nzchar(trimws(rv$modelExplanationTutor))) {
+      showNotification(
+        "The tutor-style explanation could not be generated this time.",
+        type = "warning",
+        duration = 8
+      )
+    }
   })
 
   # -------------------------------------------------------------------

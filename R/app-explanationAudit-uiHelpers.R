@@ -106,6 +106,10 @@ renderExplanationTeachingSummaryUi = function(summary) {
       multiple = TRUE,
       open = FALSE,
       accordion_panel(
+        title = "Main pieces of information used",
+        makeEvidenceList(summary$evidenceTable)
+      ),
+      accordion_panel(
         title = "Scale used for the explanation",
         makeParagraph(summary$interpretationScale)
       ),
@@ -126,13 +130,41 @@ renderExplanationTeachingSummaryUi = function(summary) {
         makeParagraph(summary$uncertaintySummary)
       ),
       accordion_panel(
-        title = "Main pieces of information used",
-        makeEvidenceList(summary$evidenceTable)
-      ),
-      accordion_panel(
         title = "Connection to the research question",
         makeParagraph(summary$researchQuestionLink)
       )
     )
+  )
+}
+
+
+#' Render the optional tutor-style explanation UI
+#'
+#' @param text Optional character scalar returned by the chat provider.
+#' @param available Logical; whether a chat provider is available.
+#'
+#' @return A Shiny UI object.
+#' @keywords internal
+#' @importFrom htmltools tagList tags
+renderExplanationTutorUi = function(text = NULL, available = TRUE) {
+
+  if (!isTRUE(available) && (is.null(text) || !nzchar(trimws(text %||% "")))) {
+    return(tags$p(
+      class = "wmfm-explanation-helper-note",
+      "An AI tutor-style explanation is available only when a chat provider is active."
+    ))
+  }
+
+  if (is.null(text) || !nzchar(trimws(text %||% ""))) {
+    return(tags$p(
+      class = "wmfm-explanation-helper-note",
+      "Use the button above if you would like a more conversational explanation of why the app described the model this way."
+    ))
+  }
+
+  tags$div(
+    class = "wmfm-explanation-helper-box",
+    tags$strong("AI tutor-style explanation"),
+    renderTeachingSummaryText(text)
   )
 }
