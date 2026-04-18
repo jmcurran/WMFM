@@ -25,8 +25,9 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
   testthat::expect_true(is.data.frame(out$evidenceTable))
   testthat::expect_true(nrow(out$evidenceTable) >= 4)
   testthat::expect_true(all(c("section", "summary") %in% names(out$evidenceTable)))
-  testthat::expect_match(out$baselineChoice, "sample mean|automatically using 0")
-  testthat::expect_match(out$xChangeDescription, "one-unit increase")
+  testthat::expect_match(out$baselineChoice, "pretending every variable begins at 0|starting value")
+  testthat::expect_match(out$xChangeDescription, "goes up by 1 unit")
+  testthat::expect_match(out$xChangeDescription, "`Test`")
   testthat::expect_match(out$researchQuestionLink, "Does Test help explain Exam\\?")
 })
 
@@ -49,13 +50,17 @@ testthat::test_that("buildExplanationTeachingSummary fills all fields when no re
   testthat::expect_false(any(vapply(out, is.null, logical(1))))
 })
 
-testthat::test_that("renderExplanationTeachingSummaryUi returns a UI object", {
+testthat::test_that("renderExplanationTeachingSummaryUi returns a UI object with code-style variable chips", {
   df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   model = stats::lm(Exam ~ Test, data = df)
   audit = buildModelExplanationAudit(model)
   summary = buildExplanationTeachingSummary(audit = audit, model = model)
   ui = renderExplanationTeachingSummaryUi(summary)
+  rendered = htmltools::renderTags(ui)$html
 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
+  testthat::expect_match(rendered, "<code")
+  testthat::expect_match(rendered, "Test")
+  testthat::expect_match(rendered, "How the outcome was described")
 })
