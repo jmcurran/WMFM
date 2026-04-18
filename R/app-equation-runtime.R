@@ -104,6 +104,26 @@ buildAppExplanation = function(
   )
 }
 
+#' Build app-side explanation audit output for a fitted model
+#'
+#' Creates the deterministic audit trail used by the transparency panel in the
+#' app. This does not depend on an active chat provider.
+#'
+#' @param model A fitted model object, typically of class `lm` or `glm`.
+#'
+#' @return A `wmfmExplanationAudit` object or `NULL` if audit construction
+#'   fails.
+#' @keywords internal
+buildAppExplanationAudit = function(model) {
+
+  tryCatch(
+    buildModelExplanationAudit(model = model),
+    error = function(e) {
+      NULL
+    }
+  )
+}
+
 #' Build app-side equation and explanation outputs for a fitted model
 #'
 #' Centralises the logic used by the app after a model has been fitted.
@@ -121,8 +141,8 @@ buildAppExplanation = function(
 #' @param equationMethod Character string giving the equation engine. Must be
 #'   one of `"deterministic"` or `"llm"`. Defaults to `"deterministic"`.
 #'
-#' @return A named list with elements `equations`, `explanation`, and
-#'   `equationMethodUsed`.
+#' @return A named list with elements `equations`, `explanation`,
+#'   `explanationAudit`, and `equationMethodUsed`.
 #' @keywords internal
 buildAppModelOutputs = function(
     model,
@@ -143,9 +163,12 @@ buildAppModelOutputs = function(
     useExplanationCache = useExplanationCache
   )
 
+  explanationAudit = buildAppExplanationAudit(model = model)
+
   list(
     equations = equationResults$equations,
     explanation = explanation,
+    explanationAudit = explanationAudit,
     equationMethodUsed = equationResults$equationMethodUsed,
     equationFallbackUsed = equationResults$equationFallbackUsed
   )

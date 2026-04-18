@@ -177,6 +177,7 @@ appServer = function(input, output, session) {
     autoFormula = "",
     modelEquations = NULL,
     modelExplanation = NULL,
+    modelExplanationAudit = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
     lastFactors = character(0),
@@ -437,6 +438,7 @@ appServer = function(input, output, session) {
     modelFit(NULL)
     rv$modelEquations = NULL
     rv$modelExplanation = NULL
+    rv$modelExplanationAudit = NULL
     rv$modelContext = NULL
 
     # Reset tracking + factor prompt state
@@ -3051,11 +3053,13 @@ $$")
         model = m,
         chatProvider = chatProvider
       )
+      explanationAudit = buildAppExplanationAudit(model = m)
 
       incProgress(0.35, detail = outputMessages$updateDetail)
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
+      rv$modelExplanationAudit = explanationAudit
 
       finishMessages = buildAppOutputMessages(
         equationMethod = equationResults$equationMethodUsed %||% "deterministic",
@@ -3284,19 +3288,71 @@ $$")
   # -------------------------------------------------------------------
   # Model explanation
   # -------------------------------------------------------------------
+  output$model_explanation_audit_numeric_anchor = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$numericAnchor$table) || nrow(audit$numericAnchor$table) == 0) {
+      return(NULL)
+    }
+
+    audit$numericAnchor$table
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_reference_levels = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$referenceLevels) || nrow(audit$referenceLevels) == 0) {
+      return(NULL)
+    }
+
+    audit$referenceLevels
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_baseline = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$baselineEvidence) || nrow(audit$baselineEvidence) == 0) {
+      return(NULL)
+    }
+
+    audit$baselineEvidence
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_effects = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$effectEvidence) || nrow(audit$effectEvidence) == 0) {
+      return(NULL)
+    }
+
+    audit$effectEvidence
+  }, rownames = FALSE)
+
   output$model_explanation = renderUI({
     expl = rv$modelExplanation
+    audit = rv$modelExplanationAudit
     m = modelFit()
 
-    if (is.null(expl)) {
+    if (is.null(expl) && is.null(audit)) {
       return(helpText("Fit a model to see a textual explanation."))
     }
 
     tagList(
-      tags$pre(
-        style = "white-space: pre-wrap; word-wrap: break-word;",
-        expl
-      )
+      if (!is.null(expl)) {
+        tags$pre(
+          style = "white-space: pre-wrap; word-wrap: break-word;",
+          expl
+        )
+      } else {
+        helpText("No LLM explanation was generated, but the explanation audit is still available below.")
+      },
+      if (!is.null(audit)) {
+        tagList(
+          tags$hr(),
+          tags$h5("How this explanation was constructed"),
+          renderModelExplanationAuditUi(audit)
+        )
+      }
     )
   })
 

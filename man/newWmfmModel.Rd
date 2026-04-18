@@ -13,6 +13,7 @@ newWmfmModel(
   researchQuestion = NULL,
   equations = NULL,
   explanation = NULL,
+  explanationAudit = NULL,
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   meta = list()
@@ -35,6 +36,8 @@ question associated with the fitted model.}
 \item{equations}{Generated equations object, or \code{NULL}.}
 
 \item{explanation}{Generated explanation text, or \code{NULL}.}
+
+\item{explanationAudit}{Deterministic explanation-audit object, or \code{NULL}.}
 
 \item{interactionTerms}{Character vector of fitted interaction-term names.}
 
