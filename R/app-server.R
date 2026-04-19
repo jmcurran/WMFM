@@ -2242,6 +2242,9 @@ $$")
 
     choices = setNames(choiceValues, choiceLabels)
 
+    currentSelected = input$interactions %||% character(0)
+    selected = intersect(currentSelected, choiceValues)
+
     infoText = NULL
     if (length(predsAll) > 3) {
       infoText = helpText(
@@ -2263,7 +2266,7 @@ $$")
         inputId  = "interactions",
         label    = NULL,
         choices  = choices,
-        selected = character(0),
+        selected = selected,
         multiple = TRUE,
         width    = "100%"
       )
@@ -2445,6 +2448,11 @@ $$")
       factors = buckets$factors
       cont = buckets$continuous
       resp = input$response_var
+
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -2687,8 +2695,8 @@ $$")
   getCurrentBuckets = function() {
     vars = rv$allVars %||% character(0)
 
-    factors = intersect(rv$bucketFactors %||% character(0), vars)
-    cont = intersect(rv$bucketContinuous %||% character(0), vars)
+    factors = intersect(input$factors %||% character(0), vars)
+    cont = intersect(input$continuous %||% character(0), vars)
 
     list(
       factors = factors,
@@ -2703,8 +2711,8 @@ $$")
   observeEvent(
     list(
       input$response_var,
-      rv$bucketFactors,
-      rv$bucketContinuous,
+      input$factors,
+      input$continuous,
       input$interactions,
       input$expert_mode
     ),
