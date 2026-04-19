@@ -207,6 +207,7 @@ appServer = function(input, output, session) {
     lastResponse = NULL,
     lastFactors = character(0),
     pendingFactorVar = NULL,
+    pendingExampleInteractions = character(0),
     chatProvider = NULL,
     contrastLlmCache = new.env(parent = emptyenv()),
     modelContext = NULL,
@@ -218,8 +219,7 @@ appServer = function(input, output, session) {
     availableOllamaModels = "gpt-oss",
     userDatasetContext = "",
     researchQuestion = "",
-    loadedExample = NULL,
-    pendingInteractions = character(0)
+    loadedExample = NULL
   )
 
 
@@ -498,6 +498,7 @@ appServer = function(input, output, session) {
     rv$lastResponse = NULL
     rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
 
     # Clear bucket state
     setBucketState(
@@ -549,13 +550,6 @@ appServer = function(input, output, session) {
 
     continuousVars = setdiff(mainEffectTerms, factorVars)
 
-    modelFit(NULL)
-    rv$modelEquations = NULL
-    rv$modelExplanation = NULL
-    rv$modelExplanationAudit = NULL
-    rv$modelExplanationTutor = NULL
-    rv$modelContext = NULL
-
     setBucketState(
       factors = intersect(factorVars, rv$allVars),
       continuous = intersect(continuousVars, rv$allVars)
@@ -563,7 +557,7 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
-    rv$pendingInteractions = interactionTerms
+    rv$pendingExampleInteractions = interactionTerms
 
     updateSelectInput(
       session,
@@ -576,6 +570,12 @@ appServer = function(input, output, session) {
       session,
       "model_type",
       selected = spec$modelType %||% "lm"
+    )
+
+    updateSelectInput(
+      session,
+      "interactions",
+      selected = interactionTerms
     )
 
     rv$autoFormula = spec$formula %||% ""
@@ -2244,15 +2244,12 @@ $$")
 
     choices = setNames(choiceValues, choiceLabels)
 
-    currentSelected = input$interactions %||% character(0)
-    pendingSelected = rv$pendingInteractions %||% character(0)
-    selected = currentSelected
-
-    if (length(selected) == 0 && length(pendingSelected) > 0) {
-      selected = pendingSelected
-    }
-
-    selected = intersect(selected, choiceValues)
+    currentInteractions = input$interactions %||% character(0)
+    pendingInteractions = rv$pendingExampleInteractions %||% character(0)
+    selectedInteractions = intersect(
+      unique(c(pendingInteractions, currentInteractions)),
+      choiceValues
+    )
 
     infoText = NULL
     if (length(predsAll) > 3) {
@@ -2275,7 +2272,7 @@ $$")
         inputId  = "interactions",
         label    = NULL,
         choices  = choices,
-        selected = selected,
+        selected = selectedInteractions,
         multiple = TRUE,
         width    = "100%"
       )
@@ -2442,6 +2439,14 @@ $$")
 
 
   # -------------------------------------------------------------------
+  observeEvent(input$interactions, {
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
+
+    rv$pendingExampleInteractions = character(0)
+  }, ignoreInit = TRUE)
+
   # When user selects "All possible interactions", expand to all codes
   # -------------------------------------------------------------------
   observeEvent(
@@ -2457,6 +2462,11 @@ $$")
       factors = buckets$factors
       cont = buckets$continuous
       resp = input$response_var
+
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -2659,16 +2669,8 @@ $$")
 
     choices = setNames(vars, labels)
 
-    current = input$response_var %||% ""
-    remembered = rv$lastResponse %||% ""
-
-    if (nzchar(current) && current %in% vars) {
-      selected = current
-    } else if (nzchar(remembered) && remembered %in% vars) {
-      selected = remembered
-    } else {
-      selected = vars[1]
-    }
+    current = rv$lastResponse %||% input$response_var %||% ""
+    selected = if (nzchar(current) && current %in% vars) current else vars[1]
 
     selectInput(
       inputId  = "response_var",
@@ -2846,6 +2848,7 @@ $$")
     rv$lastFactors      = input$factors %||% character(0)
     v                   = rv$pendingFactorVar
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
 
     showNotification(
       paste0(
@@ -2873,6 +2876,7 @@ $$")
     )
 
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
   }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
