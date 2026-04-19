@@ -548,14 +548,6 @@ appServer = function(input, output, session) {
 
     continuousVars = setdiff(mainEffectTerms, factorVars)
 
-    modelFit(NULL)
-    rv$modelEquations = NULL
-    rv$modelExplanation = NULL
-    rv$modelExplanationAudit = NULL
-    rv$modelExplanationTutor = NULL
-    rv$modelContext = NULL
-    rv$pendingFactorVar = NULL
-
     setBucketState(
       factors = intersect(factorVars, rv$allVars),
       continuous = intersect(continuousVars, rv$allVars)
@@ -563,13 +555,6 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
-    rv$autoFormula = spec$formula %||% ""
-
-    freezeReactiveValue(input, "factors")
-    freezeReactiveValue(input, "continuous")
-    freezeReactiveValue(input, "interactions")
-    freezeReactiveValue(input, "formula_text")
-    freezeReactiveValue(input, "response_var")
 
     updateSelectInput(
       session,
@@ -590,6 +575,7 @@ appServer = function(input, output, session) {
       selected = interactionTerms
     )
 
+    rv$autoFormula = spec$formula %||% ""
     updateTextInput(session, "formula_text", value = spec$formula %||% "")
     updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
   }
@@ -2122,14 +2108,7 @@ $$")
     )
 
     updateRadioButtons(session, "data_source", selected = "upload")
-
-    rv$isResetting = TRUE
-    on.exit({
-      session$onFlushed(function() {
-        rv$isResetting = FALSE
-      }, once = TRUE)
-    }, add = TRUE)
-
+    resetModelPage(resetResponse = FALSE)
     applyLoadedExampleToInputs(exampleInfo)
 
     exampleLoadStatus(
@@ -2708,8 +2687,8 @@ $$")
   getCurrentBuckets = function() {
     vars = rv$allVars %||% character(0)
 
-    factors = intersect(input$factors %||% character(0), vars)
-    cont = intersect(input$continuous %||% character(0), vars)
+    factors = intersect(rv$bucketFactors %||% character(0), vars)
+    cont = intersect(rv$bucketContinuous %||% character(0), vars)
 
     list(
       factors = factors,
@@ -2724,8 +2703,8 @@ $$")
   observeEvent(
     list(
       input$response_var,
-      input$factors,
-      input$continuous,
+      rv$bucketFactors,
+      rv$bucketContinuous,
       input$interactions,
       input$expert_mode
     ),
@@ -2747,6 +2726,11 @@ $$")
       factors = buckets$factors
       cont = buckets$continuous
       ints = input$interactions %||% character(0)
+
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
