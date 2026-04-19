@@ -3073,8 +3073,8 @@ $$")
       incProgress(0.10, detail = finishMessages$finishDetail)
       incProgress(0.10, detail = finishMessages$doneDetail)
     })
-    # After fitting and LLM completion, switch to the explanation tab
-    updateTabsetPanel(session, "main_tabs", selected = "Model Explanation")
+    # After fitting and LLM completion, return to the fitted model tab
+    updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
   })
 
   # -------------------------------------------------------------------
@@ -3371,26 +3371,35 @@ $$")
       if (!is.null(teachingSummary)) {
         tagList(
           tags$hr(),
-          tags$div(
-            class = "wmfm-explanation-helper-box",
-            tags$div(
-              class = "wmfm-explanation-helper-note",
-              "Want a more conversational explanation? You can optionally ask the app for a tutor-style explanation that is guided by the information already shown here."
-            ),
-            actionButton(
-              inputId = "modelExplanationTutorBtn",
-              label = "Explain this more simply with AI",
-              class = "btn btn-secondary btn-sm"
-            ),
-            tags$br(),
-            tags$br(),
-            renderExplanationTutorUi(
-              text = tutorText,
-              available = !is.null(rv$chatProvider)
-            )
-          ),
           tags$h5("How this explanation was constructed"),
-          renderExplanationTeachingSummaryUi(teachingSummary)
+          renderExplanationTeachingSummaryUi(teachingSummary),
+          tags$br(),
+          bslib::accordion(
+            id = "model_explanation_tutor_accordion",
+            multiple = TRUE,
+            open = FALSE,
+            bslib::accordion_panel(
+              title = "Tutor-style AI explanation",
+              tags$div(
+                class = "wmfm-explanation-helper-box",
+                tags$div(
+                  class = "wmfm-explanation-helper-note",
+                  "Want a more conversational explanation? You can optionally ask the app for a tutor-style explanation that is guided by the information already shown here."
+                ),
+                actionButton(
+                  inputId = "modelExplanationTutorBtn",
+                  label = "Explain this more simply with AI",
+                  class = "btn btn-secondary btn-sm"
+                ),
+                tags$br(),
+                tags$br(),
+                renderExplanationTutorUi(
+                  text = tutorText,
+                  available = !is.null(rv$chatProvider)
+                )
+              )
+            )
+          )
         )
       }
     )

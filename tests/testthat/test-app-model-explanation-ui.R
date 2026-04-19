@@ -68,3 +68,28 @@ testthat::test_that("buildAppTeachingTutorExplanation uses a chat provider when 
 
   testthat::expect_identical(out, "This is a simpler tutor-style explanation.")
 })
+
+getAppServerTextForTest = function() {
+  paste(deparse(body(appServer)), collapse = "\n")
+}
+
+testthat::test_that("app server keeps fitted model as the post-fit landing tab", {
+  serverText = getAppServerTextForTest()
+
+  testthat::expect_match(
+    serverText,
+    'updateTabsetPanel\\(session, "main_tabs", selected = "Fitted Model"\\)'
+  )
+  testthat::expect_no_match(serverText, 'selected = "Model Explanation"')
+})
+
+testthat::test_that("tutor-style explanation appears after the deterministic accordions", {
+  serverText = getAppServerTextForTest()
+
+  teachingPos = regexpr('renderExplanationTeachingSummaryUi\\(teachingSummary\\)', serverText, perl = TRUE)[1]
+  tutorPos = regexpr('model_explanation_tutor_accordion', serverText, fixed = TRUE)[1]
+
+  testthat::expect_true(teachingPos > 0)
+  testthat::expect_true(tutorPos > 0)
+  testthat::expect_lt(teachingPos, tutorPos)
+})
