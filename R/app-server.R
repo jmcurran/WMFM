@@ -477,19 +477,12 @@ appServer = function(input, output, session) {
     invisible(changed)
   }
 
-  beginModelInputReset = function() {
-    rv$isResetting = TRUE
-  }
-
-  endModelInputResetAfterFlush = function() {
-    session$onFlushed(function() {
-      rv$isResetting = FALSE
-    }, once = TRUE)
-  }
-
   resetModelPage = function(resetResponse = TRUE) {
 
-    beginModelInputReset()
+    rv$isResetting = TRUE
+    on.exit({
+      rv$isResetting = FALSE
+    }, add = TRUE)
 
     # Clear fitted model + LLM outputs
     modelFit(NULL)
@@ -537,8 +530,6 @@ appServer = function(input, output, session) {
         selected = rv$allVars[1]
       )
     }
-
-    endModelInputResetAfterFlush()
   }
 
   applyLoadedExampleToInputs = function(exampleInfo) {
@@ -557,6 +548,14 @@ appServer = function(input, output, session) {
 
     continuousVars = setdiff(mainEffectTerms, factorVars)
 
+    modelFit(NULL)
+    rv$modelEquations = NULL
+    rv$modelExplanation = NULL
+    rv$modelExplanationAudit = NULL
+    rv$modelExplanationTutor = NULL
+    rv$modelContext = NULL
+    rv$pendingFactorVar = NULL
+
     setBucketState(
       factors = intersect(factorVars, rv$allVars),
       continuous = intersect(continuousVars, rv$allVars)
@@ -564,6 +563,13 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
+    rv$autoFormula = spec$formula %||% ""
+
+    freezeReactiveValue(input, "factors")
+    freezeReactiveValue(input, "continuous")
+    freezeReactiveValue(input, "interactions")
+    freezeReactiveValue(input, "formula_text")
+    freezeReactiveValue(input, "response_var")
 
     updateSelectInput(
       session,
@@ -584,7 +590,6 @@ appServer = function(input, output, session) {
       selected = interactionTerms
     )
 
-    rv$autoFormula = spec$formula %||% ""
     updateTextInput(session, "formula_text", value = spec$formula %||% "")
     updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
   }
@@ -2117,10 +2122,15 @@ $$")
     )
 
     updateRadioButtons(session, "data_source", selected = "upload")
-    beginModelInputReset()
-    resetModelPage(resetResponse = FALSE)
+
+    rv$isResetting = TRUE
+    on.exit({
+      session$onFlushed(function() {
+        rv$isResetting = FALSE
+      }, once = TRUE)
+    }, add = TRUE)
+
     applyLoadedExampleToInputs(exampleInfo)
-    endModelInputResetAfterFlush()
 
     exampleLoadStatus(
       paste0(
@@ -2457,11 +2467,6 @@ $$")
       cont = buckets$continuous
       resp = input$response_var
 
-      setBucketState(
-        factors = factors,
-        continuous = cont
-      )
-
       predsAll = unique(setdiff(c(factors, cont), resp))
 
       predsLimited = predsAll
@@ -2742,11 +2747,6 @@ $$")
       factors = buckets$factors
       cont = buckets$continuous
       ints = input$interactions %||% character(0)
-
-      setBucketState(
-        factors = factors,
-        continuous = cont
-      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
