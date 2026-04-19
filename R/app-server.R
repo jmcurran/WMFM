@@ -218,7 +218,8 @@ appServer = function(input, output, session) {
     availableOllamaModels = "gpt-oss",
     userDatasetContext = "",
     researchQuestion = "",
-    loadedExample = NULL
+    loadedExample = NULL,
+    pendingExampleInteractions = character(0)
   )
 
 
@@ -497,6 +498,7 @@ appServer = function(input, output, session) {
     rv$lastResponse = NULL
     rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
 
     # Clear bucket state
     setBucketState(
@@ -540,9 +542,6 @@ appServer = function(input, output, session) {
     rv$modelExplanationAudit = NULL
     rv$modelExplanationTutor = NULL
     rv$modelContext = NULL
-    rv$autoFormula = ""
-    rv$lastResponse = NULL
-    rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
 
     spec = exampleInfo$spec %||% list()
@@ -566,6 +565,7 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
+    rv$pendingExampleInteractions = interactionTerms
 
     updateSelectInput(
       session,
@@ -2118,6 +2118,11 @@ $$")
       list(name = exampleName)
     )
 
+    rv$isResetting = TRUE
+    on.exit({
+      rv$isResetting = FALSE
+    }, add = TRUE)
+
     updateRadioButtons(session, "data_source", selected = "upload")
     applyLoadedExampleToInputs(exampleInfo)
 
@@ -2265,6 +2270,14 @@ $$")
       )
     }
 
+    selectedInteractions = intersect(
+      unique(c(
+        input$interactions %||% character(0),
+        rv$pendingExampleInteractions %||% character(0)
+      )),
+      choiceValues
+    )
+
     tagList(
       h5("Interactions (optional)"),
       infoText,
@@ -2273,12 +2286,16 @@ $$")
         inputId  = "interactions",
         label    = NULL,
         choices  = choices,
-        selected = intersect(input$interactions %||% character(0), unname(choices)),
+        selected = selectedInteractions,
         multiple = TRUE,
         width    = "100%"
       )
     )
   })
+
+  observeEvent(input$interactions, {
+    rv$pendingExampleInteractions = character(0)
+  }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
   # Display the R help file if using s2ox data set
@@ -2455,11 +2472,6 @@ $$")
       factors = buckets$factors
       cont = buckets$continuous
       resp = input$response_var
-
-      setBucketState(
-        factors = factors,
-        continuous = cont
-      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
