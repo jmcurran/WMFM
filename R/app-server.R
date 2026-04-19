@@ -2444,7 +2444,20 @@ $$")
       return(NULL)
     }
 
-    rv$pendingExampleInteractions = character(0)
+    currentInteractions = input$interactions %||% character(0)
+    pendingInteractions = rv$pendingExampleInteractions %||% character(0)
+
+    if (length(currentInteractions) == 0) {
+      return(NULL)
+    }
+
+    if (length(pendingInteractions) == 0) {
+      return(NULL)
+    }
+
+    if (all(pendingInteractions %in% currentInteractions)) {
+      rv$pendingExampleInteractions = character(0)
+    }
   }, ignoreInit = TRUE)
 
   # When user selects "All possible interactions", expand to all codes
@@ -2747,7 +2760,10 @@ $$")
       buckets = getCurrentBuckets()
       factors = buckets$factors
       cont = buckets$continuous
-      ints = input$interactions %||% character(0)
+      ints = unique(c(
+        rv$pendingExampleInteractions %||% character(0),
+        input$interactions %||% character(0)
+      ))
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
