@@ -5,4 +5,4 @@
 ^.*\.zip$
 ^dev($|/)
 ^build($|/)
-^\.wmfm_build_pkg_path($|/)
+^\.wmfm_built_pkg_path($|/)
