@@ -92,11 +92,6 @@ appUI = function() {
           )
         ),
 
-        helpText(
-          "After loading data, go to the Model tab to assign variables ",
-          "and specify the regression model."
-        ),
-
         tags$hr(class = "hr-tight"),
         h4("Load a built-in example"),
         selectInput(
@@ -110,7 +105,7 @@ appUI = function() {
           class = "btn btn-secondary"
         ),
         div(
-          style = "margin-top: 8px;",
+          style = "margin-top: 10px;",
           helpText(
             "Examples load a known working dataset together with its research question and model settings."
           )
@@ -144,6 +139,9 @@ appUI = function() {
                 uiOutput(outputId = "modelHelpBtnUi")
               )
             )
+          ),
+          helpText(
+            "After loading data, go to the Model tab to assign variables and specify the regression model."
           ),
           uiOutput("response_explain"),
           uiOutput("userDatasetContextUi"),
