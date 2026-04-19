@@ -1,3 +1,21 @@
+#' Build a variance-covariance matrix while muffling known perfect-fit warnings
+#'
+#' @param model A fitted model object.
+#'
+#' @return A variance-covariance matrix.
+#' @keywords internal
+getSafeModelVcov = function(model) {
+
+  withCallingHandlers(
+    stats::vcov(model),
+    warning = function(w) {
+      if (grepl("essentially perfect fit", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
+
 #' Build interpretable confidence-interval output for a fitted model
 #'
 #' Creates a compact table of confidence intervals for quantities that are
@@ -52,7 +70,7 @@ buildModelConfidenceIntervalData = function(
 
   mf = model.frame(model)
   predictorNames = names(mf)[-1]
-  vcovTable = round(vcov(model), 3)
+  vcovTable = round(getSafeModelVcov(model), 3)
   teachingNote = buildModelConfidenceIntervalTeachingNote(model = model)
 
   if (length(predictorNames) == 0) {
@@ -898,7 +916,7 @@ buildConfidenceIntervalPrediction = function(
 buildLinearCombinationInterval = function(model, weights, level) {
 
   coefVec = coef(model)
-  vc = vcov(model)
+  vc = getSafeModelVcov(model)
   fullWeights = setNames(rep(0, length(coefVec)), names(coefVec))
   fullWeights[names(weights)] = as.numeric(weights)
 
@@ -1591,7 +1609,7 @@ insertCiSectionBreakRows = function(ciTable) {
 buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
 
   coefVec = coef(model)
-  vc = vcov(model)
+  vc = getSafeModelVcov(model)
   se = sqrt(diag(vc))
   crit = getConfidenceIntervalCriticalValue(model = model, level = level)
 
@@ -1629,7 +1647,7 @@ buildCoefficientOnlyConfidenceIntervalData = function(model, level = 0.95) {
     details = details,
     note = NULL,
     teachingNote = buildModelConfidenceIntervalTeachingNote(model = model),
-    vcovTable = round(vcov(model), 3),
+    vcovTable = round(getSafeModelVcov(model), 3),
     mode = "coefficient"
   )
 }
