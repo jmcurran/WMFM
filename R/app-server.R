@@ -453,12 +453,43 @@ appServer = function(input, output, session) {
   })
 
 
+  setBucketState = function(factors = NULL, continuous = NULL) {
+    vars = rv$allVars %||% character(0)
+
+    nextFactors = intersect(factors %||% character(0), vars)
+    nextContinuous = intersect(continuous %||% character(0), vars)
+
+    currentFactors = rv$bucketFactors %||% character(0)
+    currentContinuous = rv$bucketContinuous %||% character(0)
+
+    changed = FALSE
+
+    if (!identical(currentFactors, nextFactors)) {
+      rv$bucketFactors = nextFactors
+      changed = TRUE
+    }
+
+    if (!identical(currentContinuous, nextContinuous)) {
+      rv$bucketContinuous = nextContinuous
+      changed = TRUE
+    }
+
+    invisible(changed)
+  }
+
+  beginModelInputReset = function() {
+    rv$isResetting = TRUE
+  }
+
+  endModelInputResetAfterFlush = function() {
+    session$onFlushed(function() {
+      rv$isResetting = FALSE
+    }, once = TRUE)
+  }
+
   resetModelPage = function(resetResponse = TRUE) {
 
-    rv$isResetting = TRUE
-    on.exit({
-      rv$isResetting = FALSE
-    }, add = TRUE)
+    beginModelInputReset()
 
     # Clear fitted model + LLM outputs
     modelFit(NULL)
@@ -475,8 +506,10 @@ appServer = function(input, output, session) {
     rv$pendingFactorVar = NULL
 
     # Clear bucket state
-    rv$bucketFactors = character(0)
-    rv$bucketContinuous = character(0)
+    setBucketState(
+      factors = character(0),
+      continuous = character(0)
+    )
 
     # Force buckets to re-render empty (Variables/Factors/Continuous)
     rv$bucketGroupId = rv$bucketGroupId + 1L
@@ -504,6 +537,8 @@ appServer = function(input, output, session) {
         selected = rv$allVars[1]
       )
     }
+
+    endModelInputResetAfterFlush()
   }
 
   applyLoadedExampleToInputs = function(exampleInfo) {
@@ -522,8 +557,10 @@ appServer = function(input, output, session) {
 
     continuousVars = setdiff(mainEffectTerms, factorVars)
 
-    rv$bucketFactors = intersect(factorVars, rv$allVars)
-    rv$bucketContinuous = intersect(continuousVars, rv$allVars)
+    setBucketState(
+      factors = intersect(factorVars, rv$allVars),
+      continuous = intersect(continuousVars, rv$allVars)
+    )
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
@@ -1062,16 +1099,24 @@ appServer = function(input, output, session) {
     if (isTRUE(rv$isResetting)) {
       return(NULL)
     }
+
     cur = input$factors %||% character(0)
-    rv$bucketFactors = intersect(cur, rv$allVars %||% character(0))
+    setBucketState(
+      factors = cur,
+      continuous = rv$bucketContinuous %||% character(0)
+    )
   }, ignoreInit = TRUE)
 
   observeEvent(input$continuous, {
     if (isTRUE(rv$isResetting)) {
       return(NULL)
     }
+
     cur = input$continuous %||% character(0)
-    rv$bucketContinuous = intersect(cur, rv$allVars %||% character(0))
+    setBucketState(
+      factors = rv$bucketFactors %||% character(0),
+      continuous = cur
+    )
   }, ignoreInit = TRUE)
 
 
@@ -2072,8 +2117,10 @@ $$")
     )
 
     updateRadioButtons(session, "data_source", selected = "upload")
+    beginModelInputReset()
     resetModelPage(resetResponse = FALSE)
     applyLoadedExampleToInputs(exampleInfo)
+    endModelInputResetAfterFlush()
 
     exampleLoadStatus(
       paste0(
@@ -2410,8 +2457,10 @@ $$")
       cont = buckets$continuous
       resp = input$response_var
 
-      rv$bucketFactors = factors
-      rv$bucketContinuous = cont
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -2694,8 +2743,10 @@ $$")
       cont = buckets$continuous
       ints = input$interactions %||% character(0)
 
-      rv$bucketFactors = factors
-      rv$bucketContinuous = cont
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
