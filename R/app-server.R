@@ -219,7 +219,7 @@ appServer = function(input, output, session) {
     userDatasetContext = "",
     researchQuestion = "",
     loadedExample = NULL,
-    pendingExampleInteractions = character(0)
+    pendingInteractions = character(0)
   )
 
 
@@ -498,7 +498,6 @@ appServer = function(input, output, session) {
     rv$lastResponse = NULL
     rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
-    rv$pendingExampleInteractions = character(0)
 
     # Clear bucket state
     setBucketState(
@@ -536,14 +535,6 @@ appServer = function(input, output, session) {
 
   applyLoadedExampleToInputs = function(exampleInfo) {
 
-    modelFit(NULL)
-    rv$modelEquations = NULL
-    rv$modelExplanation = NULL
-    rv$modelExplanationAudit = NULL
-    rv$modelExplanationTutor = NULL
-    rv$modelContext = NULL
-    rv$pendingFactorVar = NULL
-
     spec = exampleInfo$spec %||% list()
     exampleFormula = stats::as.formula(spec$formula)
     responseVar = all.vars(exampleFormula[[2]])[1] %||% rv$allVars[1]
@@ -558,6 +549,13 @@ appServer = function(input, output, session) {
 
     continuousVars = setdiff(mainEffectTerms, factorVars)
 
+    modelFit(NULL)
+    rv$modelEquations = NULL
+    rv$modelExplanation = NULL
+    rv$modelExplanationAudit = NULL
+    rv$modelExplanationTutor = NULL
+    rv$modelContext = NULL
+
     setBucketState(
       factors = intersect(factorVars, rv$allVars),
       continuous = intersect(continuousVars, rv$allVars)
@@ -565,7 +563,7 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
     rv$lastFactors = rv$bucketFactors
     rv$lastResponse = responseVar
-    rv$pendingExampleInteractions = interactionTerms
+    rv$pendingInteractions = interactionTerms
 
     updateSelectInput(
       session,
@@ -578,12 +576,6 @@ appServer = function(input, output, session) {
       session,
       "model_type",
       selected = spec$modelType %||% "lm"
-    )
-
-    updateSelectInput(
-      session,
-      "interactions",
-      selected = interactionTerms
     )
 
     rv$autoFormula = spec$formula %||% ""
@@ -2118,11 +2110,6 @@ $$")
       list(name = exampleName)
     )
 
-    rv$isResetting = TRUE
-    on.exit({
-      rv$isResetting = FALSE
-    }, add = TRUE)
-
     updateRadioButtons(session, "data_source", selected = "upload")
     applyLoadedExampleToInputs(exampleInfo)
 
@@ -2257,6 +2244,16 @@ $$")
 
     choices = setNames(choiceValues, choiceLabels)
 
+    currentSelected = input$interactions %||% character(0)
+    pendingSelected = rv$pendingInteractions %||% character(0)
+    selected = currentSelected
+
+    if (length(selected) == 0 && length(pendingSelected) > 0) {
+      selected = pendingSelected
+    }
+
+    selected = intersect(selected, choiceValues)
+
     infoText = NULL
     if (length(predsAll) > 3) {
       infoText = helpText(
@@ -2270,14 +2267,6 @@ $$")
       )
     }
 
-    selectedInteractions = intersect(
-      unique(c(
-        input$interactions %||% character(0),
-        rv$pendingExampleInteractions %||% character(0)
-      )),
-      choiceValues
-    )
-
     tagList(
       h5("Interactions (optional)"),
       infoText,
@@ -2286,16 +2275,12 @@ $$")
         inputId  = "interactions",
         label    = NULL,
         choices  = choices,
-        selected = selectedInteractions,
+        selected = selected,
         multiple = TRUE,
         width    = "100%"
       )
     )
   })
-
-  observeEvent(input$interactions, {
-    rv$pendingExampleInteractions = character(0)
-  }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
   # Display the R help file if using s2ox data set
@@ -2676,12 +2661,13 @@ $$")
 
     current = input$response_var %||% ""
     remembered = rv$lastResponse %||% ""
-    selected = if (nzchar(current) && current %in% vars) {
-      current
+
+    if (nzchar(current) && current %in% vars) {
+      selected = current
     } else if (nzchar(remembered) && remembered %in% vars) {
-      remembered
+      selected = remembered
     } else {
-      vars[1]
+      selected = vars[1]
     }
 
     selectInput(
