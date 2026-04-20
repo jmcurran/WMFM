@@ -330,8 +330,7 @@ mapSingleExplanationClaim = function(
 
   supportNote = buildExplanationClaimSupportNote(
     claimType = claimType,
-    matchedEvidence = matchedEvidence,
-    claimText = claimText
+    matchedEvidence = matchedEvidence
   )
 
   data.frame(
@@ -348,6 +347,15 @@ mapSingleExplanationClaim = function(
   )
 }
 
+#' Classify a sentence-level explanation claim
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return A single character string.
+#' @keywords internal
 #' Check whether a sentence contains explicit uncertainty language
 #'
 #' @param claimText Character scalar.
@@ -414,17 +422,6 @@ sentenceIsPrimarilyUncertainty = function(claimText) {
   (leadingUncertaintyCue || interpretiveUncertaintyCue) && !sentenceHasStrongChangeCue(claimText)
 }
 
-#' Classify a sentence-level explanation claim
-#'
-#' @param claimText Character scalar.
-#' @param audit A `wmfmExplanationAudit` object.
-#' @param teachingSummary Optional teaching summary object.
-#' @param model Optional fitted model object.
-#' @param sentenceIndex Optional integer sentence index.
-#' @param totalClaims Optional integer count of total claims.
-#'
-#' @return A single character string.
-#' @keywords internal
 classifyExplanationClaimType = function(
     claimText,
     audit,
@@ -444,6 +441,10 @@ classifyExplanationClaimType = function(
 
   if (nzchar(directResearchQuestion) && sentenceMatchesResearchQuestion(claimText, directResearchQuestion)) {
     return("researchQuestion")
+  }
+
+  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
+    return("uncertainty")
   }
 
   if (sentenceLooksLikeResearchAnswer(
@@ -466,16 +467,8 @@ classifyExplanationClaimType = function(
     return("baseline")
   }
 
-  if (sentenceIsPrimarilyUncertainty(claimText)) {
-    return("uncertainty")
-  }
-
   if (sentenceMentionsModelledChange(claimText, audit, model)) {
     return("mainEffect")
-  }
-
-  if (sentenceHasUncertaintyCue(claimText)) {
-    return("uncertainty")
   }
 
   if (sentenceMatchesReferenceLevel(claimText, audit)) {
@@ -786,7 +779,7 @@ sentenceLooksLikeResearchAnswer = function(
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationClaimSupportNote = function(claimType, matchedEvidence, claimText = NULL) {
+buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
 
   switch(
     claimType,
@@ -796,13 +789,7 @@ buildExplanationClaimSupportNote = function(claimType, matchedEvidence, claimTex
     scale = "This sentence explains the scale used to describe the response.",
     baseline = "This sentence describes a typical case and its expected outcome.",
     comparison = "This sentence explains how the groups are being compared.",
-    mainEffect = {
-      if (sentenceHasUncertaintyCue(claimText) && sentenceHasStrongChangeCue(claimText)) {
-        "This sentence explains how the response changes as the predictor increases and also shows the uncertainty around that estimate."
-      } else {
-        "This sentence explains how the response changes as the predictor increases."
-      }
-    },
+    mainEffect = "This sentence explains how the response changes as the predictor increases.",
     "This sentence provides supporting context for the explanation."
   )
 }
