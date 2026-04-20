@@ -1,12 +1,9 @@
 testthat::test_that("runModel attaches a research question to the fitted model and wmfmModel output", {
-  df = data.frame(
-    y = c(1, 2, 3, 4, 5),
-    x = c(0, 1, 2, 3, 4)
-  )
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   testthat::local_mocked_bindings(
     getModelEquations = function(model, method = "deterministic", chat = NULL) {
-      "y = 1.00 + 1.00 * x"
+      "Exam = a + b * Test"
     },
     getChatProvider = function(...) {
       NULL
@@ -16,16 +13,16 @@ testthat::test_that("runModel attaches a research question to the fitted model a
 
   out = runModel(
     data = df,
-    formula = y ~ x,
+    formula = Exam ~ Test,
     modelType = "lm",
-    researchQuestion = "Does x help explain y?",
+    researchQuestion = "Does Test help explain Exam?",
     printOutput = FALSE
   )
 
   testthat::expect_s3_class(out, "wmfmModel")
-  testthat::expect_identical(out$researchQuestion, "Does x help explain y?")
+  testthat::expect_identical(out$researchQuestion, "Does Test help explain Exam?")
   testthat::expect_identical(
     attr(out$model, "wmfm_research_question", exact = TRUE),
-    "Does x help explain y?"
+    "Does Test help explain Exam?"
   )
 })

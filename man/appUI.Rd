@@ -13,15 +13,17 @@ A Shiny UI definition created with \code{fluidPage()}.
 Constructs the Shiny user interface for the Model Builder app.
 }
 \details{
-The interface is organised into four tabs:
+The interface is organised into the main teaching and analysis tabs:
 \itemize{
 \item \strong{Load Data}: upload a data set or choose an example from
 the \pkg{s20x} package.
 \item \strong{Model}: assign variables to roles, choose the model type,
 specify the model formula, and fit/reset the model.
 \item \strong{Fitted Model}: inspect the symbolic model equation, fitted
-equations from the language model, the regression table, and a
-plain-language explanation.
+equations from the language model, and the main regression outputs.
+\item \strong{Model Explanation}: view the plain-language explanation,
+an optional tutor-style expansion, and the teaching accordions that
+explain how the explanation was constructed.
 \item \strong{Plot}: view the observed data with the fitted model
 overlaid when there is a single numeric predictor.
 }

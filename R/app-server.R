@@ -41,6 +41,8 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
+  exampleChoices = reactiveVal(character(0))
+  exampleLoadStatus = reactiveVal("Choose a built-in example if you want the app to load a complete worked setup.")
 
   initialPackageChoices = tryCatch(
     {
@@ -62,6 +64,26 @@ appServer = function(input, output, session) {
 
   output$packageScanStatus = renderText({
     packageScanStatus() %||% ""
+  })
+
+  output$exampleLoadStatus = renderText({
+    exampleLoadStatus() %||% ""
+  })
+
+  observe({
+    choices = exampleChoices()
+    selected = isolate(input$exampleName %||% "")
+
+    if (!nzchar(selected) || !(selected %in% choices)) {
+      selected = if (length(choices) > 0) choices[1] else ""
+    }
+
+    updateSelectInput(
+      session,
+      "exampleName",
+      choices = choices,
+      selected = selected
+    )
   })
 
   observe({
@@ -96,6 +118,8 @@ appServer = function(input, output, session) {
   })
 
   session$onFlushed(function() {
+    exampleChoices(listWMFMExamples())
+
     packageNames = getInstalledPackagesWithData()
 
     if (length(packageNames) == 0) {
@@ -177,10 +201,13 @@ appServer = function(input, output, session) {
     autoFormula = "",
     modelEquations = NULL,
     modelExplanation = NULL,
+    modelExplanationAudit = NULL,
+    modelExplanationTutor = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
     lastFactors = character(0),
     pendingFactorVar = NULL,
+    pendingExampleInteractions = character(0),
     chatProvider = NULL,
     contrastLlmCache = new.env(parent = emptyenv()),
     modelContext = NULL,
@@ -191,7 +218,8 @@ appServer = function(input, output, session) {
     activeOllamaModel = "gpt-oss",
     availableOllamaModels = "gpt-oss",
     userDatasetContext = "",
-    researchQuestion = ""
+    researchQuestion = "",
+    loadedExample = NULL
   )
 
 
@@ -426,6 +454,30 @@ appServer = function(input, output, session) {
   })
 
 
+  setBucketState = function(factors = NULL, continuous = NULL) {
+    vars = rv$allVars %||% character(0)
+
+    nextFactors = intersect(factors %||% character(0), vars)
+    nextContinuous = intersect(continuous %||% character(0), vars)
+
+    currentFactors = rv$bucketFactors %||% character(0)
+    currentContinuous = rv$bucketContinuous %||% character(0)
+
+    changed = FALSE
+
+    if (!identical(currentFactors, nextFactors)) {
+      rv$bucketFactors = nextFactors
+      changed = TRUE
+    }
+
+    if (!identical(currentContinuous, nextContinuous)) {
+      rv$bucketContinuous = nextContinuous
+      changed = TRUE
+    }
+
+    invisible(changed)
+  }
+
   resetModelPage = function(resetResponse = TRUE) {
 
     rv$isResetting = TRUE
@@ -437,6 +489,8 @@ appServer = function(input, output, session) {
     modelFit(NULL)
     rv$modelEquations = NULL
     rv$modelExplanation = NULL
+    rv$modelExplanationAudit = NULL
+    rv$modelExplanationTutor = NULL
     rv$modelContext = NULL
 
     # Reset tracking + factor prompt state
@@ -444,10 +498,13 @@ appServer = function(input, output, session) {
     rv$lastResponse = NULL
     rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
 
     # Clear bucket state
-    rv$bucketFactors = character(0)
-    rv$bucketContinuous = character(0)
+    setBucketState(
+      factors = character(0),
+      continuous = character(0)
+    )
 
     # Force buckets to re-render empty (Variables/Factors/Continuous)
     rv$bucketGroupId = rv$bucketGroupId + 1L
@@ -475,6 +532,55 @@ appServer = function(input, output, session) {
         selected = rv$allVars[1]
       )
     }
+  }
+
+  applyLoadedExampleToInputs = function(exampleInfo) {
+
+    spec = exampleInfo$spec %||% list()
+    exampleFormula = stats::as.formula(spec$formula)
+    responseVar = all.vars(exampleFormula[[2]])[1] %||% rv$allVars[1]
+    termLabels = attr(stats::terms(exampleFormula), "term.labels") %||% character(0)
+    interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
+    mainEffectTerms = termLabels[!grepl(":", termLabels, fixed = TRUE)]
+
+    factorVars = mainEffectTerms[vapply(mainEffectTerms, function(varName) {
+      column = rv$data[[varName]]
+      is.factor(column) || is.character(column)
+    }, logical(1))]
+
+    continuousVars = setdiff(mainEffectTerms, factorVars)
+
+    setBucketState(
+      factors = intersect(factorVars, rv$allVars),
+      continuous = intersect(continuousVars, rv$allVars)
+    )
+    rv$bucketGroupId = rv$bucketGroupId + 1L
+    rv$lastFactors = rv$bucketFactors
+    rv$lastResponse = responseVar
+    rv$pendingExampleInteractions = interactionTerms
+
+    updateSelectInput(
+      session,
+      "response_var",
+      choices = rv$allVars,
+      selected = responseVar
+    )
+
+    updateRadioButtons(
+      session,
+      "model_type",
+      selected = spec$modelType %||% "lm"
+    )
+
+    updateSelectInput(
+      session,
+      "interactions",
+      selected = interactionTerms
+    )
+
+    rv$autoFormula = spec$formula %||% ""
+    updateTextInput(session, "formula_text", value = spec$formula %||% "")
+    updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
   }
 
   # -------------------------------------------------------------------
@@ -987,16 +1093,24 @@ appServer = function(input, output, session) {
     if (isTRUE(rv$isResetting)) {
       return(NULL)
     }
+
     cur = input$factors %||% character(0)
-    rv$bucketFactors = intersect(cur, rv$allVars %||% character(0))
+    setBucketState(
+      factors = cur,
+      continuous = rv$bucketContinuous %||% character(0)
+    )
   }, ignoreInit = TRUE)
 
   observeEvent(input$continuous, {
     if (isTRUE(rv$isResetting)) {
       return(NULL)
     }
+
     cur = input$continuous %||% character(0)
-    rv$bucketContinuous = intersect(cur, rv$allVars %||% character(0))
+    setBucketState(
+      factors = rv$bucketFactors %||% character(0),
+      continuous = cur
+    )
   }, ignoreInit = TRUE)
 
 
@@ -1800,6 +1914,8 @@ $$")
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
+    rv$loadedExample = NULL
+    exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
     updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
   }
@@ -1956,12 +2072,57 @@ $$")
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
+    rv$loadedExample = NULL
+    exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
     updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading a package data set
     updateTabsetPanel(session, "main_tabs", selected = "Model")
   })
+
+  observeEvent(input$loadExampleBtn, {
+    exampleName = trimws(input$exampleName %||% "")
+
+    if (!nzchar(exampleName)) {
+      showNotification("Choose an example first.", type = "warning", duration = 6)
+      return(NULL)
+    }
+
+    exampleInfo = tryCatch(
+      loadExampleSpec(exampleName),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error", duration = 8)
+        NULL
+      }
+    )
+
+    if (is.null(exampleInfo)) {
+      return(NULL)
+    }
+
+    rv$data = exampleInfo$data
+    rv$allVars = names(exampleInfo$data)
+    rv$userDatasetContext = trimws(exampleInfo$dataContext %||% "")
+    rv$researchQuestion = trimws(exampleInfo$researchQuestion %||% "")
+    rv$loadedExample = utils::modifyList(
+      exampleInfo,
+      list(name = exampleName)
+    )
+
+    updateRadioButtons(session, "data_source", selected = "upload")
+    applyLoadedExampleToInputs(exampleInfo)
+
+    exampleLoadStatus(
+      paste0(
+        "Loaded example: ",
+        exampleName,
+        ". The data, research question, and model settings are ready on the Model tab."
+      )
+    )
+
+    updateTabsetPanel(session, "main_tabs", selected = "Model")
+  }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
   # Drag-and-drop buckets UI
@@ -2083,6 +2244,13 @@ $$")
 
     choices = setNames(choiceValues, choiceLabels)
 
+    currentInteractions = input$interactions %||% character(0)
+    pendingInteractions = rv$pendingExampleInteractions %||% character(0)
+    selectedInteractions = intersect(
+      unique(c(pendingInteractions, currentInteractions)),
+      choiceValues
+    )
+
     infoText = NULL
     if (length(predsAll) > 3) {
       infoText = helpText(
@@ -2104,7 +2272,7 @@ $$")
         inputId  = "interactions",
         label    = NULL,
         choices  = choices,
-        selected = character(0),
+        selected = selectedInteractions,
         multiple = TRUE,
         width    = "100%"
       )
@@ -2271,6 +2439,27 @@ $$")
 
 
   # -------------------------------------------------------------------
+  observeEvent(input$interactions, {
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
+
+    currentInteractions = input$interactions %||% character(0)
+    pendingInteractions = rv$pendingExampleInteractions %||% character(0)
+
+    if (length(currentInteractions) == 0) {
+      return(NULL)
+    }
+
+    if (length(pendingInteractions) == 0) {
+      return(NULL)
+    }
+
+    if (all(pendingInteractions %in% currentInteractions)) {
+      rv$pendingExampleInteractions = character(0)
+    }
+  }, ignoreInit = TRUE)
+
   # When user selects "All possible interactions", expand to all codes
   # -------------------------------------------------------------------
   observeEvent(
@@ -2287,8 +2476,10 @@ $$")
       cont = buckets$continuous
       resp = input$response_var
 
-      rv$bucketFactors = factors
-      rv$bucketContinuous = cont
+      setBucketState(
+        factors = factors,
+        continuous = cont
+      )
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -2491,7 +2682,7 @@ $$")
 
     choices = setNames(vars, labels)
 
-    current = input$response_var %||% ""
+    current = rv$lastResponse %||% input$response_var %||% ""
     selected = if (nzchar(current) && current %in% vars) current else vars[1]
 
     selectInput(
@@ -2531,8 +2722,8 @@ $$")
   getCurrentBuckets = function() {
     vars = rv$allVars %||% character(0)
 
-    factors = intersect(input$factors %||% character(0), vars)
-    cont = intersect(input$continuous %||% character(0), vars)
+    factors = intersect(rv$bucketFactors %||% character(0), vars)
+    cont = intersect(rv$bucketContinuous %||% character(0), vars)
 
     list(
       factors = factors,
@@ -2547,8 +2738,8 @@ $$")
   observeEvent(
     list(
       input$response_var,
-      input$factors,
-      input$continuous,
+      rv$bucketFactors,
+      rv$bucketContinuous,
       input$interactions,
       input$expert_mode
     ),
@@ -2569,10 +2760,10 @@ $$")
       buckets = getCurrentBuckets()
       factors = buckets$factors
       cont = buckets$continuous
-      ints = input$interactions %||% character(0)
-
-      rv$bucketFactors = factors
-      rv$bucketContinuous = cont
+      ints = unique(c(
+        rv$pendingExampleInteractions %||% character(0),
+        input$interactions %||% character(0)
+      ))
 
       predsAll = unique(setdiff(c(factors, cont), resp))
 
@@ -2673,6 +2864,7 @@ $$")
     rv$lastFactors      = input$factors %||% character(0)
     v                   = rv$pendingFactorVar
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
 
     showNotification(
       paste0(
@@ -2700,6 +2892,7 @@ $$")
     )
 
     rv$pendingFactorVar = NULL
+    rv$pendingExampleInteractions = character(0)
   }, ignoreInit = TRUE)
 
   # -------------------------------------------------------------------
@@ -2980,13 +3173,41 @@ $$")
       }
     }
 
+    if (!is.null(rv$loadedExample)) {
+      exampleInfo = rv$loadedExample
+      exampleName = exampleInfo$name %||% "Example"
+      exampleDataContext = trimws(exampleInfo$dataContext %||% "")
+
+      if (nzchar(exampleDataContext)) {
+        attr(m, "wmfm_dataset_doc") = exampleDataContext
+      }
+
+      attr(m, "wmfm_dataset_name") = paste0(exampleName, " example")
+      attr(m, "wmfm_example_name") = exampleName
+
+      nounPhrase = resolveResponseNounPhrase(m, respName)
+      attr(m, "wmfm_response_noun_phrase") = nounPhrase
+
+      rv$modelContext = list(
+        responseVar = respName,
+        nounPhrase = nounPhrase,
+        datasetName = paste0(exampleName, " example")
+      )
+    }
 
     researchQuestionRaw = trimws(input$researchQuestion %||% rv$researchQuestion %||% "")
 
-    if (nzchar(researchQuestionRaw)) {
-      researchQuestion = gsub("\"", "\\\"", researchQuestionRaw, fixed = TRUE)
-      attr(m, "wmfm_research_question") = researchQuestion
+    if (!nzchar(researchQuestionRaw)) {
+      showNotification(
+        "Please enter the research question before fitting the model. WMFM uses it to frame the explanation from the start.",
+        type = "warning",
+        duration = 8
+      )
+      return(NULL)
     }
+
+    researchQuestion = gsub("\"", "\\\"", researchQuestionRaw, fixed = TRUE)
+    attr(m, "wmfm_research_question") = researchQuestion
 
     modelFit(m)
 
@@ -3051,11 +3272,14 @@ $$")
         model = m,
         chatProvider = chatProvider
       )
+      explanationAudit = buildAppExplanationAudit(model = m)
 
       incProgress(0.35, detail = outputMessages$updateDetail)
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
+      rv$modelExplanationAudit = explanationAudit
+      rv$modelExplanationTutor = NULL
 
       finishMessages = buildAppOutputMessages(
         equationMethod = equationResults$equationMethodUsed %||% "deterministic",
@@ -3066,7 +3290,7 @@ $$")
       incProgress(0.10, detail = finishMessages$finishDetail)
       incProgress(0.10, detail = finishMessages$doneDetail)
     })
-    # After fitting and LLM completion, switch to the "Fitted Model" tab
+    # After fitting and LLM completion, return to the fitted model tab
     updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
   })
 
@@ -3284,20 +3508,196 @@ $$")
   # -------------------------------------------------------------------
   # Model explanation
   # -------------------------------------------------------------------
+  output$model_explanation_audit_numeric_anchor = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$numericAnchor$table) || nrow(audit$numericAnchor$table) == 0) {
+      return(NULL)
+    }
+
+    audit$numericAnchor$table
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_reference_levels = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$referenceLevels) || nrow(audit$referenceLevels) == 0) {
+      return(NULL)
+    }
+
+    audit$referenceLevels
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_baseline = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$baselineEvidence) || nrow(audit$baselineEvidence) == 0) {
+      return(NULL)
+    }
+
+    audit$baselineEvidence
+  }, rownames = FALSE)
+
+  output$model_explanation_audit_effects = renderTable({
+    audit = rv$modelExplanationAudit
+
+    if (is.null(audit) || !is.data.frame(audit$effectEvidence) || nrow(audit$effectEvidence) == 0) {
+      return(NULL)
+    }
+
+    audit$effectEvidence
+  }, rownames = FALSE)
+
   output$model_explanation = renderUI({
     expl = rv$modelExplanation
+    audit = rv$modelExplanationAudit
+    tutorText = rv$modelExplanationTutor
     m = modelFit()
 
-    if (is.null(expl)) {
+    if (is.null(expl) && is.null(audit)) {
       return(helpText("Fit a model to see a textual explanation."))
     }
 
-    tagList(
-      tags$pre(
-        style = "white-space: pre-wrap; word-wrap: break-word;",
-        expl
+    teachingSummary = NULL
+    researchQuestionText = trimws(as.character(rv$researchQuestion %||% attr(m, "wmfm_research_question", exact = TRUE) %||% ""))
+
+    if (!is.null(audit) && !is.null(m)) {
+      teachingSummary = tryCatch(
+        buildExplanationTeachingSummary(
+          audit = audit,
+          model = m,
+          researchQuestion = rv$researchQuestion %||% NULL
+        ),
+        error = function(e) {
+          NULL
+        }
       )
+    }
+
+    tagList(
+      if (!is.null(expl)) {
+        tags$div(
+          class = "wmfm-explanation-box",
+          if (nzchar(researchQuestionText)) {
+            tags$p(
+              tags$strong("Research question: "),
+              researchQuestionText
+            )
+          },
+          tags$pre(
+            style = "white-space: pre-wrap; word-wrap: break-word; margin-bottom: 0;",
+            expl
+          )
+        )
+      } else {
+        helpText("No LLM explanation was generated, but the teaching summary is still available below.")
+      },
+      if (!is.null(teachingSummary)) {
+        tagList(
+          tags$hr(),
+          tags$h5("How this explanation was constructed"),
+          renderExplanationTeachingSummaryUi(teachingSummary),
+          tags$br(),
+          bslib::accordion(
+            id = "model_explanation_tutor_accordion",
+            multiple = TRUE,
+            open = FALSE,
+            bslib::accordion_panel(
+              title = "Tutor-style AI explanation",
+              tags$div(
+                class = "wmfm-explanation-helper-box",
+                tags$div(
+                  class = "wmfm-explanation-helper-note",
+                  "Want a more conversational explanation? You can optionally ask the app for a tutor-style explanation that is guided by the information already shown here."
+                ),
+                actionButton(
+                  inputId = "modelExplanationTutorBtn",
+                  label = "Explain this more simply with AI",
+                  class = "btn btn-secondary btn-sm"
+                ),
+                tags$br(),
+                tags$br(),
+                renderExplanationTutorUi(
+                  text = tutorText,
+                  available = !is.null(rv$chatProvider),
+                  researchQuestion = researchQuestionText,
+                  dataDescription = teachingSummary$dataDescription %||% NULL
+                )
+              )
+            )
+          )
+        )
+      }
     )
+  })
+
+  observeEvent(input$modelExplanationTutorBtn, {
+    audit = rv$modelExplanationAudit
+    m = modelFit()
+
+    if (is.null(audit) || is.null(m)) {
+      showNotification(
+        "Fit a model first so the app has something to explain.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
+
+    if (is.null(rv$chatProvider)) {
+      showNotification(
+        "An active chat provider is needed for the tutor-style explanation.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
+
+    teachingSummary = tryCatch(
+      buildExplanationTeachingSummary(
+        audit = audit,
+        model = m,
+        researchQuestion = rv$researchQuestion %||% NULL
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+
+    if (is.null(teachingSummary)) {
+      showNotification(
+        "The teaching summary could not be built for this model.",
+        type = "error",
+        duration = 8
+      )
+      return(NULL)
+    }
+
+    withProgress(message = "Generating tutor-style explanation...", value = 0, {
+      incProgress(0.25, detail = "Preparing the teaching summary")
+
+      tutorText = buildAppTeachingTutorExplanation(
+        teachingSummary = teachingSummary,
+        chatProvider = rv$chatProvider,
+        modelExplanation = rv$modelExplanation,
+        researchQuestion = rv$researchQuestion %||% NULL
+      )
+
+      incProgress(0.60, detail = "Waiting for the chat provider")
+      incProgress(0.15, detail = "Updating the explanation tab")
+
+      rv$modelExplanationTutor = tutorText
+
+      incProgress(0.00, detail = "Done")
+    })
+
+    if (is.null(rv$modelExplanationTutor) || !nzchar(trimws(rv$modelExplanationTutor))) {
+      showNotification(
+        "The tutor-style explanation could not be generated this time.",
+        type = "warning",
+        duration = 8
+      )
+    }
   })
 
   # -------------------------------------------------------------------

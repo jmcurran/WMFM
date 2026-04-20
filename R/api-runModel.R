@@ -55,7 +55,14 @@ runModel = function(
     )
 
     coefficientTable = tryCatch(
-      summary(model)$coefficients,
+      withCallingHandlers(
+        summary(model)$coefficients,
+        warning = function(w) {
+          if (grepl("essentially perfect fit", conditionMessage(w), fixed = TRUE)) {
+            invokeRestart("muffleWarning")
+          }
+        }
+      ),
       error = function(e) {
         NULL
       }
@@ -279,6 +286,7 @@ runModel = function(
 
   equations = NULL
   explanation = NULL
+  explanationAudit = buildModelExplanationAudit(model = model)
   equationMethodUsed = equationMethod
 
   if (identical(equationMethod, "deterministic")) {
@@ -391,6 +399,7 @@ runModel = function(
     researchQuestion = attr(model, "wmfm_research_question", exact = TRUE),
     equations = equations,
     explanation = explanation,
+    explanationAudit = explanationAudit,
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(

@@ -1,10 +1,7 @@
 test_that("getModelEquations returns deterministic equation tables by default", {
-  df = data.frame(
-    y = c(1, 3, 5, 7),
-    x = c(0, 1, 2, 3)
-  )
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
 
-  model = stats::lm(y ~ x, data = df)
+  model = stats::lm(Exam ~ Test, data = df)
   out = getModelEquations(model)
 
   expect_s3_class(out, "data.frame")
@@ -17,16 +14,13 @@ test_that("getModelEquations returns deterministic equation tables by default", 
     "responseScale"
   ) %in% names(out)))
   expect_equal(nrow(out), 1)
-  expect_match(out$equation[[1]], "y =")
+  expect_match(out$equation[[1]], "Exam =")
 })
 
 test_that("getModelEquations requires chat for llm equations", {
-  df = data.frame(
-    y = c(1, 3, 5, 7),
-    x = c(0, 1, 2, 3)
-  )
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
 
-  model = stats::lm(y ~ x, data = df)
+  model = stats::lm(Exam ~ Test, data = df)
 
   expect_warning(
     expect_error(
@@ -45,17 +39,14 @@ test_that("runModel attaches deterministic equations by default without chat acc
     .package = "WMFM"
   )
 
-  df = data.frame(
-    y = c(1, 3, 5, 7),
-    x = c(0, 1, 2, 3)
-  )
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   out = NULL
 
   expect_warning(
     out <- runModel(
       data = df,
-      formula = y ~ x,
+      formula = Exam ~ Test,
       modelType = "lm",
       printOutput = FALSE
     ),
@@ -89,17 +80,14 @@ test_that("runModel falls back to deterministic equations when llm equations fai
     .package = "WMFM"
   )
 
-  df = data.frame(
-    y = c(1, 3, 5, 7),
-    x = c(0, 1, 2, 3)
-  )
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
 
   out = NULL
 
   expect_warning(
     out <- runModel(
       data = df,
-      formula = y ~ x,
+      formula = Exam ~ Test,
       modelType = "lm",
       printOutput = FALSE,
       equationMethod = "llm"
