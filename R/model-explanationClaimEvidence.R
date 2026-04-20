@@ -356,72 +356,6 @@ mapSingleExplanationClaim = function(
 #'
 #' @return A single character string.
 #' @keywords internal
-#' Check whether a sentence contains explicit uncertainty language
-#'
-#' @param claimText Character scalar.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-#' @noRd
-sentenceHasUncertaintyCue = function(claimText) {
-
-  text = tolower(claimText %||% "")
-
-  grepl(
-    "confidence interval|confidence intervals|confidence limits|limits|plausible|likely|uncertain|uncertainty|consistent with|bounds|range",
-    text,
-    perl = TRUE
-  )
-}
-
-#' Check whether a sentence contains a strong change statement
-#'
-#' @param claimText Character scalar.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-#' @noRd
-sentenceHasStrongChangeCue = function(claimText) {
-
-  text = tolower(claimText %||% "")
-
-  grepl(
-    "for each|each one-point|1-unit increase|one-point increase|per unit|per magnitude unit|multiplies|drops to|cuts the expected count|falls by|rises by|same one-point rise",
-    text,
-    perl = TRUE
-  )
-}
-
-#' Check whether a sentence is primarily about uncertainty
-#'
-#' @param claimText Character scalar.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-#' @noRd
-sentenceIsPrimarilyUncertainty = function(claimText) {
-
-  text = tolower(claimText %||% "")
-
-  if (!sentenceHasUncertaintyCue(claimText)) {
-    return(FALSE)
-  }
-
-  leadingUncertaintyCue = grepl(
-    "^(these|the) confidence interval|^(these|the) confidence intervals|^(these|the) confidence limits|^(the )?interval|^(the )?limits",
-    text,
-    perl = TRUE
-  )
-
-  interpretiveUncertaintyCue = grepl(
-    "suggest|indicating|consistent with|plausible|likely",
-    text,
-    perl = TRUE
-  )
-
-  (leadingUncertaintyCue || interpretiveUncertaintyCue) && !sentenceHasStrongChangeCue(claimText)
-}
-
 classifyExplanationClaimType = function(
     claimText,
     audit,
@@ -443,8 +377,10 @@ classifyExplanationClaimType = function(
     return("researchQuestion")
   }
 
-  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
-    return("uncertainty")
+  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
+
+  if (nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)) {
+    return("researchQuestion")
   }
 
   if (sentenceLooksLikeResearchAnswer(
@@ -457,10 +393,8 @@ classifyExplanationClaimType = function(
     return("answer")
   }
 
-  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
-
-  if (nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)) {
-    return("researchQuestion")
+  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
+    return("uncertainty")
   }
 
   if (sentenceMatchesBaselineEvidence(claimText, audit)) {
@@ -549,7 +483,7 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
   text = tolower(claimText %||% "")
 
   baselineCue = grepl(
-    "\\bwhen\\b|at about|at around|at the average|at an average|at a value|holding|for a student|for someone|starting value|baseline|fitted value",
+    "\bwhen\b|at about|at around|at the average|at an average|at a value|at a magnitude of|at the typical|typical magnitude|holding|for a student|for someone|starting value|baseline|fitted value",
     text,
     perl = TRUE
   )
@@ -578,7 +512,14 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
     nzchar(label) && grepl(label, text, fixed = TRUE)
   }, logical(1)))
 
-  baselineCue || labelMatch || (baselineCue && termMatch)
+  anchoredExpectedCue = termMatch &&
+    grepl(
+      "expected count|expected value|are expected to occur|is expected to occur|are expected|is expected|predicts an average|average of about|average of",
+      text,
+      perl = TRUE
+    )
+
+  baselineCue || labelMatch || anchoredExpectedCue || (baselineCue && termMatch)
 }
 
 #' Check whether a sentence matches factor reference-level evidence
@@ -743,14 +684,16 @@ sentenceLooksLikeResearchAnswer = function(
     return(FALSE)
   }
 
-  isLastSentence = !is.na(sentenceIndex) && !is.na(totalClaims) && sentenceIndex == totalClaims
+  isNearEnd = !is.na(sentenceIndex) && !is.na(totalClaims) &&
+    sentenceIndex >= max(1L, totalClaims - 1L)
+
   answerCue = grepl(
-    "^answer:|^on average\b|^overall\b|^in summary\b|the data are consistent with|tend to|associated with",
+    "^answer:|^on average\b|^overall\b|^in summary\b|^in short\b|^thus\b|^therefore\b|the data are consistent with|the data indicate|the data suggest|suggest that|indicate that|declines more steeply|falls more steeply|rises more steeply|rate of decline|stronger than|steeper than",
     text,
     perl = TRUE
   )
 
-  if (!(isLastSentence && answerCue)) {
+  if (!(isNearEnd && answerCue)) {
     return(FALSE)
   }
 
@@ -769,7 +712,8 @@ sentenceLooksLikeResearchAnswer = function(
     tokenizeExplanationClaimText(researchQuestion)
   )
 
-  length(overlap) >= 1 || grepl("the data are consistent with", text, fixed = TRUE)
+  length(overlap) >= 1 ||
+    grepl("the data are consistent with|the data indicate|the data suggest|suggest that|indicate that", text, perl = TRUE)
 }
 
 #' Build a plain-language support note for a mapped claim
