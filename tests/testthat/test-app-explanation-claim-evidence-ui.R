@@ -25,7 +25,9 @@ testthat::test_that("renderExplanationClaimEvidenceUi returns readable sentence 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
   testthat::expect_match(html, "Sentence 1", fixed = TRUE)
   testthat::expect_match(html, "Evidence used:", fixed = TRUE)
-  testthat::expect_match(html, "confidence-interval guidance", fixed = TRUE)
+  testthat::expect_match(html, "This sentence explains the uncertainty around the estimate", fixed = TRUE)
+  testthat::expect_false(grepl("deterministic evidence", html, fixed = TRUE))
+  testthat::expect_false(grepl("Supporting evidence:", html, fixed = TRUE))
 })
 
 

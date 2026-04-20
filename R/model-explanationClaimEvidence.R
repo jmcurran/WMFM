@@ -627,42 +627,15 @@ selectExplanationEvidenceForClaim = function(
 #' @keywords internal
 buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
 
-  evidenceLabelText = if (is.data.frame(matchedEvidence) && nrow(matchedEvidence) > 0) {
-    paste(unique(stats::na.omit(matchedEvidence$label)), collapse = "; ")
-  } else {
-    "the general teaching summary"
-  }
-
   switch(
     claimType,
-    researchQuestion = paste(
-      "This sentence is linked to the research-question framing supplied to the explanation prompt.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    uncertainty = paste(
-      "This sentence is linked to the uncertainty evidence, especially the confidence-interval guidance used to keep the wording cautious.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    scale = paste(
-      "This sentence is linked to the interpretation-scale rules that translate raw model quantities into student-facing language.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    baseline = paste(
-      "This sentence is linked to the chosen starting values and baseline fitted-value evidence used when the explanation talks about a typical case.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    comparison = paste(
-      "This sentence is linked to the reference-group choices and model-based comparison quantities used for factor predictors.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    mainEffect = paste(
-      "This sentence is linked to the model-based effect quantities that translate fitted coefficients into the main substantive comparison.",
-      "Supporting evidence:", evidenceLabelText
-    ),
-    paste(
-      "This sentence is linked to the closest deterministic evidence available in the audit and teaching summary.",
-      "Supporting evidence:", evidenceLabelText
-    )
+    researchQuestion = "This sentence restates the research question in plain language.",
+    uncertainty = "This sentence explains the uncertainty around the estimate and uses confidence-interval guidance to keep the wording cautious.",
+    scale = "This sentence explains the scale used to describe the response.",
+    baseline = "This sentence describes a typical case and its expected outcome.",
+    comparison = "This sentence explains how the groups are being compared.",
+    mainEffect = "This sentence explains how the response changes as the predictor increases.",
+    "This sentence provides supporting context for the explanation."
   )
 }
 
