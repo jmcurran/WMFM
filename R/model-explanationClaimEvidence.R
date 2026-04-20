@@ -72,7 +72,9 @@ buildExplanationClaimEvidenceMap = function(
       claimId = character(0),
       sentenceIndex = integer(0),
       claimText = character(0),
+      claimTags = I(list()),
       claimType = character(0),
+      supportNotes = I(list()),
       supportNote = character(0),
       evidenceCount = integer(0),
       evidenceTypes = character(0),
@@ -311,7 +313,7 @@ mapSingleExplanationClaim = function(
     totalClaims = NA_integer_
 ) {
 
-  claimType = classifyExplanationClaimType(
+  claimTags = detectExplanationClaimTags(
     claimText = claimText,
     audit = audit,
     teachingSummary = teachingSummary,
@@ -320,7 +322,18 @@ mapSingleExplanationClaim = function(
     totalClaims = totalClaims
   )
 
+  claimType = classifyExplanationClaimType(
+    claimText = claimText,
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = sentenceIndex,
+    totalClaims = totalClaims,
+    claimTags = claimTags
+  )
+
   matchedEvidence = selectExplanationEvidenceForClaim(
+    claimTags = claimTags,
     claimType = claimType,
     claimText = claimText,
     audit = audit,
@@ -328,16 +341,24 @@ mapSingleExplanationClaim = function(
     evidenceInventory = evidenceInventory
   )
 
-  supportNote = buildExplanationClaimSupportNote(
-    claimType = claimType,
+  supportNotes = buildExplanationClaimSupportNotes(
+    claimTags = claimTags,
     matchedEvidence = matchedEvidence
+  )
+
+  supportNote = buildExplanationClaimSupportNote(
+    claimTags = claimTags,
+    matchedEvidence = matchedEvidence,
+    supportNotes = supportNotes
   )
 
   data.frame(
     claimId = claimId,
     sentenceIndex = as.integer(sentenceIndex),
     claimText = claimText,
+    claimTags = I(list(claimTags)),
     claimType = claimType,
+    supportNotes = I(list(supportNotes)),
     supportNote = supportNote,
     evidenceCount = nrow(matchedEvidence),
     evidenceTypes = paste(unique(stats::na.omit(matchedEvidence$evidenceType)), collapse = ", "),
@@ -362,28 +383,102 @@ classifyExplanationClaimType = function(
     teachingSummary = NULL,
     model = NULL,
     sentenceIndex = NA_integer_,
-    totalClaims = NA_integer_
+    totalClaims = NA_integer_,
+    claimTags = NULL
 ) {
 
-  text = tolower(claimText %||% "")
+  if (is.null(claimTags)) {
+    claimTags = detectExplanationClaimTags(
+      claimText = claimText,
+      audit = audit,
+      teachingSummary = teachingSummary,
+      model = model,
+      sentenceIndex = sentenceIndex,
+      totalClaims = totalClaims
+    )
+  }
 
-  if (!nzchar(text)) {
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if (length(tags) == 0) {
     return("general")
   }
 
-  directResearchQuestion = trimws(as.character(attr(model, "wmfm_research_question", exact = TRUE) %||% ""))
-
-  if (nzchar(directResearchQuestion) && sentenceMatchesResearchQuestion(claimText, directResearchQuestion)) {
+  if ("researchQuestion" %in% tags) {
     return("researchQuestion")
   }
 
-  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
+  if ("answer" %in% tags) {
+    return("answer")
+  }
 
-  if (nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)) {
+  if ("typicalCase" %in% tags) {
+    return("baseline")
+  }
+
+  if ("effect" %in% tags) {
+    return("mainEffect")
+  }
+
+  if ("comparison" %in% tags) {
+    return("comparison")
+  }
+
+  if ("uncertainty" %in% tags) {
+    return("uncertainty")
+  }
+
+  if ("scale" %in% tags) {
+    return("scale")
+  }
+
+  "general"
+}
+
+#' Detect one or more tags for a sentence-level explanation claim
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#' @param sentenceIndex Integer-like sentence index.
+#' @param totalClaims Integer-like total number of claims.
+#'
+#' @return Character vector.
+#' @keywords internal
+#' @examples
+#' Detect one or more tags for a sentence-level explanation claim
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#' @param sentenceIndex Optional integer sentence index.
+#' @param totalClaims Optional integer total number of claims.
+#'
+#' @return A character vector of zero or more claim tags.
+#' @keywords internal
+#' @noRd
+detectExplanationClaimTags = function(
+    claimText,
+    audit,
+    teachingSummary = NULL,
+    model = NULL,
+    sentenceIndex = NA_integer_,
+    totalClaims = NA_integer_
+) {
+
+  text = trimws(claimText %||% "")
+
+  if (!nzchar(text)) {
+    return(character(0))
+  }
+
+  if (detectResearchQuestion(claimText = claimText, teachingSummary = teachingSummary, model = model)) {
     return("researchQuestion")
   }
 
-  if (sentenceLooksLikeResearchAnswer(
+  if (detectAnswer(
     claimText = claimText,
     sentenceIndex = sentenceIndex,
     totalClaims = totalClaims,
@@ -393,27 +488,153 @@ classifyExplanationClaimType = function(
     return("answer")
   }
 
-  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
-    return("uncertainty")
+  tags = c(
+    if (detectTypicalCase(claimText = claimText, audit = audit)) "typicalCase",
+    if (detectEffect(claimText = claimText, audit = audit, model = model)) "effect",
+    if (detectUncertainty(claimText = claimText)) "uncertainty",
+    if (detectComparison(claimText = claimText, audit = audit)) "comparison",
+    if (detectScale(claimText = claimText)) "scale"
+  )
+
+  normaliseExplanationClaimTags(tags)
+}
+
+#' Detect research-question framing in a sentence
+#'
+#' @param claimText Character scalar.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectResearchQuestion = function(claimText, teachingSummary = NULL, model = NULL) {
+
+  directResearchQuestion = trimws(as.character(attr(model, "wmfm_research_question", exact = TRUE) %||% ""))
+
+  if (nzchar(directResearchQuestion) && sentenceMatchesResearchQuestion(claimText, directResearchQuestion)) {
+    return(TRUE)
   }
 
-  if (sentenceMatchesBaselineEvidence(claimText, audit)) {
-    return("baseline")
-  }
+  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
 
-  if (sentenceMentionsModelledChange(claimText, audit, model)) {
-    return("mainEffect")
-  }
+  nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)
+}
 
-  if (sentenceMatchesReferenceLevel(claimText, audit)) {
-    return("comparison")
-  }
+#' Detect typical-case framing in a sentence
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectTypicalCase = function(claimText, audit) {
+  sentenceMatchesBaselineEvidence(claimText = claimText, audit = audit)
+}
 
-  if (grepl("odds|probability|expected count|expected value|mean response|response scale", text, perl = TRUE)) {
-    return("scale")
-  }
+#' Detect effect wording in a sentence
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param model Optional fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectEffect = function(claimText, audit, model = NULL) {
+  sentenceMentionsModelledChange(claimText = claimText, audit = audit, model = model)
+}
 
-  "general"
+#' Detect uncertainty wording in a sentence
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectUncertainty = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  grepl(
+    "confidence interval|confidence intervals|confidence limit|confidence limits|uncertain|uncertainty|likely|plausible|consistent with|confidence band|confidence bands|interval estimate",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Detect comparison wording in a sentence
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectComparison = function(claimText, audit) {
+  sentenceMatchesReferenceLevel(claimText = claimText, audit = audit)
+}
+
+#' Detect final-answer wording in a sentence
+#'
+#' @param claimText Character scalar.
+#' @param sentenceIndex Integer-like sentence index.
+#' @param totalClaims Integer-like total number of claims.
+#' @param model Optional fitted model object.
+#' @param teachingSummary Optional teaching summary object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectAnswer = function(
+    claimText,
+    sentenceIndex = NA_integer_,
+    totalClaims = NA_integer_,
+    model = NULL,
+    teachingSummary = NULL
+) {
+
+  sentenceLooksLikeResearchAnswer(
+    claimText = claimText,
+    sentenceIndex = sentenceIndex,
+    totalClaims = totalClaims,
+    model = model,
+    teachingSummary = teachingSummary
+  )
+}
+
+#' Detect response-scale wording in a sentence
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectScale = function(claimText) {
+
+  text = tolower(claimText %||% "")
+  grepl(
+    "odds scale|probability scale|response scale|log-odds|on the odds scale|on the probability scale|on the response scale|mean response scale|expected count scale|expected value scale",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Normalize claim-tag order for stable display and testing
+#'
+#' @param claimTags Character vector.
+#'
+#' @return Character vector.
+#' @keywords internal
+normaliseExplanationClaimTags = function(claimTags) {
+
+  allowedOrder = c(
+    "researchQuestion",
+    "typicalCase",
+    "effect",
+    "uncertainty",
+    "comparison",
+    "answer",
+    "scale"
+  )
+
+  tags = unique(stats::na.omit(as.character(claimTags %||% character(0))))
+  tags = tags[tags %in% allowedOrder]
+  allowedOrder[allowedOrder %in% tags]
 }
 
 #' Check whether a sentence matches research-question framing
@@ -483,7 +704,7 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
   text = tolower(claimText %||% "")
 
   baselineCue = grepl(
-    "\bwhen\b|at about|at around|at the average|at an average|at a value|at a magnitude of|at the typical|typical magnitude|holding|for a student|for someone|starting value|baseline|fitted value",
+    "\\bwhen\\b|at about|at around|at the average|at an average|at a value|at a magnitude of|at the typical|typical magnitude|holding|for a student|for someone|starting value|baseline|fitted value",
     text,
     perl = TRUE
   )
@@ -537,16 +758,22 @@ sentenceMatchesReferenceLevel = function(claimText, audit) {
     return(FALSE)
   }
 
-  cueMatch = grepl("compared with|compared to|relative to|reference group|reference level|other group|group", text, perl = TRUE)
+  cueMatch = grepl(
+    "compares|compared with|compared to|relative to|reference group|reference level|other group|comparison",
+    text,
+    perl = TRUE
+  )
 
-  levelMatch = any(vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
+  if (!cueMatch) {
+    return(FALSE)
+  }
+
+  any(vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
     row = audit$referenceLevels[i, , drop = FALSE]
     predictorMatch = grepl(tolower(row$predictor[[1]]), text, fixed = TRUE)
     referenceMatch = grepl(tolower(row$referenceLevel[[1]]), text, fixed = TRUE)
     predictorMatch || referenceMatch
-  }, logical(1)))
-
-  cueMatch || levelMatch
+  }, logical(1))) || grepl("reference group|reference level|other group", text, perl = TRUE)
 }
 
 #' Check whether a sentence mentions a modelled change
@@ -560,7 +787,16 @@ sentenceMatchesReferenceLevel = function(claimText, audit) {
 sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
 
   text = tolower(claimText %||% "")
-  changeCue = grepl("increase|decrease|higher|lower|changes|associated with|tend to", text, perl = TRUE)
+  changeCue = grepl(
+    "increase|decrease|higher|lower|changes|associated with|tend to|falls|rises|decline|declines|drop|drops|steeper",
+    text,
+    perl = TRUE
+  )
+  multiplierCue = grepl(
+    "multiplies|multiplied|1-unit|one-unit|one magnitude|one-magnitude|per unit|per one-unit",
+    text,
+    perl = TRUE
+  )
 
   predictorNames = character(0)
 
@@ -585,12 +821,19 @@ sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
     }, logical(1)))
   }
 
-  changeCue || predictorMatch || effectLabelMatch
+  uncertaintyQualifiedChangeCue = changeCue && grepl(
+    "confidence interval|confidence intervals|confidence limit|confidence limits|likely|plausible|consistent with|positive|negative",
+    text,
+    perl = TRUE
+  )
+
+  effectLabelMatch || multiplierCue || (changeCue && predictorMatch) || (changeCue && grepl("\\bas\\b", text, perl = TRUE)) || uncertaintyQualifiedChangeCue
 }
 
 #' Select evidence rows for a sentence-level claim
 #'
-#' @param claimType Character scalar.
+#' @param claimTags Optional character vector of detected tags.
+#' @param claimType Optional legacy single-type label.
 #' @param claimText Character scalar.
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param teachingSummary Optional teaching summary object.
@@ -599,7 +842,8 @@ sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
 #' @return A data frame.
 #' @keywords internal
 selectExplanationEvidenceForClaim = function(
-    claimType,
+    claimTags = NULL,
+    claimType = NULL,
     claimText,
     audit,
     teachingSummary,
@@ -617,21 +861,43 @@ selectExplanationEvidenceForClaim = function(
     ))
   }
 
-  keepTypes = switch(
-    claimType,
-    researchQuestion = c("researchQuestion"),
-    answer = c("researchQuestion", "mainEffect", "comparison", "uncertainty", "effectEvidence", "scale"),
-    uncertainty = c("uncertainty", "confidenceInterval", "effectEvidence", "baselineEvidence"),
-    scale = c("scale"),
-    baseline = c("baselineChoice", "numericAnchor", "baselineEvidence"),
-    comparison = c("referenceLevel", "effectEvidence", "mainEffect"),
-    mainEffect = c("mainEffect", "effectEvidence", "scale"),
-    c("mainEffect", "effectEvidence", "confidenceInterval")
-  )
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if (length(tags) == 0 && is.character(claimType) && length(claimType) == 1 && !is.na(claimType)) {
+    tags = switch(
+      claimType,
+      researchQuestion = "researchQuestion",
+      answer = "answer",
+      uncertainty = "uncertainty",
+      scale = "scale",
+      baseline = "typicalCase",
+      comparison = "comparison",
+      mainEffect = "effect",
+      character(0)
+    )
+  }
+
+  keepTypes = unique(unlist(lapply(tags, function(tag) {
+    switch(
+      tag,
+      researchQuestion = c("researchQuestion"),
+      typicalCase = c("baselineChoice", "numericAnchor", "baselineEvidence"),
+      effect = c("mainEffect", "effectEvidence", "scale"),
+      uncertainty = c("uncertainty", "confidenceInterval", "effectEvidence", "baselineEvidence"),
+      comparison = c("referenceLevel", "effectEvidence", "mainEffect"),
+      answer = c("researchQuestion", "mainEffect", "referenceLevel", "uncertainty", "confidenceInterval", "effectEvidence", "scale"),
+      scale = c("scale"),
+      character(0)
+    )
+  })))
+
+  if (length(keepTypes) == 0) {
+    keepTypes = c("mainEffect", "effectEvidence", "confidenceInterval")
+  }
 
   out = evidenceInventory[evidenceInventory$evidenceType %in% keepTypes, , drop = FALSE]
 
-  if (identical(claimType, "baseline") && is.list(audit$numericAnchor) && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
+  if ("typicalCase" %in% tags && is.list(audit$numericAnchor) && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
     text = tolower(claimText %||% "")
     matchedPredictors = vapply(seq_len(nrow(audit$numericAnchor$table)), function(i) {
       row = audit$numericAnchor$table[i, , drop = FALSE]
@@ -716,26 +982,67 @@ sentenceLooksLikeResearchAnswer = function(
     grepl("the data are consistent with|the data indicate|the data suggest|suggest that|indicate that", text, perl = TRUE)
 }
 
-#' Build a plain-language support note for a mapped claim
+#' Build plain-language support notes for a mapped claim
 #'
-#' @param claimType Character scalar.
+#' @param claimTags Character vector.
 #' @param matchedEvidence Data frame of evidence rows.
+#'
+#' @return Character vector.
+#' @keywords internal
+buildExplanationClaimSupportNotes = function(claimTags, matchedEvidence) {
+
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if (length(tags) == 0) {
+    return("provides supporting context")
+  }
+
+  notes = vapply(tags, function(tag) {
+    switch(
+      tag,
+      researchQuestion = "restates the research question",
+      typicalCase = "describes a typical case",
+      effect = "explains how the response changes",
+      uncertainty = "shows uncertainty in the estimate",
+      comparison = "describes how groups are being compared",
+      answer = "helps answer the research question",
+      scale = "explains the response scale",
+      "provides supporting context"
+    )
+  }, character(1))
+
+  unique(notes)
+}
+
+#' Build a combined plain-language support note for a mapped claim
+#'
+#' @param claimTags Character vector.
+#' @param matchedEvidence Data frame of evidence rows.
+#' @param supportNotes Optional character vector.
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
+buildExplanationClaimSupportNote = function(claimTags, matchedEvidence, supportNotes = NULL) {
 
-  switch(
-    claimType,
-    researchQuestion = "This sentence restates the research question in plain language.",
-    answer = "This sentence gives the overall answer to the research question.",
-    uncertainty = "This sentence explains the uncertainty around the estimate and uses confidence-interval guidance to keep the wording cautious.",
-    scale = "This sentence explains the scale used to describe the response.",
-    baseline = "This sentence describes a typical case and its expected outcome.",
-    comparison = "This sentence explains how the groups are being compared.",
-    mainEffect = "This sentence explains how the response changes as the predictor increases.",
-    "This sentence provides supporting context for the explanation."
+  notes = supportNotes %||% buildExplanationClaimSupportNotes(
+    claimTags = claimTags,
+    matchedEvidence = matchedEvidence
   )
+
+  notes = unique(stats::na.omit(as.character(notes %||% character(0))))
+
+  if (length(notes) == 0) {
+    return("This sentence provides supporting context for the explanation.")
+  }
+
+  pieces = c(
+    paste0("This sentence ", notes[[1]], "."),
+    if (length(notes) > 1) {
+      paste0("It also ", notes[-1], ".")
+    }
+  )
+
+  paste(pieces, collapse = " ")
 }
 
 #' Tokenize a claim or question for overlap matching

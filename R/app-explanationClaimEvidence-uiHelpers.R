@@ -20,6 +20,8 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
 
   cards = lapply(seq_len(nrow(claimMap$claims)), function(i) {
     row = claimMap$claims[i, , drop = FALSE]
+    supportNotes = row$supportNotes[[1]] %||% character(0)
+    supportNotes = unique(stats::na.omit(as.character(supportNotes)))
 
     tags$div(
       class = "wmfm-explanation-helper-box",
@@ -28,7 +30,22 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
         tags$strong(paste0("Sentence ", row$sentenceIndex[[1]], ": ")),
         row$claimText[[1]]
       ),
-      tags$p(row$supportNote[[1]]),
+      if (length(supportNotes) > 0) {
+        tagList(
+          tags$p(
+            class = "wmfm-explanation-helper-note",
+            tags$strong("This sentence:")
+          ),
+          tags$ul(
+            class = "wmfm-explanation-helper-note",
+            lapply(supportNotes, function(note) {
+              tags$li(note)
+            })
+          )
+        )
+      } else {
+        tags$p(row$supportNote[[1]])
+      },
       if (nzchar(row$evidenceLabels[[1]] %||% "")) {
         tags$p(
           class = "wmfm-explanation-helper-note",

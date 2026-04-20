@@ -5,7 +5,8 @@
 \title{Select evidence rows for a sentence-level claim}
 \usage{
 selectExplanationEvidenceForClaim(
-  claimType,
+  claimTags = NULL,
+  claimType = NULL,
   claimText,
   audit,
   teachingSummary,
@@ -13,7 +14,9 @@ selectExplanationEvidenceForClaim(
 )
 }
 \arguments{
-\item{claimType}{Character scalar.}
+\item{claimTags}{Optional character vector of detected tags.}
+
+\item{claimType}{Optional legacy single-type label.}
 
 \item{claimText}{Character scalar.}
 
