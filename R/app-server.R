@@ -202,6 +202,7 @@ appServer = function(input, output, session) {
     modelEquations = NULL,
     modelExplanation = NULL,
     modelExplanationAudit = NULL,
+    modelExplanationClaimEvidenceMap = NULL,
     modelExplanationTutor = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
@@ -490,6 +491,7 @@ appServer = function(input, output, session) {
     rv$modelEquations = NULL
     rv$modelExplanation = NULL
     rv$modelExplanationAudit = NULL
+    rv$modelExplanationClaimEvidenceMap = NULL
     rv$modelExplanationTutor = NULL
     rv$modelContext = NULL
 
@@ -3273,12 +3275,39 @@ $$")
         chatProvider = chatProvider
       )
       explanationAudit = buildAppExplanationAudit(model = m)
+      explanationClaimEvidenceMap = NULL
+
+      if (!is.null(explanation) && !is.null(explanationAudit)) {
+        explanationTeachingSummary = tryCatch(
+          buildExplanationTeachingSummary(
+            audit = explanationAudit,
+            model = m,
+            researchQuestion = rv$researchQuestion %||% NULL
+          ),
+          error = function(e) {
+            NULL
+          }
+        )
+
+        explanationClaimEvidenceMap = tryCatch(
+          buildExplanationClaimEvidenceMap(
+            explanationText = explanation,
+            audit = explanationAudit,
+            teachingSummary = explanationTeachingSummary,
+            model = m
+          ),
+          error = function(e) {
+            NULL
+          }
+        )
+      }
 
       incProgress(0.35, detail = outputMessages$updateDetail)
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
       rv$modelExplanationAudit = explanationAudit
+      rv$modelExplanationClaimEvidenceMap = explanationClaimEvidenceMap
       rv$modelExplanationTutor = NULL
 
       finishMessages = buildAppOutputMessages(
@@ -3551,6 +3580,7 @@ $$")
   output$model_explanation = renderUI({
     expl = rv$modelExplanation
     audit = rv$modelExplanationAudit
+    claimMap = rv$modelExplanationClaimEvidenceMap
     tutorText = rv$modelExplanationTutor
     m = modelFit()
 
@@ -3598,6 +3628,13 @@ $$")
           tags$h5("How this explanation was constructed"),
           renderExplanationTeachingSummaryUi(teachingSummary),
           tags$br(),
+          if (!is.null(claimMap)) {
+            tagList(
+              tags$h5("Where each part of the explanation came from"),
+              renderExplanationClaimEvidenceUi(claimMap),
+              tags$br()
+            )
+          },
           bslib::accordion(
             id = "model_explanation_tutor_accordion",
             multiple = TRUE,
