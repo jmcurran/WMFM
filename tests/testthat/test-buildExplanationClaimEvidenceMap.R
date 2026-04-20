@@ -96,3 +96,67 @@ testthat::test_that("buildExplanationClaimEvidenceMap handles factor comparisons
   testthat::expect_identical(out$claims$claimType[[2]], "comparison")
   testthat::expect_match(out$claims$evidenceLabels[[2]], "Reference level", fixed = TRUE)
 })
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap treats research-question paraphrases as framing", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(
+    audit = audit,
+    model = model,
+    researchQuestion = "Does Test help explain Exam?"
+  )
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "The study asks whether Test helps explain Exam.",
+      "On average, exam marks tend to increase as Test increases."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimType[[1]], "researchQuestion")
+  testthat::expect_identical(out$claims$evidenceLabels[[1]], "Research question framing")
+})
+
+
+testthat::test_that("effect sentences with intervals are not treated as baseline cases", {
+  data(quakes, package = "datasets")
+
+  df = datasets::quakes[, c("mag", "stations")]
+  df$locn = factor(ifelse(seq_len(nrow(df)) %% 2 == 0, "SC", "WA"))
+
+  model = stats::glm(stations ~ mag * locn, family = poisson(link = "log"), data = df)
+  attr(model, "wmfm_research_question") = paste(
+    "The study asks how the expected number of earthquakes changes when magnitude grows,",
+    "and whether that pattern is the same for SC and WA."
+  )
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "A one-magnitude rise multiplies the expected count in SC by about 0.21; the 95% confidence limits run from roughly 0.13 to 0.31.",
+      "In WA the same one-magnitude rise multiplies the expected count by about 0.04, with limits from roughly 0.04 to 0.72.",
+      "Answer: On average, earthquake frequency falls as magnitude increases, with a steeper decline in WA."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimType[[1]], "mainEffect")
+  testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
+  testthat::expect_match(out$claims$supportNote[[1]], "response changes", fixed = TRUE)
+  testthat::expect_match(out$claims$supportNote[[2]], "response changes", fixed = TRUE)
+  testthat::expect_identical(out$claims$claimType[[3]], "answer")
+  testthat::expect_match(out$claims$supportNote[[3]], "overall answer", fixed = TRUE)
+})

@@ -8,7 +8,9 @@ classifyExplanationClaimType(
   claimText,
   audit,
   teachingSummary = NULL,
-  model = NULL
+  model = NULL,
+  sentenceIndex = NA_integer_,
+  totalClaims = NA_integer_
 )
 }
 \arguments{

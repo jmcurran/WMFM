@@ -62,7 +62,8 @@ buildExplanationClaimEvidenceMap = function(
       audit = audit,
       teachingSummary = teachingSummary,
       model = model,
-      evidenceInventory = evidenceInventory
+      evidenceInventory = evidenceInventory,
+      totalClaims = length(claimTexts)
     )
   })
 
@@ -306,14 +307,17 @@ mapSingleExplanationClaim = function(
     audit,
     teachingSummary,
     model,
-    evidenceInventory
+    evidenceInventory,
+    totalClaims = NA_integer_
 ) {
 
   claimType = classifyExplanationClaimType(
     claimText = claimText,
     audit = audit,
     teachingSummary = teachingSummary,
-    model = model
+    model = model,
+    sentenceIndex = sentenceIndex,
+    totalClaims = totalClaims
   )
 
   matchedEvidence = selectExplanationEvidenceForClaim(
@@ -352,7 +356,14 @@ mapSingleExplanationClaim = function(
 #'
 #' @return A single character string.
 #' @keywords internal
-classifyExplanationClaimType = function(claimText, audit, teachingSummary = NULL, model = NULL) {
+classifyExplanationClaimType = function(
+    claimText,
+    audit,
+    teachingSummary = NULL,
+    model = NULL,
+    sentenceIndex = NA_integer_,
+    totalClaims = NA_integer_
+) {
 
   text = tolower(claimText %||% "")
 
@@ -370,6 +381,16 @@ classifyExplanationClaimType = function(claimText, audit, teachingSummary = NULL
     return("uncertainty")
   }
 
+  if (sentenceLooksLikeResearchAnswer(
+    claimText = claimText,
+    sentenceIndex = sentenceIndex,
+    totalClaims = totalClaims,
+    model = model,
+    teachingSummary = teachingSummary
+  )) {
+    return("answer")
+  }
+
   summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
 
   if (nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)) {
@@ -380,12 +401,12 @@ classifyExplanationClaimType = function(claimText, audit, teachingSummary = NULL
     return("baseline")
   }
 
-  if (sentenceMatchesReferenceLevel(claimText, audit)) {
-    return("comparison")
-  }
-
   if (sentenceMentionsModelledChange(claimText, audit, model)) {
     return("mainEffect")
+  }
+
+  if (sentenceMatchesReferenceLevel(claimText, audit)) {
+    return("comparison")
   }
 
   if (grepl("odds|probability|expected count|expected value|mean response|response scale", text, perl = TRUE)) {
@@ -422,12 +443,20 @@ sentenceMatchesResearchQuestion = function(claimText, researchQuestion) {
     return(TRUE)
   }
 
+  if (grepl("^(the )?(study|question|research question) asks\\b", sentenceStem, perl = TRUE)) {
+    return(TRUE)
+  }
+
   sentenceTokens = tokenizeExplanationClaimText(claimText)
   questionTokens = tokenizeExplanationClaimText(researchQuestion)
 
   overlap = intersect(sentenceTokens, questionTokens)
   tokenDenominator = max(length(unique(questionTokens)), 1)
   overlapShare = length(overlap) / tokenDenominator
+
+  if (grepl("\\b(how|whether)\\b", sentenceStem, perl = TRUE) && overlapShare >= 0.2 && length(overlap) >= 2) {
+    return(TRUE)
+  }
 
   if (grepl("[?]$", trimws(claimText %||% "")) && length(overlap) >= 2 && overlapShare >= 0.4) {
     return(TRUE)
@@ -453,7 +482,11 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
 
   text = tolower(claimText %||% "")
 
-  baselineCue = grepl("\\bwhen\\b|\\bat\\b|holding|for a student|for someone|starting value|baseline|fitted value", text, perl = TRUE)
+  baselineCue = grepl(
+    "\\bwhen\\b|at about|at around|at the average|at an average|at a value|holding|for a student|for someone|starting value|baseline|fitted value",
+    text,
+    perl = TRUE
+  )
 
   anchorTerms = character(0)
 
@@ -580,6 +613,7 @@ selectExplanationEvidenceForClaim = function(
   keepTypes = switch(
     claimType,
     researchQuestion = c("researchQuestion"),
+    answer = c("researchQuestion", "mainEffect", "comparison", "uncertainty", "effectEvidence", "scale"),
     uncertainty = c("uncertainty", "confidenceInterval", "effectEvidence", "baselineEvidence"),
     scale = c("scale"),
     baseline = c("baselineChoice", "numericAnchor", "baselineEvidence"),
@@ -618,6 +652,60 @@ selectExplanationEvidenceForClaim = function(
   unique(out)
 }
 
+
+#' Check whether a sentence looks like the final answer to the research question
+#'
+#' @param claimText Character scalar.
+#' @param sentenceIndex Integer-like sentence index.
+#' @param totalClaims Integer-like total number of claims.
+#' @param model Optional fitted model object.
+#' @param teachingSummary Optional teaching summary object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+sentenceLooksLikeResearchAnswer = function(
+    claimText,
+    sentenceIndex = NA_integer_,
+    totalClaims = NA_integer_,
+    model = NULL,
+    teachingSummary = NULL
+) {
+
+  text = trimws(tolower(claimText %||% ""))
+
+  if (!nzchar(text)) {
+    return(FALSE)
+  }
+
+  isLastSentence = !is.na(sentenceIndex) && !is.na(totalClaims) && sentenceIndex == totalClaims
+  answerCue = grepl(
+    "^answer:|^on average\b|^overall\b|^in summary\b|the data are consistent with|tend to|associated with",
+    text,
+    perl = TRUE
+  )
+
+  if (!(isLastSentence && answerCue)) {
+    return(FALSE)
+  }
+
+  researchQuestion = trimws(as.character(
+    attr(model, "wmfm_research_question", exact = TRUE) %||%
+      teachingSummary$researchQuestionLink %||%
+      ""
+  ))
+
+  if (!nzchar(researchQuestion)) {
+    return(FALSE)
+  }
+
+  overlap = intersect(
+    tokenizeExplanationClaimText(claimText),
+    tokenizeExplanationClaimText(researchQuestion)
+  )
+
+  length(overlap) >= 1 || grepl("the data are consistent with", text, fixed = TRUE)
+}
+
 #' Build a plain-language support note for a mapped claim
 #'
 #' @param claimType Character scalar.
@@ -630,6 +718,7 @@ buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
   switch(
     claimType,
     researchQuestion = "This sentence restates the research question in plain language.",
+    answer = "This sentence gives the overall answer to the research question.",
     uncertainty = "This sentence explains the uncertainty around the estimate and uses confidence-interval guidance to keep the wording cautious.",
     scale = "This sentence explains the scale used to describe the response.",
     baseline = "This sentence describes a typical case and its expected outcome.",

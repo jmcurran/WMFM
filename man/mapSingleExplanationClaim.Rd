@@ -11,7 +11,8 @@ mapSingleExplanationClaim(
   audit,
   teachingSummary,
   model,
-  evidenceInventory
+  evidenceInventory,
+  totalClaims = NA_integer_
 )
 }
 \arguments{
