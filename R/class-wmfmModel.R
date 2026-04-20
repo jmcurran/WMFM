@@ -14,6 +14,7 @@
 #' @param equations Generated equations object, or `NULL`.
 #' @param explanation Generated explanation text, or `NULL`.
 #' @param explanationAudit Deterministic explanation-audit object, or `NULL`.
+#' @param explanationClaimEvidenceMap Deterministic claim-to-evidence map, or `NULL`.
 #' @param interactionTerms Character vector of fitted interaction-term names.
 #' @param interactionMinPValue Minimum p-value across fitted interaction terms,
 #'   or `NA_real_`.
@@ -31,6 +32,7 @@ newWmfmModel = function(
     equations = NULL,
     explanation = NULL,
     explanationAudit = NULL,
+    explanationClaimEvidenceMap = NULL,
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
     meta = list()
@@ -89,6 +91,7 @@ newWmfmModel = function(
     equations = equations,
     explanation = explanation,
     explanationAudit = explanationAudit,
+    explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     interactionTerms = interactionTerms,
     interactionMinPValue = interactionMinPValue,
     meta = utils::modifyList(

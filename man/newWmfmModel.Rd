@@ -14,6 +14,7 @@ newWmfmModel(
   equations = NULL,
   explanation = NULL,
   explanationAudit = NULL,
+  explanationClaimEvidenceMap = NULL,
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   meta = list()
@@ -38,6 +39,8 @@ question associated with the fitted model.}
 \item{explanation}{Generated explanation text, or \code{NULL}.}
 
 \item{explanationAudit}{Deterministic explanation-audit object, or \code{NULL}.}
+
+\item{explanationClaimEvidenceMap}{Deterministic claim-to-evidence map, or \code{NULL}.}
 
 \item{interactionTerms}{Character vector of fitted interaction-term names.}
 

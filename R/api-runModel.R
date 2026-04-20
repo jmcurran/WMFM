@@ -287,6 +287,7 @@ runModel = function(
   equations = NULL
   explanation = NULL
   explanationAudit = buildModelExplanationAudit(model = model)
+  explanationClaimEvidenceMap = NULL
   equationMethodUsed = equationMethod
 
   if (identical(equationMethod, "deterministic")) {
@@ -390,6 +391,31 @@ runModel = function(
     )
   }
 
+  if (!is.null(explanation)) {
+    explanationTeachingSummary = tryCatch(
+      buildExplanationTeachingSummary(
+        audit = explanationAudit,
+        model = model,
+        researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% NULL
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+
+    explanationClaimEvidenceMap = tryCatch(
+      buildExplanationClaimEvidenceMap(
+        explanationText = explanation,
+        audit = explanationAudit,
+        teachingSummary = explanationTeachingSummary,
+        model = model
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+  }
+
   output = newWmfmModel(
     model = model,
     formula = formula,
@@ -400,6 +426,7 @@ runModel = function(
     equations = equations,
     explanation = explanation,
     explanationAudit = explanationAudit,
+    explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(
