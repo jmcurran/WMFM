@@ -21,6 +21,10 @@ classifyExplanationClaimType(
 \item{teachingSummary}{Optional teaching summary object.}
 
 \item{model}{Optional fitted model object.}
+
+\item{sentenceIndex}{Optional integer sentence index.}
+
+\item{totalClaims}{Optional integer count of total claims.}
 }
 \value{
 A single character string.

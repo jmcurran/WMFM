@@ -330,7 +330,8 @@ mapSingleExplanationClaim = function(
 
   supportNote = buildExplanationClaimSupportNote(
     claimType = claimType,
-    matchedEvidence = matchedEvidence
+    matchedEvidence = matchedEvidence,
+    claimText = claimText
   )
 
   data.frame(
@@ -347,12 +348,80 @@ mapSingleExplanationClaim = function(
   )
 }
 
+#' Check whether a sentence contains explicit uncertainty language
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceHasUncertaintyCue = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  grepl(
+    "confidence interval|confidence intervals|confidence limits|limits|plausible|likely|uncertain|uncertainty|consistent with|bounds|range",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Check whether a sentence contains a strong change statement
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceHasStrongChangeCue = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  grepl(
+    "for each|each one-point|1-unit increase|one-point increase|per unit|per magnitude unit|multiplies|drops to|cuts the expected count|falls by|rises by|same one-point rise",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Check whether a sentence is primarily about uncertainty
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceIsPrimarilyUncertainty = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  if (!sentenceHasUncertaintyCue(claimText)) {
+    return(FALSE)
+  }
+
+  leadingUncertaintyCue = grepl(
+    "^(these|the) confidence interval|^(these|the) confidence intervals|^(these|the) confidence limits|^(the )?interval|^(the )?limits",
+    text,
+    perl = TRUE
+  )
+
+  interpretiveUncertaintyCue = grepl(
+    "suggest|indicating|consistent with|plausible|likely",
+    text,
+    perl = TRUE
+  )
+
+  (leadingUncertaintyCue || interpretiveUncertaintyCue) && !sentenceHasStrongChangeCue(claimText)
+}
+
 #' Classify a sentence-level explanation claim
 #'
 #' @param claimText Character scalar.
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param teachingSummary Optional teaching summary object.
 #' @param model Optional fitted model object.
+#' @param sentenceIndex Optional integer sentence index.
+#' @param totalClaims Optional integer count of total claims.
 #'
 #' @return A single character string.
 #' @keywords internal
@@ -377,10 +446,6 @@ classifyExplanationClaimType = function(
     return("researchQuestion")
   }
 
-  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
-    return("uncertainty")
-  }
-
   if (sentenceLooksLikeResearchAnswer(
     claimText = claimText,
     sentenceIndex = sentenceIndex,
@@ -401,8 +466,16 @@ classifyExplanationClaimType = function(
     return("baseline")
   }
 
+  if (sentenceIsPrimarilyUncertainty(claimText)) {
+    return("uncertainty")
+  }
+
   if (sentenceMentionsModelledChange(claimText, audit, model)) {
     return("mainEffect")
+  }
+
+  if (sentenceHasUncertaintyCue(claimText)) {
+    return("uncertainty")
   }
 
   if (sentenceMatchesReferenceLevel(claimText, audit)) {
@@ -713,7 +786,7 @@ sentenceLooksLikeResearchAnswer = function(
 #'
 #' @return A single character string.
 #' @keywords internal
-buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
+buildExplanationClaimSupportNote = function(claimType, matchedEvidence, claimText = NULL) {
 
   switch(
     claimType,
@@ -723,7 +796,13 @@ buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
     scale = "This sentence explains the scale used to describe the response.",
     baseline = "This sentence describes a typical case and its expected outcome.",
     comparison = "This sentence explains how the groups are being compared.",
-    mainEffect = "This sentence explains how the response changes as the predictor increases.",
+    mainEffect = {
+      if (sentenceHasUncertaintyCue(claimText) && sentenceHasStrongChangeCue(claimText)) {
+        "This sentence explains how the response changes as the predictor increases and also shows the uncertainty around that estimate."
+      } else {
+        "This sentence explains how the response changes as the predictor increases."
+      }
+    },
     "This sentence provides supporting context for the explanation."
   )
 }
