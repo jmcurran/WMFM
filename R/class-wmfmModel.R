@@ -14,6 +14,8 @@
 #' @param equations Generated equations object, or `NULL`.
 #' @param explanation Generated explanation text, or `NULL`.
 #' @param explanationAudit Deterministic explanation-audit object, or `NULL`.
+#'   When present, this should inherit from `wmfmExplanationAudit` and follow
+#'   the same top-level contract produced by `buildModelExplanationAudit()`.
 #' @param explanationClaimEvidenceMap Deterministic claim-to-evidence map, or `NULL`.
 #' @param interactionTerms Character vector of fitted interaction-term names.
 #' @param interactionMinPValue Minimum p-value across fitted interaction terms,
@@ -80,6 +82,11 @@ newWmfmModel = function(
   if (!is.list(meta)) {
     stop("`meta` must be a list.", call. = FALSE)
   }
+
+  validateWmfmExplanationAudit(
+    x = explanationAudit,
+    allowNull = TRUE
+  )
 
   out = list(
     model = model,

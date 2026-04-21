@@ -7,79 +7,59 @@
 #' @export
 print.wmfmExplanationAudit = function(x, ...) {
 
-  catLine = function(label, value) {
-    cat("- ", label, ": ", value %||% "", "\n", sep = "")
-  }
+  validateWmfmExplanationAudit(x = x)
 
   cat("WMFM explanation audit\n")
   cat("---------------------\n")
   cat(x$transparencyNote %||% "", "\n\n", sep = "")
 
-  if (is.list(x$overview) && length(x$overview) > 0) {
+  if (!is.null(x$overview)) {
     cat("Overview\n")
-    catLine("Response", x$overview$response)
-    catLine("Predictors", paste(x$overview$predictors %||% character(0), collapse = ", "))
-    catLine("Observations", x$overview$nObservations)
-    catLine("Model family", x$overview$modelFamily)
-    catLine("Link", x$overview$link)
-    catLine("Dataset context available", x$overview$hasDatasetContext)
-    catLine("Research question available", x$overview$hasResearchQuestion)
-    cat("\n")
+    cat("- Response: ", x$overview$response %||% "", "\n", sep = "")
+    cat("- Predictors: ", paste(x$overview$predictors %||% character(0), collapse = ", "), "\n", sep = "")
+    cat("- Observations: ", x$overview$nObservations %||% "", "\n", sep = "")
+    cat("- Family/link: ", x$overview$modelFamily %||% "", " / ", x$overview$link %||% "", "\n\n", sep = "")
   }
 
-  if (is.list(x$interpretationScale) && length(x$interpretationScale) > 0) {
+  if (!is.null(x$interpretationScale)) {
     cat("Interpretation scale\n")
-    catLine("Response expression", x$interpretationScale$responseExpression)
-    catLine("Response transform", x$interpretationScale$responseTransform)
-    catLine("Fitted-value scale", x$interpretationScale$fittedValueScale)
-    catLine("Effect scale", x$interpretationScale$effectScale)
-    catLine("Back-transformation", x$interpretationScale$backTransformation)
-    cat("\n")
+    cat("- Fitted-value scale: ", x$interpretationScale$fittedValueScale %||% "", "\n", sep = "")
+    cat("- Effect scale: ", x$interpretationScale$effectScale %||% "", "\n", sep = "")
+    cat("- Back-transformation: ", x$interpretationScale$backTransformation %||% "", "\n\n", sep = "")
   }
 
-  if (is.list(x$numericAnchor) && length(x$numericAnchor) > 0) {
+  if (!is.null(x$numericAnchor)) {
     cat("Numeric anchors\n")
-    catLine("Reference rule", x$numericAnchor$numericReference)
-    catLine("Note", x$numericAnchor$note)
+    cat("- Reference rule: ", x$numericAnchor$numericReference %||% "", "\n", sep = "")
+    cat("- Note: ", x$numericAnchor$note %||% "", "\n", sep = "")
 
     if (is.data.frame(x$numericAnchor$table) && nrow(x$numericAnchor$table) > 0) {
       print(x$numericAnchor$table)
     } else {
       cat("(none)\n")
     }
-
     cat("\n")
   }
 
+  cat("Reference levels\n")
   if (is.data.frame(x$referenceLevels) && nrow(x$referenceLevels) > 0) {
-    cat("Reference levels\n")
     print(x$referenceLevels)
-    cat("\n")
+  } else {
+    cat("(none)\n")
   }
+  cat("\n")
 
-  if (is.list(x$confidenceIntervals) && length(x$confidenceIntervals) > 0) {
+  if (!is.null(x$confidenceIntervals)) {
     cat("Confidence intervals\n")
-    catLine("Level", x$confidenceIntervals$level)
-    catLine("Mode", x$confidenceIntervals$mode)
-    catLine(
-      "Displayed scales",
-      paste(x$confidenceIntervals$displayedScales %||% character(0), collapse = ", ")
-    )
-    catLine("Teaching note", x$confidenceIntervals$teachingNote)
-    cat("\n")
+    cat("- Level: ", x$confidenceIntervals$level %||% "", "\n", sep = "")
+    cat("- Mode: ", x$confidenceIntervals$mode %||% "", "\n", sep = "")
+    cat("- Displayed scales: ", paste(x$confidenceIntervals$displayedScales %||% character(0), collapse = ", "), "\n\n", sep = "")
   }
 
-  if (is.data.frame(x$baselineEvidence)) {
-    cat("Baseline evidence rows: ", nrow(x$baselineEvidence), "\n", sep = "")
-  }
-
-  if (is.data.frame(x$effectEvidence)) {
-    cat("Effect evidence rows: ", nrow(x$effectEvidence), "\n", sep = "")
-  }
-
-  if (is.data.frame(x$coefficientTable)) {
-    cat("Coefficient rows: ", nrow(x$coefficientTable), "\n", sep = "")
-  }
+  cat("Evidence tables\n")
+  cat("- Baseline rows: ", if (is.data.frame(x$baselineEvidence)) nrow(x$baselineEvidence) else 0L, "\n", sep = "")
+  cat("- Effect rows: ", if (is.data.frame(x$effectEvidence)) nrow(x$effectEvidence) else 0L, "\n", sep = "")
+  cat("- Coefficient rows: ", if (is.data.frame(x$coefficientTable)) nrow(x$coefficientTable) else 0L, "\n", sep = "")
 
   invisible(x)
 }

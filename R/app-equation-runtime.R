@@ -1,18 +1,3 @@
-#' Build app-side equation outputs for a fitted model
-#'
-#' Centralises app logic for equation generation after a model has been fitted.
-#' Deterministic equations are now the default app output. When explicitly
-#' requested, the older LLM equation path can still be used while keeping a
-#' deterministic fallback if the LLM equation request fails.
-#'
-#' @param model A fitted model object, typically of class `lm` or `glm`.
-#' @param chatProvider Optional chat provider object. Defaults to `NULL`.
-#' @param equationMethod Character string giving the equation engine. Must be
-#'   one of `"deterministic"` or `"llm"`. Defaults to `"deterministic"`.
-#'
-#' @return A named list with elements `equations`, `equationMethodUsed`, and
-#'   `equationFallbackUsed`.
-#' @keywords internal
 buildAppEquations = function(
     model,
     chatProvider = NULL,
@@ -20,73 +5,70 @@ buildAppEquations = function(
 ) {
 
   equationMethod = match.arg(equationMethod)
-
-  equations = NULL
-  equationMethodUsed = NULL
   equationFallbackUsed = FALSE
 
   if (identical(equationMethod, "deterministic")) {
-    equations = getModelEquations(
-      model = model,
-      method = "deterministic"
-    )
-    equationMethodUsed = "deterministic"
-  } else if (is.null(chatProvider)) {
-    equations = getModelEquations(
-      model = model,
-      method = "deterministic"
-    )
-    equationMethodUsed = "deterministic"
-    equationFallbackUsed = TRUE
-  } else {
-    equations = tryCatch(
-      getModelEquations(
-        model = model,
-        method = "llm",
-        chat = chatProvider
-      ),
-      error = function(e) {
-        NULL
-      }
-    )
-
-    if (is.null(equations)) {
+    return(list(
       equations = getModelEquations(
         model = model,
         method = "deterministic"
-      )
-      equationMethodUsed = "deterministic"
+      ),
+      equationMethodUsed = "deterministic",
+      equationFallbackUsed = FALSE
+    ))
+  }
+
+  if (is.null(chatProvider)) {
+    return(list(
+      equations = getModelEquations(
+        model = model,
+        method = "deterministic"
+      ),
+      equationMethodUsed = "deterministic",
       equationFallbackUsed = TRUE
-    } else {
-      equationMethodUsed = "llm"
+    ))
+  }
+
+  llmEquations = tryCatch(
+    getModelEquations(
+      model = model,
+      method = "llm",
+      chat = chatProvider
+    ),
+    error = function(e) {
+      NULL
     }
+  )
+
+  if (!is.null(llmEquations)) {
+    return(list(
+      equations = llmEquations,
+      equationMethodUsed = "llm",
+      equationFallbackUsed = FALSE
+    ))
   }
 
   list(
-    equations = equations,
-    equationMethodUsed = equationMethodUsed,
-    equationFallbackUsed = equationFallbackUsed
+    equations = getModelEquations(
+      model = model,
+      method = "deterministic"
+    ),
+    equationMethodUsed = "deterministic",
+    equationFallbackUsed = TRUE
   )
 }
 
-#' Build app-side explanation output for a fitted model
-#'
-#' Explanations remain on the LLM path. If no chat provider is available,
-#' `NULL` is returned. Explanation errors are swallowed so the app can still
-#' show fitted equations.
+#' Build app-side explanation text for a fitted model
 #'
 #' @param model A fitted model object, typically of class `lm` or `glm`.
 #' @param chatProvider Optional chat provider object. Defaults to `NULL`.
 #' @param useExplanationCache Logical. Passed through to `lmExplanation()` when
 #'   chat is available. Defaults to `TRUE`.
 #'
-#' @return A character string explanation or `NULL`.
+#' @return A character string containing the generated explanation, or `NULL`
+#'   if no explanation could be produced.
 #' @keywords internal
-buildAppExplanation = function(
-    model,
-    chatProvider = NULL,
-    useExplanationCache = TRUE
-) {
+buildAppExplanation = function(model, chatProvider = NULL, useExplanationCache = TRUE) {
 
   if (is.null(chatProvider)) {
     return(NULL)
@@ -109,6 +91,10 @@ buildAppExplanation = function(
 #' Creates the deterministic audit trail used by the transparency panel in the
 #' app. This does not depend on an active chat provider.
 #'
+#' The returned object is expected to match the same contract used by
+#' `buildModelExplanationAudit()` so that later UI and teaching-summary helpers
+#' can rely on one stable audit structure.
+#'
 #' @param model A fitted model object, typically of class `lm` or `glm`.
 #'
 #' @return A `wmfmExplanationAudit` object or `NULL` if audit construction
@@ -117,7 +103,11 @@ buildAppExplanation = function(
 buildAppExplanationAudit = function(model) {
 
   tryCatch(
-    buildModelExplanationAudit(model = model),
+    {
+      audit = buildModelExplanationAudit(model = model)
+      validateWmfmExplanationAudit(x = audit)
+      audit
+    },
     error = function(e) {
       NULL
     }
@@ -133,6 +123,9 @@ buildAppExplanationAudit = function(model) {
 #'
 #' Explanations remain on the LLM path. If no chat provider is available,
 #' deterministic equations are still returned and the explanation remains empty.
+#'
+#' The explanation audit is always built from the deterministic model-side audit
+#' helper rather than from separate app-specific audit logic.
 #'
 #' @param model A fitted model object, typically of class `lm` or `glm`.
 #' @param chatProvider Optional chat provider object. Defaults to `NULL`.
