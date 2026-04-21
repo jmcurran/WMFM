@@ -494,6 +494,42 @@ buildExplanationTeachingMainEffectDescription = function(audit, responseName, ou
   )
 }
 
+#' Extract a teaching-summary confidence level percent
+#'
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param defaultLevel Default confidence level when audit metadata is missing or invalid.
+#'
+#' @return A single numeric confidence percent.
+#' @keywords internal
+getExplanationTeachingConfidenceLevelPercent = function(audit, defaultLevel = 0.95) {
+
+  level = audit$confidenceIntervals$level %||% defaultLevel
+
+  if (!is.numeric(level) || length(level) != 1 || is.na(level) || level <= 0 || level >= 1) {
+    level = defaultLevel
+  }
+
+  round(level * 100)
+}
+
+#' Extract a teaching-summary confidence note
+#'
+#' @param audit A `wmfmExplanationAudit` object.
+#'
+#' @return A single character string.
+#' @keywords internal
+getExplanationTeachingConfidenceNote = function(audit) {
+
+  note = audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% ""
+  note = trimws(as.character(note))
+
+  if (!length(note) || is.na(note) || !nzchar(note) || identical(note, "NA") || identical(note, "coefficient.")) {
+    return("")
+  }
+
+  note
+}
+
 #' Build the uncertainty teaching text
 #'
 #' @param audit A `wmfmExplanationAudit` object.
@@ -503,7 +539,7 @@ buildExplanationTeachingMainEffectDescription = function(audit, responseName, ou
 #' @keywords internal
 buildExplanationTeachingUncertaintySummary = function(audit, outcomeLabel) {
 
-  confidenceLevel = round((audit$confidenceIntervals$level %||% 0.95) * 100)
+  confidenceLevel = getExplanationTeachingConfidenceLevelPercent(audit = audit)
 
   summaryText = paste(
     "Uncertainty was handled using",
@@ -514,9 +550,9 @@ buildExplanationTeachingUncertaintySummary = function(audit, outcomeLabel) {
     ", rather than presenting the model as exact."
   )
 
-  teachingNote = trimws(as.character(audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% ""))
+  teachingNote = getExplanationTeachingConfidenceNote(audit = audit)
 
-  if (nzchar(teachingNote) && !identical(teachingNote, "coefficient.")) {
+  if (nzchar(teachingNote)) {
     summaryText = paste(summaryText, teachingNote)
   }
 
@@ -596,7 +632,7 @@ buildExplanationTeachingEvidenceTable = function(
         section = "Uncertainty",
         summary = paste0(
           "Use ",
-          round((audit$confidenceIntervals$level %||% 0.95) * 100),
+          getExplanationTeachingConfidenceLevelPercent(audit = audit),
           "% confidence intervals to describe uncertainty carefully."
         ),
         stringsAsFactors = FALSE

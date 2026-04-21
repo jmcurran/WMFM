@@ -240,9 +240,9 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
       sourceSection = "confidenceIntervals",
       label = "Confidence interval rule",
       summary = paste(
-        round((audit$confidenceIntervals$level %||% 0.95) * 100),
+        getExplanationTeachingConfidenceLevelPercent(audit = audit),
         "% confidence intervals.",
-        audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% ""
+        getExplanationTeachingConfidenceNote(audit = audit)
       )
     )
   }
