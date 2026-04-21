@@ -22,6 +22,7 @@ testthat::test_that("appUI includes explanation and onboarding controls", {
 
   testthat::expect_match(html, "Model Explanation", fixed = TRUE)
   testthat::expect_match(html, "model_explanation", fixed = TRUE)
+  testthat::expect_match(html, "Start with the main explanation", fixed = TRUE)
   testthat::expect_match(html, "Load a built-in example", fixed = TRUE)
   testthat::expect_match(html, "loadExampleBtn", fixed = TRUE)
   testthat::expect_match(html, "Research question", fixed = TRUE)
@@ -88,15 +89,18 @@ testthat::test_that("app server keeps fitted model as the post-fit landing tab",
   testthat::expect_no_match(serverText, 'selected = "Model Explanation"')
 })
 
-testthat::test_that("tutor-style explanation appears after the deterministic accordions", {
+testthat::test_that("optional AI tutor appears after the deterministic accordions", {
   serverText = getAppServerTextForTest()
 
   teachingPos = regexpr('renderExplanationTeachingSummaryUi\\(teachingSummary\\)', serverText, perl = TRUE)[1]
   tutorPos = regexpr('model_explanation_tutor_accordion', serverText, fixed = TRUE)[1]
+  headingPos = regexpr('How to read this explanation', serverText, fixed = TRUE)[1]
 
   testthat::expect_true(teachingPos > 0)
   testthat::expect_true(tutorPos > 0)
+  testthat::expect_true(headingPos > 0)
   testthat::expect_lt(teachingPos, tutorPos)
+  testthat::expect_lt(headingPos, tutorPos)
 })
 
 
