@@ -16,6 +16,46 @@ testthat::test_that("renderExplanationTeachingSummaryUi puts main pieces first",
   testthat::expect_lt(firstPos, secondPos)
 })
 
+testthat::test_that("buildExplanationTeachingSummary uses student-facing checklist language", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+
+  audit = buildModelExplanationAudit(model)
+  summary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  testthat::expect_s3_class(summary, "wmfmExplanationTeachingSummary")
+  testthat::expect_match(summary$dataDescription, "The explanation starts by orienting the student", fixed = TRUE)
+  testthat::expect_match(summary$xChangeDescription, "one predictor goes up by one unit while the other predictors stay fixed", fixed = TRUE)
+  testthat::expect_match(summary$mainEffectDescription, "The main result was written", fixed = TRUE)
+  testthat::expect_match(summary$researchQuestionLink, "The explanation returns to the research question", fixed = TRUE)
+
+  testthat::expect_identical(
+    summary$evidenceTable$section,
+    c(
+      "Question to answer",
+      "Data used",
+      "Scale for the result",
+      "Starting point",
+      "Comparison being described",
+      "Uncertainty check"
+    )
+  )
+
+  testthat::expect_match(
+    summary$evidenceTable$summary[[1]],
+    "Start by reminding the student what the model is trying to answer:",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    summary$evidenceTable$summary[[3]],
+    "Keep the explanation on the original outcome wording",
+    fixed = TRUE
+  )
+})
+
 testthat::test_that("appUI includes explanation and onboarding controls", {
   ui = appUI()
   html = as.character(ui)

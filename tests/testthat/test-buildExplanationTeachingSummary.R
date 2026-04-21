@@ -28,10 +28,21 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
   testthat::expect_true(is.data.frame(out$evidenceTable))
   testthat::expect_true(nrow(out$evidenceTable) >= 5)
   testthat::expect_true(all(c("section", "summary") %in% names(out$evidenceTable)))
-  testthat::expect_match(out$dataDescription, "The response variable is `Exam`")
+  testthat::expect_match(out$dataDescription, "The explanation starts by orienting the student", fixed = TRUE)
   testthat::expect_match(out$dataDescription, "Number-valued predictors: `Test`")
-  testthat::expect_identical(out$evidenceTable$section[[1]], "Research question")
+  testthat::expect_identical(out$evidenceTable$section[[1]], "Question to answer")
   testthat::expect_identical(out$evidenceTable$section[[2]], "Data used")
+  testthat::expect_identical(
+    out$evidenceTable$section,
+    c(
+      "Question to answer",
+      "Data used",
+      "Scale for the result",
+      "Starting point",
+      "Comparison being described",
+      "Uncertainty check"
+    )
+  )
   testthat::expect_match(out$baselineChoice, "sample mean|pretending every variable begins at zero")
   testthat::expect_match(out$baselineChoice, "11\\.57")
   testthat::expect_match(out$baselineChoice, "Zero lies outside the observed range")
@@ -97,7 +108,7 @@ testthat::test_that("teaching summary uncertainty falls back cleanly when confid
   testthat::expect_no_match(out$uncertaintySummary, "NA", fixed = TRUE)
   testthat::expect_false(grepl("NA\\s*$", out$uncertaintySummary))
   testthat::expect_match(
-    out$evidenceTable$summary[out$evidenceTable$section == "Uncertainty"],
+    out$evidenceTable$summary[out$evidenceTable$section == "Uncertainty check"],
     "95% confidence intervals to describe uncertainty carefully.",
     fixed = TRUE
   )

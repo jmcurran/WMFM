@@ -113,7 +113,7 @@ buildExplanationTeachingDataDescription = function(
 ) {
 
   responseText = paste0(
-    "The response variable is `",
+    "The explanation starts by orienting the student to the response variable `",
     responseName,
     "`, so the model is trying to explain ",
     outcomeLabel,
@@ -145,10 +145,13 @@ buildExplanationTeachingDataDescription = function(
   }
 
   if (length(predictorParts) == 0) {
-    predictorText = "No separate predictors were included, so the fitted model mainly describes the overall pattern in the response."
+    predictorText = paste(
+      "No separate predictors were included, so the fitted model mainly describes the overall pattern in the response.",
+      "The explanation therefore starts by orienting the student to the outcome rather than to predictor comparisons."
+    )
   } else {
     predictorText = paste(
-      "The explanation uses these predictors to orient the student before discussing the fitted results.",
+      "The explanation starts by orienting the student to the variables in the model before discussing the fitted results.",
       paste(predictorParts, collapse = " ")
     )
   }
@@ -418,7 +421,7 @@ buildExplanationTeachingXChangeDescription = function(numericPredictors, factorP
       paste0(
         "For number-valued predictors such as ",
         numericText,
-        ", the explanation reads the main effect as what happens to the outcome when that predictor goes up by one unit, while the other predictors are held at their chosen starting values."
+        ", the explanation reads the main effect as what happens to the outcome when one predictor goes up by one unit while the other predictors stay fixed."
       )
     )
   }
@@ -430,7 +433,7 @@ buildExplanationTeachingXChangeDescription = function(numericPredictors, factorP
       paste0(
         "For group predictors such as ",
         factorText,
-        ", the explanation reads the effect as a group comparison, not as a one-unit increase."
+        ", the explanation reads the effect as a comparison between groups rather than as a one-unit increase."
       )
     )
   }
@@ -444,7 +447,7 @@ buildExplanationTeachingXChangeDescription = function(numericPredictors, factorP
     paste(
       "So the app keeps the wording in the original outcome wording, here",
       outcomeLabel,
-      "."
+      ", rather than switching back to technical coefficient language."
     )
   )
 
@@ -471,16 +474,16 @@ buildExplanationTeachingMainEffectDescription = function(audit, responseName, ou
 
   if (length(effectQuantities) > 0) {
     return(paste(
-      "The main effect explanation was built from model-based quantities, not from the raw regression table alone.",
+      "The main result was written from model-based quantities, not copied directly from the raw regression table.",
       "That helped the app explain what changes in",
       outcomeLabel,
-      "mean in practice."
+      "mean in practice and what the fitted result says about the comparison of interest."
     ))
   }
 
   if (length(numericPredictors) > 0 || length(factorPredictors) > 0) {
     return(paste(
-      "The main effect explanation was built by translating the fitted model into plain language.",
+      "The main result was written by translating the fitted model into plain language.",
       "Instead of repeating technical coefficient wording, the app focused on how the predictors relate to",
       outcomeLabel,
       "in a way students can read more easily."
@@ -488,7 +491,7 @@ buildExplanationTeachingMainEffectDescription = function(audit, responseName, ou
   }
 
   paste(
-    "The main effect explanation was built from the fitted model in plain language so that the explanation stays focused on what happens to",
+    "The main result was built from the fitted model in plain language so that the explanation stays focused on what happens to",
     responseName,
     "rather than on technical coefficient details."
   )
@@ -517,6 +520,7 @@ getExplanationTeachingConfidenceLevelPercent = function(audit, defaultLevel = 0.
 #' @param audit A `wmfmExplanationAudit` object.
 #'
 #' @return A single character string.
+#' @keywords internal
 #' @keywords internal
 getExplanationTeachingConfidenceNote = function(audit) {
 
@@ -585,9 +589,9 @@ buildExplanationTeachingEvidenceTable = function(
 
   if (nzchar(researchQuestion)) {
     rows[[length(rows) + 1]] = data.frame(
-      section = "Research question",
+      section = "Question to answer",
       summary = paste(
-        "Start by reminding the student of the question the model is being used to answer:",
+        "Start by reminding the student what the model is trying to answer:",
         researchQuestion
       ),
       stringsAsFactors = FALSE
@@ -604,32 +608,32 @@ buildExplanationTeachingEvidenceTable = function(
     rows,
     list(
       data.frame(
-        section = "Scale used",
+        section = "Scale for the result",
         summary = paste(
-          "Explain the model in student-friendly language using the original outcome wording for",
+          "Keep the explanation on the original outcome wording for",
           outcomeLabel,
-          "."
+          "so students read the result on the same scale as the response."
         ),
         stringsAsFactors = FALSE
       ),
       data.frame(
-        section = "Starting values",
+        section = "Starting point",
         summary = paste(
-          "Choose realistic starting values for number-valued predictors and starting comparison groups for group predictors."
+          "Choose realistic starting values for number-valued predictors and a clear reference group for group predictors before describing the main result."
         ),
         stringsAsFactors = FALSE
       ),
       data.frame(
-        section = "Main comparison",
+        section = "Comparison being described",
         summary = if (length(numericPredictors) > 0 || length(factorPredictors) > 0) {
-          "Describe number-valued predictors as one-unit changes and group predictors as comparisons between groups."
+          "Describe number-valued predictors as one-unit changes while other predictors stay fixed, and describe group predictors as comparisons between groups."
         } else {
           paste("Use the fitted model to describe changes in", responseName, "in plain language.")
         },
         stringsAsFactors = FALSE
       ),
       data.frame(
-        section = "Uncertainty",
+        section = "Uncertainty check",
         summary = paste0(
           "Use ",
           getExplanationTeachingConfidenceLevelPercent(audit = audit),
@@ -662,7 +666,7 @@ buildExplanationTeachingResearchQuestionLink = function(researchQuestion, respon
   }
 
   paste(
-    "The explanation is linked back to the research question so that the model output answers a teaching goal, not just a statistical one.",
+    "The explanation returns to the research question so the model output answers a teaching goal, not just a statistical one.",
     "Here, the explanation should help the student judge what the fitted model says about this question:",
     researchQuestion
   )
