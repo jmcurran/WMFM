@@ -129,20 +129,21 @@ testthat::test_that("app server keeps fitted model as the post-fit landing tab",
   testthat::expect_no_match(serverText, 'selected = "Model Explanation"')
 })
 
-testthat::test_that("optional AI tutor appears after the deterministic accordions", {
+testthat::test_that("optional AI tutor sits in the explanation support accordion after the deterministic sections", {
   serverText = getAppServerTextForTest()
 
-  teachingPos = regexpr('renderExplanationTeachingSummaryUi\\(teachingSummary\\)', serverText, perl = TRUE)[1]
-  tutorPos = regexpr('model_explanation_tutor_accordion', serverText, fixed = TRUE)[1]
-  headingPos = regexpr('How to read this explanation', serverText, fixed = TRUE)[1]
+  accordionPos = regexpr('model_explanation_support_accordion', serverText, fixed = TRUE)[1]
+  claimHeadingPos = regexpr('How each sentence was supported', serverText, fixed = TRUE)[1]
+  teachingHeadingPos = regexpr('How to read this explanation', serverText, fixed = TRUE)[1]
+  tutorHeadingPos = regexpr('Optional AI tutor', serverText, fixed = TRUE)[1]
 
-  testthat::expect_true(teachingPos > 0)
-  testthat::expect_true(tutorPos > 0)
-  testthat::expect_true(headingPos > 0)
-  testthat::expect_lt(teachingPos, tutorPos)
-  testthat::expect_lt(headingPos, tutorPos)
+  testthat::expect_true(accordionPos > 0)
+  testthat::expect_true(claimHeadingPos > 0)
+  testthat::expect_true(teachingHeadingPos > 0)
+  testthat::expect_true(tutorHeadingPos > 0)
+  testthat::expect_lt(claimHeadingPos, teachingHeadingPos)
+  testthat::expect_lt(teachingHeadingPos, tutorHeadingPos)
 })
-
 
 testthat::test_that("app server includes load-example support and research-question requirement", {
   serverText = getAppServerTextForTest()

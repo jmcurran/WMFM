@@ -96,20 +96,19 @@ testthat::test_that("renderExplanationClaimEvidenceUi shows a single-sentence re
 })
 
 
-testthat::test_that("app server renders the claim-evidence section after the teaching summary", {
+testthat::test_that("app server renders the claim-evidence section before the teaching summary and AI tutor", {
   serverText = paste(deparse(body(appServer)), collapse = "\n")
 
-  teachingPos = regexpr('renderExplanationTeachingSummaryUi\\(teachingSummary\\)', serverText, perl = TRUE)[1]
   claimPos = regexpr('renderExplanationClaimEvidenceUi\\(claimMap\\)', serverText, perl = TRUE)[1]
-  tutorPos = regexpr('model_explanation_tutor_accordion', serverText, fixed = TRUE)[1]
+  teachingPos = regexpr('renderExplanationTeachingSummaryUi\\(teachingSummary\\)', serverText, perl = TRUE)[1]
+  tutorPos = regexpr('Optional AI tutor', serverText, fixed = TRUE)[1]
 
-  testthat::expect_true(teachingPos > 0)
   testthat::expect_true(claimPos > 0)
+  testthat::expect_true(teachingPos > 0)
   testthat::expect_true(tutorPos > 0)
-  testthat::expect_lt(teachingPos, claimPos)
-  testthat::expect_lt(claimPos, tutorPos)
+  testthat::expect_lt(claimPos, teachingPos)
+  testthat::expect_lt(teachingPos, tutorPos)
 })
-
 
 testthat::test_that("renderExplanationClaimEvidenceUi shows all mixed-role support notes", {
   claimMap = list(
