@@ -115,3 +115,48 @@ testthat::test_that("app server includes load-example support and research-quest
     fixed = TRUE
   )
 })
+
+
+testthat::test_that("renderExplanationTutorUi explains unavailable and available tutor states clearly", {
+  unavailableUi = renderExplanationTutorUi(text = NULL, available = FALSE)
+  unavailableHtml = as.character(unavailableUi)
+
+  testthat::expect_match(
+    unavailableHtml,
+    "An AI tutor-style explanation is available only when a chat provider is active.",
+    fixed = TRUE
+  )
+
+  availableUi = renderExplanationTutorUi(
+    text = "Here is a simpler explanation.",
+    available = TRUE,
+    researchQuestion = "Does Test help explain Exam?",
+    dataDescription = "The response variable is `Exam`."
+  )
+  availableHtml = as.character(availableUi)
+
+  testthat::expect_match(availableHtml, "AI tutor-style explanation", fixed = TRUE)
+  testthat::expect_match(availableHtml, "Research question:", fixed = TRUE)
+  testthat::expect_match(availableHtml, "Here is a simpler explanation.", fixed = TRUE)
+})
+
+
+testthat::test_that("app server includes explicit fallback text for missing teaching-guide pieces", {
+  serverText = getAppServerTextForTest()
+
+  testthat::expect_match(
+    serverText,
+    'A sentence-by-sentence support map is not available for this explanation yet.',
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    serverText,
+    'The app could not build the teaching guide for this model yet, so only the main explanation is shown right now.',
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    serverText,
+    'Turn on a chat provider in Settings if you want the optional AI tutor walkthrough.',
+    fixed = TRUE
+  )
+})

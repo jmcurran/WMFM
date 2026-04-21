@@ -3599,17 +3599,20 @@ $$")
           ),
           renderExplanationTeachingSummaryUi(teachingSummary),
           tags$br(),
+          tags$h5("How each sentence was supported"),
+          tags$p(
+            class = "wmfm-explanation-helper-note",
+            "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
+          ),
           if (!is.null(claimMap)) {
-            tagList(
-              tags$h5("How each sentence was supported"),
-              tags$p(
-                class = "wmfm-explanation-helper-note",
-                "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
-              ),
-              renderExplanationClaimEvidenceUi(claimMap),
-              tags$br()
+            renderExplanationClaimEvidenceUi(claimMap)
+          } else {
+            tags$p(
+              class = "wmfm-explanation-helper-note",
+              "A sentence-by-sentence support map is not available for this explanation yet."
             )
           },
+          tags$br(),
           bslib::accordion(
             id = "model_explanation_tutor_accordion",
             multiple = TRUE,
@@ -3622,13 +3625,25 @@ $$")
                   class = "wmfm-explanation-helper-note",
                   "Want a more conversational walkthrough? You can optionally ask the app for a tutor-style explanation that stays grounded in the information already shown here."
                 ),
-                actionButton(
-                  inputId = "modelExplanationTutorBtn",
-                  label = "Explain this more simply with AI",
-                  class = "btn btn-secondary btn-sm"
-                ),
-                tags$br(),
-                tags$br(),
+                if (!is.null(rv$chatProvider) || (is.character(tutorText) && nzchar(trimws(tutorText)))) {
+                  tagList(
+                    actionButton(
+                      inputId = "modelExplanationTutorBtn",
+                      label = "Explain this more simply with AI",
+                      class = "btn btn-secondary btn-sm"
+                    ),
+                    tags$br(),
+                    tags$br()
+                  )
+                } else {
+                  tagList(
+                    tags$p(
+                      class = "wmfm-explanation-helper-note",
+                      "Turn on a chat provider in Settings if you want the optional AI tutor walkthrough."
+                    ),
+                    tags$br()
+                  )
+                },
                 renderExplanationTutorUi(
                   text = tutorText,
                   available = !is.null(rv$chatProvider),
@@ -3637,6 +3652,15 @@ $$")
                 )
               )
             )
+          )
+        )
+      } else {
+        tagList(
+          tags$hr(),
+          tags$h5("How to read this explanation"),
+          tags$p(
+            class = "wmfm-explanation-helper-note",
+            "The app could not build the teaching guide for this model yet, so only the main explanation is shown right now."
           )
         )
       }
