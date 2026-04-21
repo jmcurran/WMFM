@@ -26,9 +26,39 @@ testthat::test_that("renderExplanationClaimEvidenceUi returns readable sentence 
   testthat::expect_match(html, "Sentence 1", fixed = TRUE)
   testthat::expect_match(html, "This sentence:", fixed = TRUE)
   testthat::expect_match(html, "Evidence used:", fixed = TRUE)
+  testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
   testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
   testthat::expect_false(grepl("deterministic evidence", html, fixed = TRUE))
   testthat::expect_false(grepl("Supporting evidence:", html, fixed = TRUE))
+  testthat::expect_false(grepl("mainEffect", html, fixed = TRUE))
+})
+
+
+testthat::test_that("renderExplanationClaimEvidenceUi derives multiple role notes from claim tags", {
+  claimMap = list(
+    claims = data.frame(
+      claimId = "claim_1",
+      sentenceIndex = 1L,
+      claimText = "The expected mark increases, but there is uncertainty around that increase.",
+      claimTags = I(list(c("effect", "uncertainty"))),
+      claimType = "mainEffect",
+      supportNotes = I(list(character(0))),
+      supportNote = "",
+      evidenceCount = 2L,
+      evidenceTypes = "mainEffect, confidenceInterval",
+      evidenceLabels = "Main effect translation | Confidence interval rule",
+      mappingMethod = "keyword-audit hybrid",
+      stringsAsFactors = FALSE
+    )
+  )
+  class(claimMap) = c("wmfmExplanationClaimEvidenceMap", class(claimMap))
+
+  ui = renderExplanationClaimEvidenceUi(claimMap)
+  html = as.character(ui)
+
+  testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
+  testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
+  testthat::expect_match(html, "Evidence used:", fixed = TRUE)
 })
 
 
