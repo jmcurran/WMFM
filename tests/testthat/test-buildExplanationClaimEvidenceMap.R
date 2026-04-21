@@ -201,3 +201,37 @@ testthat::test_that("buildExplanationClaimEvidenceMap treats claimTags as the pr
   testthat::expect_identical(out$claims$claimTags[[2]], "effect")
   testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
 })
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap retains mixed comparison effect uncertainty tags", {
+  data(quakes, package = "datasets")
+
+  df = datasets::quakes[, c("mag", "stations")]
+  df$locn = factor(ifelse(seq_len(nrow(df)) %% 2 == 0, "SC", "WA"))
+
+  model = stats::glm(stations ~ mag * locn, family = poisson(link = "log"), data = df)
+  attr(model, "wmfm_research_question") = paste(
+    "The study asks how the expected number of earthquakes changes when magnitude grows,",
+    "and whether that pattern is the same for SC and WA."
+  )
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Compared with SC, WA shows a steeper decline, but the confidence limits still show uncertainty around that difference.",
+      "Answer: The decline is steeper in WA."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimTags[[1]], c("effect", "uncertainty", "comparison"))
+  testthat::expect_identical(out$claims$claimType[[1]], "mainEffect")
+  testthat::expect_true(any(grepl("Reference level", out$claims$evidenceLabels[[1]], fixed = TRUE)))
+  testthat::expect_true(any(grepl("explains how the response changes", out$claims$supportNotes[[1]], fixed = TRUE)))
+  testthat::expect_true(any(grepl("shows uncertainty in the estimate", out$claims$supportNotes[[1]], fixed = TRUE)))
+  testthat::expect_true(any(grepl("describes how groups are being compared", out$claims$supportNotes[[1]], fixed = TRUE)))
+})

@@ -75,3 +75,40 @@ testthat::test_that("app server renders the claim-evidence section after the tea
   testthat::expect_lt(teachingPos, claimPos)
   testthat::expect_lt(claimPos, tutorPos)
 })
+
+
+testthat::test_that("renderExplanationClaimEvidenceUi shows all mixed-role support notes", {
+  claimMap = list(
+    claims = data.frame(
+      claimId = "claim_1",
+      sentenceIndex = 1L,
+      claimText = "Compared with SC, WA shows a steeper decline, but there is uncertainty around that difference.",
+      claimTags = I(list(c("effect", "uncertainty", "comparison"))),
+      claimType = "mainEffect",
+      supportNotes = I(list(c(
+        "explains how the response changes",
+        "shows uncertainty in the estimate",
+        "describes how groups are being compared"
+      ))),
+      supportNote = paste(
+        "This sentence explains how the response changes.",
+        "It also shows uncertainty in the estimate.",
+        "It also describes how groups are being compared."
+      ),
+      evidenceCount = 3L,
+      evidenceTypes = "mainEffect, confidenceInterval, comparison",
+      evidenceLabels = "Main effect translation | Confidence interval rule | Reference level",
+      mappingMethod = "tag-first mapping",
+      stringsAsFactors = FALSE
+    )
+  )
+  class(claimMap) = c("wmfmExplanationClaimEvidenceMap", class(claimMap))
+
+  ui = renderExplanationClaimEvidenceUi(claimMap)
+  html = as.character(ui)
+
+  testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
+  testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
+  testthat::expect_match(html, "describes how groups are being compared", fixed = TRUE)
+  testthat::expect_match(html, "Reference level", fixed = TRUE)
+})
