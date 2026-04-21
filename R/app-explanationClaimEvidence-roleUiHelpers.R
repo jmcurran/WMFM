@@ -54,7 +54,7 @@ renderExplanationClaimRoleNotesUi = function(row) {
   tagList(
     tags$p(
       class = "wmfm-explanation-helper-note",
-      tags$strong("This sentence:")
+      tags$strong("What this sentence is doing:")
     ),
     tags$ul(
       class = "wmfm-explanation-helper-note",
@@ -84,7 +84,7 @@ renderExplanationClaimEvidenceLabelsUi = function(row) {
 
   tags$p(
     class = "wmfm-explanation-helper-note",
-    tags$strong("Evidence used: "),
+    tags$strong("Main model information behind it: "),
     evidenceLabels
   )
 }

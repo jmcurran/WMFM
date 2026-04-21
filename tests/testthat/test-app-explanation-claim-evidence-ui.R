@@ -24,13 +24,14 @@ testthat::test_that("renderExplanationClaimEvidenceUi returns readable sentence 
 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
   testthat::expect_match(html, "Sentence 1", fixed = TRUE)
-  testthat::expect_match(html, "This sentence:", fixed = TRUE)
-  testthat::expect_match(html, "Evidence used:", fixed = TRUE)
+  testthat::expect_match(html, "What this sentence is doing:", fixed = TRUE)
+  testthat::expect_match(html, "Main model information behind it:", fixed = TRUE)
   testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
   testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
   testthat::expect_false(grepl("deterministic evidence", html, fixed = TRUE))
   testthat::expect_false(grepl("Supporting evidence:", html, fixed = TRUE))
   testthat::expect_false(grepl("mainEffect", html, fixed = TRUE))
+  testthat::expect_false(grepl("Evidence used:", html, fixed = TRUE))
 })
 
 
@@ -58,7 +59,7 @@ testthat::test_that("renderExplanationClaimEvidenceUi derives multiple role note
 
   testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
   testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
-  testthat::expect_match(html, "Evidence used:", fixed = TRUE)
+  testthat::expect_match(html, "Main model information behind it:", fixed = TRUE)
 })
 
 
