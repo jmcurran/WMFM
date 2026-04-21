@@ -9,9 +9,10 @@
 #' a transparent post hoc map showing which deterministic ingredients best match
 #' the visible explanation text.
 #'
-#' The current implementation uses a hybrid approach:
-#' - deterministic evidence inventory from the audit and teaching summary
-#' - lightweight sentence-level matching against the final explanation text
+#' The current implementation uses a tag-first hybrid approach:
+#' - deterministic sentence-level claim tags from the audit and teaching summary
+#' - lightweight sentence-level evidence matching against the final explanation text
+#' - a derived legacy single-label `claimType` field kept for compatibility
 #'
 #' @param explanationText Character scalar containing the final explanation.
 #' @param audit A `wmfmExplanationAudit` object.
@@ -92,8 +93,8 @@ buildExplanationClaimEvidenceMap = function(
       "It does not claim to reveal hidden chain-of-thought."
     ),
     mappingMethod = paste(
-      "Sentence-level hybrid matching using the deterministic audit, the teaching summary,",
-      "and lightweight text heuristics."
+      "Sentence-level tag-first mapping using deterministic claim tags, the audit,",
+      "the teaching summary, and lightweight text heuristics."
     ),
     unit = "sentence",
     evidenceInventory = evidenceInventory,
@@ -322,15 +323,7 @@ mapSingleExplanationClaim = function(
     totalClaims = totalClaims
   )
 
-  claimType = classifyExplanationClaimType(
-    claimText = claimText,
-    audit = audit,
-    teachingSummary = teachingSummary,
-    model = model,
-    sentenceIndex = sentenceIndex,
-    totalClaims = totalClaims,
-    claimTags = claimTags
-  )
+  claimType = deriveLegacyExplanationClaimType(claimTags = claimTags)
 
   matchedEvidence = selectExplanationEvidenceForClaim(
     claimTags = claimTags,
@@ -368,35 +361,14 @@ mapSingleExplanationClaim = function(
   )
 }
 
-#' Classify a sentence-level explanation claim
+#' Derive the legacy single-type label from claim tags
 #'
-#' @param claimText Character scalar.
-#' @param audit A `wmfmExplanationAudit` object.
-#' @param teachingSummary Optional teaching summary object.
-#' @param model Optional fitted model object.
+#' @param claimTags Character vector of detected claim tags.
 #'
 #' @return A single character string.
 #' @keywords internal
-classifyExplanationClaimType = function(
-    claimText,
-    audit,
-    teachingSummary = NULL,
-    model = NULL,
-    sentenceIndex = NA_integer_,
-    totalClaims = NA_integer_,
-    claimTags = NULL
-) {
-
-  if (is.null(claimTags)) {
-    claimTags = detectExplanationClaimTags(
-      claimText = claimText,
-      audit = audit,
-      teachingSummary = teachingSummary,
-      model = model,
-      sentenceIndex = sentenceIndex,
-      totalClaims = totalClaims
-    )
-  }
+#' @noRd
+deriveLegacyExplanationClaimType = function(claimTags) {
 
   tags = normaliseExplanationClaimTags(claimTags)
 
@@ -435,10 +407,51 @@ classifyExplanationClaimType = function(
   "general"
 }
 
+#' Classify a sentence-level explanation claim for legacy compatibility
+#'
+#' This helper now derives the legacy single-label `claimType` value from the
+#' multi-tag detector output used by the claim-mapping pipeline. New code
+#' should prefer `detectExplanationClaimTags()` and treat `claimType` as a
+#' compatibility field only.
+#'
+#' @param claimText Character scalar.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#' @param sentenceIndex Integer-like sentence index.
+#' @param totalClaims Integer-like total number of claims.
+#' @param claimTags Optional character vector of detected claim tags.
+#'
+#' @return A single character string.
+#' @keywords internal
+classifyExplanationClaimType = function(
+    claimText,
+    audit,
+    teachingSummary = NULL,
+    model = NULL,
+    sentenceIndex = NA_integer_,
+    totalClaims = NA_integer_,
+    claimTags = NULL
+) {
+
+  if (is.null(claimTags)) {
+    claimTags = detectExplanationClaimTags(
+      claimText = claimText,
+      audit = audit,
+      teachingSummary = teachingSummary,
+      model = model,
+      sentenceIndex = sentenceIndex,
+      totalClaims = totalClaims
+    )
+  }
+
+  deriveLegacyExplanationClaimType(claimTags = claimTags)
+}
+
 #' Select evidence rows for a sentence-level claim
 #'
 #' @param claimTags Optional character vector of detected tags.
-#' @param claimType Optional legacy single-type label.
+#' @param claimType Optional legacy single-type label kept for compatibility.
 #' @param claimText Character scalar.
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param teachingSummary Optional teaching summary object.

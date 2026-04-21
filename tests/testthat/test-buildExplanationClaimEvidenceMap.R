@@ -168,3 +168,32 @@ testthat::test_that("effect sentences can carry both effect and uncertainty tags
   testthat::expect_identical(out$claims$claimType[[3]], "answer")
   testthat::expect_match(out$claims$supportNote[[3]], "helps answer the research question", fixed = TRUE)
 })
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap treats claimTags as the primary mapping output", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(
+    audit = audit,
+    model = model,
+    researchQuestion = "Does Test help explain Exam?"
+  )
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Does Test help explain Exam?",
+      "On average, exam marks tend to increase as Test increases."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_match(out$mappingMethod, "tag-first mapping", fixed = TRUE)
+  testthat::expect_identical(out$claims$claimTags[[2]], "effect")
+  testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
+})

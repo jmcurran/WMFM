@@ -16,7 +16,7 @@ selectExplanationEvidenceForClaim(
 \arguments{
 \item{claimTags}{Optional character vector of detected tags.}
 
-\item{claimType}{Optional legacy single-type label.}
+\item{claimType}{Optional legacy single-type label kept for compatibility.}
 
 \item{claimText}{Character scalar.}
 

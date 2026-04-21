@@ -426,7 +426,7 @@ sentenceLooksLikeResearchAnswer = function(
     sentenceIndex >= max(1L, totalClaims - 1L)
 
   answerCue = grepl(
-    "^answer:|^on average\\b|^overall\\b|^in summary\\b|^in short\\b|^thus\\b|^therefore\\b|the data are consistent with|the data indicate|the data suggest|suggest that|indicate that|declines more steeply|falls more steeply|rises more steeply|rate of decline|stronger than|steeper than",
+    "^answer:|^overall\\b|^in summary\\b|^in short\\b|^thus\\b|^therefore\\b|the data are consistent with|the data indicate|the data suggest|suggest that|indicate that|declines more steeply|falls more steeply|rises more steeply|rate of decline|stronger than|steeper than",
     text,
     perl = TRUE
   )
