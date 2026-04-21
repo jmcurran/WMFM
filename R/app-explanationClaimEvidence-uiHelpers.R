@@ -23,5 +23,25 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
     renderExplanationClaimEvidenceCardUi(row)
   })
 
-  do.call(tagList, cards)
+  nSentences = length(cards)
+
+  guideText = if (nSentences == 1) {
+    "There is 1 sentence in this explanation. A sentence can play more than one role."
+  } else {
+    paste0(
+      "There are ",
+      nSentences,
+      " sentences in this explanation. A sentence can play more than one role."
+    )
+  }
+
+  do.call(tagList, c(
+    list(
+      tags$p(
+        class = "wmfm-explanation-helper-note",
+        guideText
+      )
+    ),
+    cards
+  ))
 }

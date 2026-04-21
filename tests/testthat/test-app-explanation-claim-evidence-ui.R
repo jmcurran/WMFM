@@ -23,6 +23,8 @@ testthat::test_that("renderExplanationClaimEvidenceUi returns readable sentence 
   html = as.character(ui)
 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
+  testthat::expect_match(html, "There are 3 sentences in this explanation", fixed = TRUE)
+  testthat::expect_match(html, "A sentence can play more than one role", fixed = TRUE)
   testthat::expect_match(html, "Sentence 1", fixed = TRUE)
   testthat::expect_match(html, "What this sentence is doing:", fixed = TRUE)
   testthat::expect_match(html, "Main model information behind it:", fixed = TRUE)
@@ -64,6 +66,33 @@ testthat::test_that("renderExplanationClaimEvidenceUi derives multiple role note
   testthat::expect_match(html, "explains how the response changes", fixed = TRUE)
   testthat::expect_match(html, "shows uncertainty in the estimate", fixed = TRUE)
   testthat::expect_match(html, "Main model information behind it:", fixed = TRUE)
+})
+
+
+testthat::test_that("renderExplanationClaimEvidenceUi shows a single-sentence reading guide", {
+  claimMap = list(
+    claims = data.frame(
+      claimId = "claim_1",
+      sentenceIndex = 1L,
+      claimText = "The expected mark increases with Test.",
+      claimTags = I(list(c("effect"))),
+      claimType = "mainEffect",
+      supportNotes = I(list(c("explains how the response changes"))),
+      supportNote = "This sentence explains how the response changes.",
+      evidenceCount = 1L,
+      evidenceTypes = "mainEffect",
+      evidenceLabels = "Main effect translation",
+      mappingMethod = "tag-first mapping",
+      stringsAsFactors = FALSE
+    )
+  )
+  class(claimMap) = c("wmfmExplanationClaimEvidenceMap", class(claimMap))
+
+  ui = renderExplanationClaimEvidenceUi(claimMap)
+  html = as.character(ui)
+
+  testthat::expect_match(html, "There is 1 sentence in this explanation", fixed = TRUE)
+  testthat::expect_match(html, "A sentence can play more than one role", fixed = TRUE)
 })
 
 
