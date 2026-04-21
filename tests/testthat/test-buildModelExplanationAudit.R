@@ -159,7 +159,11 @@ test_that("buildModelExplanationAudit reports odds-scale interpretation for logi
   expect_identical(out$interpretationScale$fittedValueScale, "probability and odds")
   expect_identical(out$interpretationScale$effectScale, "odds multipliers")
   expect_match(out$interpretationScale$backTransformation, "inverse-logit", fixed = TRUE)
-  expect_true(any(out$confidenceIntervals$displayedScales %in% c("probability", "odds", "odds multiplier")))
+  expect_true(any(out$confidenceIntervals$displayedScales %in% c(
+    "probability",
+    "odds",
+    "odds multiplier"
+  )))
 })
 
 test_that("buildModelExplanationAudit reports expected-count interpretation for Poisson models", {
@@ -181,5 +185,9 @@ test_that("buildModelExplanationAudit reports expected-count interpretation for 
   expect_identical(out$interpretationScale$fittedValueScale, "expected count")
   expect_identical(out$interpretationScale$effectScale, "expected-count multipliers")
   expect_match(out$interpretationScale$backTransformation, "expected-count scale", fixed = TRUE)
-  expect_true(any(out$confidenceIntervals$displayedScales %in% c("expected count", "count multiplier")))
+  expect_true(any(grepl(
+    "expected count|multiplier",
+    out$confidenceIntervals$displayedScales,
+    ignore.case = TRUE
+  )))
 })

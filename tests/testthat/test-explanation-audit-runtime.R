@@ -66,14 +66,16 @@ test_that("runModel keeps explanationAudit available when chat access is unavail
 
   df = getStats20xExamTestData()[, c("Exam", "Test")]
 
+  out = NULL
+
   expect_warning(
-    out = runModel(
+    out <- runModel(
       data = df,
       formula = Exam ~ Test,
       modelType = "lm",
       printOutput = FALSE
     ),
-    "Could not connect to the language model server"
+    regexp = "Could not connect to the language model server"
   )
 
   expect_s3_class(out, "wmfmModel")
