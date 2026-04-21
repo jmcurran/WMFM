@@ -202,7 +202,6 @@ appServer = function(input, output, session) {
     modelEquations = NULL,
     modelExplanation = NULL,
     modelExplanationAudit = NULL,
-    modelExplanationClaimEvidenceMap = NULL,
     modelExplanationTutor = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
@@ -233,6 +232,49 @@ appServer = function(input, output, session) {
   )
 
   contrastPairs = reactiveVal(character(0))
+
+  modelExplanationTeachingSummary = reactive({
+    audit = rv$modelExplanationAudit
+    m = modelFit()
+
+    if (is.null(audit) || is.null(m)) {
+      return(NULL)
+    }
+
+    tryCatch(
+      buildExplanationTeachingSummary(
+        audit = audit,
+        model = m,
+        researchQuestion = rv$researchQuestion %||% NULL
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+  })
+
+  modelExplanationClaimEvidenceMap = reactive({
+    explanationText = rv$modelExplanation
+    audit = rv$modelExplanationAudit
+    teachingSummary = modelExplanationTeachingSummary()
+    m = modelFit()
+
+    if (is.null(explanationText) || is.null(audit) || is.null(teachingSummary) || is.null(m)) {
+      return(NULL)
+    }
+
+    tryCatch(
+      buildExplanationClaimEvidenceMap(
+        explanationText = explanationText,
+        audit = audit,
+        teachingSummary = teachingSummary,
+        model = m
+      ),
+      error = function(e) {
+        NULL
+      }
+    )
+  })
   contrastResultText = reactiveVal("")
 
   refreshOllamaModelChoices = function(selected = NULL) {
@@ -491,7 +533,6 @@ appServer = function(input, output, session) {
     rv$modelEquations = NULL
     rv$modelExplanation = NULL
     rv$modelExplanationAudit = NULL
-    rv$modelExplanationClaimEvidenceMap = NULL
     rv$modelExplanationTutor = NULL
     rv$modelContext = NULL
 
@@ -3275,39 +3316,12 @@ $$")
         chatProvider = chatProvider
       )
       explanationAudit = buildAppExplanationAudit(model = m)
-      explanationClaimEvidenceMap = NULL
-
-      if (!is.null(explanation) && !is.null(explanationAudit)) {
-        explanationTeachingSummary = tryCatch(
-          buildExplanationTeachingSummary(
-            audit = explanationAudit,
-            model = m,
-            researchQuestion = rv$researchQuestion %||% NULL
-          ),
-          error = function(e) {
-            NULL
-          }
-        )
-
-        explanationClaimEvidenceMap = tryCatch(
-          buildExplanationClaimEvidenceMap(
-            explanationText = explanation,
-            audit = explanationAudit,
-            teachingSummary = explanationTeachingSummary,
-            model = m
-          ),
-          error = function(e) {
-            NULL
-          }
-        )
-      }
 
       incProgress(0.35, detail = outputMessages$updateDetail)
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
       rv$modelExplanationAudit = explanationAudit
-      rv$modelExplanationClaimEvidenceMap = explanationClaimEvidenceMap
       rv$modelExplanationTutor = NULL
 
       finishMessages = buildAppOutputMessages(
@@ -3580,29 +3594,16 @@ $$")
   output$model_explanation = renderUI({
     expl = rv$modelExplanation
     audit = rv$modelExplanationAudit
-    claimMap = rv$modelExplanationClaimEvidenceMap
+    claimMap = modelExplanationClaimEvidenceMap()
     tutorText = rv$modelExplanationTutor
-    m = modelFit()
 
     if (is.null(expl) && is.null(audit)) {
       return(helpText("Fit a model to see a textual explanation."))
     }
 
-    teachingSummary = NULL
+    teachingSummary = modelExplanationTeachingSummary()
+    m = modelFit()
     researchQuestionText = trimws(as.character(rv$researchQuestion %||% attr(m, "wmfm_research_question", exact = TRUE) %||% ""))
-
-    if (!is.null(audit) && !is.null(m)) {
-      teachingSummary = tryCatch(
-        buildExplanationTeachingSummary(
-          audit = audit,
-          model = m,
-          researchQuestion = rv$researchQuestion %||% NULL
-        ),
-        error = function(e) {
-          NULL
-        }
-      )
-    }
 
     tagList(
       if (!is.null(expl)) {
@@ -3690,16 +3691,7 @@ $$")
       return(NULL)
     }
 
-    teachingSummary = tryCatch(
-      buildExplanationTeachingSummary(
-        audit = audit,
-        model = m,
-        researchQuestion = rv$researchQuestion %||% NULL
-      ),
-      error = function(e) {
-        NULL
-      }
-    )
+    teachingSummary = modelExplanationTeachingSummary()
 
     if (is.null(teachingSummary)) {
       showNotification(
