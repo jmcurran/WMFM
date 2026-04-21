@@ -29,21 +29,3 @@ testthat::test_that("detectExplanationClaimTags returns overlapping tags in a st
 
   testthat::expect_identical(tags, c("typicalCase", "effect", "uncertainty"))
 })
-
-
-testthat::test_that("buildExplanationClaimSupportNotes returns composable student-facing notes", {
-  notes = buildExplanationClaimSupportNotes(
-    claimTags = c("typicalCase", "effect", "uncertainty", "answer"),
-    matchedEvidence = data.frame(stringsAsFactors = FALSE)
-  )
-
-  testthat::expect_identical(
-    notes,
-    c(
-      "describes a typical case",
-      "explains how the response changes",
-      "shows uncertainty in the estimate",
-      "helps answer the research question"
-    )
-  )
-})

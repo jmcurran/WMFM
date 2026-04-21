@@ -65,6 +65,10 @@ testthat::test_that("buildExplanationClaimEvidenceMap returns sentence-level det
   testthat::expect_identical(out$claims$claimTags[[4]], c("effect", "uncertainty"))
   testthat::expect_identical(out$claims$claimType[[3]], "baseline")
   testthat::expect_match(out$claims$evidenceLabels[[3]], baselineLabel, fixed = TRUE)
+  testthat::expect_identical(
+    out$claims$supportNotes[[4]],
+    c("explains how the response changes", "shows uncertainty in the estimate")
+  )
   testthat::expect_match(out$claims$supportNote[[4]], "shows uncertainty in the estimate", fixed = TRUE)
 })
 
