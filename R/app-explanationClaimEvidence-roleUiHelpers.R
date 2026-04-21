@@ -65,6 +65,63 @@ renderExplanationClaimRoleNotesUi = function(row) {
   )
 }
 
+#' Build a student-facing gloss for one evidence label
+#'
+#' @param label Character scalar.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildExplanationEvidenceLabelGloss = function(label) {
+
+  label = trimws(as.character(label %||% ""))
+
+  if (!nzchar(label)) {
+    return("")
+  }
+
+  if (identical(label, "Research question framing")) {
+    return("the question the model is trying to answer")
+  }
+
+  if (label %in% c("Interpretation scale", "Model interpretation scale")) {
+    return("the scale used to describe the result")
+  }
+
+  if (identical(label, "Starting values and comparison groups")) {
+    return("the starting values or reference groups used in the explanation")
+  }
+
+  if (identical(label, "Main effect translation")) {
+    return("the main fitted result rewritten in plain language")
+  }
+
+  if (label %in% c("Uncertainty summary", "Confidence interval rule")) {
+    return("the uncertainty rule used to keep the wording cautious")
+  }
+
+  if (
+    identical(label, "Reference level") ||
+    grepl("^Reference level for `.+`$", label)
+  ) {
+    return("the comparison group used as the starting point")
+  }
+
+  if (grepl("^Starting value for `.+`$", label)) {
+    return("the chosen starting value for this predictor")
+  }
+
+  if (grepl("^Baseline", label)) {
+    return("the fitted starting value used for a typical case")
+  }
+
+  if (grepl("^Effect", label)) {
+    return("the fitted effect quantity used for this part of the explanation")
+  }
+
+  ""
+}
+
 #' Render the evidence label text for one claim-evidence row
 #'
 #' @param row Single-row data frame from a
@@ -73,7 +130,7 @@ renderExplanationClaimRoleNotesUi = function(row) {
 #' @return A Shiny UI object or `NULL`.
 #' @keywords internal
 #' @noRd
-#' @importFrom htmltools tags
+#' @importFrom htmltools tagList tags
 renderExplanationClaimEvidenceLabelsUi = function(row) {
 
   evidenceLabels = trimws(as.character(row$evidenceLabels[[1]] %||% ""))
@@ -82,10 +139,32 @@ renderExplanationClaimEvidenceLabelsUi = function(row) {
     return(NULL)
   }
 
-  tags$p(
-    class = "wmfm-explanation-helper-note",
-    tags$strong("Main model information behind it: "),
-    evidenceLabels
+  labelParts = trimws(strsplit(evidenceLabels, "\\|", fixed = FALSE)[[1]])
+  labelParts = labelParts[nzchar(labelParts)]
+
+  if (length(labelParts) == 0) {
+    return(NULL)
+  }
+
+  tagList(
+    tags$p(
+      class = "wmfm-explanation-helper-note",
+      tags$strong("Main model information behind it:")
+    ),
+    tags$ul(
+      class = "wmfm-explanation-helper-note",
+      lapply(labelParts, function(label) {
+        gloss = buildExplanationEvidenceLabelGloss(label)
+
+        tags$li(
+          if (nzchar(gloss)) {
+            tagList(tags$strong(paste0(label, ": ")), gloss)
+          } else {
+            label
+          }
+        )
+      })
+    )
   )
 }
 
