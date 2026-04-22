@@ -64,7 +64,8 @@ buildExplanationClaimEvidenceMap = function(
       teachingSummary = teachingSummary,
       model = model,
       evidenceInventory = evidenceInventory,
-      totalClaims = length(claimTexts)
+      totalClaims = length(claimTexts),
+      priorClaimTexts = if (i > 1L) claimTexts[seq_len(i - 1L)] else character(0)
     )
   })
 
@@ -291,6 +292,108 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
   do.call(rbind, rows)
 }
 
+#' Check whether a teaching summary came from an explicit research-question input
+#'
+#' @param teachingSummary Optional teaching summary object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+teachingSummaryHasExplicitResearchQuestion = function(teachingSummary = NULL) {
+
+  isTRUE(attr(teachingSummary, "researchQuestionWasSupplied", exact = TRUE))
+}
+
+#' Remove an implicit final-answer tag when a prior research-question claim already exists
+#'
+#' @param claimTags Character vector of detected tags.
+#' @param claimText Character scalar.
+#' @param priorClaimTexts Character vector of earlier claim texts.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return Character vector.
+#' @keywords internal
+#' @noRd
+maybeDropImplicitAnswerTag = function(
+    claimTags,
+    claimText,
+    priorClaimTexts = character(0),
+    teachingSummary = NULL,
+    model = NULL
+) {
+
+  tags = as.character(claimTags %||% character(0))
+
+  if (!("answer" %in% tags) || !("effect" %in% tags)) {
+    return(tags)
+  }
+
+  if ("comparison" %in% tags || sentenceHasExplicitAnswerCue(claimText)) {
+    return(tags)
+  }
+
+  if (!hasPriorResearchQuestionClaim(
+    priorClaimTexts = priorClaimTexts,
+    teachingSummary = teachingSummary,
+    model = model
+  )) {
+    return(tags)
+  }
+
+  if (!teachingSummaryHasExplicitResearchQuestion(teachingSummary = teachingSummary)) {
+    return(tags)
+  }
+
+  normaliseExplanationClaimTags(setdiff(tags, "answer"))
+}
+
+#' Check whether earlier claim texts already contain research-question framing
+#'
+#' @param priorClaimTexts Character vector.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+hasPriorResearchQuestionClaim = function(
+    priorClaimTexts = character(0),
+    teachingSummary = NULL,
+    model = NULL
+) {
+
+  if (length(priorClaimTexts) == 0) {
+    return(FALSE)
+  }
+
+  any(vapply(priorClaimTexts, function(text) {
+    detectResearchQuestion(
+      claimText = text,
+      teachingSummary = teachingSummary,
+      model = model
+    )
+  }, logical(1)))
+}
+
+#' Check whether a sentence has an explicit answer cue
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceHasExplicitAnswerCue = function(claimText) {
+
+  text = trimws(tolower(claimText %||% ""))
+
+  grepl(
+    "^(answer:|overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
+    text,
+    perl = TRUE
+  )
+}
+
 #' Map one explanation sentence back to evidence
 #'
 #' @param claimId Character scalar.
@@ -311,7 +414,8 @@ mapSingleExplanationClaim = function(
     teachingSummary,
     model,
     evidenceInventory,
-    totalClaims = NA_integer_
+    totalClaims = NA_integer_,
+    priorClaimTexts = character(0)
 ) {
 
   claimTags = detectExplanationClaimTags(
@@ -321,6 +425,14 @@ mapSingleExplanationClaim = function(
     model = model,
     sentenceIndex = sentenceIndex,
     totalClaims = totalClaims
+  )
+
+  claimTags = maybeDropImplicitAnswerTag(
+    claimTags = claimTags,
+    claimText = claimText,
+    priorClaimTexts = priorClaimTexts,
+    teachingSummary = teachingSummary,
+    model = model
   )
 
   claimType = deriveLegacyExplanationClaimType(claimTags = claimTags)

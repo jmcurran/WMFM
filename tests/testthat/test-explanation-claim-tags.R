@@ -61,6 +61,52 @@ testthat::test_that("detectExplanationClaimTags handles effect plus uncertainty 
   testthat::expect_identical(tags, c("effect", "uncertainty", "comparison"))
 })
 
+
+testthat::test_that("detectExplanationClaimTags adds answer to the final sentence when a research question exists", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "On average, exam marks tend to increase as Test increases.",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 2
+  )
+
+  testthat::expect_identical(tags, c("effect", "answer"))
+})
+
+
+testthat::test_that("detectExplanationClaimTags does not add answer without a stored research question", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "On average, exam marks tend to increase as Test increases.",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 2
+  )
+
+  testthat::expect_identical(tags, "effect")
+})
+
+
 testthat::test_that("detectExplanationClaimTags keeps scale-only sentences separate from effect tags", {
   tags = detectExplanationClaimTags(
     claimText = "This result is shown on the probability scale rather than the odds scale.",

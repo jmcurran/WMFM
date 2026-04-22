@@ -15,6 +15,8 @@
 #' @importFrom stats formula model.frame na.omit
 buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL) {
 
+  researchQuestionWasSupplied = !is.null(researchQuestion)
+
   if (is.null(audit)) {
     stop("`audit` must not be NULL.", call. = FALSE)
   }
@@ -90,6 +92,8 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
     )
   )
 
+  attr(out, "rawResearchQuestion") = researchQuestion
+  attr(out, "researchQuestionWasSupplied") = researchQuestionWasSupplied
   class(out) = c("wmfmExplanationTeachingSummary", class(out))
   out
 }

@@ -192,9 +192,35 @@ testthat::test_that("effect sentences can carry both effect and uncertainty tags
   testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
   testthat::expect_match(out$claims$supportNote[[1]], "explains how the response changes", fixed = TRUE)
   testthat::expect_match(out$claims$supportNote[[1]], "shows uncertainty in the estimate", fixed = TRUE)
-  testthat::expect_identical(out$claims$claimTags[[3]], "answer")
+  testthat::expect_identical(out$claims$claimTags[[3]], c("effect", "comparison", "answer"))
   testthat::expect_identical(out$claims$claimType[[3]], "answer")
   testthat::expect_match(out$claims$supportNote[[3]], "helps answer the research question", fixed = TRUE)
+})
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap adds answer only to the final sentence when a research question is present", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Does Test help explain Exam?",
+      "On average, exam marks tend to increase as Test increases."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimTags[[1]], "researchQuestion")
+  testthat::expect_identical(out$claims$claimTags[[2]], c("effect", "answer"))
+  testthat::expect_identical(out$claims$claimType[[2]], "answer")
 })
 
 
