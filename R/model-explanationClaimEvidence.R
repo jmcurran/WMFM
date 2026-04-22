@@ -473,7 +473,36 @@ mapSingleExplanationClaim = function(
   )
 }
 
+#' Return the explicit legacy claim-type priority used for compatibility
+#'
+#' The multi-tag `claimTags` field is the primary representation. `claimType` is
+#' a backward-compatibility label derived by ordered priority so older code can
+#' continue to work predictably when a sentence carries multiple tags.
+#'
+#' @return A named character vector whose names are tags and whose values are the
+#'   corresponding legacy `claimType` labels, ordered from highest to lowest
+#'   priority.
+#' @keywords internal
+#' @noRd
+getLegacyExplanationClaimTypePriority = function() {
+
+  c(
+    researchQuestion = "researchQuestion",
+    answer = "answer",
+    typicalCase = "baseline",
+    effect = "mainEffect",
+    comparison = "comparison",
+    uncertainty = "uncertainty",
+    scale = "scale"
+  )
+}
+
 #' Derive the legacy single-type label from claim tags
+#'
+#' The compatibility rule is explicit: `claimType` is assigned by the first
+#' matching entry in `getLegacyExplanationClaimTypePriority()`. This means that
+#' sentences with `answer` plus other tags still derive `claimType = "answer"`,
+#' while `researchQuestion` always remains the top-priority legacy label.
 #'
 #' @param claimTags Character vector of detected claim tags.
 #'
@@ -488,32 +517,12 @@ deriveLegacyExplanationClaimType = function(claimTags) {
     return("general")
   }
 
-  if ("researchQuestion" %in% tags) {
-    return("researchQuestion")
-  }
+  priority = getLegacyExplanationClaimTypePriority()
 
-  if ("answer" %in% tags) {
-    return("answer")
-  }
-
-  if ("typicalCase" %in% tags) {
-    return("baseline")
-  }
-
-  if ("effect" %in% tags) {
-    return("mainEffect")
-  }
-
-  if ("comparison" %in% tags) {
-    return("comparison")
-  }
-
-  if ("uncertainty" %in% tags) {
-    return("uncertainty")
-  }
-
-  if ("scale" %in% tags) {
-    return("scale")
+  for (tag in names(priority)) {
+    if (tag %in% tags) {
+      return(unname(priority[[tag]]))
+    }
   }
 
   "general"
