@@ -297,6 +297,9 @@ appUI = function() {
       tabPanel(
         "Model Explanation",
         h4("Model explanation"),
+        helpText(
+          "Start with the main explanation, then use the sections below to see how to read it, what information the app relied on, and where each sentence came from."
+        ),
         uiOutput("model_explanation")
       ),
 

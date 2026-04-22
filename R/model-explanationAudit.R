@@ -31,6 +31,12 @@ buildModelExplanationAuditCoefficientTable = function(model) {
 #' rules, interpretation scale, numeric anchors, reference levels, and
 #' confidence-interval evidence.
 #'
+#' The returned object is expected to follow a stable top-level contract with
+#' sections for overview metadata, prompt inputs, prompt rules,
+#' interpretation-scale metadata, numeric anchors, reference levels,
+#' confidence-interval summary, baseline and effect evidence, coefficient data,
+#' and raw prompt ingredients.
+#'
 #' @param model A fitted model object, typically of class `lm` or `glm`.
 #'
 #' @return An object of class `wmfmExplanationAudit`.
@@ -108,6 +114,7 @@ buildModelExplanationAudit = function(model) {
   )
 
   class(out) = c("wmfmExplanationAudit", class(out))
+  validateWmfmExplanationAudit(x = out)
   out
 }
 
@@ -222,8 +229,7 @@ buildModelExplanationAuditScaleInfo = function(model) {
       responseTransform = responseTransform,
       fittedValueScale = "probability and odds",
       effectScale = "odds multipliers",
-      backTransformation = "Log-odds quantities are exponentiated to odds, and fitted values are obtained by inverse-logit transformation.",
-      explanationScaleNote = "The narrative is instructed to describe effects on the odds scale rather than as raw log-odds coefficients."
+      backTransformation = "Coefficients are converted from log-odds to probabilities and odds using the inverse-logit transformation."
     ))
   }
 
@@ -233,124 +239,82 @@ buildModelExplanationAuditScaleInfo = function(model) {
       responseTransform = responseTransform,
       fittedValueScale = "expected count",
       effectScale = "expected-count multipliers",
-      backTransformation = "Log-count quantities are exponentiated to the expected-count scale.",
-      explanationScaleNote = "The narrative is instructed to describe multiplicative changes in the expected count rather than raw log coefficients."
+      backTransformation = "Coefficients are converted from the log scale to the expected-count scale using exponentiation."
     ))
   }
-
-  if (identical(responseTransform, "none")) {
-    return(list(
-      responseExpression = responseExpr,
-      responseTransform = responseTransform,
-      fittedValueScale = "response scale",
-      effectScale = "additive response-scale differences",
-      backTransformation = "No back-transformation is required.",
-      explanationScaleNote = "The narrative is instructed to describe additive changes on the response scale."
-    ))
-  }
-
-  transformLabel = switch(
-    responseTransform,
-    log = "log scale",
-    log1p = "log(1 + y) scale",
-    sqrt = "square-root scale",
-    paste0(responseTransform, " scale")
-  )
 
   list(
     responseExpression = responseExpr,
     responseTransform = responseTransform,
-    fittedValueScale = transformLabel,
-    effectScale = paste("additive differences on the", transformLabel),
-    backTransformation = "No automatic back-transformation is imposed for transformed lm responses in the current explanation workflow.",
-    explanationScaleNote = "The narrative is instructed to stay on the detected transformed scale rather than inventing an unsupported back-transformation."
+    fittedValueScale = "response scale",
+    effectScale = "additive response-scale differences",
+    backTransformation = "No back-transformation is required."
   )
 }
 
-#' Build explanation-audit numeric-anchor metadata
+#' Build explanation-audit numeric-anchor summary
 #'
 #' @param model A fitted model object.
 #' @param mf Model frame for the fitted model.
 #' @param predictorNames Predictor names.
-#' @param numericAnchorInfo Output from `buildModelNumericAnchorInfo()`.
+#' @param numericAnchorInfo Numeric anchor info from
+#'   `buildModelNumericAnchorInfo()`.
 #'
 #' @return A named list.
 #' @keywords internal
 buildModelExplanationAuditNumericAnchor = function(model, mf, predictorNames, numericAnchorInfo) {
 
-  numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
+  numericPredictors = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
 
-  if (length(numericNames) == 0) {
+  if (length(numericPredictors) == 0) {
     return(list(
       numericReference = numericAnchorInfo$numericReference,
-      note = "No numeric predictors were present, so no special numeric anchor was needed.",
-      table = data.frame()
+      note = "No numeric predictors were present, so no numeric anchor table was needed.",
+      table = data.frame(
+        predictor = character(0),
+        observedRange = character(0),
+        anchor = numeric(0),
+        reason = character(0),
+        stringsAsFactors = FALSE
+      )
     ))
   }
 
-  fmtValue = function(x) {
-    format(round(x, 4), trim = TRUE, scientific = FALSE)
+  anchorRows = lapply(numericPredictors, function(name) {
+    x = mf[[name]]
+    observedMin = min(x, na.rm = TRUE)
+    observedMax = max(x, na.rm = TRUE)
+    zeroInRange = observedMin <= 0 && observedMax >= 0
+    anchor = if (zeroInRange) 0 else mean(x, na.rm = TRUE)
+    reason = if (zeroInRange) {
+      "0 is inside the observed range, so it is used as the interpretation anchor."
+    } else {
+      "0 is outside the observed range, so the sample mean is used as the interpretation anchor."
+    }
+
+    data.frame(
+      predictor = name,
+      observedRange = paste0("[", round(observedMin, 4), ", ", round(observedMax, 4), "]"),
+      anchor = round(anchor, 4),
+      reason = reason,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  note = if (identical(numericAnchorInfo$numericReference, "zero")) {
+    "At least one numeric predictor included 0 in its observed range, so zero-based interpretation was available."
+  } else {
+    "No numeric predictor included 0 in its observed range, so mean-based interpretation was used instead."
   }
-
-  anchorTable = do.call(
-    rbind,
-    lapply(numericNames, function(varName) {
-      x = stats::na.omit(mf[[varName]])
-
-      if (length(x) == 0) {
-        anchorValue = if (identical(numericAnchorInfo$numericReference, "zero")) 0 else NA_real_
-        reason = if (identical(numericAnchorInfo$numericReference, "zero")) {
-          "0 used because all observed values are missing."
-        } else {
-          "Sample mean would usually be used, but all observed values are missing."
-        }
-
-        return(data.frame(
-          predictor = varName,
-          observedMin = NA_real_,
-          observedMax = NA_real_,
-          anchor = anchorValue,
-          reason = reason,
-          stringsAsFactors = FALSE
-        ))
-      }
-
-      zeroInRange = min(x) <= 0 && max(x) >= 0
-      anchorValue = if (identical(numericAnchorInfo$numericReference, "zero")) 0 else mean(x)
-      reason = if (zeroInRange) {
-        "0 lies inside the observed range."
-      } else {
-        "0 lies outside the observed range, so the sample mean is used."
-      }
-
-      data.frame(
-        predictor = varName,
-        observedMin = as.numeric(min(x)),
-        observedMax = as.numeric(max(x)),
-        anchor = as.numeric(anchorValue),
-        reason = reason,
-        stringsAsFactors = FALSE
-      )
-    })
-  )
-
-  anchorTable$observedRange = paste0(
-    "[",
-    ifelse(is.na(anchorTable$observedMin), "NA", fmtValue(anchorTable$observedMin)),
-    ", ",
-    ifelse(is.na(anchorTable$observedMax), "NA", fmtValue(anchorTable$observedMax)),
-    "]"
-  )
-  anchorTable = anchorTable[, c("predictor", "observedRange", "anchor", "reason"), drop = FALSE]
 
   list(
     numericReference = numericAnchorInfo$numericReference,
-    note = buildNumericAnchorUiNote(model = model, mf = mf, predictorNames = predictorNames),
-    table = anchorTable
+    note = note,
+    table = do.call(rbind, anchorRows)
   )
 }
 
-#' Build explanation-audit factor reference-level metadata
+#' Build explanation-audit reference-level summary
 #'
 #' @param mf Model frame for the fitted model.
 #' @param predictorNames Predictor names.
@@ -359,79 +323,100 @@ buildModelExplanationAuditNumericAnchor = function(model, mf, predictorNames, nu
 #' @keywords internal
 buildModelExplanationAuditReferenceLevels = function(mf, predictorNames) {
 
-  factorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
+  factorPredictors = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
 
-  if (length(factorNames) == 0) {
-    return(data.frame())
+  if (length(factorPredictors) == 0) {
+    return(data.frame(
+      predictor = character(0),
+      referenceLevel = character(0),
+      levels = character(0),
+      stringsAsFactors = FALSE
+    ))
   }
 
-  do.call(
-    rbind,
-    lapply(factorNames, function(varName) {
-      x = mf[[varName]]
-      data.frame(
-        predictor = varName,
-        referenceLevel = levels(x)[1],
-        levels = paste(levels(x), collapse = ", "),
-        stringsAsFactors = FALSE
-      )
-    })
-  )
+  out = lapply(factorPredictors, function(name) {
+    x = mf[[name]]
+    data.frame(
+      predictor = name,
+      referenceLevel = levels(x)[1],
+      levels = paste(levels(x), collapse = ", "),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, out)
 }
 
-#' Build explanation-audit confidence-interval metadata
+#' Build explanation-audit confidence-interval summary
 #'
-#' @param ciData Output from `buildModelConfidenceIntervalData()`.
+#' @param ciData Confidence-interval data from
+#'   `buildModelConfidenceIntervalData()`.
 #'
 #' @return A named list.
 #' @keywords internal
 buildModelExplanationAuditConfidenceIntervals = function(ciData) {
 
-  ciTable = ciData$table %||% data.frame()
-
-  if (!is.data.frame(ciTable) || nrow(ciTable) == 0) {
+  if (!is.data.frame(ciData) || nrow(ciData) == 0) {
     return(list(
-      level = 0.95,
-      mode = ciData$mode %||% NA_character_,
-      note = ciData$note %||% NA_character_,
-      teachingNote = ciData$teachingNote %||% NA_character_,
+      level = NA_real_,
+      mode = NA_character_,
+      note = NA_character_,
+      teachingNote = NA_character_,
       displayedScales = character(0)
     ))
   }
 
-  displayedScales = unique(ciTable$scale)
-  displayedScales = displayedScales[!is.na(displayedScales) & nzchar(displayedScales)]
-
   list(
-    level = 0.95,
-    mode = ciData$mode %||% NA_character_,
-    note = ciData$note %||% NA_character_,
-    teachingNote = ciData$teachingNote %||% NA_character_,
-    displayedScales = displayedScales
+    level = unique(ciData$level)[1],
+    mode = unique(ciData$mode)[1],
+    note = unique(ciData$note)[1],
+    teachingNote = unique(ciData$teachingNote)[1],
+    displayedScales = unique(stats::na.omit(ciData$displayScale))
   )
 }
 
-#' Build explanation-audit evidence tables
+#' Build explanation-audit evidence table for CI sections
 #'
-#' @param ciData Output from `buildModelConfidenceIntervalData()`.
-#' @param section CI section or sections to keep.
+#' @param ciData Confidence-interval data from
+#'   `buildModelConfidenceIntervalData()`.
+#' @param section Character vector of CI sections to keep.
 #'
 #' @return A data frame.
 #' @keywords internal
 buildModelExplanationAuditEvidenceTable = function(ciData, section) {
 
-  ciTable = ciData$table %||% data.frame()
-
-  if (!is.data.frame(ciTable) || nrow(ciTable) == 0 || !("ciSection" %in% names(ciTable))) {
+  if (!is.data.frame(ciData) || nrow(ciData) == 0) {
     return(data.frame())
   }
 
-  out = ciTable[ciTable$ciSection %in% section, , drop = FALSE]
+  keep = ciData$section %in% section
 
-  keepNames = intersect(
-    c("ciSection", "quantity", "estimate", "lower", "upper", "scale", "displayScale"),
-    names(out)
+  if (!any(keep)) {
+    return(data.frame())
+  }
+
+  out = ciData[keep, c(
+    "section",
+    "label",
+    "estimate",
+    "lower",
+    "upper",
+    "scale",
+    "displayScale"
+  ), drop = FALSE]
+
+  names(out) = c(
+    "ciSection",
+    "quantity",
+    "estimate",
+    "lower",
+    "upper",
+    "scale",
+    "displayScale"
   )
 
-  out[, keepNames, drop = FALSE]
+  numericColumns = vapply(out, is.numeric, logical(1))
+  out[numericColumns] = lapply(out[numericColumns], round, digits = 4)
+  rownames(out) = NULL
+  out
 }

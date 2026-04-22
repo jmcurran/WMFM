@@ -28,10 +28,21 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
   testthat::expect_true(is.data.frame(out$evidenceTable))
   testthat::expect_true(nrow(out$evidenceTable) >= 5)
   testthat::expect_true(all(c("section", "summary") %in% names(out$evidenceTable)))
-  testthat::expect_match(out$dataDescription, "The response variable is `Exam`")
+  testthat::expect_match(out$dataDescription, "The explanation starts by orienting the student", fixed = TRUE)
   testthat::expect_match(out$dataDescription, "Number-valued predictors: `Test`")
-  testthat::expect_identical(out$evidenceTable$section[[1]], "Research question")
+  testthat::expect_identical(out$evidenceTable$section[[1]], "Question to answer")
   testthat::expect_identical(out$evidenceTable$section[[2]], "Data used")
+  testthat::expect_identical(
+    out$evidenceTable$section,
+    c(
+      "Question to answer",
+      "Data used",
+      "Scale for the result",
+      "Starting point",
+      "Comparison being described",
+      "Uncertainty check"
+    )
+  )
   testthat::expect_match(out$baselineChoice, "sample mean|pretending every variable begins at zero")
   testthat::expect_match(out$baselineChoice, "11\\.57")
   testthat::expect_match(out$baselineChoice, "Zero lies outside the observed range")
@@ -77,4 +88,53 @@ testthat::test_that("renderTeachingSummaryText turns backticked names into code 
 
   testthat::expect_true(inherits(ui, c("shiny.tag", "shiny.tag.list")))
   testthat::expect_true(any(vapply(ui$children, function(x) inherits(x, "shiny.tag") && identical(x$name, "code"), logical(1))))
+})
+
+
+testthat::test_that("teaching summary uncertainty falls back cleanly when confidence metadata is NA", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+  audit = buildModelExplanationAudit(model)
+
+  audit$confidenceIntervals$level = NA_real_
+  audit$confidenceIntervals$teachingNote = NA_character_
+  audit$confidenceIntervals$note = NA_character_
+
+  out = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  testthat::expect_match(out$uncertaintySummary, "95 % confidence intervals", fixed = TRUE)
+  testthat::expect_no_match(out$uncertaintySummary, "NA", fixed = TRUE)
+  testthat::expect_false(grepl("NA\\s*$", out$uncertaintySummary))
+  testthat::expect_match(
+    out$evidenceTable$summary[out$evidenceTable$section == "Uncertainty check"],
+    "95% confidence intervals to describe uncertainty carefully.",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("claim evidence confidence interval summary avoids literal NA", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  audit$confidenceIntervals$level = NA_real_
+  audit$confidenceIntervals$teachingNote = NA_character_
+  audit$confidenceIntervals$note = NA_character_
+
+  evidenceMap = buildExplanationClaimEvidenceMap(
+    audit = audit,
+    teachingSummary = teachingSummary,
+    explanationText = "Exam scores tend to increase as Test increases."
+  )
+
+  row = evidenceMap$evidence[evidenceMap$evidence$evidenceType == "confidenceInterval", , drop = FALSE]
+
+  testthat::expect_equal(nrow(row), 1)
+  testthat::expect_match(row$summary[[1]], "95 % confidence intervals.", fixed = TRUE)
+  testthat::expect_no_match(row$summary[[1]], "NA", fixed = TRUE)
 })

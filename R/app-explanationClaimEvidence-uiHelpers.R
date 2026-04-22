@@ -20,24 +20,28 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
 
   cards = lapply(seq_len(nrow(claimMap$claims)), function(i) {
     row = claimMap$claims[i, , drop = FALSE]
-
-    tags$div(
-      class = "wmfm-explanation-helper-box",
-      tags$p(
-        class = "wmfm-explanation-helper-note",
-        tags$strong(paste0("Sentence ", row$sentenceIndex[[1]], ": ")),
-        row$claimText[[1]]
-      ),
-      tags$p(row$supportNote[[1]]),
-      if (nzchar(row$evidenceLabels[[1]] %||% "")) {
-        tags$p(
-          class = "wmfm-explanation-helper-note",
-          tags$strong("Evidence used: "),
-          row$evidenceLabels[[1]]
-        )
-      }
-    )
+    renderExplanationClaimEvidenceCardUi(row)
   })
 
-  do.call(tagList, cards)
+  nSentences = length(cards)
+
+  guideText = if (nSentences == 1) {
+    "There is 1 sentence in this explanation. A sentence can play more than one role."
+  } else {
+    paste0(
+      "There are ",
+      nSentences,
+      " sentences in this explanation. A sentence can play more than one role."
+    )
+  }
+
+  do.call(tagList, c(
+    list(
+      tags$p(
+        class = "wmfm-explanation-helper-note",
+        guideText
+      )
+    ),
+    cards
+  ))
 }

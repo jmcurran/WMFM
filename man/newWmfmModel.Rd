@@ -38,7 +38,9 @@ question associated with the fitted model.}
 
 \item{explanation}{Generated explanation text, or \code{NULL}.}
 
-\item{explanationAudit}{Deterministic explanation-audit object, or \code{NULL}.}
+\item{explanationAudit}{Deterministic explanation-audit object, or \code{NULL}.
+When present, this should inherit from \code{wmfmExplanationAudit} and follow
+the same top-level contract produced by \code{buildModelExplanationAudit()}.}
 
 \item{explanationClaimEvidenceMap}{Deterministic claim-to-evidence map, or \code{NULL}.}
 

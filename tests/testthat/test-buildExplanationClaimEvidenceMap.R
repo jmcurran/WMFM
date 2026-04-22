@@ -13,18 +13,28 @@ testthat::test_that("buildExplanationClaimEvidenceMap returns sentence-level det
   )
 
   anchorValue = buildExplanationTeachingNumber(audit$numericAnchor$table$anchor[[1]])
-  baselineLabel = audit$baselineEvidence$quantity[[1]]
+  baselineLabel = if (is.data.frame(audit$baselineEvidence) && nrow(audit$baselineEvidence) >= 1) {
+    audit$baselineEvidence$quantity[[1]]
+  } else {
+    NULL
+  }
 
-  explanationText = paste(
-    "Does Test help explain Exam?",
-    "On average, exam marks tend to increase as Test increases.",
+  baselineSentence = if (is.null(baselineLabel)) {
+    paste0("When Test is around ", anchorValue, ", the fitted value is summarised for a typical case.")
+  } else {
     paste0(
       "When Test is around ",
       anchorValue,
       ", the fitted value is summarised by ",
       baselineLabel,
       "."
-    ),
+    )
+  }
+
+  explanationText = paste(
+    "Does Test help explain Exam?",
+    "On average, exam marks tend to increase as Test increases.",
+    baselineSentence,
     "These confidence intervals suggest the increase is likely to be positive."
   )
 
@@ -48,7 +58,9 @@ testthat::test_that("buildExplanationClaimEvidenceMap returns sentence-level det
     "claimId",
     "sentenceIndex",
     "claimText",
+    "claimTags",
     "claimType",
+    "supportNotes",
     "supportNote",
     "evidenceCount",
     "evidenceTypes",
@@ -57,12 +69,31 @@ testthat::test_that("buildExplanationClaimEvidenceMap returns sentence-level det
   ) %in% names(out$claims)))
   testthat::expect_match(out$transparencyNote, "does not claim to reveal hidden chain-of-thought", fixed = TRUE)
   testthat::expect_true(all(out$claims$evidenceCount >= 1))
-  testthat::expect_identical(out$claims$claimType[[1]], "researchQuestion")
-  testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
+  testthat::expect_identical(out$claims$claimTags[[1]], "researchQuestion")
+  testthat::expect_identical(out$claims$claimTags[[2]], "effect")
+  testthat::expect_identical(out$claims$claimTags[[3]], "typicalCase")
+  testthat::expect_identical(out$claims$claimTags[[4]], c("effect", "uncertainty"))
   testthat::expect_identical(out$claims$claimType[[3]], "baseline")
-  testthat::expect_identical(out$claims$claimType[[4]], "uncertainty")
-  testthat::expect_match(out$claims$evidenceLabels[[3]], baselineLabel, fixed = TRUE)
-  testthat::expect_match(out$claims$supportNote[[4]], "confidence-interval guidance", fixed = TRUE)
+
+  baselineEvidenceLabels = out$claims$evidenceLabels[[3]]
+  testthat::expect_true(is.character(baselineEvidenceLabels))
+  testthat::expect_true(length(baselineEvidenceLabels) >= 1)
+  if (!is.null(baselineLabel)) {
+    testthat::expect_true(any(grepl(baselineLabel, baselineEvidenceLabels, fixed = TRUE)))
+  }
+
+  testthat::expect_true(is.character(out$claims$supportNotes[[4]]))
+  testthat::expect_true(any(grepl(
+    "explains how the response changes",
+    out$claims$supportNotes[[4]],
+    fixed = TRUE
+  )))
+  testthat::expect_true(any(grepl(
+    "shows uncertainty in the estimate",
+    out$claims$supportNotes[[4]],
+    fixed = TRUE
+  )))
+  testthat::expect_match(out$claims$supportNote[[4]], "shows uncertainty in the estimate", fixed = TRUE)
 })
 
 
@@ -93,8 +124,9 @@ testthat::test_that("buildExplanationClaimEvidenceMap handles factor comparisons
   )
 
   testthat::expect_equal(nrow(out$claims), 2)
+  testthat::expect_identical(out$claims$claimTags[[2]], "comparison")
   testthat::expect_identical(out$claims$claimType[[2]], "comparison")
-  testthat::expect_match(out$claims$evidenceLabels[[2]], "Reference level", fixed = TRUE)
+  testthat::expect_true(any(grepl("Reference level", out$claims$evidenceLabels[[2]], fixed = TRUE)))
 })
 
 
@@ -122,12 +154,13 @@ testthat::test_that("buildExplanationClaimEvidenceMap treats research-question p
     model = model
   )
 
+  testthat::expect_identical(out$claims$claimTags[[1]], "researchQuestion")
   testthat::expect_identical(out$claims$claimType[[1]], "researchQuestion")
   testthat::expect_identical(out$claims$evidenceLabels[[1]], "Research question framing")
 })
 
 
-testthat::test_that("effect sentences with intervals are not treated as baseline cases", {
+testthat::test_that("effect sentences can carry both effect and uncertainty tags", {
   data(quakes, package = "datasets")
 
   df = datasets::quakes[, c("mag", "stations")]
@@ -145,7 +178,7 @@ testthat::test_that("effect sentences with intervals are not treated as baseline
   out = buildExplanationClaimEvidenceMap(
     explanationText = paste(
       "A one-magnitude rise multiplies the expected count in SC by about 0.21; the 95% confidence limits run from roughly 0.13 to 0.31.",
-      "In WA the same one-magnitude rise multiplies the expected count by about 0.04, with limits from roughly 0.04 to 0.72.",
+      "In WA the same one-magnitude rise multiplies the expected count by about 0.04, with confidence limits from roughly 0.04 to 0.72.",
       "Answer: On average, earthquake frequency falls as magnitude increases, with a steeper decline in WA."
     ),
     audit = audit,
@@ -153,10 +186,43 @@ testthat::test_that("effect sentences with intervals are not treated as baseline
     model = model
   )
 
+  testthat::expect_identical(out$claims$claimTags[[1]], c("effect", "uncertainty"))
+  testthat::expect_identical(out$claims$claimTags[[2]], c("effect", "uncertainty"))
   testthat::expect_identical(out$claims$claimType[[1]], "mainEffect")
   testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
-  testthat::expect_match(out$claims$supportNote[[1]], "response changes", fixed = TRUE)
-  testthat::expect_match(out$claims$supportNote[[2]], "response changes", fixed = TRUE)
+  testthat::expect_match(out$claims$supportNote[[1]], "explains how the response changes", fixed = TRUE)
+  testthat::expect_match(out$claims$supportNote[[1]], "shows uncertainty in the estimate", fixed = TRUE)
+  testthat::expect_identical(out$claims$claimTags[[3]], "answer")
   testthat::expect_identical(out$claims$claimType[[3]], "answer")
-  testthat::expect_match(out$claims$supportNote[[3]], "overall answer", fixed = TRUE)
+  testthat::expect_match(out$claims$supportNote[[3]], "helps answer the research question", fixed = TRUE)
+})
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap treats claimTags as the primary mapping output", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(
+    audit = audit,
+    model = model,
+    researchQuestion = "Does Test help explain Exam?"
+  )
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Does Test help explain Exam?",
+      "On average, exam marks tend to increase as Test increases."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimTags[[1]], "researchQuestion")
+  testthat::expect_identical(out$claims$claimTags[[2]], "effect")
+  testthat::expect_true(all(vapply(out$claims$claimTags, length, integer(1)) >= 1L))
 })

@@ -9,9 +9,10 @@
 #' a transparent post hoc map showing which deterministic ingredients best match
 #' the visible explanation text.
 #'
-#' The current implementation uses a hybrid approach:
-#' - deterministic evidence inventory from the audit and teaching summary
-#' - lightweight sentence-level matching against the final explanation text
+#' The current implementation uses a tag-first hybrid approach:
+#' - deterministic sentence-level claim tags from the audit and teaching summary
+#' - lightweight sentence-level evidence matching against the final explanation text
+#' - a derived legacy single-label `claimType` field kept for compatibility
 #'
 #' @param explanationText Character scalar containing the final explanation.
 #' @param audit A `wmfmExplanationAudit` object.
@@ -72,7 +73,9 @@ buildExplanationClaimEvidenceMap = function(
       claimId = character(0),
       sentenceIndex = integer(0),
       claimText = character(0),
+      claimTags = I(list()),
       claimType = character(0),
+      supportNotes = I(list()),
       supportNote = character(0),
       evidenceCount = integer(0),
       evidenceTypes = character(0),
@@ -90,8 +93,8 @@ buildExplanationClaimEvidenceMap = function(
       "It does not claim to reveal hidden chain-of-thought."
     ),
     mappingMethod = paste(
-      "Sentence-level hybrid matching using the deterministic audit, the teaching summary,",
-      "and lightweight text heuristics."
+      "Sentence-level tag-first mapping using deterministic claim tags, the audit,",
+      "the teaching summary, and lightweight text heuristics."
     ),
     unit = "sentence",
     evidenceInventory = evidenceInventory,
@@ -237,9 +240,9 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
       sourceSection = "confidenceIntervals",
       label = "Confidence interval rule",
       summary = paste(
-        round((audit$confidenceIntervals$level %||% 0.95) * 100),
+        getExplanationTeachingConfidenceLevelPercent(audit = audit),
         "% confidence intervals.",
-        audit$confidenceIntervals$teachingNote %||% audit$confidenceIntervals$note %||% ""
+        getExplanationTeachingConfidenceNote(audit = audit)
       )
     )
   }
@@ -311,7 +314,7 @@ mapSingleExplanationClaim = function(
     totalClaims = NA_integer_
 ) {
 
-  claimType = classifyExplanationClaimType(
+  claimTags = detectExplanationClaimTags(
     claimText = claimText,
     audit = audit,
     teachingSummary = teachingSummary,
@@ -320,7 +323,10 @@ mapSingleExplanationClaim = function(
     totalClaims = totalClaims
   )
 
+  claimType = deriveLegacyExplanationClaimType(claimTags = claimTags)
+
   matchedEvidence = selectExplanationEvidenceForClaim(
+    claimTags = claimTags,
     claimType = claimType,
     claimText = claimText,
     audit = audit,
@@ -328,16 +334,24 @@ mapSingleExplanationClaim = function(
     evidenceInventory = evidenceInventory
   )
 
-  supportNote = buildExplanationClaimSupportNote(
-    claimType = claimType,
+  supportNotes = buildExplanationClaimSupportNotes(
+    claimTags = claimTags,
     matchedEvidence = matchedEvidence
+  )
+
+  supportNote = buildExplanationClaimSupportNote(
+    claimTags = claimTags,
+    matchedEvidence = matchedEvidence,
+    supportNotes = supportNotes
   )
 
   data.frame(
     claimId = claimId,
     sentenceIndex = as.integer(sentenceIndex),
     claimText = claimText,
+    claimTags = I(list(claimTags)),
     claimType = claimType,
+    supportNotes = I(list(supportNotes)),
     supportNote = supportNote,
     evidenceCount = nrow(matchedEvidence),
     evidenceTypes = paste(unique(stats::na.omit(matchedEvidence$evidenceType)), collapse = ", "),
@@ -347,12 +361,66 @@ mapSingleExplanationClaim = function(
   )
 }
 
-#' Classify a sentence-level explanation claim
+#' Derive the legacy single-type label from claim tags
+#'
+#' @param claimTags Character vector of detected claim tags.
+#'
+#' @return A single character string.
+#' @keywords internal
+#' @noRd
+deriveLegacyExplanationClaimType = function(claimTags) {
+
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if (length(tags) == 0) {
+    return("general")
+  }
+
+  if ("researchQuestion" %in% tags) {
+    return("researchQuestion")
+  }
+
+  if ("answer" %in% tags) {
+    return("answer")
+  }
+
+  if ("typicalCase" %in% tags) {
+    return("baseline")
+  }
+
+  if ("effect" %in% tags) {
+    return("mainEffect")
+  }
+
+  if ("comparison" %in% tags) {
+    return("comparison")
+  }
+
+  if ("uncertainty" %in% tags) {
+    return("uncertainty")
+  }
+
+  if ("scale" %in% tags) {
+    return("scale")
+  }
+
+  "general"
+}
+
+#' Classify a sentence-level explanation claim for legacy compatibility
+#'
+#' This helper now derives the legacy single-label `claimType` value from the
+#' multi-tag detector output used by the claim-mapping pipeline. New code
+#' should prefer `detectExplanationClaimTags()` and treat `claimType` as a
+#' compatibility field only.
 #'
 #' @param claimText Character scalar.
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param teachingSummary Optional teaching summary object.
 #' @param model Optional fitted model object.
+#' @param sentenceIndex Integer-like sentence index.
+#' @param totalClaims Integer-like total number of claims.
+#' @param claimTags Optional character vector of detected claim tags.
 #'
 #' @return A single character string.
 #' @keywords internal
@@ -362,235 +430,28 @@ classifyExplanationClaimType = function(
     teachingSummary = NULL,
     model = NULL,
     sentenceIndex = NA_integer_,
-    totalClaims = NA_integer_
+    totalClaims = NA_integer_,
+    claimTags = NULL
 ) {
 
-  text = tolower(claimText %||% "")
-
-  if (!nzchar(text)) {
-    return("general")
-  }
-
-  directResearchQuestion = trimws(as.character(attr(model, "wmfm_research_question", exact = TRUE) %||% ""))
-
-  if (nzchar(directResearchQuestion) && sentenceMatchesResearchQuestion(claimText, directResearchQuestion)) {
-    return("researchQuestion")
-  }
-
-  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
-
-  if (nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)) {
-    return("researchQuestion")
-  }
-
-  if (sentenceLooksLikeResearchAnswer(
-    claimText = claimText,
-    sentenceIndex = sentenceIndex,
-    totalClaims = totalClaims,
-    model = model,
-    teachingSummary = teachingSummary
-  )) {
-    return("answer")
-  }
-
-  if (grepl("confidence interval|confidence intervals|uncertain|uncertainty|likely|plausible|consistent with", text, perl = TRUE)) {
-    return("uncertainty")
-  }
-
-  if (sentenceMatchesBaselineEvidence(claimText, audit)) {
-    return("baseline")
-  }
-
-  if (sentenceMentionsModelledChange(claimText, audit, model)) {
-    return("mainEffect")
-  }
-
-  if (sentenceMatchesReferenceLevel(claimText, audit)) {
-    return("comparison")
-  }
-
-  if (grepl("odds|probability|expected count|expected value|mean response|response scale", text, perl = TRUE)) {
-    return("scale")
-  }
-
-  "general"
-}
-
-#' Check whether a sentence matches research-question framing
-#'
-#' @param claimText Character scalar.
-#' @param researchQuestion Character scalar.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-sentenceMatchesResearchQuestion = function(claimText, researchQuestion) {
-
-  sentence = trimws(tolower(claimText %||% ""))
-  question = trimws(tolower(researchQuestion %||% ""))
-
-  if (!nzchar(sentence) || !nzchar(question)) {
-    return(FALSE)
-  }
-
-  if (identical(sentence, question)) {
-    return(TRUE)
-  }
-
-  sentenceStem = trimws(sub("[?!.]+$", "", sentence))
-  questionStem = trimws(sub("[?!.]+$", "", question))
-
-  if (identical(sentenceStem, questionStem) && grepl("[?]$", trimws(claimText %||% ""))) {
-    return(TRUE)
-  }
-
-  if (grepl("^(the )?(study|question|research question) asks\\b", sentenceStem, perl = TRUE)) {
-    return(TRUE)
-  }
-
-  sentenceTokens = tokenizeExplanationClaimText(claimText)
-  questionTokens = tokenizeExplanationClaimText(researchQuestion)
-
-  overlap = intersect(sentenceTokens, questionTokens)
-  tokenDenominator = max(length(unique(questionTokens)), 1)
-  overlapShare = length(overlap) / tokenDenominator
-
-  if (grepl("\\b(how|whether)\\b", sentenceStem, perl = TRUE) && overlapShare >= 0.2 && length(overlap) >= 2) {
-    return(TRUE)
-  }
-
-  if (grepl("[?]$", trimws(claimText %||% "")) && length(overlap) >= 2 && overlapShare >= 0.4) {
-    return(TRUE)
-  }
-
-  leadingQuestionCue = grepl("^(does|do|did|can|could|should|would|is|are|will|has|have)\\b", sentenceStem, perl = TRUE)
-
-  if (leadingQuestionCue && grepl("[?]$", trimws(claimText %||% "")) && overlapShare >= 0.3) {
-    return(TRUE)
-  }
-
-  FALSE
-}
-
-#' Check whether a sentence matches baseline evidence
-#'
-#' @param claimText Character scalar.
-#' @param audit A `wmfmExplanationAudit` object.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-sentenceMatchesBaselineEvidence = function(claimText, audit) {
-
-  text = tolower(claimText %||% "")
-
-  baselineCue = grepl(
-    "\bwhen\b|at about|at around|at the average|at an average|at a value|at a magnitude of|at the typical|typical magnitude|holding|for a student|for someone|starting value|baseline|fitted value",
-    text,
-    perl = TRUE
-  )
-
-  anchorTerms = character(0)
-
-  if (is.list(audit$numericAnchor) && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
-    anchorTerms = unlist(lapply(seq_len(nrow(audit$numericAnchor$table)), function(i) {
-      row = audit$numericAnchor$table[i, , drop = FALSE]
-      c(
-        normaliseExplanationNumericString(row$anchor[[1]])
-      )
-    }), use.names = FALSE)
-  }
-
-  baselineEvidenceLabels = character(0)
-  if (is.data.frame(audit$baselineEvidence) && nrow(audit$baselineEvidence) > 0 && "quantity" %in% names(audit$baselineEvidence)) {
-    baselineEvidenceLabels = tolower(stats::na.omit(as.character(audit$baselineEvidence$quantity)))
-  }
-
-  termMatch = any(vapply(anchorTerms, function(term) {
-    nzchar(term) && grepl(term, text, fixed = TRUE)
-  }, logical(1)))
-
-  labelMatch = any(vapply(baselineEvidenceLabels, function(label) {
-    nzchar(label) && grepl(label, text, fixed = TRUE)
-  }, logical(1)))
-
-  anchoredExpectedCue = termMatch &&
-    grepl(
-      "expected count|expected value|are expected to occur|is expected to occur|are expected|is expected|predicts an average|average of about|average of",
-      text,
-      perl = TRUE
+  if (is.null(claimTags)) {
+    claimTags = detectExplanationClaimTags(
+      claimText = claimText,
+      audit = audit,
+      teachingSummary = teachingSummary,
+      model = model,
+      sentenceIndex = sentenceIndex,
+      totalClaims = totalClaims
     )
-
-  baselineCue || labelMatch || anchoredExpectedCue || (baselineCue && termMatch)
-}
-
-#' Check whether a sentence matches factor reference-level evidence
-#'
-#' @param claimText Character scalar.
-#' @param audit A `wmfmExplanationAudit` object.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-sentenceMatchesReferenceLevel = function(claimText, audit) {
-
-  text = tolower(claimText %||% "")
-
-  if (!is.data.frame(audit$referenceLevels) || nrow(audit$referenceLevels) == 0) {
-    return(FALSE)
   }
 
-  cueMatch = grepl("compared with|compared to|relative to|reference group|reference level|other group|group", text, perl = TRUE)
-
-  levelMatch = any(vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
-    row = audit$referenceLevels[i, , drop = FALSE]
-    predictorMatch = grepl(tolower(row$predictor[[1]]), text, fixed = TRUE)
-    referenceMatch = grepl(tolower(row$referenceLevel[[1]]), text, fixed = TRUE)
-    predictorMatch || referenceMatch
-  }, logical(1)))
-
-  cueMatch || levelMatch
-}
-
-#' Check whether a sentence mentions a modelled change
-#'
-#' @param claimText Character scalar.
-#' @param audit A `wmfmExplanationAudit` object.
-#' @param model Optional fitted model object.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
-
-  text = tolower(claimText %||% "")
-  changeCue = grepl("increase|decrease|higher|lower|changes|associated with|tend to", text, perl = TRUE)
-
-  predictorNames = character(0)
-
-  if (!is.null(model)) {
-    mf = tryCatch(stats::model.frame(model), error = function(e) NULL)
-
-    if (is.data.frame(mf) && ncol(mf) >= 2) {
-      predictorNames = tolower(names(mf)[-1])
-    }
-  }
-
-  predictorMatch = length(predictorNames) > 0 && any(vapply(predictorNames, function(name) {
-    grepl(name, text, fixed = TRUE)
-  }, logical(1)))
-
-  effectLabelMatch = FALSE
-
-  if (is.data.frame(audit$effectEvidence) && nrow(audit$effectEvidence) > 0 && "quantity" %in% names(audit$effectEvidence)) {
-    effectLabels = tolower(stats::na.omit(as.character(audit$effectEvidence$quantity)))
-    effectLabelMatch = any(vapply(effectLabels, function(label) {
-      grepl(label, text, fixed = TRUE)
-    }, logical(1)))
-  }
-
-  changeCue || predictorMatch || effectLabelMatch
+  deriveLegacyExplanationClaimType(claimTags = claimTags)
 }
 
 #' Select evidence rows for a sentence-level claim
 #'
-#' @param claimType Character scalar.
+#' @param claimTags Optional character vector of detected tags.
+#' @param claimType Optional legacy single-type label kept for compatibility.
 #' @param claimText Character scalar.
 #' @param audit A `wmfmExplanationAudit` object.
 #' @param teachingSummary Optional teaching summary object.
@@ -599,7 +460,8 @@ sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
 #' @return A data frame.
 #' @keywords internal
 selectExplanationEvidenceForClaim = function(
-    claimType,
+    claimTags = NULL,
+    claimType = NULL,
     claimText,
     audit,
     teachingSummary,
@@ -617,21 +479,43 @@ selectExplanationEvidenceForClaim = function(
     ))
   }
 
-  keepTypes = switch(
-    claimType,
-    researchQuestion = c("researchQuestion"),
-    answer = c("researchQuestion", "mainEffect", "comparison", "uncertainty", "effectEvidence", "scale"),
-    uncertainty = c("uncertainty", "confidenceInterval", "effectEvidence", "baselineEvidence"),
-    scale = c("scale"),
-    baseline = c("baselineChoice", "numericAnchor", "baselineEvidence"),
-    comparison = c("referenceLevel", "effectEvidence", "mainEffect"),
-    mainEffect = c("mainEffect", "effectEvidence", "scale"),
-    c("mainEffect", "effectEvidence", "confidenceInterval")
-  )
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if (length(tags) == 0 && is.character(claimType) && length(claimType) == 1 && !is.na(claimType)) {
+    tags = switch(
+      claimType,
+      researchQuestion = "researchQuestion",
+      answer = "answer",
+      uncertainty = "uncertainty",
+      scale = "scale",
+      baseline = "typicalCase",
+      comparison = "comparison",
+      mainEffect = "effect",
+      character(0)
+    )
+  }
+
+  keepTypes = unique(unlist(lapply(tags, function(tag) {
+    switch(
+      tag,
+      researchQuestion = c("researchQuestion"),
+      typicalCase = c("baselineChoice", "numericAnchor", "baselineEvidence"),
+      effect = c("mainEffect", "effectEvidence", "scale"),
+      uncertainty = c("uncertainty", "confidenceInterval", "effectEvidence", "baselineEvidence"),
+      comparison = c("referenceLevel", "effectEvidence", "mainEffect"),
+      answer = c("researchQuestion", "mainEffect", "referenceLevel", "uncertainty", "confidenceInterval", "effectEvidence", "scale"),
+      scale = c("scale"),
+      character(0)
+    )
+  })))
+
+  if (length(keepTypes) == 0) {
+    keepTypes = c("mainEffect", "effectEvidence", "confidenceInterval")
+  }
 
   out = evidenceInventory[evidenceInventory$evidenceType %in% keepTypes, , drop = FALSE]
 
-  if (identical(claimType, "baseline") && is.list(audit$numericAnchor) && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
+  if ("typicalCase" %in% tags && is.list(audit$numericAnchor) && is.data.frame(audit$numericAnchor$table) && nrow(audit$numericAnchor$table) > 0) {
     text = tolower(claimText %||% "")
     matchedPredictors = vapply(seq_len(nrow(audit$numericAnchor$table)), function(i) {
       row = audit$numericAnchor$table[i, , drop = FALSE]
@@ -659,84 +543,6 @@ selectExplanationEvidenceForClaim = function(
   unique(out)
 }
 
-
-#' Check whether a sentence looks like the final answer to the research question
-#'
-#' @param claimText Character scalar.
-#' @param sentenceIndex Integer-like sentence index.
-#' @param totalClaims Integer-like total number of claims.
-#' @param model Optional fitted model object.
-#' @param teachingSummary Optional teaching summary object.
-#'
-#' @return Logical scalar.
-#' @keywords internal
-sentenceLooksLikeResearchAnswer = function(
-    claimText,
-    sentenceIndex = NA_integer_,
-    totalClaims = NA_integer_,
-    model = NULL,
-    teachingSummary = NULL
-) {
-
-  text = trimws(tolower(claimText %||% ""))
-
-  if (!nzchar(text)) {
-    return(FALSE)
-  }
-
-  isNearEnd = !is.na(sentenceIndex) && !is.na(totalClaims) &&
-    sentenceIndex >= max(1L, totalClaims - 1L)
-
-  answerCue = grepl(
-    "^answer:|^on average\b|^overall\b|^in summary\b|^in short\b|^thus\b|^therefore\b|the data are consistent with|the data indicate|the data suggest|suggest that|indicate that|declines more steeply|falls more steeply|rises more steeply|rate of decline|stronger than|steeper than",
-    text,
-    perl = TRUE
-  )
-
-  if (!(isNearEnd && answerCue)) {
-    return(FALSE)
-  }
-
-  researchQuestion = trimws(as.character(
-    attr(model, "wmfm_research_question", exact = TRUE) %||%
-      teachingSummary$researchQuestionLink %||%
-      ""
-  ))
-
-  if (!nzchar(researchQuestion)) {
-    return(FALSE)
-  }
-
-  overlap = intersect(
-    tokenizeExplanationClaimText(claimText),
-    tokenizeExplanationClaimText(researchQuestion)
-  )
-
-  length(overlap) >= 1 ||
-    grepl("the data are consistent with|the data indicate|the data suggest|suggest that|indicate that", text, perl = TRUE)
-}
-
-#' Build a plain-language support note for a mapped claim
-#'
-#' @param claimType Character scalar.
-#' @param matchedEvidence Data frame of evidence rows.
-#'
-#' @return A single character string.
-#' @keywords internal
-buildExplanationClaimSupportNote = function(claimType, matchedEvidence) {
-
-  switch(
-    claimType,
-    researchQuestion = "This sentence restates the research question in plain language.",
-    answer = "This sentence gives the overall answer to the research question.",
-    uncertainty = "This sentence explains the uncertainty around the estimate and uses confidence-interval guidance to keep the wording cautious.",
-    scale = "This sentence explains the scale used to describe the response.",
-    baseline = "This sentence describes a typical case and its expected outcome.",
-    comparison = "This sentence explains how the groups are being compared.",
-    mainEffect = "This sentence explains how the response changes as the predictor increases.",
-    "This sentence provides supporting context for the explanation."
-  )
-}
 
 #' Tokenize a claim or question for overlap matching
 #'

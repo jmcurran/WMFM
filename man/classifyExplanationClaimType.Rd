@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-explanationClaimEvidence.R
 \name{classifyExplanationClaimType}
 \alias{classifyExplanationClaimType}
-\title{Classify a sentence-level explanation claim}
+\title{Classify a sentence-level explanation claim for legacy compatibility}
 \usage{
 classifyExplanationClaimType(
   claimText,
@@ -10,7 +10,8 @@ classifyExplanationClaimType(
   teachingSummary = NULL,
   model = NULL,
   sentenceIndex = NA_integer_,
-  totalClaims = NA_integer_
+  totalClaims = NA_integer_,
+  claimTags = NULL
 )
 }
 \arguments{
@@ -21,11 +22,20 @@ classifyExplanationClaimType(
 \item{teachingSummary}{Optional teaching summary object.}
 
 \item{model}{Optional fitted model object.}
+
+\item{sentenceIndex}{Integer-like sentence index.}
+
+\item{totalClaims}{Integer-like total number of claims.}
+
+\item{claimTags}{Optional character vector of detected claim tags.}
 }
 \value{
 A single character string.
 }
 \description{
-Classify a sentence-level explanation claim
+This helper now derives the legacy single-label \code{claimType} value from the
+multi-tag detector output used by the claim-mapping pipeline. New code
+should prefer \code{detectExplanationClaimTags()} and treat \code{claimType} as a
+compatibility field only.
 }
 \keyword{internal}
