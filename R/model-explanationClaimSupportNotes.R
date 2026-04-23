@@ -13,7 +13,7 @@ getExplanationClaimSupportNoteForTag = function(claimTag) {
     effect = "explains how the response changes",
     uncertainty = "shows uncertainty in the estimate",
     comparison = "describes how groups are being compared",
-    answer = "helps answer the research question",
+    answer = "helps answer the research question by pulling the results together",
     scale = "explains the response scale"
   )
 

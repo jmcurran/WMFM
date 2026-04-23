@@ -26,12 +26,17 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
   nSentences = length(cards)
 
   guideText = if (nSentences == 1) {
-    "There is 1 sentence in this explanation. A sentence can play more than one role."
+    paste(
+      "There is 1 sentence in this explanation.",
+      "A sentence can play more than one role.",
+      "When the final sentence is tagged as answering the research question, it is the closing takeaway."
+    )
   } else {
     paste0(
       "There are ",
       nSentences,
-      " sentences in this explanation. A sentence can play more than one role."
+      " sentences in this explanation. A sentence can play more than one role. ",
+      "When the final sentence is tagged as answering the research question, it is the closing takeaway."
     )
   }
 

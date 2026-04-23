@@ -12,16 +12,22 @@ buildExplanationClaimUiRoleNotes = function(row) {
   supportNotes = unique(stats::na.omit(as.character(supportNotes)))
 
   if (length(supportNotes) > 0) {
-    return(supportNotes)
+    return(orderExplanationClaimUiRoleNotes(
+      roleNotes = supportNotes,
+      claimTags = row$claimTags[[1]] %||% character(0)
+    ))
   }
 
   claimTags = row$claimTags[[1]] %||% character(0)
   claimTags = unique(stats::na.omit(as.character(claimTags)))
 
   if (length(claimTags) > 0) {
-    return(buildExplanationClaimSupportNotes(
-      claimTags = claimTags,
-      matchedEvidence = data.frame(stringsAsFactors = FALSE)
+    return(orderExplanationClaimUiRoleNotes(
+      roleNotes = buildExplanationClaimSupportNotes(
+        claimTags = claimTags,
+        matchedEvidence = data.frame(stringsAsFactors = FALSE)
+      ),
+      claimTags = claimTags
     ))
   }
 
@@ -32,6 +38,36 @@ buildExplanationClaimUiRoleNotes = function(row) {
   }
 
   character(0)
+}
+
+#' Order student-facing role notes for clearer display
+#'
+#' @param roleNotes Character vector.
+#' @param claimTags Character vector.
+#'
+#' @return Character vector.
+#' @keywords internal
+#' @noRd
+orderExplanationClaimUiRoleNotes = function(roleNotes, claimTags = character(0)) {
+
+  notes = unique(stats::na.omit(as.character(roleNotes %||% character(0))))
+  notes = notes[nzchar(notes)]
+
+  if (length(notes) <= 1) {
+    return(notes)
+  }
+
+  tags = unique(stats::na.omit(as.character(claimTags %||% character(0))))
+
+  if (!("answer" %in% tags)) {
+    return(notes)
+  }
+
+  answerPattern = "answer the research question"
+  answerNotes = notes[grepl(answerPattern, notes, fixed = TRUE)]
+  otherNotes = notes[!grepl(answerPattern, notes, fixed = TRUE)]
+
+  c(answerNotes, otherNotes)
 }
 
 #' Render student-facing role notes for one claim-evidence row

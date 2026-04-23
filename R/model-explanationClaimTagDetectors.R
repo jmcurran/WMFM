@@ -33,25 +33,58 @@ detectExplanationClaimTags = function(
     return("researchQuestion")
   }
 
-  if (detectAnswer(
+  typicalCaseTag = detectTypicalCase(claimText = claimText, audit = audit)
+  effectTag = detectEffect(claimText = claimText, audit = audit, model = model)
+  uncertaintyTag = detectUncertainty(claimText = claimText)
+  comparisonTag = detectComparison(claimText = claimText, audit = audit)
+  answerTag = detectAnswer(
     claimText = claimText,
     sentenceIndex = sentenceIndex,
     totalClaims = totalClaims,
     model = model,
-    teachingSummary = teachingSummary
-  )) {
-    return("answer")
-  }
+    teachingSummary = teachingSummary,
+    effectTag = effectTag,
+    uncertaintyTag = uncertaintyTag,
+    comparisonTag = comparisonTag,
+    typicalCaseTag = typicalCaseTag
+  )
 
   tags = c(
-    if (detectTypicalCase(claimText = claimText, audit = audit)) "typicalCase",
-    if (detectEffect(claimText = claimText, audit = audit, model = model)) "effect",
-    if (detectUncertainty(claimText = claimText)) "uncertainty",
-    if (detectComparison(claimText = claimText, audit = audit)) "comparison",
+    if (typicalCaseTag) "typicalCase",
+    if (effectTag) "effect",
+    if (uncertaintyTag) "uncertainty",
+    if (comparisonTag) "comparison",
+    if (answerTag) "answer",
     if (detectScale(claimText = claimText)) "scale"
   )
 
   normaliseExplanationClaimTags(tags)
+}
+
+
+#' Recover the explicit research question used for teaching logic
+#'
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return A single character string.
+#' @keywords internal
+#' @noRd
+getStoredResearchQuestion = function(teachingSummary = NULL, model = NULL) {
+
+  directResearchQuestion = trimws(as.character(attr(model, "wmfm_research_question", exact = TRUE) %||% ""))
+
+  if (nzchar(directResearchQuestion)) {
+    return(directResearchQuestion)
+  }
+
+  summaryResearchQuestion = trimws(as.character(attr(teachingSummary, "rawResearchQuestion", exact = TRUE) %||% ""))
+
+  if (nzchar(summaryResearchQuestion)) {
+    return(summaryResearchQuestion)
+  }
+
+  ""
 }
 
 #' Detect research-question framing in a sentence
@@ -65,15 +98,9 @@ detectExplanationClaimTags = function(
 #' @noRd
 detectResearchQuestion = function(claimText, teachingSummary = NULL, model = NULL) {
 
-  directResearchQuestion = trimws(as.character(attr(model, "wmfm_research_question", exact = TRUE) %||% ""))
+  researchQuestion = getStoredResearchQuestion(teachingSummary = teachingSummary, model = model)
 
-  if (nzchar(directResearchQuestion) && sentenceMatchesResearchQuestion(claimText, directResearchQuestion)) {
-    return(TRUE)
-  }
-
-  summaryResearchQuestion = trimws(as.character(teachingSummary$researchQuestionLink %||% ""))
-
-  nzchar(summaryResearchQuestion) && sentenceMatchesResearchQuestion(claimText, summaryResearchQuestion)
+  nzchar(researchQuestion) && sentenceMatchesResearchQuestion(claimText, researchQuestion)
 }
 
 #' Detect typical-case framing in a sentence
@@ -147,7 +174,11 @@ detectAnswer = function(
     sentenceIndex = NA_integer_,
     totalClaims = NA_integer_,
     model = NULL,
-    teachingSummary = NULL
+    teachingSummary = NULL,
+    effectTag = FALSE,
+    uncertaintyTag = FALSE,
+    comparisonTag = FALSE,
+    typicalCaseTag = FALSE
 ) {
 
   sentenceLooksLikeResearchAnswer(
@@ -155,7 +186,11 @@ detectAnswer = function(
     sentenceIndex = sentenceIndex,
     totalClaims = totalClaims,
     model = model,
-    teachingSummary = teachingSummary
+    teachingSummary = teachingSummary,
+    effectTag = effectTag,
+    uncertaintyTag = uncertaintyTag,
+    comparisonTag = comparisonTag,
+    typicalCaseTag = typicalCaseTag
   )
 }
 
@@ -324,22 +359,47 @@ sentenceMatchesReferenceLevel = function(claimText, audit) {
     return(FALSE)
   }
 
-  cueMatch = grepl(
-    "compares|compared with|compared to|relative to|reference group|reference level|other group|comparison",
+  comparativeCue = grepl(
+    "compares|compared with|compared to|relative to|reference group|reference level|other group|comparison|same for|different in|stronger|weaker|steeper|higher|lower|more|less|than in|than for",
     text,
     perl = TRUE
   )
 
-  if (!cueMatch) {
-    return(FALSE)
-  }
-
-  any(vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
+  rowMatches = vapply(seq_len(nrow(audit$referenceLevels)), function(i) {
     row = audit$referenceLevels[i, , drop = FALSE]
     predictorMatch = grepl(tolower(row$predictor[[1]]), text, fixed = TRUE)
     referenceMatch = grepl(tolower(row$referenceLevel[[1]]), text, fixed = TRUE)
-    predictorMatch || referenceMatch
-  }, logical(1))) || grepl("reference group|reference level|other group", text, perl = TRUE)
+    levelMatch = FALSE
+
+    if ("level" %in% names(row) && !is.na(row$level[[1]]) && nzchar(row$level[[1]])) {
+      levelMatch = grepl(tolower(row$level[[1]]), text, fixed = TRUE)
+    }
+
+    predictorMatch || referenceMatch || levelMatch
+  }, logical(1))
+
+  parsedAvailableLevels = character(0)
+
+  if ("levels" %in% names(audit$referenceLevels)) {
+    rawLevels = stats::na.omit(as.character(audit$referenceLevels$levels))
+    parsedAvailableLevels = unlist(strsplit(rawLevels, "[,|/]", perl = TRUE), use.names = FALSE)
+    parsedAvailableLevels = trimws(parsedAvailableLevels)
+  }
+
+  levelTerms = unique(stats::na.omit(c(
+    as.character(audit$referenceLevels$referenceLevel %||% character(0)),
+    if ("level" %in% names(audit$referenceLevels)) as.character(audit$referenceLevels$level) else character(0),
+    parsedAvailableLevels
+  )))
+  levelTerms = tolower(levelTerms[nzchar(levelTerms)])
+  matchedLevels = sum(vapply(levelTerms, function(level) {
+    grepl(level, text, fixed = TRUE)
+  }, logical(1)))
+
+  (comparativeCue && any(rowMatches)) ||
+    (comparativeCue && matchedLevels >= 1L) ||
+    matchedLevels >= 2L ||
+    grepl("reference group|reference level|other group", text, perl = TRUE)
 }
 
 #' Check whether a sentence mentions a modelled change
@@ -413,7 +473,11 @@ sentenceLooksLikeResearchAnswer = function(
     sentenceIndex = NA_integer_,
     totalClaims = NA_integer_,
     model = NULL,
-    teachingSummary = NULL
+    teachingSummary = NULL,
+    effectTag = FALSE,
+    uncertaintyTag = FALSE,
+    comparisonTag = FALSE,
+    typicalCaseTag = FALSE
 ) {
 
   text = trimws(tolower(claimText %||% ""))
@@ -422,34 +486,35 @@ sentenceLooksLikeResearchAnswer = function(
     return(FALSE)
   }
 
-  isNearEnd = !is.na(sentenceIndex) && !is.na(totalClaims) &&
-    sentenceIndex >= max(1L, totalClaims - 1L)
-
-  answerCue = grepl(
-    "^answer:|^overall\\b|^in summary\\b|^in short\\b|^thus\\b|^therefore\\b|the data are consistent with|the data indicate|the data suggest|suggest that|indicate that|declines more steeply|falls more steeply|rises more steeply|rate of decline|stronger than|steeper than",
-    text,
-    perl = TRUE
+  researchQuestion = getStoredResearchQuestion(
+    teachingSummary = teachingSummary,
+    model = model
   )
-
-  if (!(isNearEnd && answerCue)) {
-    return(FALSE)
-  }
-
-  researchQuestion = trimws(as.character(
-    attr(model, "wmfm_research_question", exact = TRUE) %||%
-      teachingSummary$researchQuestionLink %||%
-      ""
-  ))
 
   if (!nzchar(researchQuestion)) {
     return(FALSE)
   }
 
-  overlap = intersect(
-    tokenizeExplanationClaimText(claimText),
-    tokenizeExplanationClaimText(researchQuestion)
+  isFinalSentence = !is.na(sentenceIndex) && !is.na(totalClaims) &&
+    totalClaims >= 1L && sentenceIndex == totalClaims
+
+  if (!isFinalSentence) {
+    return(FALSE)
+  }
+
+  explicitAnswerCue = grepl(
+    "^(answer:|overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
+    text,
+    perl = TRUE
   )
 
-  length(overlap) >= 1 ||
-    grepl("the data are consistent with|the data indicate|the data suggest|suggest that|indicate that", text, perl = TRUE)
+  if (isTRUE(typicalCaseTag)) {
+    return(FALSE)
+  }
+
+  if (isTRUE(effectTag) && !isTRUE(uncertaintyTag)) {
+    return(TRUE)
+  }
+
+  explicitAnswerCue
 }
