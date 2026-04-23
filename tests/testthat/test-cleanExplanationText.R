@@ -73,3 +73,26 @@ testthat::test_that("buildExplanationClaimEvidenceMap uses cleaned text for sent
   )
   testthat::expect_identical(out$claims$claimTags[[2]], c("effect", "answer"))
 })
+
+
+testthat::test_that("cleanExplanationText removes markdown-like Answer headings", {
+  testthat::expect_identical(
+    cleanExplanationText("**Answer:** On average, exam marks increase."),
+    "On average, exam marks increase."
+  )
+
+  testthat::expect_identical(
+    cleanExplanationText("## Answer\nOn average, exam marks increase."),
+    "On average, exam marks increase."
+  )
+
+  testthat::expect_identical(
+    cleanExplanationText("The study asks whether Test helps explain Exam.\n**Answer:** On average, exam marks increase."),
+    "The study asks whether Test helps explain Exam.\nOn average, exam marks increase."
+  )
+
+  testthat::expect_identical(
+    cleanExplanationText("Answer to the research question: On average, exam marks increase."),
+    "On average, exam marks increase."
+  )
+})

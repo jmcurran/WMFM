@@ -23,7 +23,17 @@ cleanExplanationText = function(text) {
   keep = !is.na(cleaned)
 
   cleaned[keep] = gsub(
-    pattern = "(^|(?<=[.!?]\\s))answer\\b[[:space:]]*(?::|-)?[[:space:]]*",
+    pattern = paste0(
+      "(^|(?<=[.!?]\\s)|(?<=[.!?]\\n)|(?<=\\n))",
+      "[[:space:]]*",
+      "(?:[#>*_`~-]+[[:space:]]*)*",
+      "answer",
+      "(?:[[:space:]]+to[[:space:]]+the[[:space:]]+research[[:space:]]+question)?",
+      "\\b",
+      "[[:space:]]*(?::|-|--|\\.)?",
+      "[[:space:]]*",
+      "(?:[#>*_`~-]+[[:space:]]*)*"
+    ),
     replacement = "\\1",
     x = cleaned[keep],
     perl = TRUE,
