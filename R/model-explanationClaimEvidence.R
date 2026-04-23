@@ -88,6 +88,14 @@ buildExplanationClaimEvidenceMap = function(
     do.call(rbind, claims)
   }
 
+  claimsTable = applyStructuralAnswerSelection(
+    claimsTable = claimsTable,
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    evidenceInventory = evidenceInventory
+  )
+
   out = list(
     transparencyNote = paste(
       "This map links visible explanation sentences to deterministic supporting evidence.",
@@ -157,6 +165,17 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
         sourceSection = "researchQuestionLink",
         label = "Research question framing",
         summary = researchText
+      )
+    }
+
+    dataDescriptionText = trimws(as.character(teachingSummary$dataDescription %||% ""))
+
+    if (nzchar(dataDescriptionText)) {
+      addRow(
+        evidenceType = "dataDescription",
+        sourceSection = "dataDescription",
+        label = "Data description",
+        summary = dataDescriptionText
       )
     }
 
@@ -631,7 +650,10 @@ selectExplanationEvidenceForClaim = function(
   })))
 
   if (length(keepTypes) == 0) {
-    keepTypes = c("mainEffect", "effectEvidence", "confidenceInterval")
+    keepTypes = selectContextEvidenceTypes(
+      claimText = claimText,
+      evidenceInventory = evidenceInventory
+    )
   }
 
   out = evidenceInventory[evidenceInventory$evidenceType %in% keepTypes, , drop = FALSE]
@@ -664,6 +686,237 @@ selectExplanationEvidenceForClaim = function(
   unique(out)
 }
 
+
+#' Apply structural answer selection across mapped explanation claims
+#'
+#' @param claimsTable Claim mapping data frame.
+#' @param audit A `wmfmExplanationAudit` object.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#' @param evidenceInventory Evidence inventory data frame.
+#'
+#' @return A claim mapping data frame.
+#' @keywords internal
+#' @noRd
+applyStructuralAnswerSelection = function(
+    claimsTable,
+    audit,
+    teachingSummary = NULL,
+    model = NULL,
+    evidenceInventory
+) {
+
+  if (!is.data.frame(claimsTable) || nrow(claimsTable) == 0) {
+    return(claimsTable)
+  }
+
+  adjustedTags = lapply(seq_len(nrow(claimsTable)), function(i) {
+    tags = normaliseExplanationClaimTags(claimsTable$claimTags[[i]])
+    setdiff(tags, "answer")
+  })
+
+  candidateIndex = selectStructuralAnswerClaimIndex(
+    claimTexts = claimsTable$claimText,
+    claimTags = adjustedTags,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  if (!is.na(candidateIndex)) {
+    adjustedTags[[candidateIndex]] = normaliseExplanationClaimTags(c(adjustedTags[[candidateIndex]], "answer"))
+  }
+
+  rebuiltClaims = lapply(seq_len(nrow(claimsTable)), function(i) {
+    claimTags = adjustedTags[[i]]
+    claimType = deriveLegacyExplanationClaimType(claimTags = claimTags)
+    matchedEvidence = selectExplanationEvidenceForClaim(
+      claimTags = claimTags,
+      claimType = claimType,
+      claimText = claimsTable$claimText[[i]],
+      audit = audit,
+      teachingSummary = teachingSummary,
+      evidenceInventory = evidenceInventory
+    )
+    supportNotes = buildExplanationClaimSupportNotes(
+      claimTags = claimTags,
+      matchedEvidence = matchedEvidence
+    )
+    supportNote = buildExplanationClaimSupportNote(
+      claimTags = claimTags,
+      matchedEvidence = matchedEvidence,
+      supportNotes = supportNotes
+    )
+    data.frame(
+      claimId = claimsTable$claimId[[i]],
+      sentenceIndex = claimsTable$sentenceIndex[[i]],
+      claimText = claimsTable$claimText[[i]],
+      claimTags = I(list(claimTags)),
+      claimType = claimType,
+      supportNotes = I(list(supportNotes)),
+      supportNote = supportNote,
+      evidenceCount = nrow(matchedEvidence),
+      evidenceTypes = paste(unique(stats::na.omit(matchedEvidence$evidenceType)), collapse = ", "),
+      evidenceLabels = paste(unique(stats::na.omit(matchedEvidence$label)), collapse = " | "),
+      mappingMethod = claimsTable$mappingMethod[[i]],
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, rebuiltClaims)
+}
+
+#' Select the last substantive answer candidate from mapped claims
+#'
+#' @param claimTexts Character vector of claim texts.
+#' @param claimTags List of tag vectors with any implicit `answer` removed.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#'
+#' @return Integer index or `NA_integer_`.
+#' @keywords internal
+#' @noRd
+selectStructuralAnswerClaimIndex = function(
+    claimTexts,
+    claimTags,
+    teachingSummary = NULL,
+    model = NULL
+) {
+
+  researchQuestion = trimws(getStoredResearchQuestion(
+    teachingSummary = teachingSummary,
+    model = model
+  ))
+
+  if (!nzchar(researchQuestion) || length(claimTexts) == 0) {
+    return(NA_integer_)
+  }
+
+  for (i in rev(seq_along(claimTexts))) {
+    if (isStructuralAnswerCandidate(
+      claimText = claimTexts[[i]],
+      claimTags = claimTags[[i]],
+      teachingSummary = teachingSummary,
+      model = model,
+      priorClaimTexts = if (i > 1L) claimTexts[seq_len(i - 1L)] else character(0)
+    )) {
+      return(as.integer(i))
+    }
+  }
+
+  NA_integer_
+}
+
+#' Check whether a mapped sentence is a substantive answer candidate
+#'
+#' @param claimText Character scalar.
+#' @param claimTags Character vector.
+#' @param teachingSummary Optional teaching summary object.
+#' @param model Optional fitted model object.
+#' @param priorClaimTexts Character vector of earlier claim texts.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isStructuralAnswerCandidate = function(
+    claimText,
+    claimTags,
+    teachingSummary = NULL,
+    model = NULL,
+    priorClaimTexts = character(0)
+) {
+
+  tags = normaliseExplanationClaimTags(claimTags)
+
+  if ("researchQuestion" %in% tags || "typicalCase" %in% tags || !("effect" %in% tags)) {
+    return(FALSE)
+  }
+
+  text = trimws(tolower(claimText %||% ""))
+
+  if (!nzchar(text) || sentenceIsDisclaimerTail(claimText)) {
+    return(FALSE)
+  }
+
+  if (sentenceHasExplicitAnswerCue(claimText)) {
+    return(TRUE)
+  }
+
+  if ("comparison" %in% tags) {
+    return(TRUE)
+  }
+
+  if ("uncertainty" %in% tags) {
+    return(FALSE)
+  }
+
+  if (
+    hasPriorResearchQuestionClaim(
+      priorClaimTexts = priorClaimTexts,
+      teachingSummary = teachingSummary,
+      model = model
+    ) &&
+    teachingSummaryHasExplicitResearchQuestion(teachingSummary = teachingSummary)
+  ) {
+    return(FALSE)
+  }
+
+  TRUE
+}
+
+#' Check whether a sentence is a trailing disclaimer rather than an answer
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceIsDisclaimerTail = function(claimText) {
+
+  text = trimws(tolower(claimText %||% ""))
+
+  grepl(
+    "does not guarantee individual|does not predict individual|does not guarantee that every individual|applies on average|reflects average effects|average effects and does not|individual outcomes",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Select context evidence types for untagged setup sentences
+#'
+#' @param claimText Character scalar.
+#' @param evidenceInventory Evidence inventory data frame.
+#'
+#' @return Character vector of evidence types.
+#' @keywords internal
+#' @noRd
+selectContextEvidenceTypes = function(claimText, evidenceInventory) {
+
+  if (!is.data.frame(evidenceInventory) || nrow(evidenceInventory) == 0) {
+    return(character(0))
+  }
+
+  claimTokens = tokenizeExplanationClaimText(claimText)
+
+  overlaps = vapply(seq_len(nrow(evidenceInventory)), function(i) {
+    evidenceTokens = tokenizeExplanationClaimText(paste(
+      evidenceInventory$label[[i]],
+      evidenceInventory$summary[[i]]
+    ))
+    length(intersect(claimTokens, evidenceTokens))
+  }, numeric(1))
+
+  bestOverlap = max(overlaps, 0)
+
+  if (bestOverlap > 0) {
+    return(unique(evidenceInventory$evidenceType[overlaps == bestOverlap]))
+  }
+
+  if ("dataDescription" %in% evidenceInventory$evidenceType) {
+    return("dataDescription")
+  }
+
+  character(0)
+}
 
 #' Tokenize a claim or question for overlap matching
 #'
