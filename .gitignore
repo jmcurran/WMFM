@@ -14,3 +14,4 @@ build*
 build/*
 .wmfm_built_pkg_path
 
+.positai
