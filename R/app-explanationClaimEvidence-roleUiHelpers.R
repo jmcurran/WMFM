@@ -215,12 +215,14 @@ renderExplanationClaimEvidenceLabelsUi = function(row) {
 #' @importFrom htmltools tagList tags
 renderExplanationClaimEvidenceCardUi = function(row) {
 
+  displayClaimText = cleanExplanationText(row$claimText[[1]])
+
   tags$div(
     class = "wmfm-explanation-helper-box",
     tags$p(
       class = "wmfm-explanation-helper-note",
       tags$strong(paste0("Sentence ", row$sentenceIndex[[1]], ": ")),
-      row$claimText[[1]]
+      displayClaimText
     ),
     renderExplanationClaimRoleNotesUi(row),
     renderExplanationClaimEvidenceLabelsUi(row)
