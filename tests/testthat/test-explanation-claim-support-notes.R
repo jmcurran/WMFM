@@ -10,7 +10,7 @@ testthat::test_that("buildExplanationClaimSupportNotes returns composable studen
       "describes a typical case",
       "explains how the response changes",
       "shows uncertainty in the estimate",
-      "helps answer the research question"
+      "helps answer the research question by pulling the results together"
     )
   )
 })
