@@ -256,3 +256,62 @@ testthat::test_that("buildExplanationClaimEvidenceMap treats claimTags as the pr
   testthat::expect_identical(out$claims$claimTags[[2]], "effect")
   testthat::expect_true(all(vapply(out$claims$claimTags, length, integer(1)) >= 1L))
 })
+
+
+testthat::test_that("structural answer selection skips a trailing disclaimer", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Does Test help explain Exam?",
+      "On average, exam marks tend to increase as Test increases.",
+      "This applies on average and does not guarantee individual outcomes."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(out$claims$claimTags[[1]], "researchQuestion")
+  testthat::expect_true("answer" %in% out$claims$claimTags[[2]])
+  testthat::expect_false("answer" %in% out$claims$claimTags[[3]])
+  testthat::expect_identical(out$claims$claimType[[2]], "answer")
+})
+
+
+testthat::test_that("cleaned Answer prefixes do not control answer selection", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "Does Test help explain Exam?",
+      "Answer: On average, exam marks tend to increase as Test increases.",
+      "This applies on average and does not guarantee individual outcomes."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_identical(
+    out$claims$claimText[[2]],
+    "On average, exam marks tend to increase as Test increases."
+  )
+  testthat::expect_true("answer" %in% out$claims$claimTags[[2]])
+  testthat::expect_false("answer" %in% out$claims$claimTags[[3]])
+  testthat::expect_false(grepl("^Answer", out$claims$claimText[[2]]))
+})
