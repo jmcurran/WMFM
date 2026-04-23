@@ -503,7 +503,7 @@ sentenceLooksLikeResearchAnswer = function(
   }
 
   explicitAnswerCue = grepl(
-    "^(answer:|overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
+    "^(overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
     text,
     perl = TRUE
   )

@@ -192,6 +192,10 @@ testthat::test_that("effect sentences can carry both effect and uncertainty tags
   testthat::expect_identical(out$claims$claimType[[2]], "mainEffect")
   testthat::expect_match(out$claims$supportNote[[1]], "explains how the response changes", fixed = TRUE)
   testthat::expect_match(out$claims$supportNote[[1]], "shows uncertainty in the estimate", fixed = TRUE)
+  testthat::expect_identical(
+    out$claims$claimText[[3]],
+    "On average, earthquake frequency falls as magnitude increases, with a steeper decline in WA."
+  )
   testthat::expect_identical(out$claims$claimTags[[3]], c("effect", "comparison", "answer"))
   testthat::expect_identical(out$claims$claimType[[3]], "answer")
   testthat::expect_match(out$claims$supportNote[[3]], "helps answer the research question", fixed = TRUE)

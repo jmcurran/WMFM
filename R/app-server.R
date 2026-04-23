@@ -3315,6 +3315,7 @@ $$")
         model = m,
         chatProvider = chatProvider
       )
+      explanation = cleanExplanationText(explanation)
       explanationAudit = buildAppExplanationAudit(model = m)
 
       incProgress(0.35, detail = outputMessages$updateDetail)

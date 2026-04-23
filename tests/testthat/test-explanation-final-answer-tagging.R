@@ -61,7 +61,7 @@ testthat::test_that("detectExplanationClaimTags can combine answer with uncertai
 
   tags = detectExplanationClaimTags(
     claimText = paste(
-      "Answer: On average, exam marks tend to increase as Test increases,",
+      "To answer the research question, exam marks tend to increase as Test increases,",
       "although the confidence interval still shows uncertainty."
     ),
     audit = audit,

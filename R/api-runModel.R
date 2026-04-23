@@ -392,6 +392,8 @@ runModel = function(
   }
 
   if (!is.null(explanation)) {
+    explanation = cleanExplanationText(explanation)
+
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(
         audit = explanationAudit,
