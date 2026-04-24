@@ -78,6 +78,10 @@ buildExplanationClaimEvidenceMap = function(
       claimText = character(0),
       claimTags = I(list()),
       claimType = character(0),
+      primaryRole = character(0),
+      roles = I(list()),
+      qualityFlags = I(list()),
+      supportMapIds = I(list()),
       supportNotes = I(list()),
       supportNote = character(0),
       evidenceCount = integer(0),
@@ -112,6 +116,7 @@ buildExplanationClaimEvidenceMap = function(
     claims = claimsTable
   )
 
+  attr(out, "qualityFlags") = buildExplanationMapQualityFlags(claimsTable)
   class(out) = c("wmfmExplanationClaimEvidenceMap", class(out))
   out
 }
@@ -467,6 +472,23 @@ mapSingleExplanationClaim = function(
     evidenceInventory = evidenceInventory
   )
 
+  roles = detectExplanationSentenceRoles(
+    claimText = claimText,
+    claimTags = claimTags,
+    matchedEvidence = matchedEvidence
+  )
+
+  primaryRole = deriveExplanationPrimaryRole(roles)
+
+  qualityFlags = buildExplanationSentenceQualityFlags(
+    claimText = claimText,
+    roles = roles
+  )
+
+  supportMapIds = buildExplanationSentenceSupportMapIds(
+    matchedEvidence = matchedEvidence
+  )
+
   supportNotes = buildExplanationClaimSupportNotes(
     claimTags = claimTags,
     matchedEvidence = matchedEvidence
@@ -484,6 +506,10 @@ mapSingleExplanationClaim = function(
     claimText = claimText,
     claimTags = I(list(claimTags)),
     claimType = claimType,
+    primaryRole = primaryRole,
+    roles = I(list(roles)),
+    qualityFlags = I(list(qualityFlags)),
+    supportMapIds = I(list(supportMapIds)),
     supportNotes = I(list(supportNotes)),
     supportNote = supportNote,
     evidenceCount = nrow(matchedEvidence),
@@ -739,6 +765,19 @@ applyStructuralAnswerSelection = function(
       teachingSummary = teachingSummary,
       evidenceInventory = evidenceInventory
     )
+    roles = mapExplanationClaimTagsToSentenceRoles(
+      claimTags = claimTags,
+      matchedEvidence = matchedEvidence,
+      claimText = claimsTable$claimText[[i]]
+    )
+    primaryRole = deriveExplanationPrimaryRole(roles)
+    qualityFlags = buildExplanationSentenceQualityFlags(
+      claimText = claimsTable$claimText[[i]],
+      roles = roles
+    )
+    supportMapIds = buildExplanationSentenceSupportMapIds(
+      matchedEvidence = matchedEvidence
+    )
     supportNotes = buildExplanationClaimSupportNotes(
       claimTags = claimTags,
       matchedEvidence = matchedEvidence
@@ -754,6 +793,10 @@ applyStructuralAnswerSelection = function(
       claimText = claimsTable$claimText[[i]],
       claimTags = I(list(claimTags)),
       claimType = claimType,
+      primaryRole = primaryRole,
+      roles = I(list(roles)),
+      qualityFlags = I(list(qualityFlags)),
+      supportMapIds = I(list(supportMapIds)),
       supportNotes = I(list(supportNotes)),
       supportNote = supportNote,
       evidenceCount = nrow(matchedEvidence),

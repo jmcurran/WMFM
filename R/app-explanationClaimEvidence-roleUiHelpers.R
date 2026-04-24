@@ -247,6 +247,108 @@ buildDeveloperFeedbackCommentInputId = function(sentenceIndex) {
   )
 }
 
+#' Normalize an optional list-column value for developer UI display
+#'
+#' @param x Value to normalize.
+#'
+#' @return Character vector.
+#' @keywords internal
+#' @noRd
+normalizeExplanationDeveloperUiValues = function(x) {
+
+  values = as.character(x %||% character(0))
+  values = trimws(values)
+  values[nzchar(values)]
+}
+
+#' Render one developer-only metadata row
+#'
+#' @param label Character scalar.
+#' @param values Character vector.
+#'
+#' @return A Shiny UI object or `NULL`.
+#' @keywords internal
+#' @noRd
+#' @importFrom htmltools tags
+renderExplanationDeveloperMetadataRowUi = function(label, values) {
+
+  values = normalizeExplanationDeveloperUiValues(values)
+
+  if (length(values) == 0) {
+    return(NULL)
+  }
+
+  tags$li(
+    tags$strong(paste0(label, ": ")),
+    paste(values, collapse = ", ")
+  )
+}
+
+#' Render developer-only sentence schema diagnostics
+#'
+#' @param row Single-row data frame from a
+#'   `wmfmExplanationClaimEvidenceMap$claims` table.
+#' @param developerMode Logical. Should developer-only diagnostics be displayed?
+#'
+#' @return A Shiny UI object or `NULL`.
+#' @keywords internal
+#' @noRd
+#' @importFrom htmltools tagList tags
+renderExplanationDeveloperSchemaDiagnosticsUi = function(row, developerMode = FALSE) {
+
+  if (!isTRUE(developerMode)) {
+    return(NULL)
+  }
+
+  primaryRole = if ("primaryRole" %in% names(row)) {
+    row$primaryRole[[1]]
+  } else {
+    character(0)
+  }
+
+  roles = if ("roles" %in% names(row)) {
+    row$roles[[1]]
+  } else {
+    character(0)
+  }
+
+  qualityFlags = if ("qualityFlags" %in% names(row)) {
+    row$qualityFlags[[1]]
+  } else {
+    character(0)
+  }
+
+  supportMapIds = if ("supportMapIds" %in% names(row)) {
+    row$supportMapIds[[1]]
+  } else {
+    character(0)
+  }
+
+  rows = list(
+    renderExplanationDeveloperMetadataRowUi("Primary role", primaryRole),
+    renderExplanationDeveloperMetadataRowUi("Roles", roles),
+    renderExplanationDeveloperMetadataRowUi("Quality flags", qualityFlags),
+    renderExplanationDeveloperMetadataRowUi("Support map ids", supportMapIds)
+  )
+
+  rows = rows[!vapply(rows, is.null, logical(1))]
+
+  if (length(rows) == 0) {
+    return(NULL)
+  }
+
+  tagList(
+    tags$p(
+      class = "wmfm-explanation-helper-note",
+      tags$strong("Developer diagnostics:")
+    ),
+    tags$ul(
+      class = "wmfm-explanation-helper-note wmfm-developer-schema-diagnostics",
+      rows
+    )
+  )
+}
+
 #' Render developer-only sentence feedback controls
 #'
 #' @param row Single-row data frame from a
@@ -317,6 +419,10 @@ renderExplanationClaimEvidenceCardUi = function(row, developerMode = FALSE) {
     ),
     renderExplanationClaimRoleNotesUi(row),
     renderExplanationClaimEvidenceLabelsUi(row),
+    renderExplanationDeveloperSchemaDiagnosticsUi(
+      row = row,
+      developerMode = isTRUE(developerMode)
+    ),
     renderExplanationDeveloperFeedbackControlsUi(
       row = row,
       developerMode = isTRUE(developerMode)

@@ -186,3 +186,61 @@ testthat::test_that("developer feedback comment boxes appear conditionally in de
     fixed = TRUE
   )
 })
+
+testthat::test_that("developer mode shows Stage 9 sentence diagnostics", {
+  row = data.frame(
+    claimId = "claim_1",
+    sentenceIndex = 1L,
+    claimText = "The fitted log-odds coefficient is 1.23456.",
+    claimTags = I(list(c("effect"))),
+    claimType = "effect",
+    primaryRole = "effect",
+    roles = I(list(c("effect", "evidence"))),
+    qualityFlags = I(list(c("technicalScaleLeakage", "rawCoefficientShown"))),
+    supportMapIds = I(list(c("effectEvidence:x", "coefficientEvidence:x"))),
+    supportNotes = I(list("explains how the response changes")),
+    supportNote = "This sentence explains how the response changes.",
+    evidenceCount = 1L,
+    evidenceTypes = "mainEffect",
+    evidenceLabels = "Main effect translation",
+    mappingMethod = "tag-first mapping",
+    stringsAsFactors = FALSE
+  )
+
+  html = as.character(renderExplanationClaimEvidenceCardUi(
+    row = row,
+    developerMode = TRUE
+  ))
+
+  testthat::expect_match(html, "Developer diagnostics:", fixed = TRUE)
+  testthat::expect_match(html, "Primary role:", fixed = TRUE)
+  testthat::expect_match(html, "effect, evidence", fixed = TRUE)
+  testthat::expect_match(html, "technicalScaleLeakage", fixed = TRUE)
+  testthat::expect_match(html, "effectEvidence:x", fixed = TRUE)
+})
+
+testthat::test_that("student mode hides Stage 9 sentence diagnostics", {
+  row = data.frame(
+    claimId = "claim_1",
+    sentenceIndex = 1L,
+    claimText = "The fitted log-odds coefficient is 1.23456.",
+    claimTags = I(list(c("effect"))),
+    claimType = "effect",
+    primaryRole = "effect",
+    roles = I(list(c("effect", "evidence"))),
+    qualityFlags = I(list(c("technicalScaleLeakage", "rawCoefficientShown"))),
+    supportMapIds = I(list(c("effectEvidence:x", "coefficientEvidence:x"))),
+    supportNotes = I(list("explains how the response changes")),
+    supportNote = "This sentence explains how the response changes.",
+    evidenceCount = 1L,
+    evidenceTypes = "mainEffect",
+    evidenceLabels = "Main effect translation",
+    mappingMethod = "tag-first mapping",
+    stringsAsFactors = FALSE
+  )
+
+  html = as.character(renderExplanationClaimEvidenceCardUi(row))
+
+  testthat::expect_no_match(html, "Developer diagnostics:", fixed = TRUE)
+  testthat::expect_no_match(html, "technicalScaleLeakage", fixed = TRUE)
+})

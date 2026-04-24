@@ -17,6 +17,7 @@
 #'   When present, this should inherit from `wmfmExplanationAudit` and follow
 #'   the same top-level contract produced by `buildModelExplanationAudit()`.
 #' @param explanationClaimEvidenceMap Deterministic claim-to-evidence map, or `NULL`.
+#' @param modelProfile Deterministic explanation model-profile metadata, or `NULL`.
 #' @param interactionTerms Character vector of fitted interaction-term names.
 #' @param interactionMinPValue Minimum p-value across fitted interaction terms,
 #'   or `NA_real_`.
@@ -35,6 +36,7 @@ newWmfmModel = function(
     explanation = NULL,
     explanationAudit = NULL,
     explanationClaimEvidenceMap = NULL,
+    modelProfile = NULL,
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
     meta = list()
@@ -99,6 +101,7 @@ newWmfmModel = function(
     explanation = explanation,
     explanationAudit = explanationAudit,
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
+    modelProfile = modelProfile,
     interactionTerms = interactionTerms,
     interactionMinPValue = interactionMinPValue,
     meta = utils::modifyList(

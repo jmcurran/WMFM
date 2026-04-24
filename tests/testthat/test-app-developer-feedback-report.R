@@ -228,3 +228,50 @@ testthat::test_that("developer feedback report writes JSON to file", {
   testthat::expect_true(file.exists(file))
   testthat::expect_equal(parsed$metadata$modelType, "glm-binomial")
 })
+
+testthat::test_that("developer feedback report includes Stage 9 control metadata", {
+  set.seed(1)
+  d = data.frame(
+    Exam = 50 + 1:12 + stats::rnorm(12),
+    Test = 1:12
+  )
+  m = stats::lm(Exam ~ Test, data = d)
+  modelProfile = buildExplanationModelProfile(model = m, data = d)
+
+  wmfm = newWmfmModel(
+    model = m,
+    formula = stats::formula(m),
+    modelType = "gaussian",
+    data = d,
+    researchQuestion = "Does Test predict Exam?",
+    explanation = "As Test increases, Exam tends to increase.",
+    modelProfile = modelProfile
+  )
+
+  claimMap = list(
+    claims = data.frame(
+      sentenceIndex = 1L,
+      claimText = "As Test increases, Exam tends to increase.",
+      claimTags = I(list("effect")),
+      primaryRole = "effect",
+      roles = I(list(c("effect", "evidence"))),
+      qualityFlags = I(list(character(0))),
+      supportMapIds = I(list("effectEvidence:Test")),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  report = buildDeveloperFeedbackReport(
+    model = wmfm,
+    claimMap = claimMap,
+    input = list()
+  )
+
+  testthat::expect_equal(report$metadata$modelProfile$modelFamily, "lm")
+  testthat::expect_equal(report$metadata$modelProfile$modelStructure, "numericMainEffect")
+  testthat::expect_equal(report$metadata$ruleProfile$comparisonScope, "minimal")
+  testthat::expect_equal(report$sentenceRecords[[1]]$primaryRole, "effect")
+  testthat::expect_equal(report$sentenceRecords[[1]]$roles, c("effect", "evidence"))
+  testthat::expect_equal(report$sentenceRecords[[1]]$qualityFlags, character(0))
+  testthat::expect_equal(report$sentenceRecords[[1]]$supportMapIds, "effectEvidence:Test")
+})

@@ -53,7 +53,9 @@ buildDeveloperFeedbackReport = function(
       modelType = extractDeveloperFeedbackModelType(model = model, fittedModel = fittedModel),
       modelFormula = if (!is.null(modelFormula)) paste(deparse(modelFormula), collapse = "") else NULL,
       responseVariable = extractDeveloperFeedbackResponse(modelFormula),
-      predictors = extractDeveloperFeedbackPredictors(modelFormula)
+      predictors = extractDeveloperFeedbackPredictors(modelFormula),
+      modelProfile = buildDeveloperFeedbackModelProfileSummary(model),
+      ruleProfile = buildDeveloperFeedbackRuleProfileSummary(model)
     ),
     context = list(
       researchQuestion = normalizeDeveloperFeedbackNullableText(researchQuestion),
@@ -272,6 +274,18 @@ buildDeveloperFeedbackSentenceRecords = function(claimsTable, input = list()) {
       sentenceId = as.integer(sentenceIndex),
       sentenceText = cleanExplanationText(claimsTable$claimText[[i]]),
       claimTags = normalizeDeveloperFeedbackClaimTags(claimsTable$claimTags[[i]]),
+      primaryRole = normalizeDeveloperFeedbackScalar(
+        getDeveloperFeedbackColumnValue(claimsTable, "primaryRole", i)
+      ),
+      roles = normalizeDeveloperFeedbackClaimTags(
+        getDeveloperFeedbackColumnValue(claimsTable, "roles", i)
+      ),
+      qualityFlags = normalizeDeveloperFeedbackClaimTags(
+        getDeveloperFeedbackColumnValue(claimsTable, "qualityFlags", i)
+      ),
+      supportMapIds = normalizeDeveloperFeedbackClaimTags(
+        getDeveloperFeedbackColumnValue(claimsTable, "supportMapIds", i)
+      ),
       isMarkedIncorrect = isMarkedIncorrect,
       userComment = comment
     )
@@ -290,6 +304,143 @@ normalizeDeveloperFeedbackClaimTags = function(claimTags) {
   tags = as.character(claimTags %||% character(0))
   tags = trimws(tags)
   tags[nzchar(tags)]
+}
+
+#' Extract an optional claim-table value for developer feedback
+#'
+#' @param claimsTable Claims data frame.
+#' @param columnName Column name to extract.
+#' @param rowIndex Row index to extract.
+#'
+#' @return The requested value, or `NULL` when unavailable.
+#' @keywords internal
+#' @noRd
+getDeveloperFeedbackColumnValue = function(claimsTable, columnName, rowIndex) {
+
+  if (!is.data.frame(claimsTable) || !(columnName %in% names(claimsTable))) {
+    return(NULL)
+  }
+
+  claimsTable[[columnName]][[rowIndex]] %||% NULL
+}
+
+#' Normalize a scalar metadata value for developer feedback
+#'
+#' @param x Value to normalize.
+#'
+#' @return Character scalar or `NULL`.
+#' @keywords internal
+#' @noRd
+normalizeDeveloperFeedbackScalar = function(x) {
+
+  values = normalizeDeveloperFeedbackClaimTags(x)
+
+  if (length(values) == 0) {
+    return(NULL)
+  }
+
+  values[[1]]
+}
+
+#' Build a compact model-profile summary for developer feedback
+#'
+#' @param model A fitted model object or a `wmfmModel` object.
+#'
+#' @return A named list or `NULL`.
+#' @keywords internal
+#' @noRd
+buildDeveloperFeedbackModelProfileSummary = function(model) {
+
+  modelProfile = NULL
+
+  if (inherits(model, "wmfmModel")) {
+    modelProfile = model$modelProfile
+  }
+
+  if (!is.list(modelProfile)) {
+    return(NULL)
+  }
+
+  list(
+    modelFamily = normalizeDeveloperFeedbackScalar(modelProfile$modelFamily),
+    modelStructure = normalizeDeveloperFeedbackScalar(modelProfile$modelStructure),
+    modelScale = normalizeDeveloperFeedbackScalar(modelProfile$modelScale),
+    interpretationScale = normalizeDeveloperFeedbackScalar(modelProfile$interpretationScale),
+    responseVariable = normalizeDeveloperFeedbackScalar(modelProfile$responseVariable),
+    transformationType = normalizeDeveloperFeedbackScalar(modelProfile$transformationType),
+    hasInteractions = isTRUE(modelProfile$hasInteractions),
+    comparisonScope = normalizeDeveloperFeedbackScalar(modelProfile$comparisonScope),
+    requiresAnchor = isTRUE(modelProfile$requiresAnchor),
+    predictorTypes = normalizeDeveloperFeedbackPredictorTypes(modelProfile$predictorTypes),
+    interactionTypes = normalizeDeveloperFeedbackClaimTags(modelProfile$interactionTypes)
+  )
+}
+
+#' Build a compact rule-profile summary for developer feedback
+#'
+#' @param model A fitted model object or a `wmfmModel` object.
+#'
+#' @return A named list or `NULL`.
+#' @keywords internal
+#' @noRd
+buildDeveloperFeedbackRuleProfileSummary = function(model) {
+
+  modelProfile = NULL
+
+  if (inherits(model, "wmfmModel")) {
+    modelProfile = model$modelProfile
+  }
+
+  if (!is.list(modelProfile)) {
+    return(NULL)
+  }
+
+  ruleProfile = tryCatch(
+    buildExplanationRuleProfile(modelProfile),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (!is.list(ruleProfile)) {
+    return(NULL)
+  }
+
+  list(
+    skeletonId = normalizeDeveloperFeedbackScalar(ruleProfile$skeletonId),
+    comparisonScope = normalizeDeveloperFeedbackScalar(ruleProfile$comparisonScope),
+    comparisonGuidance = normalizeDeveloperFeedbackScalar(ruleProfile$comparisonGuidance),
+    scaleGuidance = normalizeDeveloperFeedbackScalar(ruleProfile$scaleGuidance),
+    effectLanguage = normalizeDeveloperFeedbackScalar(ruleProfile$effectLanguage),
+    avoidTerms = normalizeDeveloperFeedbackClaimTags(ruleProfile$avoidTerms),
+    qualityFlagsToCheck = normalizeDeveloperFeedbackClaimTags(ruleProfile$qualityFlagsToCheck)
+  )
+}
+
+#' Normalize predictor-type metadata for developer feedback
+#'
+#' @param predictorTypes Predictor-type list from a model profile.
+#'
+#' @return A named list.
+#' @keywords internal
+#' @noRd
+normalizeDeveloperFeedbackPredictorTypes = function(predictorTypes) {
+
+  out = list(
+    numeric = character(0),
+    factor = character(0),
+    other = character(0)
+  )
+
+  if (!is.list(predictorTypes)) {
+    return(out)
+  }
+
+  for (fieldName in names(out)) {
+    out[[fieldName]] = normalizeDeveloperFeedbackClaimTags(predictorTypes[[fieldName]])
+  }
+
+  out
 }
 
 #' Normalize optional text for developer feedback

@@ -1,5 +1,6 @@
 ^WMFM\.Rproj$
 ^\.Rproj\.user$
+^.*\.Rproj$
 ^LICENSE\.md$
 ^.*\.sh$
 ^.*\.zip$

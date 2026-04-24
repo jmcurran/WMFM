@@ -14,6 +14,9 @@ getExplanationClaimSupportNoteForTag = function(claimTag) {
     uncertainty = "shows uncertainty in the estimate",
     comparison = "describes how groups are being compared",
     answer = "helps answer the research question by pulling the results together",
+    modelContext = "provides model context",
+    modelConstraint = "explains a limitation or structural feature of the model",
+    statisticalDisclaimer = "explains the statistical scope of the result",
     scale = "explains the response scale"
   )
 
