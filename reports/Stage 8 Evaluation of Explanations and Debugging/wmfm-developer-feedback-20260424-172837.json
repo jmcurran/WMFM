@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 17:28:37 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Test",
+    "responseVariable": "Exam",
+    "predictors": "Test"
+  },
+  "context": {
+    "researchQuestion": "How does final exam mark tend to change as the test mark changes?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "How does a student’s final exam score tend to change when the score on the earlier test changes?  \nOn average, at the typical test score of about 12, the model predicts a final exam score of roughly 53 units.  \nFor every one-point increase on the test, the expected exam score rises by about 3.8 points; the 95 % confidence range for this change is between 3.3 and 4.3 points.  These numbers come from the model’s coefficient for the Test variable and its confidence interval, and they show a clear positive association.  \nWith the model explaining roughly 59 % of the variation in exam scores (an R-squared of 0.587), the findings suggest that higher test marks are associated with higher final exam marks, but this holds on average and does not guarantee a specific outcome for any individual student."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "How does a student’s final exam score tend to change when the score on the earlier test changes?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "On average, at the typical test score of about 12, the model predicts a final exam score of roughly 53 units.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "For every one-point increase on the test, the expected exam score rises by about 3.8 points; the 95 % confidence range for this change is between 3.3 and 4.3 points.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "These numbers come from the model’s coefficient for the Test variable and its confidence interval, and they show a clear positive association.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "With the model explaining roughly 59 % of the variation in exam scores (an R-squared of 0.587), the findings suggest that higher test marks are associated with higher final exam marks, but this holds on average and does not guarantee a specific outcome for any individual student.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "This is a mixture of trying to answer the research question, explaining model adequacy (bearing in mind R^2 is a poor statistic to use in many cases), and has a statistical disclaimer. Two of these are issues with the explanation. The reason this is incorrect is that it is not marked as answering the research question."
+    }
+  ],
+  "auditLinkage": null
+}

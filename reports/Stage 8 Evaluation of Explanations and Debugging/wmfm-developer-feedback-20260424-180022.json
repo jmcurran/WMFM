@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:00:22 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Attend + Test",
+    "responseVariable": "Exam",
+    "predictors": ["Attend", "Test"]
+  },
+  "context": {
+    "researchQuestion": "How do attendance and test mark relate to final exam mark, without allowing the test-mark slope to differ by attendance?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": "Sentences 3 and 4 should be reversed. There are two statements about point estimates, and then two statements about CIs, when it should be point estimate 1, CI 1, point estimate 2, CI 2."
+  },
+  "explanation": {
+    "fullText": "How do attendance and test mark relate to final exam mark, without allowing the test-mark slope to differ by attendance?  \nThe model shows that, on average, a student who attends classes tends to score about 8 points higher on the final exam than a student who does not, when the exam and test scores are held at the average level of the data.  \nEach one-point increase in a student’s test mark is associated with an average increase of about 3.5 points on the final exam, regardless of attendance. The 95 % confidence interval for the attendance effect ranges from 3.8 to 12.2 points, meaning that even at the lower bound the average exam score is still noticeably higher for attendees. The interval for the test-mark effect is 3 to 4 points, indicating a consistent positive relationship. For a student with an average test score of 11.567, the model predicts an expected exam mark of roughly 47.4 when the student does not attend and roughly 55.4 when the student attends. About 62 % of the variability in exam marks is explained by attendance and test score together.  \nIn short, on average students who attend class and those who achieve higher test marks both have higher final exam scores, and the strength of these associations is consistent across the two attendance groups."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "How do attendance and test mark relate to final exam mark, without allowing the test-mark slope to differ by attendance?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct. The translation is terrible - however, I think this is the fault of the example perhaps rather than the LLM. The research question should be something like \"Are regular attendance of classes and a good test mark a good predictor of my final exam mark?\" The fact that there is no interaction in this model could be signalled with a statement like \"This model assumes that the relationship between the test mark and the final exam is the same for every test mark and only (potentially) differs according to attendance\""
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The model shows that, on average, a student who attends classes tends to score about 8 points higher on the final exam than a student who does not, when the exam and test scores are held at the average level of the data.",
+      "claimTags": ["typicalCase", "effect", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "Each one-point increase in a student’s test mark is associated with an average increase of about 3.5 points on the final exam, regardless of attendance.",
+      "claimTags": ["effect", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The 95 % confidence interval for the attendance effect ranges from 3.8 to 12.2 points, meaning that even at the lower bound the average exam score is still noticeably higher for attendees.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "The interval for the test-mark effect is 3 to 4 points, indicating a consistent positive relationship.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "Should be classified as \"shows uncertainty in the estimate\""
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "For a student with an average test score of 11.567, the model predicts an expected exam mark of roughly 47.4 when the student does not attend and roughly 55.4 when the student attends.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "The average test score should be rounded here to something more sensible like 11.6"
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "About 62 % of the variability in exam marks is explained by attendance and test score together.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "In short, on average students who attend class and those who achieve higher test marks both have higher final exam scores, and the strength of these associations is consistent across the two attendance groups.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:13:24 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Attend + Test + Attend:Test",
+    "responseVariable": "Exam",
+    "predictors": ["Attend", "Test", "Attend:Test"]
+  },
+  "context": {
+    "researchQuestion": "Does the relationship between test mark and final exam mark appear to differ by attendance group?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question is whether the link between a student’s test mark and their final exam mark looks different for people who regularly attended class compared with those who did not.  \nIn the fitted linear model the effect of the test mark is 2.75 points for every one-point rise in the test when students did not attend class. When students did attend class, the rise in the exam score is larger: about 3.89 points for each one-point rise in the test. At the average test score of 11.5671, the expected exam mark for non-attenders is roughly 46, whereas for attenders it is about 55-almost nine points higher on average. The 95 % confidence interval for the test-only effect runs from about 1.84 to 3.66, and the interval for the additional effect of attendance on that slope runs from 0.04 to 2.24; the fact that both intervals do not contain zero means that the data are consistent with a stronger positive relationship for those who attend. The overall model explains about 63 % of the variation in exam scores, indicating a fairly good fit for this dataset.  \n\nOverall, on average the data suggest that the association between test marks and exam marks is stronger for students who regularly attended class than for those who did not. This difference is evident in the steeper slope at the average test mark and the higher predicted exam scores for attenders, though the evidence does not provide a definitive causal claim."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is whether the link between a student’s test mark and their final exam mark looks different for people who regularly attended class compared with those who did not.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "I think this statement is actually worse than the original research question."
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "In the fitted linear model the effect of the test mark is 2.75 points for every one-point rise in the test when students did not attend class.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "Should not mention \"fitted linear model\". It is also misclassified, because it is talking how the response changes with respect to a change in test mark."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "When students did attend class, the rise in the exam score is larger: about 3.89 points for each one-point rise in the test.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "Same as above - it is talking about how the response changes with respect to an increase in a predictor. It's also giving information about the interaction. It should really be followed up with a confidence interval - and for sentence 2."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "At the average test score of 11.5671, the expected exam mark for non-attenders is roughly 46, whereas for attenders it is about 55-almost nine points higher on average.",
+      "claimTags": ["typicalCase", "effect", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "11.5671 should be rounded. In theory it does tell you how the response changes, but what it is actually telling you is the difference between the two groups at a typical value."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "The 95 % confidence interval for the test-only effect runs from about 1.84 to 3.66, and the interval for the additional effect of attendance on that slope runs from 0.04 to 2.24; the fact that both intervals do not contain zero means that the data are consistent with a stronger positive relationship for those who attend.",
+      "claimTags": ["uncertainty", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "I'm struggling with this sentence. I can sort of see what it is trying to do, but it is so confused. If I wanted to make a technical argument about there being a difference in slopes for attenders versus non-attenders, then I'd probably be interested in a point estimate of the difference in slopes and a confidence interval around that point estimate not containing zero. I think that same idea could be represented in a non-technical way"
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The overall model explains about 63 % of the variation in exam scores, indicating a fairly good fit for this dataset.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "Overall, on average the data suggest that the association between test marks and exam marks is stronger for students who regularly attended class than for those who did not.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "This is an answer to the original research question, and quite a strong one."
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "This difference is evident in the steeper slope at the average test mark and the higher predicted exam scores for attenders, though the evidence does not provide a definitive causal claim.",
+      "claimTags": ["typicalCase", "effect", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "This is also part of the justification of the final conclusion."
+    }
+  ],
+  "auditLinkage": null
+}

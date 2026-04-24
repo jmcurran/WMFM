@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:08:50 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Attend + Assign + Attend:Assign",
+    "responseVariable": "Pass",
+    "predictors": ["Attend", "Assign", "Attend:Assign"]
+  },
+  "context": {
+    "researchQuestion": "Does the relationship between assignment mark and the odds of passing appear to differ by attendance group?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "Research question  \nDoes the link between a student’s assignment mark and the odds of passing the course differ for students who regularly attend class compared with those who do not?\n\nModel results  \nAt an assignment mark of 0, the odds that a student passes the course are about 0.001 for both attendance groups, which corresponds to a very small probability of passing. For each one-point rise in the assignment mark, the odds of passing increase by roughly 81 % (point estimate). That 81 % increase could be anywhere from a 37 % rise (lower bound) to a 172 % rise (upper bound), because the 95 % confidence interval for this effect ranges from 1.37 to 2.72.  \nWhen students attend class regularly, the additional effect of an extra assignment point is almost the same: the odds rise by about 81 % again. The difference between the attendance groups is very small (about −0.6 % on a multiplicative scale) and the 95 % confidence interval for that difference stretches from a 38 % decrease to a 55 % increase. In other words, the data do not provide clear evidence that the relationship between assignment score and passing odds is meaningfully different for the two attendance groups.\nOn average, higher assignment marks are associated with markedly higher odds of passing, and this association looks essentially the same whether a student attends class regularly or not. The model does not support a substantial or reliable difference in how assignment marks influence passing odds between the two attendance groups."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "Research question Does the link between a student’s assignment mark and the odds of passing the course differ for students who regularly attend class compared with those who do not?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "Model results At an assignment mark of 0, the odds that a student passes the course are about 0.001 for both attendance groups, which corresponds to a very small probability of passing.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is describing a typical value. It should be given at a more sensible number like the mean assignment mark, or 10. The odds are too small to make sense, and should be expressed as odds, i.e. either 0.001:1 or 1:1000"
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "For each one-point rise in the assignment mark, the odds of passing increase by roughly 81 % (point estimate).",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "That 81 % increase could be anywhere from a 37 % rise (lower bound) to a 172 % rise (upper bound), because the 95 % confidence interval for this effect ranges from 1.37 to 2.72.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": true,
+      "userComment": "I don't think the explanation should have to explain that it got these numbers from the CI"
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "When students attend class regularly, the additional effect of an extra assignment point is almost the same: the odds rise by about 81 % again.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The difference between the attendance groups is very small (about −0.6 % on a multiplicative scale) and the 95 % confidence interval for that difference stretches from a 38 % decrease to a 55 % increase.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "In other words, the data do not provide clear evidence that the relationship between assignment score and passing odds is meaningfully different for the two attendance groups.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "Could be regarded as an answer to the research question"
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "On average, higher assignment marks are associated with markedly higher odds of passing, and this association looks essentially the same whether a student attends class regularly or not.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "Could be regarded as an answer to the research question"
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "The model does not support a substantial or reliable difference in how assignment marks influence passing odds between the two attendance groups.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "Could be regarded as an answer to the research questions"
+    }
+  ],
+  "auditLinkage": null
+}

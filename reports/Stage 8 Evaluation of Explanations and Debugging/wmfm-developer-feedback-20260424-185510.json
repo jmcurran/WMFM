@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:55:10 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Attend + Gender + Attend:Gender",
+    "responseVariable": "Pass",
+    "predictors": ["Attend", "Gender", "Attend:Gender"]
+  },
+  "context": {
+    "researchQuestion": "Does the attendance difference in odds of passing appear to differ by gender?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question is whether the advantage of attending the summer-school classes in terms of the odds of passing the course is different for women and men.  \n\nIn the fitted logit model, students who regularly attended class had odds of passing that were about 6.4 times the odds for those who did not attend, with a confidence interval from about 2.2 to 20.2. This large increase is clearly seen even at the lower end of the interval, indicating that attending classes strongly raises the odds of passing.  \nFor gender, the estimate for being male is a multiplier of about 0.58, with a confidence interval from roughly 0.17 to 1.9. These values span one, so the data allow the possibility that being male could reduce the odds of passing, increase them slightly, or have little effect.  \nThe interaction between attending and being male has a multiplier of about 1.2, with an interval from 0.24 to 5.8. Because this range includes one and extends below and above it, the model does not provide clear evidence that the attendance effect differs for men versus women; it could be slightly larger for men, slightly smaller, or about the same.\n\nOn average, the data suggest that attending the classes is associated with a much higher chance of passing for both genders, and the available evidence does not indicate a reliable difference between women and men in how attendance changes passing odds. The results are for average, expected outcomes rather than predictions for any particular student."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is whether the advantage of attending the summer-school classes in terms of the odds of passing the course is different for women and men.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "In the fitted logit model, students who regularly attended class had odds of passing that were about 6.4 times the odds for those who did not attend, with a confidence interval from about 2.2 to 20.2.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "Classificiation is okay. Explanation should not mention \"fitted logit model\". It should explain that this is averaged over gender. I also have no idea where the information for this statement comes from. It is very hard to relate it any of the model output."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "This large increase is clearly seen even at the lower end of the interval, indicating that attending classes strongly raises the odds of passing.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": true,
+      "userComment": "I think it answers part of the research question but not all of it."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "For gender, the estimate for being male is a multiplier of about 0.58, with a confidence interval from roughly 0.17 to 1.9.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "I think is trying to say the odds on passing if you are male, but it sure isn't clear ?"
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "These values span one, so the data allow the possibility that being male could reduce the odds of passing, increase them slightly, or have little effect.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "It's actually an interpretation of a confidence interval on the original scale. It is badly stated."
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The interaction between attending and being male has a multiplier of about 1.2, with an interval from 0.24 to 5.8.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is both stating how the response changes, and expressing the uncertainty in that estimate. It is terrible because it mentions interaction directly."
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "Because this range includes one and extends below and above it, the model does not provide clear evidence that the attendance effect differs for men versus women; it could be slightly larger for men, slightly smaller, or about the same.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "Maybe, but I think this is interpretation of a confidence interval. It also answers the research question."
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "On average, the data suggest that attending the classes is associated with a much higher chance of passing for both genders, and the available evidence does not indicate a reliable difference between women and men in how attendance changes passing odds.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "Answer to the research question. Clearly."
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "The results are for average, expected outcomes rather than predictions for any particular student.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is just a statistical disclaimer."
+    }
+  ],
+  "auditLinkage": null
+}

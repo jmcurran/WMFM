@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 17:39:12 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Attend + Gender",
+    "responseVariable": "Exam",
+    "predictors": ["Attend", "Gender"]
+  },
+  "context": {
+    "researchQuestion": "Do final exam marks differ by attendance and gender, without allowing the attendance difference to depend on gender?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "We wanted to see whether students who attend class and students of different gender obtain different average final exam scores, looking at attendance’s effect separately from gender.\n\nThe fitted analysis shows that, on average, students who regularly attended class achieved a final exam score of about 59.2, whereas those who did not attend scored about 43.8. The attendance difference is about 15.4 points, and the 95 % CI for this effect is 9.3 to 21.5, so even at the lower bound the improvement remains positive. For gender, keeping attendance fixed, male students had a mean score roughly 3.1 points lower than female students. The 95 % CI for this gender effect ranges from -8.8 to 2.6; the data are consistent with a small increase or a small decrease for males, so evidence for a gender difference is weak. The overall fit explains roughly 16 % of the variation in exam marks.\n\nIn short, on average students who attend class score considerably higher on the final exam than those who do not, and the data provide no clear evidence that male and female students differ in average final exam marks once attendance is taken into account."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "We wanted to see whether students who attend class and students of different gender obtain different average final exam scores, looking at attendance’s effect separately from gender.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The fitted analysis shows that, on average, students who regularly attended class achieved a final exam score of about 59.2, whereas those who did not attend scored about 43.8.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "I think I would classify this as trying to show the differences between the groups, or in your system \"How the groups are being compared\",  on the basis of one variable."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "The attendance difference is about 15.4 points, and the 95 % CI for this effect is 9.3 to 21.5, so even at the lower bound the improvement remains positive.",
+      "claimTags": ["effect", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "There should be something noting the use of the CI. I would like to look at the issue of whether mentioning the confidence interval counts as using technical language."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "For gender, keeping attendance fixed, male students had a mean score roughly 3.1 points lower than female students.",
+      "claimTags": ["effect", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "The 95 % CI for this gender effect ranges from -8.8 to 2.6; the data are consistent with a small increase or a small decrease for males, so evidence for a gender difference is weak.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The overall fit explains roughly 16 % of the variation in exam marks.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "In short, on average students who attend class score considerably higher on the final exam than those who do not, and the data provide no clear evidence that male and female students differ in average final exam marks once attendance is taken into account.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

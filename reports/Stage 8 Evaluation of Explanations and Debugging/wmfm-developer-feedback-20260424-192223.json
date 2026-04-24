@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:22:23 +1200",
+    "modelType": "glm-poisson",
+    "modelFormula": "Freq ~ Locn",
+    "responseVariable": "Freq",
+    "predictors": "Locn"
+  },
+  "context": {
+    "researchQuestion": "Does expected earthquake frequency differ between the two locations?",
+    "datasetSummary": {
+      "nRows": 18,
+      "nColumns": 3,
+      "variableNames": ["Locn", "Magnitude", "Freq"],
+      "variableClasses": {
+        "Locn": "character",
+        "Magnitude": "numeric",
+        "Freq": "integer"
+      }
+    },
+    "otherIssues": "Generally a good explanation."
+  },
+  "explanation": {
+    "fullText": "Does the average expected frequency of earthquakes differ between California and Washington?  \n\nOn average, the fitted model predicts about 10.8 earthquakes for every observation window in Southern California, with a 95% confidence interval from 8.7 to 13.4. In Washington, the expected number drops to about 2.6 per window, with confidence limits from 1.6 to 4. This means that, on average, a Washington earthquake is expected to occur at roughly 24 % of the rate seen in California-about a 76 % reduction. Even at the upper end of the Washington confidence interval, the rate remains well below the lower end of the California interval, indicating a clear and substantial difference in expected frequency.\nThe data are consistent with a lower expected earthquake frequency in Washington than in California, on average. The fitted model shows that Washington’s average rate is substantially smaller than California’s, though it does not predict exact counts for individual events."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "Does the average expected frequency of earthquakes differ between California and Washington?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "Only a slight issue here \"averaage expected\" rather than just one of those two words"
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "On average, the fitted model predicts about 10.8 earthquakes for every observation window in Southern California, with a 95% confidence interval from 8.7 to 13.4.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "I think there is a \"Typical value\" statement here too"
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "In Washington, the expected number drops to about 2.6 per window, with confidence limits from 1.6 to 4.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": true,
+      "userComment": "Shows how the response changes between levels of the factor / groups"
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "This means that, on average, a Washington earthquake is expected to occur at roughly 24 % of the rate seen in California-about a 76 % reduction.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Even at the upper end of the Washington confidence interval, the rate remains well below the lower end of the California interval, indicating a clear and substantial difference in expected frequency.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The data are consistent with a lower expected earthquake frequency in Washington than in California, on average.",
+      "claimTags": ["effect", "uncertainty", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "The fitted model shows that Washington’s average rate is substantially smaller than California’s, though it does not predict exact counts for individual events.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "I think this is an additional \"answer to the research question\" and a statistical disclaimer. The words \"fitted model\" should not appear."
+    }
+  ],
+  "auditLinkage": null
+}
