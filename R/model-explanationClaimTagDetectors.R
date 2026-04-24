@@ -194,6 +194,63 @@ detectAnswer = function(
   )
 }
 
+#' Detect general model-context wording in a sentence
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+detectModelContext = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  grepl(
+    "\\bmodel\\b|\\bdata\\b|\\bobservations\\b|\\bresponse\\b|\\bpredictor\\b|\\bvariable\\b|\\bestimates\\b|\\bestimated\\b",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Detect model-constraint wording in a sentence
+#'
+#' @param claimText Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+detectModelConstraint = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  grepl(
+    "no predictors|without predictors|reference group|reference category|comparison group|held fixed|kept fixed|same value of the other|similar values of the other|does not compare groups|does not explain differences",
+    text,
+    perl = TRUE
+  )
+}
+
+#' Detect statistical-scope disclaimers
+#'
+#' @param claimText Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+detectStatisticalDisclaimer = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  averageScope = grepl("on average", text, fixed = TRUE) &&
+    grepl("particular case|individual case|particular individual|specific case|specific individual", text, perl = TRUE)
+
+  causalScope = grepl(
+    "not causal|not a causal|causal relationship|causal relationships|association only|statistical association|statistical associations|does not prove causation|cannot prove causation",
+    text,
+    perl = TRUE
+  )
+
+  averageScope || causalScope
+}
+
 #' Detect response-scale wording in a sentence
 #'
 #' @param claimText Character scalar.
