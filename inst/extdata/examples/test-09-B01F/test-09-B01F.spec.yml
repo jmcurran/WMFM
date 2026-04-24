@@ -1,0 +1,6 @@
+modelType: logistic
+formula: Pass ~ Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: How does the probability of passing tend to change as the test mark changes?

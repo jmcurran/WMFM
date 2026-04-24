@@ -1,0 +1,6 @@
+modelType: logistic
+formula: Pass ~ Attend
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Do students who regularly attended class appear to have different odds of passing?

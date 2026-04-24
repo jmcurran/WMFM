@@ -10,6 +10,8 @@
 #'
 #' @param package A character string giving the package name containing the
 #'   packaged examples.
+#' @param includeTestExamples Logical. Should developer-only examples whose
+#'   names begin with `test` be included? Defaults to `FALSE`.
 #'
 #' @return A character vector of available example names. If no examples are
 #'   found, an empty character vector is returned.
@@ -24,7 +26,7 @@
 #' @importFrom tools file_ext Rd2txt
 #' @importFrom utils read.csv read.table data capture.output
 #' @importFrom yaml read_yaml
-listWMFMExamples = function(package = "WMFM") {
+listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
   examplesPath = system.file(
     "extdata",
     "examples",
@@ -48,8 +50,13 @@ listWMFMExamples = function(package = "WMFM") {
 
   exampleNames = basename(specFiles)
   exampleNames = sub("\\.spec\\.yml$", "", exampleNames)
+  exampleNames = sort(unique(exampleNames))
 
-  sort(unique(exampleNames))
+  if (!isTRUE(includeTestExamples)) {
+    exampleNames = exampleNames[!startsWith(exampleNames, "test")]
+  }
+
+  exampleNames
 }
 
 #' Load packaged WMFM example inputs

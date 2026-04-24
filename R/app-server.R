@@ -118,7 +118,7 @@ appServer = function(input, output, session) {
   })
 
   session$onFlushed(function() {
-    exampleChoices(listWMFMExamples())
+    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
 
     packageNames = getInstalledPackagesWithData()
 
@@ -145,7 +145,12 @@ appServer = function(input, output, session) {
     }
   }, once = TRUE)
 
+  observeEvent(input$developerMode, {
+    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
+  }, ignoreInit = TRUE)
+
   observeEvent(input$data_package, {
+
     req(input$data_source == "package")
 
     pkg = input$data_package %||% ""

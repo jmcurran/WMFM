@@ -1,0 +1,5 @@
+modelType: poisson
+formula: Freq ~ Locn
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: Does expected earthquake frequency differ between the two locations?

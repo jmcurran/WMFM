@@ -338,6 +338,16 @@ appUI = function() {
 
       tabPanel(
         "Settings",
+        h4("Developer mode"),
+        checkboxInput(
+          inputId = "developerMode",
+          label = "Show developer-only controls and test examples",
+          value = FALSE
+        ),
+        helpText(
+          "Developer mode exposes diagnostic controls and examples whose names begin with test."
+        ),
+        tags$hr(class = "hr-tight"),
         h4("Chat provider"),
         helpText(
           "Choose which language model backend WMFM should use for equations and explanations."

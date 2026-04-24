@@ -1,0 +1,6 @@
+modelType: lm
+formula: Exam ~ Attend
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Do students who regularly attended class tend to have different final exam marks?

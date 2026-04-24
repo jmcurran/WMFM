@@ -1,0 +1,6 @@
+modelType: lm
+formula: Exam ~ Attend + Gender
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Do final exam marks differ by attendance and gender, without allowing the attendance difference to depend on gender?

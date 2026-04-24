@@ -1,0 +1,6 @@
+modelType: lm
+formula: Exam ~ 1
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: What is the average final exam mark in the course data?
