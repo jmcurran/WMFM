@@ -89,9 +89,12 @@ appUI = function() {
           div(
             style = "font-size: 0.85em; color: #666;",
             textOutput("packageScanStatus")
+          ),
+          div(
+            style = "font-size: 0.85em; color: #666;",
+            textOutput("packageDatasetStatus")
           )
         ),
-
         tags$hr(class = "hr-tight"),
         h4("Load a built-in example"),
         selectInput(

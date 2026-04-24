@@ -41,6 +41,7 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
+  packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
   exampleChoices = reactiveVal(character(0))
   exampleLoadStatus = reactiveVal("Choose a built-in example if you want the app to load a complete worked setup.")
 
@@ -64,6 +65,10 @@ appServer = function(input, output, session) {
 
   output$packageScanStatus = renderText({
     packageScanStatus() %||% ""
+  })
+
+  output$packageDatasetStatus = renderText({
+    packageDatasetStatus() %||% ""
   })
 
 
@@ -119,33 +124,47 @@ appServer = function(input, output, session) {
   })
 
   session$onFlushed(function() {
-    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
+    withProgress(
+      message = "Preparing the data choices",
+      value = 0,
+      {
+        packageScanStatus("Preparing the built-in examples.")
+        incProgress(0.25, detail = "Checking built-in examples")
+        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
 
-    packageNames = getInstalledPackagesWithData()
+        packageScanStatus("Checking installed packages for datasets.")
+        incProgress(0.45, detail = "Checking installed packages")
+        packageNames = getInstalledPackagesWithData()
 
-    if (length(packageNames) == 0) {
-      packageChoices(character(0))
-      packageScanStatus("No installed packages with datasets were found.")
-      return(NULL)
-    }
+        if (length(packageNames) == 0) {
+          packageChoices(character(0))
+          packageScanStatus("No installed packages with datasets were found.")
+          packageDatasetStatus("No package datasets are available yet.")
+          return(NULL)
+        }
 
-    packageChoices(packageNames)
+        packageScanStatus("Updating the package list.")
+        incProgress(0.25, detail = "Updating the package list")
+        packageChoices(packageNames)
 
-    if (length(setdiff(packageNames, initialPackageChoices)) > 0) {
-      packageScanStatus(
-        paste0(
-          "Found ",
-          length(packageNames),
-          " installed package",
-          if (length(packageNames) == 1) "" else "s",
-          " with datasets."
-        )
-      )
-    } else {
-      packageScanStatus(NULL)
-    }
+        if (length(setdiff(packageNames, initialPackageChoices)) > 0) {
+          packageScanStatus(
+            paste0(
+              "Found ",
+              length(packageNames),
+              " installed package",
+              if (length(packageNames) == 1) "" else "s",
+              " with datasets."
+            )
+          )
+        } else {
+          packageScanStatus(NULL)
+        }
+
+        incProgress(0.05, detail = "Ready")
+      }
+    )
   }, once = TRUE)
-
   observeEvent(input$developerMode, {
     exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
   }, ignoreInit = TRUE)
@@ -156,51 +175,85 @@ appServer = function(input, output, session) {
 
     pkg = input$data_package %||% ""
 
-    if (identical(pkg, "s20x")) {
-      s20xOk = tryCatch(
-        {
-          ensureS20xInstalled()
-          TRUE
-        },
-        error = function(e) {
-          showNotification(conditionMessage(e), type = "error")
-          FALSE
-        }
-      )
-
-      if (!isTRUE(s20xOk)) {
-        updateSelectInput(
-          session,
-          "package_dataset",
-          choices = c("s20x is not installed" = ""),
-          selected = ""
-        )
-        return(NULL)
-      }
-    }
-
-    dsNames = getPackageDatasetNames(pkg)
-
-    if (length(dsNames) == 0) {
+    if (!nzchar(pkg)) {
+      packageDatasetStatus("Choose a package to see its available datasets.")
       updateSelectInput(
         session,
         "package_dataset",
-        choices = c("No datasets found" = ""),
-        selected = ""
+        choices = character(0),
+        selected = character(0)
       )
       return(NULL)
     }
 
-    choices = c("Choose a data set..." = "", dsNames)
+    withProgress(
+      message = "Preparing the dataset list",
+      value = 0,
+      {
+        packageDatasetStatus(paste0("Checking datasets in ", pkg, "."))
+        incProgress(0.2, detail = "Checking the selected package")
 
-    updateSelectInput(
-      session,
-      "package_dataset",
-      choices = choices,
-      selected = ""
+        if (identical(pkg, "s20x")) {
+          s20xOk = tryCatch(
+            {
+              ensureS20xInstalled()
+              TRUE
+            },
+            error = function(e) {
+              showNotification(conditionMessage(e), type = "error")
+              FALSE
+            }
+          )
+
+          if (!isTRUE(s20xOk)) {
+            packageDatasetStatus("The s20x package is not installed.")
+            updateSelectInput(
+              session,
+              "package_dataset",
+              choices = c("s20x is not installed" = ""),
+              selected = ""
+            )
+            return(NULL)
+          }
+        }
+
+        incProgress(0.55, detail = "Finding available datasets")
+        dsNames = getPackageDatasetNames(pkg)
+
+        if (length(dsNames) == 0) {
+          packageDatasetStatus(paste0("No datasets were found in ", pkg, "."))
+          updateSelectInput(
+            session,
+            "package_dataset",
+            choices = c("No datasets found" = ""),
+            selected = ""
+          )
+          return(NULL)
+        }
+
+        packageDatasetStatus(
+          paste0(
+            "Found ",
+            length(dsNames),
+            " dataset",
+            if (length(dsNames) == 1) "" else "s",
+            " in ",
+            pkg,
+            "."
+          )
+        )
+        choices = c("Choose a data set..." = "", dsNames)
+
+        incProgress(0.25, detail = "Updating the dataset list")
+        updateSelectInput(
+          session,
+          "package_dataset",
+          choices = choices,
+          selected = ""
+        )
+      }
     )
   }, ignoreInit = FALSE)
-
   rv = reactiveValues(
     data = NULL,
     allVars = character(0),
