@@ -1,0 +1,6 @@
+modelType: logistic
+formula: Pass ~ 1
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: What is the overall probability of passing in the course data?

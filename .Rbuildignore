@@ -5,6 +5,7 @@
 ^.*\.zip$
 ^dev($|/)
 ^build($|/)
+^scripts($|/)
 ^\.wmfm_built_pkg_path($|/)
 ^\.positai$
 ^\.claude$

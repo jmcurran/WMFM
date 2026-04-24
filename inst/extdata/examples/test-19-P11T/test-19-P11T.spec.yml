@@ -1,0 +1,5 @@
+modelType: poisson
+formula: Freq ~ Locn * Magnitude
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: Does the relationship between magnitude and expected earthquake frequency appear to differ by location?

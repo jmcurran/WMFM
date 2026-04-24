@@ -1,0 +1,6 @@
+modelType: logistic
+formula: Pass ~ Attend * Gender
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Does the attendance difference in odds of passing appear to differ by gender?

@@ -4,11 +4,14 @@
 \alias{listWMFMExamples}
 \title{List packaged WMFM examples}
 \usage{
-listWMFMExamples(package = "WMFM")
+listWMFMExamples(package = "WMFM", includeTestExamples = FALSE)
 }
 \arguments{
 \item{package}{A character string giving the package name containing the
 packaged examples.}
+
+\item{includeTestExamples}{Logical. Should developer-only examples whose
+names begin with \code{test} be included? Defaults to \code{FALSE}.}
 }
 \value{
 A character vector of available example names. If no examples are

@@ -1,0 +1,6 @@
+modelType: logistic
+formula: Pass ~ Attend * Assign
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Does the relationship between assignment mark and the odds of passing appear to differ by attendance group?

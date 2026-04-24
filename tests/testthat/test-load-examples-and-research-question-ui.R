@@ -137,3 +137,71 @@ test_that("app server keeps pending example interactions available", {
     fixed = TRUE
   ))
 })
+
+test_that("developer mode source controls are present", {
+  skipIfExampleSourceFilesUnavailable()
+
+  uiText = readProjectFileTextForExampleTests("app-ui.R")
+  serverText = readProjectFileTextForExampleTests("app-server.R")
+
+  expect_true(grepl(
+    'inputId = "developerMode"',
+    uiText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    "Show developer-only controls and test examples",
+    uiText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    "includeTestExamples = isTRUE(input$developerMode)",
+    serverText,
+    fixed = TRUE
+  ))
+})
+
+test_that("packaged test examples are hidden unless explicitly requested", {
+  visibleExamples = listWMFMExamples(package = "WMFM")
+  developerExamples = listWMFMExamples(
+    package = "WMFM",
+    includeTestExamples = TRUE
+  )
+
+  expect_false(any(startsWith(visibleExamples, "test")))
+  expect_true(any(startsWith(developerExamples, "test")))
+  expect_true(all(visibleExamples %in% developerExamples))
+})
+
+test_that("developer test example ladder contains the expected model families", {
+  developerExamples = listWMFMExamples(
+    package = "WMFM",
+    includeTestExamples = TRUE
+  )
+
+  expectedExamples = c(
+    "test-01-G00F",
+    "test-02-G01F",
+    "test-03-G10F",
+    "test-04-G20F",
+    "test-05-G20T",
+    "test-06-G11F",
+    "test-07-G11T",
+    "test-08-B00F",
+    "test-09-B01F",
+    "test-10-B10F",
+    "test-11-B20F",
+    "test-12-B20T",
+    "test-13-B11F",
+    "test-14-B11T",
+    "test-15-P00F",
+    "test-16-P01F",
+    "test-17-P10F",
+    "test-18-P11F",
+    "test-19-P11T"
+  )
+
+  expect_true(all(expectedExamples %in% developerExamples))
+})

@@ -1,0 +1,5 @@
+modelType: poisson
+formula: Freq ~ 1
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: What is the average expected earthquake count per observation in the quake data?

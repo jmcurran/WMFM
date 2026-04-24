@@ -17,8 +17,8 @@
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
-#' @importFrom shiny renderTable tableOutput
-#' @importFrom shiny radioButtons textInput modalButton actionButton
+#' @importFrom shiny renderTable tableOutput downloadButton downloadHandler
+#' @importFrom shiny radioButtons textInput textAreaInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
 #' @importFrom shiny isolate validate need freezeReactiveValue
 #' @importFrom sortable bucket_list add_rank_list
@@ -65,6 +65,7 @@ appServer = function(input, output, session) {
   output$packageScanStatus = renderText({
     packageScanStatus() %||% ""
   })
+
 
   output$exampleLoadStatus = renderText({
     exampleLoadStatus() %||% ""
@@ -118,7 +119,7 @@ appServer = function(input, output, session) {
   })
 
   session$onFlushed(function() {
-    exampleChoices(listWMFMExamples())
+    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
 
     packageNames = getInstalledPackagesWithData()
 
@@ -145,7 +146,12 @@ appServer = function(input, output, session) {
     }
   }, once = TRUE)
 
+  observeEvent(input$developerMode, {
+    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
+  }, ignoreInit = TRUE)
+
   observeEvent(input$data_package, {
+
     req(input$data_source == "package")
 
     pkg = input$data_package %||% ""
@@ -275,6 +281,45 @@ appServer = function(input, output, session) {
       }
     )
   })
+
+  developerFeedbackReport = reactive({
+    if (!isTRUE(input$developerMode)) {
+      return(NULL)
+    }
+
+    m = modelFit()
+    claimMap = modelExplanationClaimEvidenceMap()
+
+    if (is.null(m) || is.null(claimMap)) {
+      return(NULL)
+    }
+
+    buildDeveloperFeedbackReport(
+      model = m,
+      claimMap = claimMap,
+      input = input,
+      explanationText = rv$modelExplanation,
+      researchQuestion = rv$researchQuestion %||% NULL,
+      data = rv$data,
+      otherIssues = input$developerFeedbackOtherIssues %||% NULL
+    )
+  })
+
+  output$developerFeedbackReportDownload = downloadHandler(
+    filename = function() {
+      paste0("wmfm-developer-feedback-", format(Sys.time(), "%Y%m%d-%H%M%S"), ".json")
+    },
+    content = function(file) {
+      report = developerFeedbackReport()
+
+      if (is.null(report)) {
+        stop("Developer feedback report is not available.", call. = FALSE)
+      }
+
+      writeDeveloperFeedbackReportJson(report = report, file = file)
+    }
+  )
+
   contrastResultText = reactiveVal("")
 
   refreshOllamaModelChoices = function(selected = NULL) {
@@ -3609,7 +3654,30 @@ $$")
                 "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
               ),
               if (!is.null(claimMap)) {
-                renderExplanationClaimEvidenceUi(claimMap)
+                tagList(
+                  renderExplanationClaimEvidenceUi(
+                    claimMap = claimMap,
+                    developerMode = isTRUE(input$developerMode)
+                  ),
+                  if (isTRUE(input$developerMode)) {
+                    tagList(
+                      tags$hr(class = "hr-tight"),
+                      textAreaInput(
+                        inputId = "developerFeedbackOtherIssues",
+                        label = "Other debugging issues",
+                        value = "",
+                        width = "100%",
+                        rows = 3,
+                        placeholder = "Note any other issues that should be considered when debugging this explanation."
+                      ),
+                      downloadButton(
+                        outputId = "developerFeedbackReportDownload",
+                        label = "Save report to file",
+                        class = "btn btn-primary btn-sm"
+                      )
+                    )
+                  }
+                )
               } else {
                 tags$p(
                   class = "wmfm-explanation-helper-note",

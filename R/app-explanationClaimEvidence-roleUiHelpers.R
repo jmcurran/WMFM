@@ -204,16 +204,107 @@ renderExplanationClaimEvidenceLabelsUi = function(row) {
   )
 }
 
+#' Sanitize a sentence index for developer feedback input ids
+#'
+#' @param sentenceIndex Sentence index.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+sanitizeDeveloperFeedbackSentenceIndex = function(sentenceIndex) {
+
+  indexText = as.character(sentenceIndex %||% "")
+  gsub("[^A-Za-z0-9_]+", "_", indexText)
+}
+
+#' Build a stable input id for a developer feedback checkbox
+#'
+#' @param sentenceIndex Sentence index.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildDeveloperFeedbackIncorrectInputId = function(sentenceIndex) {
+
+  paste0(
+    "developerFeedbackIncorrect_",
+    sanitizeDeveloperFeedbackSentenceIndex(sentenceIndex)
+  )
+}
+
+#' Build a stable input id for a developer feedback comment box
+#'
+#' @param sentenceIndex Sentence index.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildDeveloperFeedbackCommentInputId = function(sentenceIndex) {
+
+  paste0(
+    "developerFeedbackComment_",
+    sanitizeDeveloperFeedbackSentenceIndex(sentenceIndex)
+  )
+}
+
+#' Render developer-only sentence feedback controls
+#'
+#' @param row Single-row data frame from a
+#'   `wmfmExplanationClaimEvidenceMap$claims` table.
+#' @param developerMode Logical. Should developer-only feedback controls be
+#'   displayed?
+#'
+#' @return A Shiny UI object or `NULL`.
+#' @keywords internal
+#' @noRd
+#' @importFrom htmltools tags
+#' @importFrom shiny checkboxInput conditionalPanel textAreaInput
+renderExplanationDeveloperFeedbackControlsUi = function(row, developerMode = FALSE) {
+
+  if (!isTRUE(developerMode)) {
+    return(NULL)
+  }
+
+  sentenceIndex = row$sentenceIndex[[1]]
+  incorrectInputId = buildDeveloperFeedbackIncorrectInputId(sentenceIndex)
+  commentInputId = buildDeveloperFeedbackCommentInputId(sentenceIndex)
+
+  tags$div(
+    class = "wmfm-developer-feedback-controls",
+    checkboxInput(
+      inputId = incorrectInputId,
+      label = "Mark as incorrect",
+      value = FALSE
+    ),
+    conditionalPanel(
+      condition = paste0("input['", incorrectInputId, "'] === true"),
+      textAreaInput(
+        inputId = commentInputId,
+        label = "Describe the issue",
+        value = "",
+        rows = 3,
+        width = "100%",
+        placeholder = paste(
+          "Explain what is wrong with this sentence or its support mapping.",
+          "For example, note an incorrect scale, missing interaction,",
+          "wrong baseline, unsupported claim, or unclear wording."
+        )
+      )
+    )
+  )
+}
 #' Render one explanation claim-evidence card
 #'
 #' @param row Single-row data frame from a
 #'   `wmfmExplanationClaimEvidenceMap$claims` table.
+#' @param developerMode Logical. Should developer-only feedback controls be
+#'   displayed?
 #'
 #' @return A Shiny UI object.
 #' @keywords internal
 #' @noRd
 #' @importFrom htmltools tagList tags
-renderExplanationClaimEvidenceCardUi = function(row) {
+renderExplanationClaimEvidenceCardUi = function(row, developerMode = FALSE) {
 
   displayClaimText = cleanExplanationText(row$claimText[[1]])
 
@@ -225,6 +316,10 @@ renderExplanationClaimEvidenceCardUi = function(row) {
       displayClaimText
     ),
     renderExplanationClaimRoleNotesUi(row),
-    renderExplanationClaimEvidenceLabelsUi(row)
+    renderExplanationClaimEvidenceLabelsUi(row),
+    renderExplanationDeveloperFeedbackControlsUi(
+      row = row,
+      developerMode = isTRUE(developerMode)
+    )
   )
 }

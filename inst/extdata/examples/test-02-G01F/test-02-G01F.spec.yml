@@ -1,0 +1,6 @@
+modelType: lm
+formula: Exam ~ Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: How does final exam mark tend to change as the test mark changes?

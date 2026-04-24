@@ -8,8 +8,6 @@ __MACOSX/
 .Ruserdata
 *Rcheck/
 *.sh
-dev*
-dev/*
 build*
 build/*
 .wmfm_built_pkg_path
