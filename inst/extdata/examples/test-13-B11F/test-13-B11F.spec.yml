@@ -1,6 +1,6 @@
 modelType: logistic
-formula: Pass ~ Attend + Test
+formula: Pass ~ Attend + Assign
 dataSource: package
 dataPackage: s20x
 dataObject: course.df
-researchQuestion: How do attendance and test mark relate to the odds of passing, without allowing the test-mark slope to differ by attendance?
+researchQuestion: How do attendance and assignment mark relate to the odds of passing, without allowing the assignment-mark slope to differ by attendance?

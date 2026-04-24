@@ -332,3 +332,36 @@ buildDeveloperFeedbackAuditLinkage = function(model) {
     class = class(model$explanationAudit)
   )
 }
+
+#' Convert a developer feedback report to JSON
+#'
+#' @param report Developer feedback report object.
+#'
+#' @return Character scalar containing pretty JSON.
+#' @keywords internal
+#' @noRd
+#' @importFrom jsonlite toJSON
+developerFeedbackReportToJson = function(report) {
+
+  as.character(toJSON(
+    report,
+    auto_unbox = TRUE,
+    pretty = TRUE,
+    null = "null"
+  ))
+}
+
+#' Write a developer feedback report to a JSON file
+#'
+#' @param report Developer feedback report object.
+#' @param file Path to the output JSON file.
+#'
+#' @return The output file path, invisibly.
+#' @keywords internal
+#' @noRd
+writeDeveloperFeedbackReportJson = function(report, file) {
+
+  json = developerFeedbackReportToJson(report)
+  writeLines(json, con = file, useBytes = TRUE)
+  invisible(file)
+}

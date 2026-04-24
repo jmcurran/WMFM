@@ -17,7 +17,7 @@
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
-#' @importFrom shiny renderTable tableOutput
+#' @importFrom shiny renderTable tableOutput downloadButton downloadHandler
 #' @importFrom shiny radioButtons textInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
 #' @importFrom shiny isolate validate need freezeReactiveValue
@@ -303,6 +303,22 @@ appServer = function(input, output, session) {
       data = rv$data
     )
   })
+
+  output$developerFeedbackReportDownload = downloadHandler(
+    filename = function() {
+      paste0("wmfm-developer-feedback-", format(Sys.time(), "%Y%m%d-%H%M%S"), ".json")
+    },
+    content = function(file) {
+      report = developerFeedbackReport()
+
+      if (is.null(report)) {
+        stop("Developer feedback report is not available.", call. = FALSE)
+      }
+
+      writeDeveloperFeedbackReportJson(report = report, file = file)
+    }
+  )
+
   contrastResultText = reactiveVal("")
 
   refreshOllamaModelChoices = function(selected = NULL) {
@@ -3637,9 +3653,21 @@ $$")
                 "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
               ),
               if (!is.null(claimMap)) {
-                renderExplanationClaimEvidenceUi(
-                  claimMap = claimMap,
-                  developerMode = isTRUE(input$developerMode)
+                tagList(
+                  renderExplanationClaimEvidenceUi(
+                    claimMap = claimMap,
+                    developerMode = isTRUE(input$developerMode)
+                  ),
+                  if (isTRUE(input$developerMode)) {
+                    tagList(
+                      tags$hr(class = "hr-tight"),
+                      downloadButton(
+                        outputId = "developerFeedbackReportDownload",
+                        label = "Save report to file",
+                        class = "btn btn-primary btn-sm"
+                      )
+                    )
+                  }
                 )
               } else {
                 tags$p(

@@ -153,3 +153,46 @@ testthat::test_that("developer feedback report supports wmfmModel inputs", {
   testthat::expect_equal(report$context$researchQuestion, "Does Test predict Exam?")
   testthat::expect_equal(report$explanation$fullText, "Exam tends to increase with Test.")
 })
+
+testthat::test_that("developer feedback report converts to JSON", {
+  report = list(
+    metadata = list(
+      modelType = "lm",
+      modelFormula = "Exam ~ Test"
+    ),
+    context = list(
+      researchQuestion = NULL
+    ),
+    sentenceRecords = list(
+      list(
+        sentenceId = 1L,
+        sentenceText = "Exam tends to increase with Test.",
+        isMarkedIncorrect = FALSE,
+        userComment = NULL
+      )
+    )
+  )
+
+  json = developerFeedbackReportToJson(report)
+  parsed = jsonlite::fromJSON(json, simplifyVector = FALSE)
+
+  testthat::expect_match(json, "\\n", fixed = FALSE)
+  testthat::expect_equal(parsed$metadata$modelType, "lm")
+  testthat::expect_null(parsed$context$researchQuestion)
+  testthat::expect_false(parsed$sentenceRecords[[1]]$isMarkedIncorrect)
+})
+
+testthat::test_that("developer feedback report writes JSON to file", {
+  report = list(
+    metadata = list(modelType = "glm-binomial"),
+    sentenceRecords = list()
+  )
+  file = tempfile(fileext = ".json")
+
+  result = writeDeveloperFeedbackReportJson(report = report, file = file)
+  parsed = jsonlite::fromJSON(file, simplifyVector = FALSE)
+
+  testthat::expect_identical(result, file)
+  testthat::expect_true(file.exists(file))
+  testthat::expect_equal(parsed$metadata$modelType, "glm-binomial")
+})
