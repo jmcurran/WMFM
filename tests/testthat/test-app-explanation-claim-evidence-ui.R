@@ -29,3 +29,25 @@ testthat::test_that("answer role notes are shown first in the UI list", {
     "helps answer the research question by pulling the results together"
   )
 })
+
+testthat::test_that("claim evidence cards clean answer formatting before display", {
+  row = data.frame(
+    claimId = "claim_1",
+    sentenceIndex = 1L,
+    claimText = "Answer: Overall, higher Test scores are linked with higher exam marks.",
+    claimTags = I(list(c("effect", "answer"))),
+    claimType = "answer",
+    supportNotes = I(list("helps answer the research question by pulling the results together")),
+    supportNote = "This sentence helps answer the research question.",
+    evidenceCount = 1L,
+    evidenceTypes = "mainEffect",
+    evidenceLabels = "Main effect translation",
+    mappingMethod = "tag-first mapping",
+    stringsAsFactors = FALSE
+  )
+
+  html = as.character(renderExplanationClaimEvidenceCardUi(row))
+
+  testthat::expect_match(html, "Overall, higher Test scores", fixed = TRUE)
+  testthat::expect_no_match(html, "Answer:", fixed = TRUE)
+})

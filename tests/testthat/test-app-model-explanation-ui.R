@@ -201,3 +201,18 @@ testthat::test_that("app server includes explicit fallback text for missing teac
     fixed = TRUE
   )
 })
+
+testthat::test_that("app server cleans explanation text again at display time", {
+  serverText = getAppServerTextForTest()
+
+  testthat::expect_match(
+    serverText,
+    "displayExplanation = if (!is.null(expl))",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    serverText,
+    "cleanExplanationText(expl)",
+    fixed = TRUE
+  )
+})

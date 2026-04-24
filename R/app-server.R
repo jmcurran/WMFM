@@ -3315,6 +3315,7 @@ $$")
         model = m,
         chatProvider = chatProvider
       )
+      explanation = cleanExplanationText(explanation)
       explanationAudit = buildAppExplanationAudit(model = m)
 
       incProgress(0.35, detail = outputMessages$updateDetail)
@@ -3564,9 +3565,14 @@ $$")
     teachingSummary = modelExplanationTeachingSummary()
     m = modelFit()
     researchQuestionText = trimws(as.character(rv$researchQuestion %||% attr(m, "wmfm_research_question", exact = TRUE) %||% ""))
+    displayExplanation = if (!is.null(expl)) {
+      cleanExplanationText(expl)
+    } else {
+      NULL
+    }
 
     tagList(
-      if (!is.null(expl)) {
+      if (!is.null(displayExplanation)) {
         tagList(
           tags$div(
             class = "wmfm-explanation-helper-note",
@@ -3582,7 +3588,7 @@ $$")
             },
             tags$pre(
               style = "white-space: pre-wrap; word-wrap: break-word; margin-bottom: 0;",
-              expl
+              displayExplanation
             )
           )
         )
