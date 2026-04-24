@@ -18,7 +18,7 @@
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
 #' @importFrom shiny renderTable tableOutput downloadButton downloadHandler
-#' @importFrom shiny radioButtons textInput modalButton actionButton
+#' @importFrom shiny radioButtons textInput textAreaInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
 #' @importFrom shiny isolate validate need freezeReactiveValue
 #' @importFrom sortable bucket_list add_rank_list
@@ -300,7 +300,8 @@ appServer = function(input, output, session) {
       input = input,
       explanationText = rv$modelExplanation,
       researchQuestion = rv$researchQuestion %||% NULL,
-      data = rv$data
+      data = rv$data,
+      otherIssues = input$developerFeedbackOtherIssues %||% NULL
     )
   })
 
@@ -3661,6 +3662,14 @@ $$")
                   if (isTRUE(input$developerMode)) {
                     tagList(
                       tags$hr(class = "hr-tight"),
+                      textAreaInput(
+                        inputId = "developerFeedbackOtherIssues",
+                        label = "Other debugging issues",
+                        value = "",
+                        width = "100%",
+                        rows = 3,
+                        placeholder = "Note any other issues that should be considered when debugging this explanation."
+                      ),
                       downloadButton(
                         outputId = "developerFeedbackReportDownload",
                         label = "Save report to file",

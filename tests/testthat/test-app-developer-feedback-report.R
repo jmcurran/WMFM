@@ -40,12 +40,44 @@ testthat::test_that("developer feedback report captures sentence feedback", {
   testthat::expect_equal(report$metadata$responseVariable, "Exam")
   testthat::expect_equal(report$metadata$predictors, c("Test", "Gender"))
   testthat::expect_equal(report$context$researchQuestion, "Does Test predict Exam?")
+  testthat::expect_null(report$context$otherIssues)
   testthat::expect_equal(report$context$datasetSummary$nRows, 4L)
   testthat::expect_length(report$sentenceRecords, 2L)
   testthat::expect_true(report$sentenceRecords[[1]]$isMarkedIncorrect)
   testthat::expect_equal(report$sentenceRecords[[1]]$userComment, "Wrong scale.")
   testthat::expect_false(report$sentenceRecords[[2]]$isMarkedIncorrect)
   testthat::expect_null(report$sentenceRecords[[2]]$userComment)
+})
+
+
+testthat::test_that("developer feedback report captures general debugging notes", {
+  d = data.frame(
+    Exam = c(60, 70, 80, 90),
+    Test = c(55, 65, 75, 85)
+  )
+  m = stats::lm(Exam ~ Test, data = d)
+
+  claimMap = list(
+    claims = data.frame(
+      sentenceIndex = 1L,
+      claimText = "Exam tends to increase with Test.",
+      claimTags = I(list("effect")),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  report = buildDeveloperFeedbackReport(
+    model = m,
+    claimMap = claimMap,
+    input = list(),
+    data = d,
+    otherIssues = "The answer sentence should be checked against the research question."
+  )
+
+  testthat::expect_equal(
+    report$context$otherIssues,
+    "The answer sentence should be checked against the research question."
+  )
 })
 
 testthat::test_that("developer feedback report handles missing comments", {
