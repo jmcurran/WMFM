@@ -1,5 +1,29 @@
+makeProfileLmNumericData = function() {
+  set.seed(1)
+  x = seq_len(12)
+  y = 2 + 0.5 * x + stats::rnorm(length(x), sd = 0.2)
+  data.frame(y = y, x = x)
+}
+
+makeProfileLmFactorData = function() {
+  set.seed(1)
+  group = factor(rep(c("A", "B"), each = 6))
+  y = 2 + ifelse(group == "B", 1, 0) + stats::rnorm(length(group), sd = 0.2)
+  data.frame(y = y, group = group)
+}
+
+makeProfileLmInteractionData = function() {
+  set.seed(1)
+  x = rep(seq_len(6), times = 2)
+  group = factor(rep(c("A", "B"), each = 6))
+  y = 1 + 0.4 * x + ifelse(group == "B", 0.8, 0) +
+    ifelse(group == "B", 0.25 * x, 0) + stats::rnorm(length(x), sd = 0.2)
+  data.frame(y = y, x = x, group = group)
+}
+
 testthat::test_that("buildExplanationModelProfile detects intercept-only LM models", {
-  df = data.frame(y = c(1, 2, 3, 4))
+  set.seed(1)
+  df = data.frame(y = 2 + stats::rnorm(12, sd = 0.2))
   model = stats::lm(y ~ 1, data = df)
 
   out = buildExplanationModelProfile(model = model, data = df, modelType = "lm")
@@ -13,10 +37,7 @@ testthat::test_that("buildExplanationModelProfile detects intercept-only LM mode
 })
 
 testthat::test_that("buildExplanationModelProfile detects numeric LM models", {
-  df = data.frame(
-    y = c(1, 2, 3, 4),
-    x = c(2, 4, 6, 8)
-  )
+  df = makeProfileLmNumericData()
   model = stats::lm(y ~ x, data = df)
 
   out = buildExplanationModelProfile(model = model, data = df, modelType = "lm")
@@ -29,10 +50,7 @@ testthat::test_that("buildExplanationModelProfile detects numeric LM models", {
 })
 
 testthat::test_that("buildExplanationModelProfile detects factor LM models", {
-  df = data.frame(
-    y = c(1, 2, 3, 4),
-    group = factor(c("A", "A", "B", "B"))
-  )
+  df = makeProfileLmFactorData()
   model = stats::lm(y ~ group, data = df)
 
   out = buildExplanationModelProfile(model = model, data = df, modelType = "lm")
@@ -44,11 +62,7 @@ testthat::test_that("buildExplanationModelProfile detects factor LM models", {
 })
 
 testthat::test_that("buildExplanationModelProfile detects interactions", {
-  df = data.frame(
-    y = c(1, 2, 3, 4, 5, 6),
-    x = c(1, 2, 3, 1, 2, 3),
-    group = factor(c("A", "A", "A", "B", "B", "B"))
-  )
+  df = makeProfileLmInteractionData()
   model = stats::lm(y ~ x * group, data = df)
 
   out = buildExplanationModelProfile(model = model, data = df, modelType = "lm")
@@ -60,9 +74,10 @@ testthat::test_that("buildExplanationModelProfile detects interactions", {
 })
 
 testthat::test_that("buildExplanationModelProfile detects logistic scale metadata", {
+  set.seed(1)
   df = data.frame(
-    y = c(0, 0, 1, 1, 1, 0),
-    x = c(1, 2, 3, 4, 5, 6)
+    y = c(0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0),
+    x = stats::rnorm(12)
   )
   model = stats::glm(y ~ x, data = df, family = stats::binomial(link = "logit"))
 
@@ -74,9 +89,11 @@ testthat::test_that("buildExplanationModelProfile detects logistic scale metadat
 })
 
 testthat::test_that("buildExplanationModelProfile detects Poisson scale metadata", {
+  set.seed(1)
+  x = seq_len(12)
   df = data.frame(
-    y = c(1, 2, 3, 4, 5, 6),
-    x = c(1, 2, 3, 4, 5, 6)
+    y = stats::rpois(length(x), lambda = exp(0.4 + 0.08 * x)),
+    x = x
   )
   model = stats::glm(y ~ x, data = df, family = stats::poisson(link = "log"))
 
@@ -88,9 +105,11 @@ testthat::test_that("buildExplanationModelProfile detects Poisson scale metadata
 })
 
 testthat::test_that("buildExplanationModelProfile records transformed response metadata", {
+  set.seed(1)
+  x = seq_len(12)
   df = data.frame(
-    y = c(1, 2, 3, 4, 5, 6),
-    x = c(1, 2, 3, 4, 5, 6)
+    y = exp(1 + 0.1 * x + stats::rnorm(length(x), sd = 0.05)),
+    x = x
   )
   model = stats::lm(log(y) ~ x, data = df)
 
@@ -102,20 +121,17 @@ testthat::test_that("buildExplanationModelProfile records transformed response m
   testthat::expect_identical(out$interpretationScale, "originalResponse")
 })
 
-testthat::test_that("runModel attaches explanation model profile metadata", {
-  df = data.frame(
-    y = c(1, 2, 3, 4),
-    x = c(1, 2, 3, 4)
-  )
+testthat::test_that("newWmfmModel stores explanation model profile metadata", {
+  df = makeProfileLmNumericData()
+  model = stats::lm(y ~ x, data = df)
+  profile = buildExplanationModelProfile(model = model, data = df, modelType = "lm")
 
-  out = suppressWarnings(
-    runModel(
-      data = df,
-      formula = y ~ x,
-      modelType = "lm",
-      printOutput = FALSE,
-      equationMethod = "deterministic"
-    )
+  out = newWmfmModel(
+    model = model,
+    formula = y ~ x,
+    modelType = "lm",
+    data = df,
+    modelProfile = profile
   )
 
   testthat::expect_type(out$modelProfile, "list")

@@ -197,9 +197,13 @@ getExplanationProfilePredictorVariables = function(modelTerms, modelFrame, respo
     return(character(0))
   }
 
-  predictorVariables = unique(unlist(lapply(termLabels, function(termLabel) {
-    all.vars(stats::as.formula(paste("~", termLabel)))
-  })))
+  predictorVariables = unique(unlist(
+    lapply(
+      termLabels,
+      getExplanationProfileTermVariables
+    ),
+    use.names = FALSE
+  ))
   predictorVariables = predictorVariables[!predictorVariables %in% responseVariable]
 
   if (is.data.frame(modelFrame) && ncol(modelFrame) > 0) {
@@ -207,6 +211,26 @@ getExplanationProfilePredictorVariables = function(modelTerms, modelFrame, respo
   }
 
   predictorVariables
+}
+
+getExplanationProfileTermVariables = function(termLabel) {
+
+  if (!is.character(termLabel) || length(termLabel) != 1 || is.na(termLabel)) {
+    return(character(0))
+  }
+
+  termFormula = tryCatch(
+    stats::as.formula(paste("~", termLabel)),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(termFormula)) {
+    return(character(0))
+  }
+
+  all.vars(termFormula)
 }
 
 getExplanationProfilePredictorTypes = function(predictorVariables, modelFrame) {
@@ -245,7 +269,7 @@ getExplanationProfileInteractionTypes = function(termLabels, predictorTypes) {
   }
 
   vapply(interactionLabels, function(interactionLabel) {
-    interactionVars = all.vars(stats::as.formula(paste("~", interactionLabel)))
+    interactionVars = getExplanationProfileTermVariables(interactionLabel)
     numericCount = sum(interactionVars %in% predictorTypes$numeric)
     factorCount = sum(interactionVars %in% predictorTypes$factor)
 
