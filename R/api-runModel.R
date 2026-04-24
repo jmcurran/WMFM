@@ -287,6 +287,11 @@ runModel = function(
   equations = NULL
   explanation = NULL
   explanationAudit = buildModelExplanationAudit(model = model)
+  modelProfile = buildExplanationModelProfile(
+    model = model,
+    data = dataModel,
+    modelType = modelType
+  )
   explanationClaimEvidenceMap = NULL
   equationMethodUsed = equationMethod
 
@@ -429,6 +434,7 @@ runModel = function(
     explanation = explanation,
     explanationAudit = explanationAudit,
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
+    modelProfile = modelProfile,
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(

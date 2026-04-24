@@ -15,6 +15,7 @@ newWmfmModel(
   explanation = NULL,
   explanationAudit = NULL,
   explanationClaimEvidenceMap = NULL,
+  modelProfile = NULL,
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   meta = list()
@@ -43,6 +44,8 @@ When present, this should inherit from \code{wmfmExplanationAudit} and follow
 the same top-level contract produced by \code{buildModelExplanationAudit()}.}
 
 \item{explanationClaimEvidenceMap}{Deterministic claim-to-evidence map, or \code{NULL}.}
+
+\item{modelProfile}{Deterministic explanation model-profile metadata, or \code{NULL}.}
 
 \item{interactionTerms}{Character vector of fitted interaction-term names.}
 
