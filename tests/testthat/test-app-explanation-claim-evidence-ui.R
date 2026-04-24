@@ -134,3 +134,55 @@ testthat::test_that("claim evidence map passes developer mode to every card", {
   testthat::expect_match(html, "developerFeedbackIncorrect_1", fixed = TRUE)
   testthat::expect_match(html, "developerFeedbackIncorrect_2", fixed = TRUE)
 })
+
+testthat::test_that("developer feedback comment boxes are hidden by default", {
+  row = data.frame(
+    claimId = "claim_1",
+    sentenceIndex = 1L,
+    claimText = "Higher Test scores are linked with higher exam marks.",
+    claimTags = I(list(c("effect"))),
+    claimType = "effect",
+    supportNotes = I(list("explains how the response changes")),
+    supportNote = "This sentence explains how the response changes.",
+    evidenceCount = 1L,
+    evidenceTypes = "mainEffect",
+    evidenceLabels = "Main effect translation",
+    mappingMethod = "tag-first mapping",
+    stringsAsFactors = FALSE
+  )
+
+  html = as.character(renderExplanationClaimEvidenceCardUi(row))
+
+  testthat::expect_no_match(html, "Describe the issue", fixed = TRUE)
+  testthat::expect_no_match(html, "developerFeedbackComment_1", fixed = TRUE)
+})
+
+testthat::test_that("developer feedback comment boxes appear conditionally in developer mode", {
+  row = data.frame(
+    claimId = "claim_1",
+    sentenceIndex = 1L,
+    claimText = "Higher Test scores are linked with higher exam marks.",
+    claimTags = I(list(c("effect"))),
+    claimType = "effect",
+    supportNotes = I(list("explains how the response changes")),
+    supportNote = "This sentence explains how the response changes.",
+    evidenceCount = 1L,
+    evidenceTypes = "mainEffect",
+    evidenceLabels = "Main effect translation",
+    mappingMethod = "tag-first mapping",
+    stringsAsFactors = FALSE
+  )
+
+  html = as.character(renderExplanationClaimEvidenceCardUi(
+    row = row,
+    developerMode = TRUE
+  ))
+
+  testthat::expect_match(html, "Describe the issue", fixed = TRUE)
+  testthat::expect_match(html, "developerFeedbackComment_1", fixed = TRUE)
+  testthat::expect_match(
+    html,
+    "input[&#39;developerFeedbackIncorrect_1&#39;] === true",
+    fixed = TRUE
+  )
+})
