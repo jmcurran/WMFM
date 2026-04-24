@@ -4,7 +4,7 @@
 \alias{renderExplanationClaimEvidenceUi}
 \title{Render the claim-to-evidence map for the app}
 \usage{
-renderExplanationClaimEvidenceUi(claimMap)
+renderExplanationClaimEvidenceUi(claimMap, developerMode = FALSE)
 }
 \arguments{
 \item{claimMap}{A \code{wmfmExplanationClaimEvidenceMap} object, or \code{NULL}.}

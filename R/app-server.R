@@ -3614,7 +3614,10 @@ $$")
                 "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
               ),
               if (!is.null(claimMap)) {
-                renderExplanationClaimEvidenceUi(claimMap)
+                renderExplanationClaimEvidenceUi(
+                  claimMap = claimMap,
+                  developerMode = isTRUE(input$developerMode)
+                )
               } else {
                 tags$p(
                   class = "wmfm-explanation-helper-note",

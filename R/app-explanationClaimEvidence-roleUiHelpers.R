@@ -204,16 +204,63 @@ renderExplanationClaimEvidenceLabelsUi = function(row) {
   )
 }
 
+#' Build a stable input id for a developer feedback checkbox
+#'
+#' @param sentenceIndex Sentence index.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildDeveloperFeedbackIncorrectInputId = function(sentenceIndex) {
+
+  indexText = as.character(sentenceIndex %||% "")
+  indexText = gsub("[^A-Za-z0-9_]+", "_", indexText)
+
+  paste0("developerFeedbackIncorrect_", indexText)
+}
+
+#' Render developer-only sentence feedback controls
+#'
+#' @param row Single-row data frame from a
+#'   `wmfmExplanationClaimEvidenceMap$claims` table.
+#' @param developerMode Logical. Should developer-only feedback controls be
+#'   displayed?
+#'
+#' @return A Shiny UI object or `NULL`.
+#' @keywords internal
+#' @noRd
+#' @importFrom htmltools tags
+#' @importFrom shiny checkboxInput
+renderExplanationDeveloperFeedbackControlsUi = function(row, developerMode = FALSE) {
+
+  if (!isTRUE(developerMode)) {
+    return(NULL)
+  }
+
+  sentenceIndex = row$sentenceIndex[[1]]
+
+  tags$div(
+    class = "wmfm-developer-feedback-controls",
+    checkboxInput(
+      inputId = buildDeveloperFeedbackIncorrectInputId(sentenceIndex),
+      label = "Mark as incorrect",
+      value = FALSE
+    )
+  )
+}
+
 #' Render one explanation claim-evidence card
 #'
 #' @param row Single-row data frame from a
 #'   `wmfmExplanationClaimEvidenceMap$claims` table.
+#' @param developerMode Logical. Should developer-only feedback controls be
+#'   displayed?
 #'
 #' @return A Shiny UI object.
 #' @keywords internal
 #' @noRd
 #' @importFrom htmltools tagList tags
-renderExplanationClaimEvidenceCardUi = function(row) {
+renderExplanationClaimEvidenceCardUi = function(row, developerMode = FALSE) {
 
   displayClaimText = cleanExplanationText(row$claimText[[1]])
 
@@ -225,6 +272,10 @@ renderExplanationClaimEvidenceCardUi = function(row) {
       displayClaimText
     ),
     renderExplanationClaimRoleNotesUi(row),
-    renderExplanationClaimEvidenceLabelsUi(row)
+    renderExplanationClaimEvidenceLabelsUi(row),
+    renderExplanationDeveloperFeedbackControlsUi(
+      row = row,
+      developerMode = isTRUE(developerMode)
+    )
   )
 }

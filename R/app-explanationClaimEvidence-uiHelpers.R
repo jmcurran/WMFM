@@ -8,7 +8,7 @@
 #' @return A Shiny UI object.
 #' @keywords internal
 #' @importFrom htmltools tagList tags
-renderExplanationClaimEvidenceUi = function(claimMap) {
+renderExplanationClaimEvidenceUi = function(claimMap, developerMode = FALSE) {
 
   if (is.null(claimMap)) {
     return(NULL)
@@ -20,7 +20,10 @@ renderExplanationClaimEvidenceUi = function(claimMap) {
 
   cards = lapply(seq_len(nrow(claimMap$claims)), function(i) {
     row = claimMap$claims[i, , drop = FALSE]
-    renderExplanationClaimEvidenceCardUi(row)
+    renderExplanationClaimEvidenceCardUi(
+      row = row,
+      developerMode = isTRUE(developerMode)
+    )
   })
 
   nSentences = length(cards)
