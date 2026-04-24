@@ -1,6 +1,6 @@
 Package: WMFM
 Title: Explore Fitted Linear and Generalised Linear Models with Shiny
-Version: 0.1.7.455
+Version: 0.1.7.456
 Authors@R: 
     person(
         given = "James",

@@ -66,6 +66,7 @@ appServer = function(input, output, session) {
     packageScanStatus() %||% ""
   })
 
+
   output$exampleLoadStatus = renderText({
     exampleLoadStatus() %||% ""
   })
@@ -278,6 +279,28 @@ appServer = function(input, output, session) {
       error = function(e) {
         NULL
       }
+    )
+  })
+
+  developerFeedbackReport = reactive({
+    if (!isTRUE(input$developerMode)) {
+      return(NULL)
+    }
+
+    m = modelFit()
+    claimMap = modelExplanationClaimEvidenceMap()
+
+    if (is.null(m) || is.null(claimMap)) {
+      return(NULL)
+    }
+
+    buildDeveloperFeedbackReport(
+      model = m,
+      claimMap = claimMap,
+      input = input,
+      explanationText = rv$modelExplanation,
+      researchQuestion = rv$researchQuestion %||% NULL,
+      data = rv$data
     )
   })
   contrastResultText = reactiveVal("")
