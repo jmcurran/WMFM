@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:26:28 +1200",
+    "modelType": "glm-poisson",
+    "modelFormula": "Freq ~ Locn + Magnitude",
+    "responseVariable": "Freq",
+    "predictors": ["Locn", "Magnitude"]
+  },
+  "context": {
+    "researchQuestion": "How do location and magnitude relate to expected earthquake frequency, without allowing the magnitude slope to differ by location?",
+    "datasetSummary": {
+      "nRows": 18,
+      "nColumns": 3,
+      "variableNames": ["Locn", "Magnitude", "Freq"],
+      "variableClasses": {
+        "Locn": "character",
+        "Magnitude": "numeric",
+        "Freq": "integer"
+      }
+    },
+    "otherIssues": "This is a fairly good explanation."
+  },
+  "explanation": {
+    "fullText": "The study asked whether the expected number of earthquakes changes with magnitude in the same way in Southern California (SC) and Washington (WA). It also wanted to know how the average expected frequency differs between the two locations when the effect of magnitude is the same in both.  \n\nWhen magnitude is set to the average observed level of 6.25, the model predicts on average about six earthquakes for SC (with a 95 % confidence interval of 4.3 to 8.4) and about 1.5 earthquakes for WA (with a 95 % confidence interval of 0.9 to 2.4).  Thus, on average, Washington’s expected earthquake count is only about 24 % of Southern California’s; Southern California’s expected count is roughly four times larger.  Increasing magnitude by one unit reduces the expected count to about 17 % of its previous level (an 83 % decrease); the 95 % confidence interval for this multiplier ranges from 11 % to 25 % of the previous level, so the data consistently show a strong decline.  The reduction is similar for both locations because the model does not allow the magnitude slope to differ by location.  \n\nIn plain terms, on average, the number of earthquakes drops steeply as magnitude grows, and Washington experiences about one quarter the typical earthquake frequency of Southern California, regardless of magnitude. This conclusion is about average expected counts; it does not predict the exact number of earthquakes for any single event."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The study asked whether the expected number of earthquakes changes with magnitude in the same way in Southern California (SC) and Washington (WA).",
+      "claimTags": ["effect", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "This is the research question."
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "It also wanted to know how the average expected frequency differs between the two locations when the effect of magnitude is the same in both.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "\"Average expected\" instead of just one of those words."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "When magnitude is set to the average observed level of 6.25, the model predicts on average about six earthquakes for SC (with a 95 % confidence interval of 4.3 to 8.4) and about 1.5 earthquakes for WA (with a 95 % confidence interval of 0.9 to 2.4).",
+      "claimTags": ["typicalCase", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "Thus, on average, Washington’s expected earthquake count is only about 24 % of Southern California’s; Southern California’s expected count is roughly four times larger.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "I think this is group comparison."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Increasing magnitude by one unit reduces the expected count to about 17 % of its previous level (an 83 % decrease); the 95 % confidence interval for this multiplier ranges from 11 % to 25 % of the previous level, so the data consistently show a strong decline.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The reduction is similar for both locations because the model does not allow the magnitude slope to differ by location.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "In plain terms, on average, the number of earthquakes drops steeply as magnitude grows, and Washington experiences about one quarter the typical earthquake frequency of Southern California, regardless of magnitude.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "This conclusion is about average expected counts; it does not predict the exact number of earthquakes for any single event.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is just a statistical disclaimer."
+    }
+  ],
+  "auditLinkage": null
+}

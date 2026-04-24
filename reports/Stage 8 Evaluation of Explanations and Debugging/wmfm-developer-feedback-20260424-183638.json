@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:36:38 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Attend",
+    "responseVariable": "Pass",
+    "predictors": "Attend"
+  },
+  "context": {
+    "researchQuestion": "Do students who regularly attended class appear to have different odds of passing?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The study asked whether students who regularly attended class tended to have different odds of passing the course.  \nIn the fitted model the baseline odds of passing for a student who did not attend class are about 0.70 (the 95 % confidence interval for these odds stretches from 0.39 to 1.27).  For a student who did attend class, the odds jump to roughly 4.88 (with a 95 % confidence interval from 2.89 to 8.26).  This means that, on average, a regularly-attending student has about seven times higher odds of passing than a student who rarely or never attended class; even at the low end of the confidence interval, the odds are more than twice as high, and at the high end they could be as much as eleven times higher.  \nThus, the data are consistent with the conclusion that, on average, students who regularly attended class are associated with much higher odds of passing the course."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The study asked whether students who regularly attended class tended to have different odds of passing the course.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "In the fitted model the baseline odds of passing for a student who did not attend class are about 0.70 (the 95 % confidence interval for these odds stretches from 0.39 to 1.27).",
+      "claimTags": ["typicalCase", "uncertainty"],
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct. The language is poor \"fitted model\", \"baseline odds\". Odds being expressed as just a decimal instead of 0.7:1"
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "For a student who did attend class, the odds jump to roughly 4.88 (with a 95 % confidence interval from 2.89 to 8.26).",
+      "claimTags": ["typicalCase", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "This means that, on average, a regularly-attending student has about seven times higher odds of passing than a student who rarely or never attended class; even at the low end of the confidence interval, the odds are more than twice as high, and at the high end they could be as much as eleven times higher.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "The \"seven times higher\" is actually an odds ratio and perhaps this needs to be made a little clearer. That is, if I need to work out where 7 comes from, then I need to note that this 0.7 * 7 = 4.9 which is very close to 4.88, or alternatively 4.88 / 0.7 is approximately 7."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Thus, the data are consistent with the conclusion that, on average, students who regularly attended class are associated with much higher odds of passing the course.",
+      "claimTags": ["effect", "uncertainty", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:15:23 +1200",
+    "modelType": "glm-poisson",
+    "modelFormula": "Freq ~ 1",
+    "responseVariable": "Freq",
+    "predictors": []
+  },
+  "context": {
+    "researchQuestion": "What is the average expected earthquake count per observation in the quake data?",
+    "datasetSummary": {
+      "nRows": 18,
+      "nColumns": 3,
+      "variableNames": ["Locn", "Magnitude", "Freq"],
+      "variableClasses": {
+        "Locn": "character",
+        "Magnitude": "numeric",
+        "Freq": "integer"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question is how many earthquakes should we expect, on average, for each recorded observation in the dataset?  \n\nFor the fitted Poisson model the log of the expected count is 1.8971 at the baseline level of the predictors. Turning this log count back to the original scale gives an expected number of about 6.7 earthquakes per observation. The 95 % confidence interval for the log intercept is 1.7127 to 2.0709; converting those limits to counts yields 5.6 at the lower end and 7.9 at the upper end. Thus the data are consistent with an average expected count somewhere between roughly 5.6 and 7.9 earthquakes, with the best estimate close to 6.7.  \n\nAnswering the original question, on average the model predicts about 6 to 7 earthquakes per observation, with uncertainty that still keeps the expected count well above five and below eight. This average reflects the overall level of earthquake frequency in the sample rather than a certainty for any particular event."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is how many earthquakes should we expect, on average, for each recorded observation in the dataset?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is good. The restatement of the terrible research question is terrible. The research question is is what is the average number of earthquakes?"
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "For the fitted Poisson model the log of the expected count is 1.8971 at the baseline level of the predictors.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct. The language and explanation is terrible. \"fitted Poisson model\" should not feature. Why explain the log of the expected count, when you could just give the expected count. \"baseline level of the predictors\" is unnecessary and meanlingless - there are no predictors in this model."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "Turning this log count back to the original scale gives an expected number of about 6.7 earthquakes per observation.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "It's providing scale translation. Unclear why you would do this unless you said the model provided the log-count and so the actual expected count is... but even then your reader wouldn't care about the log-count. That's a technical artifact"
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The 95 % confidence interval for the log intercept is 1.7127 to 2.0709; converting those limits to counts yields 5.6 at the lower end and 7.9 at the upper end.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": true,
+      "userComment": "I think it is just \"shows uncertainty in the estimate\" - the rounding is terrible. Who cares about the log scale?"
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Thus the data are consistent with an average expected count somewhere between roughly 5.6 and 7.9 earthquakes, with the best estimate close to 6.7.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Answering the original question, on average the model predicts about 6 to 7 earthquakes per observation, with uncertainty that still keeps the expected count well above five and below eight.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "what the hell does \"earthquakes per observation\" mean? Also - if the sentence says \"Answering the original question\" that's a pretty strong hint it is answering the original question."
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "This average reflects the overall level of earthquake frequency in the sample rather than a certainty for any particular event.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "Terrible sentence."
+    }
+  ],
+  "auditLinkage": null
+}

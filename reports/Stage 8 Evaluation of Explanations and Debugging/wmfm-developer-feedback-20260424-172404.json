@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 17:24:04 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ 1",
+    "responseVariable": "Exam",
+    "predictors": []
+  },
+  "context": {
+    "researchQuestion": "What is the average final exam mark in the course data?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question asks for the average final exam mark for students in this summer statistics course.  \nBecause the fitted model contains no predictors, the only estimate is the overall mean, which is about 52.9.   A 95 % confidence interval for this mean ranges from roughly 49.8 to 55.9, so the data are compatible with an average exam score anywhere in that interval.  The model explains essentially no variation in scores, indicating that many other factors not included in the model drive the differences among students.  \nIn short, on average students earned around 53 points on the final exam, though individual marks differed appreciably."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question asks for the average final exam mark for students in this summer statistics course.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "Because the fitted model contains no predictors, the only estimate is the overall mean, which is about 52.9.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "A 95 % confidence interval for this mean ranges from roughly 49.8 to 55.9, so the data are compatible with an average exam score anywhere in that interval.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The model explains essentially no variation in scores, indicating that many other factors not included in the model drive the differences among students.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is a simple mean model. In this context R^2 has no meaning because the model sums of squares are the same as the residual sums of squares hence the ratio is 1, and when subtracted from one the answer is zero. It would be better to say the percentage of variation explained here has no meaning, or to say nothing at all. I think this is a prompt issue rather than a misclassification."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "In short, on average students earned around 53 points on the final exam, though individual marks differed appreciably.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This should be marked at attempting to answer the research question, especially since it starts with a summary statement \"In short,...\""
+    }
+  ],
+  "auditLinkage": null
+}

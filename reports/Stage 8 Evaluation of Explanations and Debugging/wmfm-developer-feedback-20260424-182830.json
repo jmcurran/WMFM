@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:28:30 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Assign",
+    "responseVariable": "Pass",
+    "predictors": "Assign"
+  },
+  "context": {
+    "researchQuestion": "How does the probability of passing tend to change as the assignment mark changes?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "How does the probability of passing the course change as a student’s assignment mark rises?  \nThe model links the binary outcome “Pass” to the assignment score, measured from 0 to 20.  \nUsing the fitted odds, the baseline odds of a pass when the assignment score is 0 are about 0.001, indicating a very low chance of passing at that point.\n\nFor each one-point increase in the assignment score, the odds of passing are multiplied by roughly 1.88. That means the odds grow by about 88 percent for every additional point earned on the assignment. The 95 percent confidence interval for this multiplicative effect ranges from about 1.55 to 2.40, so even at the lower bound the odds still rise by roughly 55 percent. These numbers come from exponentiating the estimated coefficient of 0.6309 (confidence interval 0.4407 to 0.8770). Thus, the data consistently support a strong positive association between higher assignment marks and higher odds of passing, with uncertainty that still indicates a clear benefit.\n\nOn average, students who score higher on their assignments tend to have a higher probability of passing the course, though the effect varies across students and the model does not predict individual outcomes with certainty."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "How does the probability of passing the course change as a student’s assignment mark rises?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The model links the binary outcome “Pass” to the assignment score, measured from 0 to 20.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "Using the fitted odds, the baseline odds of a pass when the assignment score is 0 are about 0.001, indicating a very low chance of passing at that point.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "Although zero is in the range of the data I think predicting at the mean or the middle of the range (10) might make more sense. Stating odds of 0.001 and not 0.001:1 or perhaps sensible scaling like 1:1000 seems like an issue we should look at."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "For each one-point increase in the assignment score, the odds of passing are multiplied by roughly 1.88.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "That means the odds grow by about 88 percent for every additional point earned on the assignment.",
+      "claimTags": [],
+      "isMarkedIncorrect": true,
+      "userComment": "This is a rephrasing of how the response changes. It might also be a little confusing because the research question is phrased in probability, and much of the explanation talks about odds."
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The 95 percent confidence interval for this multiplicative effect ranges from about 1.55 to 2.40, so even at the lower bound the odds still rise by roughly 55 percent.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "These numbers come from exponentiating the estimated coefficient of 0.6309 (confidence interval 0.4407 to 0.8770).",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct, but I have no idea what this sentence is doing here. This should be in this section."
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "Thus, the data consistently support a strong positive association between higher assignment marks and higher odds of passing, with uncertainty that still indicates a clear benefit.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "On average, students who score higher on their assignments tend to have a higher probability of passing the course, though the effect varies across students and the model does not predict individual outcomes with certainty.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "This is the answer to the research question mixed with a statistical disclaimer."
+    }
+  ],
+  "auditLinkage": null
+}

@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:17:44 +1200",
+    "modelType": "glm-poisson",
+    "modelFormula": "Freq ~ Magnitude",
+    "responseVariable": "Freq",
+    "predictors": "Magnitude"
+  },
+  "context": {
+    "researchQuestion": "How does expected earthquake frequency change as magnitude increases?",
+    "datasetSummary": {
+      "nRows": 18,
+      "nColumns": 3,
+      "variableNames": ["Locn", "Magnitude", "Freq"],
+      "variableClasses": {
+        "Locn": "character",
+        "Magnitude": "numeric",
+        "Freq": "integer"
+      }
+    },
+    "otherIssues": "On the whole, this was a very clear and good description."
+  },
+  "explanation": {
+    "fullText": "Research question: how does expected earthquake frequency change as magnitude increases?\n\nOn average, the expected number of earthquakes drops sharply as the magnitude rises. At an average magnitude of 6.25, a typical location is expected to record about 3.7 earthquakes, with a 95 % confidence interval of 2.7 to 5.1. For each one-point increase in magnitude, the expected count is multiplied by about 0.17, meaning the expected frequency falls to roughly 17 % of what it was before (an 83 % decrease). Even at the less extreme end of the confidence interval, the multiplier ranges from about 0.11 to 0.25, so the decrease remains substantial throughout the interval. The data therefore suggest that, on average, higher-magnitude earthquakes are associated with markedly lower expected frequencies, and this relationship appears consistent over the range of magnitudes studied."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "Research question: how does expected earthquake frequency change as magnitude increases?",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "On average, the expected number of earthquakes drops sharply as the magnitude rises.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "At an average magnitude of 6.25, a typical location is expected to record about 3.7 earthquakes, with a 95 % confidence interval of 2.7 to 5.1.",
+      "claimTags": ["typicalCase", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "For each one-point increase in magnitude, the expected count is multiplied by about 0.17, meaning the expected frequency falls to roughly 17 % of what it was before (an 83 % decrease).",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Even at the less extreme end of the confidence interval, the multiplier ranges from about 0.11 to 0.25, so the decrease remains substantial throughout the interval.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "The data therefore suggest that, on average, higher-magnitude earthquakes are associated with markedly lower expected frequencies, and this relationship appears consistent over the range of magnitudes studied.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "Fails to detect this as the answer to the research question"
+    }
+  ],
+  "auditLinkage": null
+}

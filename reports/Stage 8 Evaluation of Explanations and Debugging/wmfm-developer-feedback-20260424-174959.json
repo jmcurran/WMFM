@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 17:49:59 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Attend + Gender + Attend:Gender",
+    "responseVariable": "Exam",
+    "predictors": ["Attend", "Gender", "Attend:Gender"]
+  },
+  "context": {
+    "researchQuestion": "Does the attendance difference in final exam marks appear to differ by gender?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question is whether the benefit of attending class for the final exam differs for male and female students.  \n\nIn this sample of 146 students, the average exam score for a female student who did not attend class is about 44 points.  When a student attends class, the average score rises by about 15 points (the estimate 14.8 with a 95% confidence interval from 6.3 to 23.3), so attending class is clearly associated with higher marks for both genders.  The estimated difference for male students relative to female students who do not attend is -4 points, but the 95% confidence interval from -14.1 to 6.1 includes zero, meaning the data are compatible with a small advantage or a small disadvantage for males.  The interaction term, which would capture any extra benefit of attendance for males, is +1.3 points, but its 95% confidence interval from -10.9 to 13.5 again crosses zero, making the evidence for a gender-specific attendance effect very weak.  Together the model explains roughly 16% of the variation in exam scores.\n\nOn average, attendance is associated with higher exam scores for both male and female students, and the data do not provide clear evidence that this benefit is larger or smaller for one gender than the other."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is whether the benefit of attending class for the final exam differs for male and female students.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "This is a restatement of the research question. A very pedantic point is that female is the reference level because it comes alphabetically before male, and so the sentence should say female and male, even though cultural conditioning has us say it the other way around emphasising male-centricity."
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "In this sample of 146 students, the average exam score for a female student who did not attend class is about 44 points.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "I think this describes a typical case. Why it choses to explain just one case is not clear."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "When a student attends class, the average score rises by about 15 points (the estimate 14.8 with a 95% confidence interval from 6.3 to 23.3), so attending class is clearly associated with higher marks for both genders.",
+      "claimTags": ["typicalCase", "effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct. However, this is kind of a non-sequitur from the previous sentence. If you wanted to make this comparison, then you'd make the statement for students who don't attend averaging over gender, and then compare it by looking at the same statistic for students who do attend."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The estimated difference for male students relative to female students who do not attend is -4 points, but the 95% confidence interval from -14.1 to 6.1 includes zero, meaning the data are compatible with a small advantage or a small disadvantage for males.",
+      "claimTags": ["uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "The interaction term, which would capture any extra benefit of attendance for males, is +1.3 points, but its 95% confidence interval from -10.9 to 13.5 again crosses zero, making the evidence for a gender-specific attendance effect very weak.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "The explanation should not mention interaction terms. It needs a much more non-technical way of describing it (like the last clause of the sentence)."
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Together the model explains roughly 16% of the variation in exam scores.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "On average, attendance is associated with higher exam scores for both male and female students, and the data do not provide clear evidence that this benefit is larger or smaller for one gender than the other.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:30:07 +1200",
+    "modelType": "glm-poisson",
+    "modelFormula": "Freq ~ Locn + Magnitude + Locn:Magnitude",
+    "responseVariable": "Freq",
+    "predictors": ["Locn", "Magnitude", "Locn:Magnitude"]
+  },
+  "context": {
+    "researchQuestion": "Does the relationship between magnitude and expected earthquake frequency appear to differ by location?",
+    "datasetSummary": {
+      "nRows": 18,
+      "nColumns": 3,
+      "variableNames": ["Locn", "Magnitude", "Freq"],
+      "variableClasses": {
+        "Locn": "character",
+        "Magnitude": "numeric",
+        "Freq": "integer"
+      }
+    },
+    "otherIssues": "This is a high quality answer on the whole."
+  },
+  "explanation": {
+    "fullText": "The question is whether the way that earthquake frequency drops as magnitude rises is different in Southern California compared with Washington.  \nOn average, larger earthquakes occur far less often than smaller ones, and the data suggest that this decrease is steeper in Washington than in Southern California.  \n\nAt the median magnitude of 6.25, the model predicts that an earthquake-rich zone in Southern California has an expected count of about 6.8 events, with the 95 % confidence interval 4.9 to 9.4.  In Washington the expected count at the same magnitude is about 0.5 events, with the 95 % confidence interval 0.2 to 1.9.  Thus, even at the same magnitude level, Washington has a considerably lower expected frequency of earthquakes.  \n\nEach one-point increase in magnitude is associated with a sharp fall in the expected count.  In Southern California the count is reduced to roughly 21 % of its previous level-an about 79 % decrease-with the 95 % confidence interval corresponding to a reduction of 69 % to 86 %.  In Washington the reduction is even more pronounced: the expected count falls to between 4 % and 72 % of its previous level-a decrease ranging from 28 % to 96 %-and the interval does not include no change.  The confidence interval for the extra decline in Washington therefore supports a steeper rate of decrease compared with Southern California.  \n\nIn summary, on average the data indicate that earthquake frequency falls more steeply with magnitude in Washington than in Southern California, while both regions show a strong negative relationship between magnitude and expected count."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is whether the way that earthquake frequency drops as magnitude rises is different in Southern California compared with Washington.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "On average, larger earthquakes occur far less often than smaller ones, and the data suggest that this decrease is steeper in Washington than in Southern California.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "It is actually an answer to the research question, in the wrong place because it hasn't explained how it got to that conclusion."
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "At the median magnitude of 6.25, the model predicts that an earthquake-rich zone in Southern California has an expected count of about 6.8 events, with the 95 % confidence interval 4.9 to 9.4.",
+      "claimTags": ["typicalCase", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "In Washington the expected count at the same magnitude is about 0.5 events, with the 95 % confidence interval 0.2 to 1.9.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "Also describes a typical case."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "Thus, even at the same magnitude level, Washington has a considerably lower expected frequency of earthquakes.",
+      "claimTags": ["effect", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Each one-point increase in magnitude is associated with a sharp fall in the expected count.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "In Southern California the count is reduced to roughly 21 % of its previous level-an about 79 % decrease-with the 95 % confidence interval corresponding to a reduction of 69 % to 86 %.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "In Washington the reduction is even more pronounced: the expected count falls to between 4 % and 72 % of its previous level-a decrease ranging from 28 % to 96 %-and the interval does not include no change.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "Also how the response changes and the uncertainty in the estimate."
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "The confidence interval for the extra decline in Washington therefore supports a steeper rate of decrease compared with Southern California.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 10,
+      "sentenceText": "In summary, on average the data indicate that earthquake frequency falls more steeply with magnitude in Washington than in Southern California, while both regions show a strong negative relationship between magnitude and expected count.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

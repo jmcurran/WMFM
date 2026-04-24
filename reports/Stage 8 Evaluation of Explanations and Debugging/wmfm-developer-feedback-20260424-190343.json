@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 19:03:43 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Attend + Assign",
+    "responseVariable": "Pass",
+    "predictors": ["Attend", "Assign"]
+  },
+  "context": {
+    "researchQuestion": "How do attendance and assignment mark relate to the odds of passing, without allowing the assignment-mark slope to differ by attendance?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The study asks how a student’s attendance and their assignment score are related to the odds of passing the course, when the effect of the assignment score is assumed to be the same for everyone.\n\nThe data come from 146 students enrolled in a summer school Stat 20x course. For each student the response is whether they passed the course (Yes = 1, No = 0). The predictors used are whether they regularly attended class (Attend = Yes or No) and their numeric assignment mark (0-20).\n\nAt an assignment score of zero, the baseline odds of passing are very low: odds = 0.001 for both attendance groups (confidence interval 0 to 0.01 or 0 to 0.029). For each one-point increase in the assignment mark, the odds of passing multiply by about 1.8 (the multiplier ranges from 1.5 to 2.3). This means that, on average, a student whose assignment score is ten points higher would have odds of passing about 1.8 ¹⁰-roughly a several-fold increase. The interval shows that the increase could be as small as 1.5-fold or as large as 2.3-fold, but in all cases it represents a higher likelihood of passing.\n\nAttendance has a positive association: students who regularly attended class have odds of passing that are about 2.5 times those of students who did not attend, with the multiplier ranging from 0.8 to 7.7. Because the confidence interval includes values below 1, the data are compatible with a small decrease, no effect, or a large increase in odds associated with attendance. Thus the evidence for attendance alone is weaker than for assignment score.\n\nIn summary, the fitted model says that better assignment marks are consistently linked to higher odds of passing the course, while the link between regular attendance and odds of passing is uncertain; on average, higher assignment marks support a clearer positive association with passing."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The study asks how a student’s attendance and their assignment score are related to the odds of passing the course, when the effect of the assignment score is assumed to be the same for everyone.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The data come from 146 students enrolled in a summer school Stat 20x course.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "For each student the response is whether they passed the course (Yes = 1, No = 0).",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "This is supporting information about the response."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The predictors used are whether they regularly attended class (Attend = Yes or No) and their numeric assignment mark (0-20).",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "Supporting information about the predictors."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "At an assignment score of zero, the baseline odds of passing are very low: odds = 0.001 for both attendance groups (confidence interval 0 to 0.01 or 0 to 0.029).",
+      "claimTags": ["typicalCase", "uncertainty"],
+      "isMarkedIncorrect": true,
+      "userComment": "The classification is correct, but this would have been better done at a typical value like the mean or 10. The odds are not stated as odds. Equally 0.001:1 is easier to read if it is 1:1000"
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "For each one-point increase in the assignment mark, the odds of passing multiply by about 1.8 (the multiplier ranges from 1.5 to 2.3).",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "It also expresses uncertainty in this change. The language here is awkward \"multiply by\" should be \"are multiplied by\""
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "This means that, on average, a student whose assignment score is ten points higher would have odds of passing about 1.8 ¹⁰-roughly a several-fold increase.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "I think this is a \"typical value\", maybe not - also not sure why the superscript 10 is there."
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "The interval shows that the increase could be as small as 1.5-fold or as large as 2.3-fold, but in all cases it represents a higher likelihood of passing.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "Explains uncertainty too. The language is poor. It would be better to say \"The increase could be as small as ...\""
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "Attendance has a positive association: students who regularly attended class have odds of passing that are about 2.5 times those of students who did not attend, with the multiplier ranging from 0.8 to 7.7.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 10,
+      "sentenceText": "Because the confidence interval includes values below 1, the data are compatible with a small decrease, no effect, or a large increase in odds associated with attendance.",
+      "claimTags": ["effect", "uncertainty"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 11,
+      "sentenceText": "Thus the evidence for attendance alone is weaker than for assignment score.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": true,
+      "userComment": "I'm not sure what this sentence is saying"
+    },
+    {
+      "sentenceId": 12,
+      "sentenceText": "In summary, the fitted model says that better assignment marks are consistently linked to higher odds of passing the course, while the link between regular attendance and odds of passing is uncertain; on average, higher assignment marks support a clearer positive association with passing.",
+      "claimTags": ["effect", "uncertainty", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 17:32:21 +1200",
+    "modelType": "lm",
+    "modelFormula": "Exam ~ Attend",
+    "responseVariable": "Exam",
+    "predictors": "Attend"
+  },
+  "context": {
+    "researchQuestion": "Do students who regularly attended class tend to have different final exam marks?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": "I think I am generally happy with this. The only niggle is that the explanation mentions the \"regression results\" when it should be something like \"the model results\" or \"the information from the fitted model\""
+  },
+  "explanation": {
+    "fullText": "The study asks whether students who regularly attended class tend to have higher final exam marks in a summer school Stats 20x course.  \n\nThe regression results show that, on average, students who attended class have a final exam mark of about 57.8, compared with about 42.2 for those who did not. This difference is roughly 15.6 points, or about 37 % higher. The 95 % confidence interval for that difference ranges from 9.5 to 21.6 points, so even at the low end the mean mark for attendees remains well above that for non-attendees. The model explains roughly 15 % of the variation in exam marks, indicating that attendance is one factor among several that influence scores.  \n\nTherefore, on average students who regularly attended class tend to score higher on the final exam, with a mean advantage of about 15.6 points (≈ 37 %), and the data suggest this pattern is unlikely to be due solely to chance."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The study asks whether students who regularly attended class tend to have higher final exam marks in a summer school Stats 20x course.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The regression results show that, on average, students who attended class have a final exam mark of about 57.8, compared with about 42.2 for those who did not.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "This difference is roughly 15.6 points, or about 37 % higher.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The 95 % confidence interval for that difference ranges from 9.5 to 21.6 points, so even at the low end the mean mark for attendees remains well above that for non-attendees.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "The model explains roughly 15 % of the variation in exam marks, indicating that attendance is one factor among several that influence scores.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Therefore, on average students who regularly attended class tend to score higher on the final exam, with a mean advantage of about 15.6 points (≈ 37 %), and the data suggest this pattern is unlikely to be due solely to chance.",
+      "claimTags": ["effect", "uncertainty", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}

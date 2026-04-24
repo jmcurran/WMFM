@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:20:15 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ 1",
+    "responseVariable": "Pass",
+    "predictors": []
+  },
+  "context": {
+    "researchQuestion": "What is the overall probability of passing in the course data?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": "The explanation shouldn't really be talking about the intercept and log-odds."
+  },
+  "explanation": {
+    "fullText": "The study asks how likely students are to pass the summer-school Stats 20x course.\n\nThe data come from 146 students, each row giving information about that student’s background and exam marks. In the analysis the only predictor retained is the overall baseline, so the model estimates the average odds of passing. The intercept corresponds to a log-odds of 0.8408, which means the baseline odds are exp(0.8408) ≈ 2.32. In plain terms, students of the reference group (the average student in the sample) are about 2.5 times more likely to pass than not. Converting this to a probability gives an expected pass rate of roughly 0.70; the 95 % confidence interval translates to a probability between 0.62 and 0.77, so the data support a pass rate somewhere in that range.\n\nOn average, students in this course pass about 70 percent of the time, with the evidence indicating that the true pass probability likely lies between about 62 and 77 percent."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The study asks how likely students are to pass the summer-school Stats 20x course.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "The data come from 146 students, each row giving information about that student’s background and exam marks.",
+      "claimTags": [],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "In the analysis the only predictor retained is the overall baseline, so the model estimates the average odds of passing.",
+      "claimTags": "typicalCase",
+      "isMarkedIncorrect": true,
+      "userComment": "I think this is just supporting information describing the model. There are actually no predictors in this model, so saying the overall baseline is a predictor seems off."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The intercept corresponds to a log-odds of 0.8408, which means the baseline odds are exp(0.8408) ≈ 2.32.",
+      "claimTags": ["typicalCase", "scale"],
+      "isMarkedIncorrect": true,
+      "userComment": "If I was expressing odds I'd write 2.32:1"
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "In plain terms, students of the reference group (the average student in the sample) are about 2.5 times more likely to pass than not.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "This says nothing about uncertainty. It's closer to the answer to the research question."
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Converting this to a probability gives an expected pass rate of roughly 0.70; the 95 % confidence interval translates to a probability between 0.62 and 0.77, so the data support a pass rate somewhere in that range.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "On average, students in this course pass about 70 percent of the time, with the evidence indicating that the true pass probability likely lies between about 62 and 77 percent.",
+      "claimTags": "uncertainty",
+      "isMarkedIncorrect": true,
+      "userComment": "This should be tagged as the answer to the research question."
+    }
+  ],
+  "auditLinkage": null
+}

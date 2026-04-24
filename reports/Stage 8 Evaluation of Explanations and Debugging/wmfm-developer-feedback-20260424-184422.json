@@ -1,0 +1,111 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-24 18:44:22 +1200",
+    "modelType": "glm-binomial",
+    "modelFormula": "Pass ~ Attend + Gender",
+    "responseVariable": "Pass",
+    "predictors": ["Attend", "Gender"]
+  },
+  "context": {
+    "researchQuestion": "Do the odds of passing differ by attendance and gender, without allowing the attendance difference to depend on gender?",
+    "datasetSummary": {
+      "nRows": 146,
+      "nColumns": 15,
+      "variableNames": ["Grade", "Pass", "Exam", "Degree", "Gender", "Attend", "Assign", "Test", "B", "C", "MC", "Colour", "Stage1", "Years.Since", "Repeat"],
+      "variableClasses": {
+        "Grade": "factor",
+        "Pass": "factor",
+        "Exam": "integer",
+        "Degree": "factor",
+        "Gender": "factor",
+        "Attend": "factor",
+        "Assign": "numeric",
+        "Test": "numeric",
+        "B": "integer",
+        "C": "integer",
+        "MC": "integer",
+        "Colour": "factor",
+        "Stage1": "factor",
+        "Years.Since": "numeric",
+        "Repeat": "factor"
+      }
+    },
+    "otherIssues": null
+  },
+  "explanation": {
+    "fullText": "The question is whether the chance of passing the Summer School Stats 20x course is different for students who regularly attend class compared with those who do not, and whether this attendance difference is different for males versus females, assuming that the attendance effect does not depend on gender.\n\nFor a typical female student whose other characteristics are at their reference levels, the odds of passing when she does not attend class are about 0.879; when she attends class the odds rise to about 6.089. This means that regular attendance multiplies the odds of passing by roughly 6.9 times, a large positive association. The 95 % confidence interval for the attended odds is from 3.111 to 11.918, so even at the lower end the odds are still more than three times higher than for non-attendees, whereas the upper end indicates a very strong increase. For males at the same reference levels, the odds of passing when not attending are about 1.138 and when attending about 0.164, so attendance also raises the odds of passing in this group, though the exact magnitude is less certain because the confidence interval (0.084 to 0.321) is wider.\n\nComparing sexes, a typical female student has odds of passing equal to 0.879, while a typical male student has odds of about 0.558. Thus, on average male students have about 0.63 times the odds of passing that female students have, i.e., roughly 37 % lower odds. The 95 % confidence interval for the male odds is 0.271 to 1.152, which overlaps 1, so the data do not give strong evidence that the gender difference is a clear decrease; the result is uncertain.\n\nOn average, students who regularly attend class have much higher odds of passing than those who do not, and this positive attendance effect is seen for both females and males. The difference in odds between females and males is suggested to favor females, but the evidence is weak, so we cannot confidently say that gender itself changes the odds of passing when attendance is held constant."
+  },
+  "sentenceRecords": [
+    {
+      "sentenceId": 1,
+      "sentenceText": "The question is whether the chance of passing the Summer School Stats 20x course is different for students who regularly attend class compared with those who do not, and whether this attendance difference is different for males versus females, assuming that the attendance effect does not depend on gender.",
+      "claimTags": "researchQuestion",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 2,
+      "sentenceText": "For a typical female student whose other characteristics are at their reference levels, the odds of passing when she does not attend class are about 0.879; when she attends class the odds rise to about 6.089.",
+      "claimTags": ["typicalCase", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "Classification is fine. There is unnecessary precision here, and odds should be expressed as odds e.g. 0.88:1"
+    },
+    {
+      "sentenceId": 3,
+      "sentenceText": "This means that regular attendance multiplies the odds of passing by roughly 6.9 times, a large positive association.",
+      "claimTags": "effect",
+      "isMarkedIncorrect": true,
+      "userComment": "This is correct, but should say this is for females."
+    },
+    {
+      "sentenceId": 4,
+      "sentenceText": "The 95 % confidence interval for the attended odds is from 3.111 to 11.918, so even at the lower end the odds are still more than three times higher than for non-attendees, whereas the upper end indicates a very strong increase.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": true,
+      "userComment": "I'd say this is just showing the uncertainty in the estimate, although I guess it could be saying something how the response changes too. Too much precision here. Odds not presented as odds."
+    },
+    {
+      "sentenceId": 5,
+      "sentenceText": "For males at the same reference levels, the odds of passing when not attending are about 1.138 and when attending about 0.164, so attendance also raises the odds of passing in this group, though the exact magnitude is less certain because the confidence interval (0.084 to 0.321) is wider.",
+      "claimTags": ["typicalCase", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 6,
+      "sentenceText": "Comparing sexes, a typical female student has odds of passing equal to 0.879, while a typical male student has odds of about 0.558.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 7,
+      "sentenceText": "Thus, on average male students have about 0.63 times the odds of passing that female students have, i.e., roughly 37 % lower odds.",
+      "claimTags": "comparison",
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 8,
+      "sentenceText": "The 95 % confidence interval for the male odds is 0.271 to 1.152, which overlaps 1, so the data do not give strong evidence that the gender difference is a clear decrease; the result is uncertain.",
+      "claimTags": ["effect", "uncertainty", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 9,
+      "sentenceText": "On average, students who regularly attend class have much higher odds of passing than those who do not, and this positive attendance effect is seen for both females and males.",
+      "claimTags": ["effect", "comparison", "answer"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    },
+    {
+      "sentenceId": 10,
+      "sentenceText": "The difference in odds between females and males is suggested to favor females, but the evidence is weak, so we cannot confidently say that gender itself changes the odds of passing when attendance is held constant.",
+      "claimTags": ["typicalCase", "effect", "comparison"],
+      "isMarkedIncorrect": false,
+      "userComment": null
+    }
+  ],
+  "auditLinkage": null
+}
