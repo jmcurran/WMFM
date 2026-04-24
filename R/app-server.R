@@ -130,7 +130,7 @@ appServer = function(input, output, session) {
       {
         packageScanStatus("Preparing the built-in examples.")
         incProgress(0.25, detail = "Checking built-in examples")
-        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
+        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(input$developerMode))))
 
         packageScanStatus("Checking installed packages for datasets.")
         incProgress(0.45, detail = "Checking installed packages")
