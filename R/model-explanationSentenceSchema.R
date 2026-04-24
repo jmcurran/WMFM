@@ -234,5 +234,8 @@ buildExplanationSentenceSupportMapIds = function(matchedEvidence = NULL) {
 #' @noRd
 buildExplanationSentenceQualityFlags = function(claimText, roles) {
 
-  character(0)
+  buildExplanationDeterministicQualityFlags(
+    claimText = claimText,
+    roles = roles
+  )
 }

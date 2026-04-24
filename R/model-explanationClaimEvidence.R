@@ -116,6 +116,7 @@ buildExplanationClaimEvidenceMap = function(
     claims = claimsTable
   )
 
+  attr(out, "qualityFlags") = buildExplanationMapQualityFlags(claimsTable)
   class(out) = c("wmfmExplanationClaimEvidenceMap", class(out))
   out
 }
