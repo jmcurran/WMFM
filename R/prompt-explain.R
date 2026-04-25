@@ -56,6 +56,10 @@ lmToExplanationPrompt = function(model) {
     mf = modelFrame,
     predictorNames = predictors
   )
+  explanationSkeletonBlock = buildExplanationSkeletonPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -134,6 +138,8 @@ Interpretation rules for numeric predictors:
 - Do not say that a multiplicative confidence interval lies below zero.
 
 {anchoredBaselineBlock}
+
+{explanationSkeletonBlock}
 
 {formattedQuantityBlock}
 ")
