@@ -109,6 +109,11 @@ buildModelExplanationAudit = function(model) {
         model = model,
         mf = mf,
         predictorNames = predictorNames
+      ),
+      formattedQuantityPrompt = buildFormattedPromptQuantityBlock(
+        model = model,
+        mf = mf,
+        predictorNames = predictorNames
       )
     )
   )
@@ -178,6 +183,8 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     researchQuestion = if (nzchar(researchQuestion)) researchQuestion else NA_character_,
     coefficientTableIncluded = TRUE,
     confidenceIntervalsIncluded = TRUE,
+    formattedQuantitiesIncluded = TRUE,
+    rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,
     nObservations = nrow(mf)
