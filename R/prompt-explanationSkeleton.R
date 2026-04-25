@@ -87,7 +87,13 @@ buildExplanationSkeletonPromptBlock = function(model, mf = NULL) {
   if (identical(ruleProfile$modelStructure, "interaction") || grepl("_interaction$", ruleProfile$skeletonId)) {
     lines = c(
       lines,
-      "For interactions, explain the effect within one group or selected value, then the corresponding effect within the other group or selected value, and then compare those effects directly."
+      "Interaction explanation control:",
+      "- Use a within-group-then-compare structure.",
+      "- First describe the effect within one relevant group or selected value.",
+      "- Then describe the same kind of effect within the other relevant group or selected value.",
+      "- Then compare those within-group effects directly in plain language.",
+      "- Do not explain by adding, subtracting, or decomposing model coefficients.",
+      "- Do not use the phrase interaction term in the student-facing explanation."
     )
   }
 

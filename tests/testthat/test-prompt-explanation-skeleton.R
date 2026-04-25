@@ -28,11 +28,14 @@ testthat::test_that("lmToExplanationPrompt includes within-group-then-compare in
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
   testthat::expect_match(prompt, "Skeleton id: poisson_interaction", fixed = TRUE)
-  testthat::expect_match(prompt, "firstEffect", fixed = TRUE)
-  testthat::expect_match(prompt, "secondEffect", fixed = TRUE)
+  testthat::expect_match(prompt, "firstWithinGroupEffect", fixed = TRUE)
+  testthat::expect_match(prompt, "secondWithinGroupEffect", fixed = TRUE)
   testthat::expect_match(prompt, "effectComparison", fixed = TRUE)
-  testthat::expect_match(prompt, "then compare those effects directly", fixed = TRUE)
-  testthat::expect_match(prompt, "interaction term", fixed = TRUE)
+  testthat::expect_match(prompt, "Interaction explanation control:", fixed = TRUE)
+  testthat::expect_match(prompt, "Use a within-group-then-compare structure", fixed = TRUE)
+  testthat::expect_match(prompt, "compare those within-group effects directly", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not explain by adding, subtracting, or decomposing model coefficients", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not use the phrase interaction term", fixed = TRUE)
   testthat::expect_no_match(prompt, "component-by-component", fixed = TRUE)
 })
 

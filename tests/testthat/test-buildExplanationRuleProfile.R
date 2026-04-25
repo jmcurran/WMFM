@@ -76,9 +76,14 @@ test_that("buildExplanationRuleProfile creates interaction structure", {
   expect_identical(out$skeletonId, "poisson_interaction")
   expect_identical(
     out$skeletonSteps$stepRole[1:3],
-    c("firstEffect", "secondEffect", "effectComparison")
+    c("firstWithinGroupEffect", "secondWithinGroupEffect", "effectComparison")
   )
-  expect_match(out$effectLanguage, "then compare", fixed = TRUE)
+  expect_match(out$effectLanguage, "within each relevant group", fixed = TRUE)
+  expect_match(
+    out$skeletonSteps$instruction[out$skeletonSteps$stepRole == "effectComparison"],
+    "Compare the within-group effects directly",
+    fixed = TRUE
+  )
   expect_true("interactionTermMentioned" %in% out$qualityFlagsToCheck)
   expect_true("interaction term" %in% out$avoidTerms)
   expect_match(out$scaleGuidance, "expected counts", fixed = TRUE)
