@@ -64,3 +64,19 @@ testthat::test_that("lmToExplanationPrompt omits research question block when ab
     fixed = TRUE
   )
 })
+
+
+test_that("lmToExplanationPrompt includes cautious CI and non-redundant final answer guidance", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+  fit = stats::lm(Exam ~ Test, data = df)
+  attr(fit, "wmfm_research_question") = "How does final exam mark tend to change as the test mark changes?"
+  attr(fit, "wmfm_dataset_doc") = "Stats 20x Summer School Data"
+  attr(fit, "wmfm_dataset_name") = "s20x"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "Approximate proportion of variation explained by the model: 59%", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not infer course level", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not repeat model-fit statistics in the final paragraph", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not write that the true effect is likely to fall inside the confidence interval", fixed = TRUE)
+})

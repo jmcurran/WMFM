@@ -15,6 +15,9 @@ lmToExplanationPrompt = function(model) {
   modelFrame = model.frame(model)
   response = names(modelFrame)[1]
   n = nrow(modelFrame)
+  predictors = names(modelFrame)[-1]
+  isInterceptOnlyModel = length(predictors) == 0
+
   if (inherits(model, "glm")) {
     fam = model$family$family
     link = model$family$link
@@ -25,8 +28,12 @@ lmToExplanationPrompt = function(model) {
     )
   } else {
     modelSummary = summary(model)
-    r2 = round(modelSummary$r.squared, 3)
-    r2Text = glue::glue("Approximate proportion of variation explained by the model: {r2}")
+    if (isInterceptOnlyModel) {
+      r2Text = ""
+    } else {
+      r2 = paste0(round(modelSummary$r.squared * 100), "%")
+      r2Text = glue::glue("Approximate proportion of variation explained by the model: {r2}")
+    }
     modelDesc = "This is a linear regression model with Gaussian errors and identity link."
     fam = "gaussian"
     link = "identity"
@@ -40,7 +47,6 @@ lmToExplanationPrompt = function(model) {
     "The outcome is continuous, so the model describes how the mean response changes."
   }
 
-  predictors = names(modelFrame)[-1]
   numericAnchorInfo = buildModelNumericAnchorInfo(
     model = model,
     mf = modelFrame,
@@ -142,6 +148,8 @@ Number of observations: {n}
 {r2Text}
 If an R-squared value is shown above, briefly explain what it says about how well
 the model explains variation in the response.
+For intercept-only models, do not discuss R-squared, variation explained, model fit, or the absence of predictors unless the user specifically asks about them.
+For intercept-only models, answer using the supplied formatted estimate and confidence interval; do not give generic statements about constants or intervals without the numbers.
 
 {numericAnchorInfo$promptText}
 

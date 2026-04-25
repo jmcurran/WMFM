@@ -14,7 +14,11 @@ test_that("buildExplanationRuleProfile creates intercept-only rules", {
 
   expect_identical(out$skeletonId, "lm_interceptOnly")
   expect_identical(out$comparisonScope, "none")
-  expect_true("modelConstraint" %in% out$skeletonSteps$stepRole)
+  expect_identical(
+    out$skeletonSteps$stepRole,
+    c("estimate", "uncertainty", "answer")
+  )
+  expect_false("modelConstraint" %in% out$skeletonSteps$stepRole)
   expect_true("interceptOnlyMentionsPredictors" %in% out$qualityFlagsToCheck)
   expect_true("lmInterceptOnlyUsesRSquared" %in% out$qualityFlagsToCheck)
 })

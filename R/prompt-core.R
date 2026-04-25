@@ -27,7 +27,8 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
 
   contractBody = paste(
     "Guidelines:",
-    "- If dataset documentation is provided, summarise it in at most one short clause.",
+    "- If dataset documentation is provided, use it only to define variables when needed; do not guess course level, study level, or other background details from abbreviated data set names.",
+    "- Do not infer course level, study level, or other background details from abbreviated data set names such as s20x.",
     "- Briefly explain what the response represents and what the predictors represent, defining predictors in-line without bullet points.",
     "",
     "- Start the explanation by describing the outcome and the main comparison in plain language.",
@@ -90,6 +91,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- Avoid phrasing that mimics hypothesis testing (e.g. \"significantly different\", \"reject\", \"different from zero\", or \"provides strong evidence for\").",
     "- Present the point estimate first, then describe uncertainty using the confidence interval.",
     "- Explain confidence intervals in plain language without assigning probability to the parameter (e.g. \"values between L and U are consistent with the data\" or \"effects in this range cannot be ruled out by the data\").",
+    "- Do not write that the true effect is likely to fall inside the confidence interval or that we can be reasonably sure the true effect is inside the interval.",
     "- Do not interpret confidence intervals as hypothesis tests and do not describe them in terms of \"difference from zero\".",
     "- If a confidence interval includes 0, say there is weak or uncertain evidence for a clear effect, because the data are consistent with anything from a small decrease to a small increase.",
     "- For multiplicative effects on counts or odds, do not say a confidence interval lies below zero.",
@@ -122,7 +124,8 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "  When interpreting confidence intervals, describe them as showing a decrease throughout the interval, or as staying below the no-change value of 1.",
     "",
     "- Only discuss overall model fit when a standard R-squared is provided (linear models only).",
-    "- If overall model fit is described, mention it briefly at the end.",
+    "- If overall model fit is described, mention it once briefly and do not repeat it in the final answer unless it directly answers the research question.",
+    "- Do not repeat model-fit statistics in the final paragraph unless model fit directly answers the research question.",
     "",
     "- Do not use section headings or bold labels.",
     "- Write as a single short paragraph (or at most two), not a bulleted list.",
