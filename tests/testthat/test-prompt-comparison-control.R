@@ -54,7 +54,8 @@ testthat::test_that("lmToExplanationPrompt gives logistic factor comparison safe
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
   testthat::expect_match(prompt, "For logistic factor effects, use probabilities", fixed = TRUE)
-  testthat::expect_match(prompt, "odds ratio or odds multiplier to describe the direct group comparison", fixed = TRUE)
+  testthat::expect_match(prompt, "supplied odds ratio to describe the direct group comparison", fixed = TRUE)
+  testthat::expect_match(prompt, "Prefer the direct odds-ratio row", fixed = TRUE)
   testthat::expect_match(prompt, "Do not compare separate group odds intervals", fixed = TRUE)
   testthat::expect_match(prompt, "CI overlap or non-overlap", fixed = TRUE)
 })

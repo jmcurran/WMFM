@@ -376,6 +376,16 @@ buildNoInteractionConfidenceIntervalRows = function(
         appendRow = appendRow
       )
     }
+
+    addLogisticTwoLevelFactorComparisonRow(
+      model = model,
+      mf = mf,
+      familyObj = familyObj,
+      level = level,
+      baseInfo = baseInfo,
+      factorName = factorName,
+      appendRow = appendRow
+    )
   }
 
   for (numericName in numericNames) {
@@ -617,6 +627,140 @@ addFittedQuantityRows = function(
   }
 
   invisible(NULL)
+}
+
+#' Add an odds-ratio row for a two-level logistic factor comparison
+#'
+#' Adds a direct factor-comparison row for two-level binomial-logit models.
+#' Fitted values remain available on the probability scale, while this row gives
+#' the direct odds-ratio comparison needed to answer factor-comparison questions
+#' without reasoning from separate raw group odds or interval overlap.
+#'
+#' @param model A fitted model object.
+#' @param mf Model frame.
+#' @param familyObj Optional GLM family object.
+#' @param level Confidence level.
+#' @param baseInfo Base-setting information.
+#' @param factorName Name of the two-level factor predictor.
+#' @param appendRow Row appender closure.
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @keywords internal
+addLogisticTwoLevelFactorComparisonRow = function(
+    model,
+    mf,
+    familyObj,
+    level,
+    baseInfo,
+    factorName,
+    appendRow
+) {
+
+  if (is.null(familyObj) || !isSupportedLogisticModel(model = model)) {
+    return(invisible(NULL))
+  }
+
+  if (!factorName %in% names(mf) || !is.factor(mf[[factorName]])) {
+    return(invisible(NULL))
+  }
+
+  levs = levels(mf[[factorName]])
+
+  if (length(levs) != 2) {
+    return(invisible(NULL))
+  }
+
+  referenceData = baseInfo$baseRow
+  comparisonData = baseInfo$baseRow
+  referenceData[[factorName]] = factor(levs[1], levels = levs)
+  comparisonData[[factorName]] = factor(levs[2], levels = levs)
+
+  weights = buildNewDataDifferenceWeights(
+    model = model,
+    referenceData = referenceData,
+    comparisonData = comparisonData
+  )
+
+  if (length(weights) == 0) {
+    return(invisible(NULL))
+  }
+
+  interval = buildLinearCombinationInterval(
+    model = model,
+    weights = weights,
+    level = level
+  )
+
+  notation = buildConfidenceIntervalNotation(model = model, mf = mf)
+  quantity = paste0(
+    notation$oddsSuccess,
+    " odds ratio comparing ",
+    factorName,
+    " = ",
+    levs[2],
+    " with ",
+    factorName,
+    " = ",
+    levs[1]
+  )
+
+  settings = paste0(
+    factorName,
+    " comparison: ",
+    levs[2],
+    " versus ",
+    levs[1],
+    ". ",
+    buildOtherBaseSettingsText(
+      mf = mf,
+      baseRow = baseInfo$baseRow,
+      excludeVarName = factorName,
+      numericReference = baseInfo$numericReference
+    )
+  )
+
+  appendRow(
+    quantity = quantity,
+    estimate = exp(interval$estimate),
+    lower = exp(interval$lower),
+    upper = exp(interval$upper),
+    scale = "odds ratio",
+    section = "effect",
+    settings = settings,
+    weights = interval$weights,
+    scaleNote = "Computed as the direct log-odds contrast between the two factor levels, then exponentiated to the odds-ratio scale."
+  )
+
+  invisible(NULL)
+}
+
+#' Build coefficient weights for a difference between two new-data rows
+#'
+#' @param model A fitted model object.
+#' @param referenceData One-row reference data frame.
+#' @param comparisonData One-row comparison data frame.
+#'
+#' @return A named numeric vector of non-zero coefficient weights.
+#' @keywords internal
+buildNewDataDifferenceWeights = function(model, referenceData, comparisonData) {
+
+  tt = stats::delete.response(stats::terms(model))
+  referenceMatrix = stats::model.matrix(tt, data = referenceData)
+  comparisonMatrix = stats::model.matrix(tt, data = comparisonData)
+
+  coefNames = names(stats::coef(model))
+  commonNames = intersect(coefNames, intersect(colnames(referenceMatrix), colnames(comparisonMatrix)))
+
+  if (length(commonNames) == 0) {
+    return(numeric(0))
+  }
+
+  weights = as.numeric(comparisonMatrix[1, commonNames, drop = TRUE]) -
+    as.numeric(referenceMatrix[1, commonNames, drop = TRUE])
+  names(weights) = commonNames
+  weights = weights[abs(weights) > 1e-12]
+
+  weights
 }
 
 #' Add a numeric-effect CI row
@@ -1399,6 +1543,7 @@ mapConfidenceIntervalDisplayScale = function(scale, modelFramework) {
       probability = "probability",
       odds = "odds",
       "odds multiplier" = "oddsMultiplier",
+      "odds ratio" = "oddsMultiplier",
       coefficient = "coefficient",
       scale
     ))
@@ -1437,6 +1582,7 @@ mapConfidenceIntervalPrimaryScale = function(scale, modelFramework) {
       probability = "probability",
       odds = "odds",
       "odds multiplier" = "odds multiplier",
+      "odds ratio" = "odds ratio",
       coefficient = "log-odds coefficient",
       scale
     ))
@@ -1475,6 +1621,7 @@ mapConfidenceIntervalSecondaryScale = function(scale, modelFramework) {
       probability = "odds",
       odds = "log-odds",
       "odds multiplier" = "log-odds coefficient",
+      "odds ratio" = "log-odds contrast",
       coefficient = "odds multiplier",
       ""
     ))

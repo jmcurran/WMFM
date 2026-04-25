@@ -70,3 +70,33 @@ testthat::test_that("logistic formatted prompt quantities prefer probability bas
   testthat::expect_no_match(promptBlock, "odds scale", fixed = TRUE)
   testthat::expect_no_match(promptBlock, "1.9:1", fixed = TRUE)
 })
+
+
+testthat::test_that("logistic factor formatted prompt quantities include a direct odds ratio", {
+  stats20xPath = system.file("extdata", "STATS20x.txt", package = "WMFM")
+
+  if (!nzchar(stats20xPath)) {
+    sourcePath = file.path("inst", "extdata", "STATS20x.txt")
+    if (file.exists(sourcePath)) {
+      stats20xPath = sourcePath
+    }
+  }
+
+  testthat::expect_true(nzchar(stats20xPath))
+
+  courseDf = utils::read.table(
+    stats20xPath,
+    header = TRUE,
+    sep = "\t",
+    stringsAsFactors = TRUE
+  )
+
+  fit = stats::glm(Pass ~ Attend, family = stats::binomial(), data = courseDf)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+
+  testthat::expect_match(promptBlock, "Baseline or fitted values:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "odds ratio scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "odds ratio comparing", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "odds scale", fixed = TRUE)
+})
