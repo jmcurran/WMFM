@@ -68,6 +68,10 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  promptValidationGuardBlock = buildPromptValidationGuardBlock(
+    model = model,
+    mf = modelFrame
+  )
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -154,6 +158,8 @@ Interpretation rules for numeric predictors:
 {responseScaleControlBlock}
 
 {comparisonControlBlock}
+
+{promptValidationGuardBlock}
 ")
 
   prompt = composeWmfmPrompt(

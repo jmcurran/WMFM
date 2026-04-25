@@ -126,6 +126,10 @@ buildModelExplanationAudit = function(model) {
       comparisonControlPrompt = buildComparisonControlPromptBlock(
         model = model,
         mf = mf
+      ),
+      promptValidationGuardPrompt = buildPromptValidationGuardBlock(
+        model = model,
+        mf = mf
       )
     )
   )
@@ -199,6 +203,7 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     explanationSkeletonIncluded = TRUE,
     responseScaleControlIncluded = TRUE,
     comparisonControlIncluded = TRUE,
+    promptValidationGuardIncluded = TRUE,
     rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,
@@ -220,7 +225,8 @@ buildModelExplanationAuditPromptRules = function(model) {
     "Use the chosen numeric anchor for baseline and conditional interpretation instead of automatically using 0.",
     "Use confidence intervals to support cautious conclusions about direction and size, without treating them as hypothesis tests.",
     "Avoid raw transformation expressions, coefficient jargon, and unnecessary numerical precision.",
-    "Use comparison-scope guidance to avoid unnecessary exhaustive pairwise treatment or group comparisons."
+    "Use comparison-scope guidance to avoid unnecessary exhaustive pairwise treatment or group comparisons.",
+    "Use deterministic validation-guard targets to flag likely prompt failures without automatically regenerating explanations."
   )
 
   researchQuestion = trimws(attr(model, "wmfm_research_question", exact = TRUE) %||% "")
