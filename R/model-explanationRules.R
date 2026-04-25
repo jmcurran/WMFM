@@ -173,11 +173,11 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
 
   if (grepl("_interaction$", skeletonId)) {
     return(buildExplanationSkeletonDataFrame(c(
-      firstEffect = "Describe the effect within the first relevant group or selected value.",
-      secondEffect = "Describe the corresponding effect within the second relevant group or selected value.",
-      effectComparison = "Compare those effects directly without using coefficient decomposition.",
-      uncertainty = "Give uncertainty for the relevant effect or comparison where available.",
-      answer = "Answer the research question in plain language."
+      firstWithinGroupEffect = "Describe the effect within the first relevant group or selected value, keeping the estimate and uncertainty together if available.",
+      secondWithinGroupEffect = "Describe the same kind of effect within the second relevant group or selected value, using the same interpretation scale.",
+      effectComparison = "Compare the within-group effects directly, focusing on whether one effect is larger, smaller, steeper, weaker, or in a different direction.",
+      interactionConclusion = "State what the different within-group effects mean for the research question in plain language.",
+      answer = "Answer the research question without decomposing coefficients or naming the interaction term."
     )))
   }
 
@@ -286,7 +286,7 @@ buildExplanationEffectLanguage = function(modelStructure, predictorTypes, hasInt
   }
 
   if (isTRUE(hasInteractions) || identical(modelStructure, "interaction")) {
-    return("Describe effects within groups or selected values first, then compare those effects.")
+    return("Describe the effect within each relevant group or selected value first, then compare the within-group effects directly.")
   }
 
   hasNumeric = length(predictorTypes$numeric) > 0

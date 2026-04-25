@@ -14,13 +14,6 @@
 lmToExplanationPrompt = function(model) {
   modelFrame = model.frame(model)
   response = names(modelFrame)[1]
-  coefTable = coef(summary(model))
-  coefText = paste(capture.output(print(round(coefTable, 4))), collapse = "\n")
-
-  ci = confint(model)
-  ci = round(ci, 4)
-  ciText = paste(capture.output(print(ci)), collapse = "\n")
-
   n = nrow(modelFrame)
   if (inherits(model, "glm")) {
     fam = model$family$family
@@ -57,6 +50,27 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame,
     predictorNames = predictors
+  )
+  formattedQuantityBlock = buildFormattedPromptQuantityBlock(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors
+  )
+  explanationSkeletonBlock = buildExplanationSkeletonPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
+  responseScaleControlBlock = buildResponseScaleControlPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
+  comparisonControlBlock = buildComparisonControlPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
+  promptValidationGuardBlock = buildPromptValidationGuardBlock(
+    model = model,
+    mf = modelFrame
   )
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
@@ -137,11 +151,15 @@ Interpretation rules for numeric predictors:
 
 {anchoredBaselineBlock}
 
-Coefficient table:
-{coefText}
+{explanationSkeletonBlock}
 
-Confidence intervals (95%):
-{ciText}
+{formattedQuantityBlock}
+
+{responseScaleControlBlock}
+
+{comparisonControlBlock}
+
+{promptValidationGuardBlock}
 ")
 
   prompt = composeWmfmPrompt(

@@ -8,6 +8,8 @@ __MACOSX/
 .Ruserdata
 *Rcheck/
 *.sh
+chatgpt-bundles*
+chatgpt-bundles/*
 build*
 build/*
 .wmfm_built_pkg_path

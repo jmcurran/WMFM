@@ -109,6 +109,27 @@ buildModelExplanationAudit = function(model) {
         model = model,
         mf = mf,
         predictorNames = predictorNames
+      ),
+      formattedQuantityPrompt = buildFormattedPromptQuantityBlock(
+        model = model,
+        mf = mf,
+        predictorNames = predictorNames
+      ),
+      explanationSkeletonPrompt = buildExplanationSkeletonPromptBlock(
+        model = model,
+        mf = mf
+      ),
+      responseScaleControlPrompt = buildResponseScaleControlPromptBlock(
+        model = model,
+        mf = mf
+      ),
+      comparisonControlPrompt = buildComparisonControlPromptBlock(
+        model = model,
+        mf = mf
+      ),
+      promptValidationGuardPrompt = buildPromptValidationGuardBlock(
+        model = model,
+        mf = mf
       )
     )
   )
@@ -178,6 +199,12 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     researchQuestion = if (nzchar(researchQuestion)) researchQuestion else NA_character_,
     coefficientTableIncluded = TRUE,
     confidenceIntervalsIncluded = TRUE,
+    formattedQuantitiesIncluded = TRUE,
+    explanationSkeletonIncluded = TRUE,
+    responseScaleControlIncluded = TRUE,
+    comparisonControlIncluded = TRUE,
+    promptValidationGuardIncluded = TRUE,
+    rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,
     nObservations = nrow(mf)
@@ -197,7 +224,9 @@ buildModelExplanationAuditPromptRules = function(model) {
     "Interpret effects on a single student-facing scale rather than leaving them on the raw coefficient scale.",
     "Use the chosen numeric anchor for baseline and conditional interpretation instead of automatically using 0.",
     "Use confidence intervals to support cautious conclusions about direction and size, without treating them as hypothesis tests.",
-    "Avoid raw transformation expressions, coefficient jargon, and unnecessary numerical precision."
+    "Avoid raw transformation expressions, coefficient jargon, and unnecessary numerical precision.",
+    "Use comparison-scope guidance to avoid unnecessary exhaustive pairwise treatment or group comparisons.",
+    "Use deterministic validation-guard targets to flag likely prompt failures without automatically regenerating explanations."
   )
 
   researchQuestion = trimws(attr(model, "wmfm_research_question", exact = TRUE) %||% "")
