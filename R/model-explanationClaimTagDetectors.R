@@ -33,7 +33,7 @@ detectExplanationClaimTags = function(
     return("researchQuestion")
   }
 
-  typicalCaseTag = detectTypicalCase(claimText = claimText, audit = audit)
+  typicalCaseTag = detectTypicalCase(claimText = claimText, audit = audit, model = model)
   effectTag = detectEffect(claimText = claimText, audit = audit, model = model)
   uncertaintyTag = detectUncertainty(claimText = claimText)
   comparisonTag = detectComparison(claimText = claimText, audit = audit)
@@ -111,8 +111,21 @@ detectResearchQuestion = function(claimText, teachingSummary = NULL, model = NUL
 #' @return Logical scalar.
 #' @keywords internal
 #' @noRd
-detectTypicalCase = function(claimText, audit) {
-  sentenceMatchesBaselineEvidence(claimText = claimText, audit = audit)
+detectTypicalCase = function(claimText, audit, model = NULL) {
+
+  if (sentenceMatchesBaselineEvidence(claimText = claimText, audit = audit)) {
+    return(TRUE)
+  }
+
+  if (isInterceptOnlyExplanationModel(model) && sentenceLooksLikePointEstimate(claimText)) {
+    return(TRUE)
+  }
+
+  looksLikeStandaloneEstimate = sentenceLooksLikePointEstimate(claimText) &&
+    detectUncertainty(claimText) &&
+    !sentenceMentionsModelledChange(claimText = claimText, audit = audit, model = model)
+
+  isTRUE(looksLikeStandaloneEstimate)
 }
 
 #' Detect effect wording in a sentence
@@ -390,6 +403,28 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
     nzchar(label) && grepl(label, text, fixed = TRUE)
   }, logical(1)))
 
+  baselineEstimateTerms = character(0)
+
+  if (is.data.frame(audit$baselineEvidence) && nrow(audit$baselineEvidence) > 0 && "estimate" %in% names(audit$baselineEvidence)) {
+    baselineEstimateTerms = unlist(lapply(audit$baselineEvidence$estimate, function(value) {
+      c(
+        normaliseExplanationNumericString(value),
+        normaliseExplanationNumericString(round(as.numeric(value), digits = 1)),
+        normaliseExplanationNumericString(round(as.numeric(value)))
+      )
+    }), use.names = FALSE)
+  }
+
+  estimateMatch = any(vapply(unique(stats::na.omit(baselineEstimateTerms)), function(term) {
+    nzchar(term) && grepl(term, text, fixed = TRUE)
+  }, logical(1)))
+
+  pointEstimateCue = grepl(
+    "mean|average|estimated|estimate|predicted|predicts|expected|probability|chance|mark|score|count|value",
+    text,
+    perl = TRUE
+  )
+
   anchoredExpectedCue = termMatch &&
     grepl(
       "expected count|expected value|are expected to occur|is expected to occur|are expected|is expected|predicts an average|average of about|average of",
@@ -397,7 +432,47 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
       perl = TRUE
     )
 
-  baselineCue || labelMatch || anchoredExpectedCue || (baselineCue && termMatch)
+  baselineCue || labelMatch || anchoredExpectedCue || (baselineCue && termMatch) || (estimateMatch && pointEstimateCue)
+}
+
+
+#' Check whether a model is intercept-only for explanation tagging
+#'
+#' @param model Optional fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isInterceptOnlyExplanationModel = function(model = NULL) {
+
+  if (is.null(model)) {
+    return(FALSE)
+  }
+
+  termLabels = tryCatch(attr(stats::terms(model), "term.labels"), error = function(e) character(0))
+  length(termLabels) == 0
+}
+
+#' Check whether a sentence gives a point estimate
+#'
+#' @param claimText Character scalar.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+sentenceLooksLikePointEstimate = function(claimText) {
+
+  text = tolower(claimText %||% "")
+
+  hasPointEstimateCue = grepl(
+    "mean|average|estimated|estimate|predicted|predicts|expected|probability|chance|mark|score|count|value",
+    text,
+    perl = TRUE
+  )
+
+  hasNumber = grepl("[0-9]", text, perl = TRUE)
+
+  hasPointEstimateCue && hasNumber
 }
 
 #' Check whether a sentence matches factor reference-level evidence
@@ -543,27 +618,49 @@ sentenceLooksLikeResearchAnswer = function(
     return(FALSE)
   }
 
-  researchQuestion = getStoredResearchQuestion(
-    teachingSummary = teachingSummary,
-    model = model
-  )
-
-  if (!nzchar(researchQuestion)) {
-    return(FALSE)
-  }
-
   isFinalSentence = !is.na(sentenceIndex) && !is.na(totalClaims) &&
     totalClaims >= 1L && sentenceIndex == totalClaims
 
-  if (!isFinalSentence) {
-    return(FALSE)
-  }
+  isNearFinalSentence = !is.na(sentenceIndex) && !is.na(totalClaims) &&
+    totalClaims >= 1L && sentenceIndex >= max(totalClaims - 1L, 1L)
 
   explicitAnswerCue = grepl(
     "^(overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
     text,
     perl = TRUE
   )
+
+  if (!isFinalSentence && !(isNearFinalSentence && explicitAnswerCue)) {
+    return(FALSE)
+  }
+
+  pointEstimateWithUncertainty = isTRUE(uncertaintyTag) &&
+    sentenceLooksLikePointEstimate(claimText)
+
+  if (isNearFinalSentence && explicitAnswerCue && pointEstimateWithUncertainty) {
+    return(TRUE)
+  }
+
+  researchQuestion = getStoredResearchQuestion(
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  if (!nzchar(researchQuestion)) {
+    return(
+      isTRUE(explicitAnswerCue) &&
+        (
+          isTRUE(effectTag) ||
+            isTRUE(comparisonTag) ||
+            isTRUE(typicalCaseTag) ||
+            (isTRUE(uncertaintyTag) && sentenceLooksLikePointEstimate(claimText))
+        )
+    )
+  }
+
+  if (isTRUE(typicalCaseTag) && !isTRUE(effectTag) && !isTRUE(comparisonTag)) {
+    return(isTRUE(explicitAnswerCue) || isInterceptOnlyExplanationModel(model))
+  }
 
   if (isTRUE(typicalCaseTag)) {
     return(FALSE)
