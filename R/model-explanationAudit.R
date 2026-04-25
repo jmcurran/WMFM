@@ -122,6 +122,10 @@ buildModelExplanationAudit = function(model) {
       responseScaleControlPrompt = buildResponseScaleControlPromptBlock(
         model = model,
         mf = mf
+      ),
+      comparisonControlPrompt = buildComparisonControlPromptBlock(
+        model = model,
+        mf = mf
       )
     )
   )
@@ -194,6 +198,7 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     formattedQuantitiesIncluded = TRUE,
     explanationSkeletonIncluded = TRUE,
     responseScaleControlIncluded = TRUE,
+    comparisonControlIncluded = TRUE,
     rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,
@@ -214,7 +219,8 @@ buildModelExplanationAuditPromptRules = function(model) {
     "Interpret effects on a single student-facing scale rather than leaving them on the raw coefficient scale.",
     "Use the chosen numeric anchor for baseline and conditional interpretation instead of automatically using 0.",
     "Use confidence intervals to support cautious conclusions about direction and size, without treating them as hypothesis tests.",
-    "Avoid raw transformation expressions, coefficient jargon, and unnecessary numerical precision."
+    "Avoid raw transformation expressions, coefficient jargon, and unnecessary numerical precision.",
+    "Use comparison-scope guidance to avoid unnecessary exhaustive pairwise treatment or group comparisons."
   )
 
   researchQuestion = trimws(attr(model, "wmfm_research_question", exact = TRUE) %||% "")

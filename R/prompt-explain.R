@@ -64,6 +64,10 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  comparisonControlBlock = buildComparisonControlPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -148,6 +152,8 @@ Interpretation rules for numeric predictors:
 {formattedQuantityBlock}
 
 {responseScaleControlBlock}
+
+{comparisonControlBlock}
 ")
 
   prompt = composeWmfmPrompt(
