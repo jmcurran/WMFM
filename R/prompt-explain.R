@@ -60,6 +60,10 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  responseScaleControlBlock = buildResponseScaleControlPromptBlock(
+    model = model,
+    mf = modelFrame
+  )
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -142,6 +146,8 @@ Interpretation rules for numeric predictors:
 {explanationSkeletonBlock}
 
 {formattedQuantityBlock}
+
+{responseScaleControlBlock}
 ")
 
   prompt = composeWmfmPrompt(

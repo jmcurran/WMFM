@@ -118,6 +118,10 @@ buildModelExplanationAudit = function(model) {
       explanationSkeletonPrompt = buildExplanationSkeletonPromptBlock(
         model = model,
         mf = mf
+      ),
+      responseScaleControlPrompt = buildResponseScaleControlPromptBlock(
+        model = model,
+        mf = mf
       )
     )
   )
@@ -189,6 +193,7 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     confidenceIntervalsIncluded = TRUE,
     formattedQuantitiesIncluded = TRUE,
     explanationSkeletonIncluded = TRUE,
+    responseScaleControlIncluded = TRUE,
     rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,
