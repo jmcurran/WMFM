@@ -80,7 +80,10 @@ buildResponseScaleFamilyRules = function(modelFamily) {
   if (identical(modelFamily, "logistic")) {
     return(c(
       "- For fitted values, use probability language rather than log-odds language.",
-      "- For effects, use odds or odds-multiplier language only when the formatted quantity is on that scale.",
+      "- For numeric effects, use an odds multiplier only to describe the multiplicative change in odds for the stated change in the predictor.",
+      "- For factor comparisons, use an odds ratio or odds multiplier for the direct comparison rather than separately interpreting each group's raw odds.",
+      "- Do not reason from whether a single group's odds interval contains 1:1; use the direct comparison interval when discussing group differences.",
+      "- Do not use overlap or non-overlap of separate fitted-value intervals as evidence for a group difference.",
       "- Do not write log-odds, logit, or coefficient-scale interpretations as the main explanation."
     ))
   }

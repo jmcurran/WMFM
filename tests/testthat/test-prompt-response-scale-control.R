@@ -23,6 +23,10 @@ testthat::test_that("lmToExplanationPrompt includes logistic response-scale cont
   testthat::expect_match(prompt, "Response-scale control:", fixed = TRUE)
   testthat::expect_match(prompt, "Student-facing interpretation scale: probability", fixed = TRUE)
   testthat::expect_match(prompt, "For fitted values, use probability language rather than log-odds language.", fixed = TRUE)
+  testthat::expect_match(prompt, "Use odds ratios or odds multipliers only for effect sizes and direct comparisons.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not mix raw odds, probabilities, and odds ratios in the same reasoning chain", fixed = TRUE)
+  testthat::expect_match(prompt, "For factor comparisons, use an odds ratio or odds multiplier", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not use overlap or non-overlap of separate fitted-value intervals", fixed = TRUE)
   testthat::expect_match(prompt, "Do not describe raw coefficients as the substantive effects.", fixed = TRUE)
 })
 

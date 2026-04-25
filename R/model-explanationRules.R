@@ -262,7 +262,11 @@ buildExplanationScaleGuidance = function(modelProfile) {
   )
 
   if (identical(modelFamily, "logistic")) {
-    return("Explain fitted values as probabilities and use odds only when needed for effect interpretation; avoid log-odds.")
+    return(paste(
+      "Explain fitted values as probabilities.",
+      "Use odds ratios or odds multipliers only for effect sizes and direct comparisons.",
+      "Do not mix raw odds, probabilities, and odds ratios in the same reasoning chain; avoid log-odds."
+    ))
   }
 
   if (identical(modelFamily, "poisson")) {

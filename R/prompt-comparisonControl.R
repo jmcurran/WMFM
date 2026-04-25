@@ -68,6 +68,18 @@ buildComparisonControlPromptBlock = function(model, mf = NULL) {
     "- Keep uncertainty attached to the estimate or comparison being discussed."
   )
 
+  if (inherits(model, "glm") &&
+      identical(model$family$family, "binomial") &&
+      identical(model$family$link, "logit") &&
+      nrow(factorSummary) > 0) {
+    lines = c(
+      lines,
+      "- For logistic factor effects, use probabilities to describe fitted group outcomes and an odds ratio or odds multiplier to describe the direct group comparison.",
+      "- Do not compare separate group odds intervals with each other, and do not infer a group difference from CI overlap or non-overlap.",
+      "- Do not say the confidence interval for one group's raw odds covering 1:1 means there may be no group difference."
+    )
+  }
+
   if (nrow(factorSummary) > 0) {
     lines = c(
       lines,

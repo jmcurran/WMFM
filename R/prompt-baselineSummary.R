@@ -59,7 +59,7 @@ buildAnchoredBaselinePromptBlock = function(
   if (inherits(model, "glm") && identical(model$family$family, "poisson")) {
     baselineRows = baselineRows[baselineRows$scale == "expected value", , drop = FALSE]
   } else if (inherits(model, "glm") && identical(model$family$family, "binomial")) {
-    baselineRows = baselineRows[baselineRows$scale == "odds", , drop = FALSE]
+    baselineRows = baselineRows[baselineRows$scale == "probability", , drop = FALSE]
   }
 
   if (nrow(baselineRows) == 0) {
@@ -84,9 +84,10 @@ buildAnchoredBaselinePromptBlock = function(
 
   for (i in seq_len(nrow(baselineRows))) {
     label = baselineRows$quantity[[i]]
-    estimateText = formatConfidenceIntervalNumber(baselineRows$estimate[[i]])
-    lowerText = formatConfidenceIntervalNumber(baselineRows$lower[[i]])
-    upperText = formatConfidenceIntervalNumber(baselineRows$upper[[i]])
+    quantityType = getAnchoredBaselinePromptQuantityType(baselineRows[i, , drop = FALSE])
+    estimateText = formatExplanationQuantity(baselineRows$estimate[[i]], quantityType = quantityType)
+    lowerText = formatExplanationQuantity(baselineRows$lower[[i]], quantityType = quantityType)
+    upperText = formatExplanationQuantity(baselineRows$upper[[i]], quantityType = quantityType)
 
     line = paste0(
       "- ",
@@ -110,4 +111,19 @@ buildAnchoredBaselinePromptBlock = function(
   }
 
   paste(lines, collapse = "\n")
+}
+
+getAnchoredBaselinePromptQuantityType = function(row) {
+
+  scale = tolower(as.character(row$scale[[1]]))
+
+  if (grepl("probability", scale, fixed = TRUE)) {
+    return("probability")
+  }
+
+  if (grepl("odds", scale, fixed = TRUE)) {
+    return("odds")
+  }
+
+  "number"
 }

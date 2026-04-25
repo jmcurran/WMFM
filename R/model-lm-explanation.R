@@ -39,7 +39,7 @@ lmExplanation = function(model, chat, useCache = TRUE) {
 
   key = paste(
     "expl",
-    "v3-numeric-anchor-research-question",
+    "v4-stage12-logistic-scale-anchor",
     formulaStr,
     coefStr,
     numericAnchorInfo$cacheKey,

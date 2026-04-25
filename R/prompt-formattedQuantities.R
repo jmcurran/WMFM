@@ -52,6 +52,10 @@ buildFormattedPromptQuantityBlock = function(
   }
 
   quantityTable = quantityTable[quantityTable$ciSection %in% c("baseline", "effect", "contrast"), , drop = FALSE]
+  quantityTable = filterFormattedPromptQuantityTable(
+    quantityTable = quantityTable,
+    model = model
+  )
 
   if (nrow(quantityTable) == 0) {
     return("")
@@ -152,7 +156,11 @@ getFormattedPromptQuantityType = function(row) {
   scale = tolower(as.character(row$scale[[1]]))
   displayScale = tolower(as.character(row$displayScale[[1]] %||% ""))
   primaryScale = tolower(as.character(row$primaryScale[[1]] %||% ""))
-  scaleText = paste(scale, displayScale, primaryScale, collapse = " ")
+  scaleText = paste(c(scale, displayScale, primaryScale), collapse = " ")
+
+  if (grepl("multiplier", scaleText, fixed = TRUE) || grepl("ratio", scaleText, fixed = TRUE)) {
+    return("multiplier")
+  }
 
   if (grepl("probability", scaleText, fixed = TRUE)) {
     return("probability")
@@ -162,9 +170,31 @@ getFormattedPromptQuantityType = function(row) {
     return("odds")
   }
 
-  if (grepl("multiplier", scaleText, fixed = TRUE) || grepl("ratio", scaleText, fixed = TRUE)) {
-    return("multiplier")
+  "number"
+}
+
+filterFormattedPromptQuantityTable = function(quantityTable, model) {
+
+  if (!is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
+    return(quantityTable)
   }
 
-  "number"
+  if (!inherits(model, "glm") ||
+      !identical(model$family$family, "binomial") ||
+      !identical(model$family$link, "logit")) {
+    return(quantityTable)
+  }
+
+  scaleText = tolower(as.character(quantityTable$scale %||% ""))
+  isBaseline = quantityTable$ciSection %in% "baseline"
+  isEffectOrContrast = quantityTable$ciSection %in% c("effect", "contrast")
+  isProbability = grepl("probability", scaleText, fixed = TRUE)
+  isOddsMultiplier = grepl("odds multiplier", scaleText, fixed = TRUE) |
+    grepl("odds ratio", scaleText, fixed = TRUE)
+
+  keep = (!isBaseline & !isEffectOrContrast) |
+    (isBaseline & isProbability) |
+    (isEffectOrContrast & isOddsMultiplier)
+
+  quantityTable[keep, , drop = FALSE]
 }

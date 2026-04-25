@@ -55,7 +55,8 @@ test_that("lmToExplanationPrompt handles logistic models when zero lies inside t
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
   expect_match(prompt, "This is a generalised linear model with binomial family and logit link.", fixed = TRUE)
-  expect_match(prompt, "x: observed range = [-2, 3.5]; chosen anchor = 0 (0 lies inside the observed range.)", fixed = TRUE)
+  expect_match(prompt, "x: observed range = [-2, 3.5]; chosen anchor = 0.75", fixed = TRUE)
+  expect_match(prompt, "for logistic explanations, use the sample mean", fixed = TRUE)
   expect_match(prompt, "Keep the inferential register cautious and evidence-based.", fixed = TRUE)
   expect_match(prompt, 'Do not say that the data "confirm", "prove", "establish", or "demonstrate" an effect.', fixed = TRUE)
 })

@@ -55,11 +55,22 @@ chooseModelNumericReference = function(model = NULL, mf = NULL, predictorNames =
     logical(1)
   )
 
+  if (isLogisticModelForNumericReference(model)) {
+    return("mean")
+  }
+
   if (all(zeroInRange)) {
     return("zero")
   }
 
   "mean"
+}
+
+isLogisticModelForNumericReference = function(model) {
+
+  inherits(model, "glm") &&
+    identical(model$family$family, "binomial") &&
+    identical(model$family$link, "logit")
 }
 
 #' Build numeric-anchor metadata for model prompts and cache keys
@@ -136,7 +147,11 @@ buildModelNumericAnchorInfo = function(model = NULL, mf = NULL, predictorNames =
           reasonText = "0 lies inside the observed range."
         } else {
           anchorValue = mean(x)
-          reasonText = "0 lies outside the observed range, so use the sample mean instead."
+          if (isLogisticModelForNumericReference(model)) {
+            reasonText = "for logistic explanations, use the sample mean so fitted probabilities are described at a typical value rather than at 0."
+          } else {
+            reasonText = "0 lies outside the observed range, so use the sample mean instead."
+          }
         }
       }
 

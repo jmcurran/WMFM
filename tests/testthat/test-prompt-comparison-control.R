@@ -30,6 +30,35 @@ testthat::test_that("lmToExplanationPrompt allows targeted comparison guidance w
   testthat::expect_no_match(prompt, "With no research question asking for specific pairs", fixed = TRUE)
 })
 
+testthat::test_that("lmToExplanationPrompt gives logistic factor comparison safeguards", {
+  stats20xPath = system.file("extdata", "STATS20x.txt", package = "WMFM")
+
+  if (!nzchar(stats20xPath)) {
+    sourcePath = file.path("inst", "extdata", "STATS20x.txt")
+    if (file.exists(sourcePath)) {
+      stats20xPath = sourcePath
+    }
+  }
+
+  testthat::expect_true(nzchar(stats20xPath))
+
+  courseDf = utils::read.table(
+    stats20xPath,
+    header = TRUE,
+    sep = "\t",
+    stringsAsFactors = TRUE
+  )
+
+  fit = stats::glm(Pass ~ Attend, family = stats::binomial(), data = courseDf)
+  attr(fit, "wmfm_research_question") = "Do students who regularly attended class appear to have different odds of passing?"
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "For logistic factor effects, use probabilities", fixed = TRUE)
+  testthat::expect_match(prompt, "odds ratio or odds multiplier to describe the direct group comparison", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not compare separate group odds intervals", fixed = TRUE)
+  testthat::expect_match(prompt, "CI overlap or non-overlap", fixed = TRUE)
+})
+
 testthat::test_that("buildModelExplanationAudit records comparison-control prompt input", {
   dat = data.frame(
     y = c(10, 11, 12, 12, 20, 21, 19, 22, 31, 29, 30, 32),
