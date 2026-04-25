@@ -43,6 +43,7 @@ appServer = function(input, output, session) {
   packageScanStatus = reactiveVal(NULL)
   packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
   exampleChoices = reactiveVal(character(0))
+  developerModeUnlocked = reactiveVal(FALSE)
   exampleLoadStatus = reactiveVal("Choose a built-in example if you want the app to load a complete worked setup.")
 
   initialPackageChoices = tryCatch(
@@ -130,7 +131,7 @@ appServer = function(input, output, session) {
       {
         packageScanStatus("Preparing the built-in examples.")
         incProgress(0.25, detail = "Checking built-in examples")
-        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(input$developerMode))))
+        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(developerModeUnlocked()))))
 
         packageScanStatus("Checking installed packages for datasets.")
         incProgress(0.45, detail = "Checking installed packages")
@@ -165,8 +166,43 @@ appServer = function(input, output, session) {
       }
     )
   }, once = TRUE)
-  observeEvent(input$developerMode, {
-    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(input$developerMode)))
+  observeEvent(developerModeUnlocked(), {
+    exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(developerModeUnlocked())))
+  }, ignoreInit = TRUE)
+
+  output$developerModeStatus = renderText({
+    if (isTRUE(developerModeUnlocked())) {
+      return("Developer mode is unlocked.")
+    }
+
+    "Developer mode is locked."
+  })
+
+  observeEvent(input$unlockDeveloperModeBtn, {
+    passwordOk = tryCatch(
+      verifyDeveloperModePassword(input$developerModePassword %||% ""),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error", duration = 8)
+        FALSE
+      }
+    )
+
+    session$sendInputMessage("developerModePassword", list(value = ""))
+
+    if (!isTRUE(passwordOk)) {
+      developerModeUnlocked(FALSE)
+      showNotification("Incorrect password. Developer mode remains locked.", type = "error", duration = 6)
+      return(NULL)
+    }
+
+    developerModeUnlocked(TRUE)
+    showNotification("Developer mode unlocked.", type = "message", duration = 5)
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$lockDeveloperModeBtn, {
+    developerModeUnlocked(FALSE)
+    session$sendInputMessage("developerModePassword", list(value = ""))
+    showNotification("Developer mode locked.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
   observeEvent(input$data_package, {
@@ -336,7 +372,7 @@ appServer = function(input, output, session) {
   })
 
   developerFeedbackReport = reactive({
-    if (!isTRUE(input$developerMode)) {
+    if (!isTRUE(developerModeUnlocked())) {
       return(NULL)
     }
 
@@ -3710,9 +3746,9 @@ $$")
                 tagList(
                   renderExplanationClaimEvidenceUi(
                     claimMap = claimMap,
-                    developerMode = isTRUE(input$developerMode)
+                    developerMode = isTRUE(developerModeUnlocked())
                   ),
-                  if (isTRUE(input$developerMode)) {
+                  if (isTRUE(developerModeUnlocked())) {
                     tagList(
                       tags$hr(class = "hr-tight"),
                       textAreaInput(

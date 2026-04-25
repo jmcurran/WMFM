@@ -342,13 +342,25 @@ appUI = function() {
       tabPanel(
         "Settings",
         h4("Developer mode"),
-        checkboxInput(
-          inputId = "developerMode",
-          label = "Show developer-only controls and test examples",
-          value = FALSE
+        passwordInput(
+          inputId = "developerModePassword",
+          label = "Developer mode password",
+          placeholder = "Enter password to unlock developer mode"
         ),
+        actionButton(
+          inputId = "unlockDeveloperModeBtn",
+          label = "Unlock developer mode",
+          class = "btn-primary btn-sm"
+        ),
+        actionButton(
+          inputId = "lockDeveloperModeBtn",
+          label = "Lock developer mode",
+          class = "btn-secondary btn-sm"
+        ),
+        tags$br(), tags$br(),
+        textOutput("developerModeStatus"),
         helpText(
-          "Developer mode exposes diagnostic controls and examples whose names begin with test."
+          "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
         ),
         tags$hr(class = "hr-tight"),
         h4("Chat provider"),

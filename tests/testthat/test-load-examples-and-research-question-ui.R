@@ -138,26 +138,32 @@ test_that("app server keeps pending example interactions available", {
   ))
 })
 
-test_that("developer mode source controls are present", {
+test_that("developer mode source controls are password protected", {
   skipIfExampleSourceFilesUnavailable()
 
   uiText = readProjectFileTextForExampleTests("app-ui.R")
   serverText = readProjectFileTextForExampleTests("app-server.R")
 
   expect_true(grepl(
-    'inputId = "developerMode"',
+    'inputId = "developerModePassword"',
     uiText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
-    "Show developer-only controls and test examples",
+    "Unlock developer mode",
     uiText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
-    "includeTestExamples = isTRUE(input$developerMode)",
+    "verifyDeveloperModePassword",
+    serverText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    "includeTestExamples = isTRUE(developerModeUnlocked())",
     serverText,
     fixed = TRUE
   ))
