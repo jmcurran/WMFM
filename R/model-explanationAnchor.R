@@ -212,7 +212,7 @@ buildExplanationAnchorRow = function(
   data.frame(
     anchorVariable = varName,
     anchorValue = chosen$value,
-    anchorDisplayValue = if (is.na(chosen$value)) NA_character_ else formatExplanationAnchor(chosen$value),
+    anchorDisplayValue = if (is.na(chosen$value)) NA_character_ else formatExplanationAnchor(chosen$value, sigDigits = 2),
     anchorSource = chosen$source,
     anchorReason = chosen$reason,
     anchorScale = "original",
