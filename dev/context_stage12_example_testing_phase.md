@@ -1,4 +1,4 @@
-# WMFM example testing phase after Stages 9, 10, and developer-mode protection
+# WMFM example testing phase after Stages 9, 10, and developer-mode protection (Stage 11)
 
 ## Context
 
