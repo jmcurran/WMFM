@@ -15,7 +15,7 @@
 #'
 #' @importFrom shiny reactive reactiveValues reactiveVal renderPlot renderUI renderText
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
-#' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput
+#' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput updateCheckboxInput
 #' @importFrom shiny updateSelectInput showModal removeModal modalDialog
 #' @importFrom shiny renderTable tableOutput downloadButton downloadHandler
 #' @importFrom shiny radioButtons textInput textAreaInput modalButton actionButton

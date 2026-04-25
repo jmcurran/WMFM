@@ -1,4 +1,4 @@
-#' Store a developer-mode password hash
+#' Create a developer-mode password hash
 #'
 #' Creates a salted password hash suitable for storing in the
 #' `WMFM_DEVELOPER_MODE_PASSWORD_HASH` environment variable.
@@ -7,8 +7,8 @@
 #'
 #' @return A salted password hash string.
 #'
-#' @keywords internal
-storeDeveloperModePasswordHash = function(password) {
+#' @export
+makeDeveloperModePasswordHash = function(password) {
   if (!requireNamespace("sodium", quietly = TRUE)) {
     stop("The sodium package is required to create the developer-mode password hash.")
   }
@@ -18,6 +18,19 @@ storeDeveloperModePasswordHash = function(password) {
   }
 
   sodium::password_store(password)
+}
+
+#' Store a developer-mode password hash
+#'
+#' Backward-compatible alias for `makeDeveloperModePasswordHash()`.
+#'
+#' @param password Character scalar giving the plain-text password.
+#'
+#' @return A salted password hash string.
+#'
+#' @keywords internal
+storeDeveloperModePasswordHash = function(password) {
+  makeDeveloperModePasswordHash(password)
 }
 
 #' Verify the developer-mode password

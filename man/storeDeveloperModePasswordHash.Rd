@@ -13,7 +13,6 @@ storeDeveloperModePasswordHash(password)
 A salted password hash string.
 }
 \description{
-Creates a salted password hash suitable for storing in the
-\code{WMFM_DEVELOPER_MODE_PASSWORD_HASH} environment variable.
+Backward-compatible alias for \code{makeDeveloperModePasswordHash()}.
 }
 \keyword{internal}
