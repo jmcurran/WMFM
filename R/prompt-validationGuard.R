@@ -87,7 +87,7 @@ buildPromptValidationGuardTargets = function(modelProfile = NULL, ruleProfile = 
       "avoid raw coefficients, intercepts, beta notation, and coefficient-scale interpretations",
       "avoid displaying odds as ordinary decimals when odds-format quantities are available",
       "use explicit change language for numeric-predictor effects",
-      "include a short answer sentence that directly addresses the research question or main model question",
+      "include a clear final answer sentence that directly addresses the research question or main model question and uses the key estimate or comparison",
       "keep uncertainty with the estimate whenever confidence intervals are provided"
     ),
     stringsAsFactors = FALSE

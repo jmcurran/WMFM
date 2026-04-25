@@ -177,7 +177,7 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
       secondWithinGroupEffect = "Describe the same kind of effect within the second relevant group or selected value, using the same interpretation scale.",
       effectComparison = "Compare the within-group effects directly, focusing on whether one effect is larger, smaller, steeper, weaker, or in a different direction.",
       interactionConclusion = "State what the different within-group effects mean for the research question in plain language.",
-      answer = "Answer the research question without decomposing coefficients or naming the interaction term."
+      answer = "Answer the research question with a clear closing takeaway that uses the key within-group comparison and avoids decomposing coefficients or naming the interaction term."
     )))
   }
 
@@ -187,7 +187,7 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
       comparisonSummary = buildExplanationSkeletonComparisonStep(comparisonScope),
       evidence = "Give targeted numeric support only when it helps answer the research question.",
       uncertainty = "Give uncertainty if available, keeping it with the comparison or estimate.",
-      answer = "Answer the research question without listing unnecessary pairwise comparisons."
+      answer = "Answer the research question with a clear closing takeaway that uses the most relevant comparison and avoids listing unnecessary pairwise comparisons."
     )))
   }
 
@@ -196,7 +196,7 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
       typicalCase = "Describe the fitted value at a meaningful anchor if needed.",
       effect = "Describe the effect of a change in the numeric predictor.",
       uncertainty = "Give uncertainty if available, keeping it with the effect estimate.",
-      answer = "Answer the research question in terms of the direction and size of change."
+      answer = "Answer the research question with a clear closing takeaway that states the direction and size of change."
     )))
   }
 
@@ -205,7 +205,7 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
     effect = "Explain one relevant effect at a time on the interpretation scale.",
     comparisonSummary = buildExplanationSkeletonComparisonStep(comparisonScope),
     uncertainty = "Give uncertainty if available, keeping it next to the relevant estimate.",
-    answer = "Answer the research question using only relevant effects or comparisons."
+    answer = "Answer the research question with a clear closing takeaway using only relevant effects or comparisons."
   ))
 }
 

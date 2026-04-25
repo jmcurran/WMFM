@@ -12,6 +12,7 @@ testthat::test_that("lmToExplanationPrompt includes validation guard targets", {
   testthat::expect_match(prompt, "rawCoefficientShown", fixed = TRUE)
   testthat::expect_match(prompt, "effectWithoutChangeLanguage", fixed = TRUE)
   testthat::expect_match(prompt, "missingAnswer", fixed = TRUE)
+  testthat::expect_match(prompt, "key estimate or comparison", fixed = TRUE)
   testthat::expect_match(prompt, "missingUncertainty", fixed = TRUE)
   testthat::expect_match(prompt, "do not regenerate automatically", fixed = TRUE)
 })

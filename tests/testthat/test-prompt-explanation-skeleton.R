@@ -11,6 +11,7 @@ testthat::test_that("lmToExplanationPrompt includes numeric model-aware skeleton
   testthat::expect_match(prompt, "Skeleton id: lm_numericMainEffect", fixed = TRUE)
   testthat::expect_match(prompt, "typicalCase", fixed = TRUE)
   testthat::expect_match(prompt, "effect of a change in the numeric predictor", fixed = TRUE)
+  testthat::expect_match(prompt, "clear closing takeaway", fixed = TRUE)
   testthat::expect_match(prompt, "Scale guidance: Explain estimates and effects on the response scale.", fixed = TRUE)
 })
 

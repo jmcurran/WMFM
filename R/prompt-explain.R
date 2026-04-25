@@ -112,7 +112,10 @@ Use the research question to structure the explanation.
 - Do not skip that opening restatement when a research question is present.
 - Then explain the model results as usual in a separate middle paragraph or paragraphs.
 - End with a short final paragraph that directly answers the research question in plain language.
+- Start the final paragraph with a clear answer cue such as \"Overall,\" or \"To answer the research question,\" so the closing takeaway is explicit.
 - The final paragraph must include the most important estimate or comparison that answers the question, unless the model genuinely does not provide one.
+- If a confidence interval or uncertainty range is available for that estimate or comparison, keep it in the same final paragraph or explicitly refer back to it.
+- Do not end with a generic statement such as \"higher values are associated with higher outcomes\" unless it also gives the key numeric effect or comparison.
 - The final paragraph should summarise the answer in one or two sentences rather than repeating the full explanation.
 - In the final paragraph, make it clear that the conclusion is about average or expected outcomes rather than certain outcomes for each individual case.
 - Prefer wording such as \"on average\", \"tend to\", \"is associated with\", or \"is consistent with\" when answering the research question.

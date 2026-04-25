@@ -25,6 +25,16 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
     "End with a short final paragraph that directly answers the research question in plain language.",
     fixed = TRUE
   )
+  testthat::expect_match(
+    prompt,
+    "Start the final paragraph with a clear answer cue",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "Do not end with a generic statement",
+    fixed = TRUE
+  )
 })
 
 testthat::test_that("lmToExplanationPrompt omits research question block when absent", {
@@ -46,6 +56,11 @@ testthat::test_that("lmToExplanationPrompt omits research question block when ab
   testthat::expect_no_match(
     prompt,
     "End with a short final paragraph that directly answers the research question in plain language.",
+    fixed = TRUE
+  )
+  testthat::expect_no_match(
+    prompt,
+    "Start the final paragraph with a clear answer cue",
     fixed = TRUE
   )
 })
