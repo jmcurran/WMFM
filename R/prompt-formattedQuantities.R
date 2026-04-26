@@ -41,13 +41,24 @@ buildFormattedPromptQuantityBlock = function(
     }
   )
 
-  if (is.null(ciOut) || !identical(ciOut$mode, "derived") || is.null(ciOut$table)) {
+  if (is.null(ciOut) || is.null(ciOut$table)) {
     return("")
   }
 
   quantityTable = ciOut$table
 
   if (!is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
+    return("")
+  }
+
+  quantityTable = maybeConvertInterceptOnlyPromptQuantityTable(
+    quantityTable = quantityTable,
+    model = model,
+    mf = mf,
+    predictorNames = predictorNames
+  )
+
+  if (!identical(ciOut$mode, "derived") && length(predictorNames) > 0) {
     return("")
   }
 
@@ -78,6 +89,71 @@ buildFormattedPromptQuantityBlock = function(
   }
 
   paste(lines, collapse = "\n")
+}
+
+
+maybeConvertInterceptOnlyPromptQuantityTable = function(
+    quantityTable,
+    model,
+    mf,
+    predictorNames) {
+
+  if (length(predictorNames) > 0 || !is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
+    return(quantityTable)
+  }
+
+  interceptRows = quantityTable[quantityTable$quantity %in% "(Intercept)", , drop = FALSE]
+
+  if (nrow(interceptRows) != 1) {
+    return(quantityTable)
+  }
+
+  responseName = names(mf)[[1]]
+  out = interceptRows
+  out$ciSection = "baseline"
+  out$quantity = buildInterceptOnlyPromptQuantityLabel(
+    model = model,
+    responseName = responseName
+  )
+  out$scale = buildInterceptOnlyPromptQuantityScale(model = model)
+
+  if (isSupportedLogisticModel(model = model)) {
+    out$estimate = stats::family(model)$linkinv(interceptRows$estimate)
+    out$lower = stats::family(model)$linkinv(interceptRows$lower)
+    out$upper = stats::family(model)$linkinv(interceptRows$upper)
+  } else if (isSupportedPoissonModel(model = model)) {
+    out$estimate = exp(interceptRows$estimate)
+    out$lower = exp(interceptRows$lower)
+    out$upper = exp(interceptRows$upper)
+  }
+
+  out
+}
+
+buildInterceptOnlyPromptQuantityLabel = function(model, responseName) {
+
+  if (isSupportedLogisticModel(model = model)) {
+    return(formatBinomialProbabilityLabel(model = model, outcome = "success"))
+  }
+
+  if (isSupportedPoissonModel(model = model)) {
+    return(paste0("Expected ", responseName))
+  }
+
+  paste0("Mean ", responseName)
+}
+
+buildInterceptOnlyPromptQuantityScale = function(model) {
+
+  if (isSupportedLogisticModel(model = model)) {
+    return("probability")
+  }
+
+  if (isSupportedPoissonModel(model = model)) {
+    return("expected value")
+  }
+
+  "response"
 }
 
 buildFormattedPromptQuantitySettings = function(details) {

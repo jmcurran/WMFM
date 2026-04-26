@@ -3,8 +3,8 @@
 #' For a two-level factor response, R's binomial GLM parameterisation targets the
 #' second factor level as the fitted probability. This helper extracts readable
 #' labels for the success and failure outcomes so the app can write
-#' 
-#' `Pr(Pass)` and `Odds(Pass)` rather than a generic `p`.
+#'
+#' `Pr(Pass = Pass)` and `Odds(Pass = Pass)` rather than a generic `p`.
 #'
 #' @param model A fitted model object.
 #'
@@ -55,40 +55,42 @@ getBinomialOutcomeLabels = function(model) {
 #'
 #' @param model A fitted binomial model.
 #' @param outcome Either `"success"` or `"failure"`.
-#' @param indexed Logical. If `TRUE`, append `_i` inside the label.
+#' @param indexed Logical. If `TRUE`, append `_i` to the response name.
 #'
-#' @return A character scalar such as `"Pr(Pass)"` or `"Pr(Fail_i)"`.
+#' @return A character scalar such as `"Pr(Pass = Pass)"` or `"Pr(Pass_i = Pass)"`.
 #' @keywords internal
 formatBinomialProbabilityLabel = function(model, outcome = c("success", "failure"), indexed = FALSE) {
 
   outcome = match.arg(outcome)
   labels = getBinomialOutcomeLabels(model)
-  baseLabel = if (identical(outcome, "success")) labels$successLabel else labels$failureLabel
+  outcomeLabel = if (identical(outcome, "success")) labels$successLabel else labels$failureLabel
+  responseLabel = labels$responseName
 
   if (indexed) {
-    return(paste0("Pr(", baseLabel, "_i)"))
+    responseLabel = paste0(responseLabel, "_i")
   }
 
-  paste0("Pr(", baseLabel, ")")
+  paste0("Pr(", responseLabel, " = ", outcomeLabel, ")")
 }
 
 #' Format an odds label for a binomial model
 #'
 #' @param model A fitted binomial model.
 #' @param outcome Either `"success"` or `"failure"`.
-#' @param indexed Logical. If `TRUE`, append `_i` inside the label.
+#' @param indexed Logical. If `TRUE`, append `_i` to the response name.
 #'
-#' @return A character scalar such as `"Odds(Pass)"` or `"Odds(Fail_i)"`.
+#' @return A character scalar such as `"Odds(Pass = Pass)"` or `"Odds(Pass_i = Pass)"`.
 #' @keywords internal
 formatBinomialOddsLabel = function(model, outcome = c("success", "failure"), indexed = FALSE) {
 
   outcome = match.arg(outcome)
   labels = getBinomialOutcomeLabels(model)
-  baseLabel = if (identical(outcome, "success")) labels$successLabel else labels$failureLabel
+  outcomeLabel = if (identical(outcome, "success")) labels$successLabel else labels$failureLabel
+  responseLabel = labels$responseName
 
   if (indexed) {
-    return(paste0("Odds(", baseLabel, "_i)"))
+    responseLabel = paste0(responseLabel, "_i")
   }
 
-  paste0("Odds(", baseLabel, ")")
+  paste0("Odds(", responseLabel, " = ", outcomeLabel, ")")
 }
