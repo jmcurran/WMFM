@@ -63,7 +63,17 @@ testthat::test_that("lmToExplanationPrompt gives concise intercept-only answer g
 
   testthat::expect_match(
     prompt,
-    "Answer the research question directly using the numeric estimate and uncertainty",
+    "Restate the research question inferentially",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "this sentence is both the estimate, the uncertainty statement, and the final answer",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "Do not add a separate range explanation",
     fixed = TRUE
   )
   testthat::expect_match(
