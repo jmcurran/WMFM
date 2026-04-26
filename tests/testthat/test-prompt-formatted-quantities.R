@@ -148,7 +148,7 @@ testthat::test_that("intercept-only logistic formatted prompt quantities include
 
   testthat::expect_match(promptBlock, "Formatted model quantities for the explanation:", fixed = TRUE)
   testthat::expect_match(promptBlock, "Baseline or fitted values:", fixed = TRUE)
-  testthat::expect_match(promptBlock, "Pr(Pass) on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Pr(Pass = Pass) on the probability scale", fixed = TRUE)
   testthat::expect_match(promptBlock, "estimate =", fixed = TRUE)
   testthat::expect_match(promptBlock, "95% confidence interval", fixed = TRUE)
   testthat::expect_no_match(promptBlock, "(Intercept)", fixed = TRUE)
@@ -168,7 +168,50 @@ testthat::test_that("intercept-only logistic explanation prompt includes probabi
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
-  testthat::expect_match(prompt, "Pr(Pass) on the probability scale", fixed = TRUE)
+  testthat::expect_match(prompt, "Pr(Pass = Pass) on the probability scale", fixed = TRUE)
   testthat::expect_match(prompt, "For intercept-only models", fixed = TRUE)
   testthat::expect_no_match(prompt, "coefficient scale", fixed = TRUE)
+})
+
+testthat::test_that("two-factor logistic interaction prompt includes probability and odds-ratio payload", {
+  d = data.frame(
+    Attend = factor(character(0), levels = c("No", "Yes")),
+    Gender = factor(character(0), levels = c("Female", "Male")),
+    Pass = factor(character(0), levels = c("Fail", "Pass"))
+  )
+
+  addRows = function(attend, gender, failures, passes) {
+    data.frame(
+      Attend = factor(rep(attend, failures + passes), levels = c("No", "Yes")),
+      Gender = factor(rep(gender, failures + passes), levels = c("Female", "Male")),
+      Pass = factor(c(rep("Fail", failures), rep("Pass", passes)), levels = c("Fail", "Pass"))
+    )
+  }
+
+  d = rbind(
+    d,
+    addRows("No", "Female", failures = 8, passes = 2),
+    addRows("Yes", "Female", failures = 6, passes = 4),
+    addRows("No", "Male", failures = 7, passes = 3),
+    addRows("Yes", "Male", failures = 2, passes = 8)
+  )
+
+  fit = stats::glm(Pass ~ Attend * Gender, family = stats::binomial(), data = d)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(promptBlock, "Pr(Pass = Pass) when Attend = No; Gender = Female on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Pr(Pass = Pass) when Attend = Yes; Gender = Female on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Pr(Pass = Pass) when Attend = No; Gender = Male on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Pr(Pass = Pass) when Attend = Yes; Gender = Male on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Odds(Pass = Pass) odds ratio comparing Attend = Yes with Attend = No when Gender = Female", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Odds(Pass = Pass) odds ratio comparing Attend = Yes with Attend = No when Gender = Male", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Ratio of odds ratios for Odds(Pass = Pass): Attend effect at Gender = Male versus Gender = Female", fixed = TRUE)
+  testthat::expect_match(promptBlock, "95% confidence interval", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "coefficient scale", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "AttendYes:GenderMale", fixed = TRUE)
+
+  testthat::expect_match(prompt, "Pr(Pass = Pass) when Attend = No; Gender = Female on the probability scale", fixed = TRUE)
+  testthat::expect_match(prompt, "Odds(Pass = Pass) odds ratio comparing Attend = Yes with Attend = No when Gender = Male", fixed = TRUE)
+  testthat::expect_match(prompt, "Ratio of odds ratios for Odds(Pass = Pass): Attend effect at Gender = Male versus Gender = Female", fixed = TRUE)
 })

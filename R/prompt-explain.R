@@ -124,7 +124,7 @@ Research question supplied by the user:
 {researchQuestion}
 
 Use the research question to structure the explanation.
-- Start with a short opening paragraph that restates the research question directly in clear, natural language.
+- Start with a short opening paragraph that briefly restates the research question in clear, natural language.
 - Do not use meta phrasing such as \"The question asks...\", \"This question is about...\", or \"The aim is to...\".
 - Do not skip that opening restatement when a research question is present.
 - Then explain the model results as usual in a compact middle paragraph or paragraphs.

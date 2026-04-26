@@ -150,7 +150,7 @@ classifyModelConfidenceIntervalPlan = function(model, mf) {
   factorNames = predictorNames[vapply(mf[predictorNames], is.factor, logical(1))]
   numericNames = predictorNames[vapply(mf[predictorNames], is.numeric, logical(1))]
 
-  if (isLmIdentityModel(model = model) &&
+  if ((isLmIdentityModel(model = model) || isSupportedLogisticModel(model = model)) &&
       length(factorNames) == 2 &&
       length(numericNames) == 0 &&
       length(interactionTerms) == 1) {
@@ -170,8 +170,8 @@ classifyModelConfidenceIntervalPlan = function(model, mf) {
         interactionTerm = interactionTerms[[1]],
         note = paste(
           "Rows are tagged internally as fitted quantities and factor comparisons.",
-          "For the two-factor interaction, fitted means are shown for each factor combination",
-          "and simple factor differences are shown within each level of the other factor."
+          "For the two-factor interaction, fitted quantities are shown for each factor combination",
+          "and simple factor comparisons are shown within each level of the other factor."
         )
       ))
     }
@@ -187,8 +187,9 @@ classifyModelConfidenceIntervalPlan = function(model, mf) {
       mode = "coefficient",
       note = paste(
         "This model contains interaction terms, so the confidence-interval table is shown on the coefficient scale.",
-        "Derived interaction teaching rows are supported for two-factor linear-model interactions",
-        "and for logistic GLMs and Poisson GLMs in the simple one-factor-plus-one-numeric interaction case."
+        "Derived interaction teaching rows are supported for two-factor linear-model interactions,",
+        "two-factor logistic interactions, and for logistic GLMs and Poisson GLMs",
+        "in the simple one-factor-plus-one-numeric interaction case."
       )
     ))
   }
@@ -591,33 +592,64 @@ buildFactorByFactorInteractionConfidenceIntervalRows = function(
     }
   }
 
-  addFactorByFactorSimpleDifferenceRows(
-    model = model,
-    mf = mf,
-    level = level,
-    focalFactor = firstFactor,
-    conditioningFactor = secondFactor,
-    appendRow = appendRow
-  )
-
-  addFactorByFactorSimpleDifferenceRows(
-    model = model,
-    mf = mf,
-    level = level,
-    focalFactor = secondFactor,
-    conditioningFactor = firstFactor,
-    appendRow = appendRow
-  )
-
-  if (length(firstLevels) == 2 && length(secondLevels) == 2) {
-    addFactorByFactorDifferenceOfDifferencesRow(
+  if (isSupportedLogisticModel(model = model)) {
+    addLogisticFactorByFactorConditionalOddsRatioRows(
       model = model,
       mf = mf,
       level = level,
-      firstFactor = firstFactor,
-      secondFactor = secondFactor,
+      focalFactor = firstFactor,
+      conditioningFactor = secondFactor,
       appendRow = appendRow
     )
+
+    addLogisticFactorByFactorConditionalOddsRatioRows(
+      model = model,
+      mf = mf,
+      level = level,
+      focalFactor = secondFactor,
+      conditioningFactor = firstFactor,
+      appendRow = appendRow
+    )
+
+    if (length(firstLevels) == 2 && length(secondLevels) == 2) {
+      addLogisticFactorByFactorRatioOfOddsRatiosRow(
+        model = model,
+        mf = mf,
+        level = level,
+        firstFactor = firstFactor,
+        secondFactor = secondFactor,
+        appendRow = appendRow
+      )
+    }
+  } else {
+    addFactorByFactorSimpleDifferenceRows(
+      model = model,
+      mf = mf,
+      level = level,
+      focalFactor = firstFactor,
+      conditioningFactor = secondFactor,
+      appendRow = appendRow
+    )
+
+    addFactorByFactorSimpleDifferenceRows(
+      model = model,
+      mf = mf,
+      level = level,
+      focalFactor = secondFactor,
+      conditioningFactor = firstFactor,
+      appendRow = appendRow
+    )
+
+    if (length(firstLevels) == 2 && length(secondLevels) == 2) {
+      addFactorByFactorDifferenceOfDifferencesRow(
+        model = model,
+        mf = mf,
+        level = level,
+        firstFactor = firstFactor,
+        secondFactor = secondFactor,
+        appendRow = appendRow
+      )
+    }
   }
 
   invisible(NULL)
@@ -909,6 +941,238 @@ addFactorByFactorDifferenceOfDifferencesRow = function(
   invisible(NULL)
 }
 
+
+#' Add conditional odds-ratio rows within levels of another factor
+#'
+#' @param model A fitted logistic model.
+#' @param mf Model frame.
+#' @param level Confidence level.
+#' @param focalFactor Factor whose levels are being compared.
+#' @param conditioningFactor Factor level held fixed.
+#' @param appendRow Row appender closure.
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @keywords internal
+addLogisticFactorByFactorConditionalOddsRatioRows = function(
+    model,
+    mf,
+    level,
+    focalFactor,
+    conditioningFactor,
+    appendRow
+) {
+
+  if (!isSupportedLogisticModel(model = model)) {
+    return(invisible(NULL))
+  }
+
+  focalLevels = levels(mf[[focalFactor]])
+  conditioningLevels = levels(mf[[conditioningFactor]])
+
+  if (length(focalLevels) != 2) {
+    return(invisible(NULL))
+  }
+
+  notation = buildConfidenceIntervalNotation(model = model, mf = mf)
+
+  for (conditioningLevel in conditioningLevels) {
+    referenceData = buildFactorByFactorNewData(
+      mf = mf,
+      focalFactor = focalFactor,
+      focalLevel = focalLevels[[1]],
+      conditioningFactor = conditioningFactor,
+      conditioningLevel = conditioningLevel
+    )
+    comparisonData = buildFactorByFactorNewData(
+      mf = mf,
+      focalFactor = focalFactor,
+      focalLevel = focalLevels[[2]],
+      conditioningFactor = conditioningFactor,
+      conditioningLevel = conditioningLevel
+    )
+
+    weights = buildNewDataDifferenceWeights(
+      model = model,
+      referenceData = referenceData,
+      comparisonData = comparisonData
+    )
+
+    if (length(weights) == 0) {
+      next
+    }
+
+    interval = buildLinearCombinationInterval(
+      model = model,
+      weights = weights,
+      level = level
+    )
+
+    appendRow(
+      quantity = paste0(
+        notation$oddsSuccess,
+        " odds ratio comparing ",
+        focalFactor,
+        " = ",
+        focalLevels[[2]],
+        " with ",
+        focalFactor,
+        " = ",
+        focalLevels[[1]],
+        " when ",
+        conditioningFactor,
+        " = ",
+        conditioningLevel
+      ),
+      estimate = exp(interval$estimate),
+      lower = exp(interval$lower),
+      upper = exp(interval$upper),
+      scale = "odds ratio",
+      section = "effect",
+      settings = paste0(
+        focalFactor,
+        " comparison: ",
+        focalLevels[[2]],
+        " versus ",
+        focalLevels[[1]],
+        " when ",
+        conditioningFactor,
+        " = ",
+        conditioningLevel,
+        "."
+      ),
+      weights = interval$weights,
+      scaleNote = "Computed as a conditional log-odds contrast, then exponentiated to the odds-ratio scale."
+    )
+  }
+
+  invisible(NULL)
+}
+
+#' Add the two-by-two ratio-of-odds-ratios row for a logistic interaction
+#'
+#' @param model A fitted logistic model.
+#' @param mf Model frame.
+#' @param level Confidence level.
+#' @param firstFactor First factor name.
+#' @param secondFactor Second factor name.
+#' @param appendRow Row appender closure.
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @keywords internal
+addLogisticFactorByFactorRatioOfOddsRatiosRow = function(
+    model,
+    mf,
+    level,
+    firstFactor,
+    secondFactor,
+    appendRow
+) {
+
+  if (!isSupportedLogisticModel(model = model)) {
+    return(invisible(NULL))
+  }
+
+  firstLevels = levels(mf[[firstFactor]])
+  secondLevels = levels(mf[[secondFactor]])
+
+  lowLow = buildFactorByFactorNewData(
+    mf = mf,
+    focalFactor = firstFactor,
+    focalLevel = firstLevels[[1]],
+    conditioningFactor = secondFactor,
+    conditioningLevel = secondLevels[[1]]
+  )
+  highLow = buildFactorByFactorNewData(
+    mf = mf,
+    focalFactor = firstFactor,
+    focalLevel = firstLevels[[2]],
+    conditioningFactor = secondFactor,
+    conditioningLevel = secondLevels[[1]]
+  )
+  lowHigh = buildFactorByFactorNewData(
+    mf = mf,
+    focalFactor = firstFactor,
+    focalLevel = firstLevels[[1]],
+    conditioningFactor = secondFactor,
+    conditioningLevel = secondLevels[[2]]
+  )
+  highHigh = buildFactorByFactorNewData(
+    mf = mf,
+    focalFactor = firstFactor,
+    focalLevel = firstLevels[[2]],
+    conditioningFactor = secondFactor,
+    conditioningLevel = secondLevels[[2]]
+  )
+
+  firstOddsRatio = buildNewDataDifferenceWeights(
+    model = model,
+    referenceData = lowLow,
+    comparisonData = highLow
+  )
+  secondOddsRatio = buildNewDataDifferenceWeights(
+    model = model,
+    referenceData = lowHigh,
+    comparisonData = highHigh
+  )
+
+  allNames = union(names(firstOddsRatio), names(secondOddsRatio))
+  weights = setNames(rep(0, length(allNames)), allNames)
+  weights[names(secondOddsRatio)] = weights[names(secondOddsRatio)] + secondOddsRatio
+  weights[names(firstOddsRatio)] = weights[names(firstOddsRatio)] - firstOddsRatio
+  weights = weights[abs(weights) > 1e-12]
+
+  if (length(weights) == 0) {
+    return(invisible(NULL))
+  }
+
+  interval = buildLinearCombinationInterval(
+    model = model,
+    weights = weights,
+    level = level
+  )
+  notation = buildConfidenceIntervalNotation(model = model, mf = mf)
+
+  appendRow(
+    quantity = paste0(
+      "Ratio of odds ratios for ",
+      notation$oddsSuccess,
+      ": ",
+      firstFactor,
+      " effect at ",
+      secondFactor,
+      " = ",
+      secondLevels[[2]],
+      " versus ",
+      secondFactor,
+      " = ",
+      secondLevels[[1]]
+    ),
+    estimate = exp(interval$estimate),
+    lower = exp(interval$lower),
+    upper = exp(interval$upper),
+    scale = "odds ratio",
+    section = "contrast",
+    settings = paste0(
+      "Compares the ",
+      firstFactor,
+      " odds ratio at ",
+      secondFactor,
+      " = ",
+      secondLevels[[2]],
+      " with the ",
+      firstFactor,
+      " odds ratio at ",
+      secondFactor,
+      " = ",
+      secondLevels[[1]],
+      "."
+    ),
+    weights = interval$weights,
+    scaleNote = "Computed as a difference between conditional log-odds contrasts, then exponentiated to a ratio of odds ratios."
+  )
+
+  invisible(NULL)
+}
 
 #' Add fitted-quantity CI rows for a single predictor setting
 #'
@@ -1440,7 +1704,7 @@ completeConfidenceIntervalNewData = function(
 #' @param model A fitted model object.
 #' @param newData One-row new-data frame.
 #' @param level Confidence level.
-#' @param numericReference Numeric reference choice used if 
+#' @param numericReference Numeric reference choice used if
 #'   \code{newData} omits a numeric predictor.
 #'
 #' @return A list with fit, interval bounds, and non-zero weights.
