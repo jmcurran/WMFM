@@ -98,7 +98,7 @@ maybeConvertInterceptOnlyPromptQuantityTable = function(
     mf,
     predictorNames) {
 
-  if (length(predictorNames) > 0 || inherits(model, "glm") || !is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
+  if (length(predictorNames) > 0 || !is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
     return(quantityTable)
   }
 
@@ -116,13 +116,24 @@ maybeConvertInterceptOnlyPromptQuantityTable = function(
     responseName = responseName
   )
   out$scale = buildInterceptOnlyPromptQuantityScale(model = model)
+
+  if (isSupportedLogisticModel(model = model)) {
+    out$estimate = stats::family(model)$linkinv(interceptRows$estimate)
+    out$lower = stats::family(model)$linkinv(interceptRows$lower)
+    out$upper = stats::family(model)$linkinv(interceptRows$upper)
+  } else if (isSupportedPoissonModel(model = model)) {
+    out$estimate = exp(interceptRows$estimate)
+    out$lower = exp(interceptRows$lower)
+    out$upper = exp(interceptRows$upper)
+  }
+
   out
 }
 
 buildInterceptOnlyPromptQuantityLabel = function(model, responseName) {
 
   if (isSupportedLogisticModel(model = model)) {
-    return(paste0("Pr(", responseName, " = success)"))
+    return(formatBinomialProbabilityLabel(model = model, outcome = "success"))
   }
 
   if (isSupportedPoissonModel(model = model)) {

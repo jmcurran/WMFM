@@ -134,3 +134,41 @@ testthat::test_that("two-factor lm interaction prompt includes formatted quantit
   testthat::expect_match(promptBlock, "Difference between Attend differences in Exam for Gender = Male versus Gender = Female", fixed = TRUE)
   testthat::expect_no_match(promptBlock, "Coefficient table:", fixed = TRUE)
 })
+
+testthat::test_that("intercept-only logistic formatted prompt quantities include the success probability", {
+  dat = data.frame(
+    Pass = factor(
+      c("Fail", "Fail", "Fail", "Pass", "Pass", "Pass", "Pass", "Pass"),
+      levels = c("Fail", "Pass")
+    )
+  )
+
+  fit = stats::glm(Pass ~ 1, family = stats::binomial(), data = dat)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+
+  testthat::expect_match(promptBlock, "Formatted model quantities for the explanation:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Baseline or fitted values:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Pr(Pass) on the probability scale", fixed = TRUE)
+  testthat::expect_match(promptBlock, "estimate =", fixed = TRUE)
+  testthat::expect_match(promptBlock, "95% confidence interval", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "(Intercept)", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "coefficient scale", fixed = TRUE)
+})
+
+testthat::test_that("intercept-only logistic explanation prompt includes probability payload", {
+  dat = data.frame(
+    Pass = factor(
+      c("Fail", "Fail", "Fail", "Pass", "Pass", "Pass", "Pass", "Pass"),
+      levels = c("Fail", "Pass")
+    )
+  )
+
+  fit = stats::glm(Pass ~ 1, family = stats::binomial(), data = dat)
+  attr(fit, "wmfm_research_question") = "What is the overall chance of passing?"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "Pr(Pass) on the probability scale", fixed = TRUE)
+  testthat::expect_match(prompt, "For intercept-only models", fixed = TRUE)
+  testthat::expect_no_match(prompt, "coefficient scale", fixed = TRUE)
+})
