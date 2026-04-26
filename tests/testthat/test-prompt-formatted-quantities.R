@@ -116,3 +116,21 @@ testthat::test_that("intercept-only lm formatted prompt quantities include the m
   testthat::expect_match(promptBlock, "95% confidence interval", fixed = TRUE)
   testthat::expect_no_match(promptBlock, "(Intercept)", fixed = TRUE)
 })
+
+testthat::test_that("two-factor lm interaction prompt includes formatted quantities", {
+
+  d = data.frame(
+    Exam = c(44, 46, 59, 61, 40, 42, 56, 58),
+    Attend = factor(rep(c("No", "Yes"), times = 4), levels = c("No", "Yes")),
+    Gender = factor(rep(c("Female", "Female", "Male", "Male"), each = 2), levels = c("Female", "Male"))
+  )
+
+  fit = stats::lm(Exam ~ Attend * Gender, data = d)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+
+  testthat::expect_match(promptBlock, "Formatted model quantities for the explanation:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Expected Exam when Attend = No; Gender = Female", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Difference in Exam comparing Attend = Yes with Attend = No when Gender = Female", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Difference between Attend differences in Exam for Gender = Male versus Gender = Female", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "Coefficient table:", fixed = TRUE)
+})

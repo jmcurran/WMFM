@@ -110,3 +110,33 @@ testthat::test_that("buildModelConfidenceIntervalData reports mean anchoring whe
   testthat::expect_match(out$note, "Numeric predictors are fixed at their means", fixed = TRUE)
   testthat::expect_true(any(grepl("Magnitude = 6.25", vapply(out$details, `[[`, character(1), "settings"), fixed = TRUE)))
 })
+
+testthat::test_that("buildModelConfidenceIntervalData gives derived rows for two-factor lm interactions", {
+
+  d = data.frame(
+    y = c(10, 12, 20, 22, 11, 13, 24, 26),
+    attend = factor(rep(c("No", "Yes"), times = 4), levels = c("No", "Yes")),
+    gender = factor(rep(c("Female", "Female", "Male", "Male"), each = 2), levels = c("Female", "Male"))
+  )
+
+  fit = stats::lm(y ~ attend * gender, data = d)
+
+  out = buildModelConfidenceIntervalData(fit)
+
+  testthat::expect_identical(out$mode, "derived")
+  testthat::expect_true(any(grepl(
+    "Expected y when attend = No; gender = Female",
+    out$table$quantity,
+    fixed = TRUE
+  )))
+  testthat::expect_true(any(grepl(
+    "Difference in y comparing attend = Yes with attend = No when gender = Female",
+    out$table$quantity,
+    fixed = TRUE
+  )))
+  testthat::expect_true(any(grepl(
+    "Difference between attend differences in y for gender = Male versus gender = Female",
+    out$table$quantity,
+    fixed = TRUE
+  )))
+})
