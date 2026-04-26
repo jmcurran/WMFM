@@ -83,6 +83,12 @@ lmToExplanationPrompt = function(model) {
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
   researchQuestion = attr(model, "wmfm_research_question", exact = TRUE)
 
+  if (isInterceptOnlyModel && !is.null(researchQuestion)) {
+    researchQuestion = normaliseInterceptOnlyResearchQuestion(
+      researchQuestion = researchQuestion
+    )
+  }
+
   if (!is.null(dsDoc)) {
     dsLines = strsplit(dsDoc, "\n", fixed = TRUE)[[1]]
     dsLines = dsLines[seq_len(min(length(dsLines), 40L))]
@@ -151,7 +157,7 @@ the model explains variation in the response.
 For intercept-only models, do not discuss R-squared, variation explained, model fit, or the absence of predictors unless the user specifically asks about them.
 For intercept-only models, answer using the supplied formatted estimate and confidence interval; do not give generic statements about constants or intervals without the numbers.
 For intercept-only models with a confidence interval, frame the estimate as uncertainty about an underlying average, probability, or expected count for the relevant setting, rather than only as the observed sample mean.
-For intercept-only models, Restate the research question inferentially; do not describe it as only the average in this data set or sample.
+For intercept-only models, Restate the research question inferentially; do not describe it as only the average in this data set, dataset, course data, or sample.
 For intercept-only models, prefer wording such as: Using our data, we estimate this value to be X, with a 95% confidence interval of L to U.
 For intercept-only models, it is acceptable to say we can be 95% confident that the true value lies within this interval; do not describe this as a probability and do not say there is a 95% chance.
 For intercept-only models, prefer we can be 95% confident over the true value is likely.
@@ -190,4 +196,45 @@ Interpretation rules for numeric predictors:
   )
 
   prompt
+}
+
+#' Normalise intercept-only research-question wording for prompt use
+#'
+#' Intercept-only explanations should frame the question as inference about an
+#' underlying average, probability, or expected count, not as a descriptive
+#' question about the observed data set. This helper removes common user-entered
+#' data-set phrases before the question is inserted into the prompt.
+#'
+#' @param researchQuestion Character scalar containing the supplied research
+#'   question.
+#'
+#' @return A character scalar with sample/data wording replaced by setting-level
+#'   wording where possible.
+#' @keywords internal
+#' @noRd
+normaliseInterceptOnlyResearchQuestion = function(researchQuestion) {
+  if (!is.character(researchQuestion) || length(researchQuestion) != 1 || is.na(researchQuestion)) {
+    return("")
+  }
+
+  out = trimws(researchQuestion)
+
+  out = gsub(
+    "\\b(in|from)\\s+(the|this|these|our)?\\s*course\\s+(data|dataset|data set|sample)\\b",
+    "for this course",
+    out,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
+  out = gsub(
+    "\\b(in|from)\\s+(the|this|these|our)?\\s*(data|dataset|data set|sample)\\b",
+    "for the relevant setting",
+    out,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
+  out = gsub("\\s+", " ", out, perl = TRUE)
+  trimws(out)
 }

@@ -91,7 +91,9 @@ testthat::test_that("lmToExplanationPrompt gives inferential framing for interce
 
   testthat::expect_no_match(prompt, "Approximate proportion of variation explained", fixed = TRUE)
   testthat::expect_match(prompt, "underlying average", fixed = TRUE)
-  testthat::expect_match(prompt, "do not describe it as only the average in this data set or sample", fixed = TRUE)
+  testthat::expect_match(prompt, "What is the average final exam mark for this course?", fixed = TRUE)
+  testthat::expect_no_match(prompt, "What is the average final exam mark in the course data?", fixed = TRUE)
+  testthat::expect_match(prompt, "do not describe it as only the average in this data set, dataset, course data, or sample", fixed = TRUE)
   testthat::expect_match(prompt, "maximum of two short paragraphs", fixed = TRUE)
   testthat::expect_match(prompt, "the sentence containing the estimate and confidence interval is the final answer", fixed = TRUE)
   testthat::expect_match(prompt, "one concise answer with the estimate and confidence interval is enough", fixed = TRUE)
