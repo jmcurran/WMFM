@@ -19,6 +19,11 @@ test_that("buildExplanationRuleProfile creates intercept-only rules", {
     c("estimate", "uncertainty", "answer")
   )
   expect_false("modelConstraint" %in% out$skeletonSteps$stepRole)
+  expect_match(
+    out$skeletonSteps$instruction[out$skeletonSteps$stepRole == "uncertainty"],
+    "underlying average",
+    fixed = TRUE
+  )
   expect_true("interceptOnlyMentionsPredictors" %in% out$qualityFlagsToCheck)
   expect_true("lmInterceptOnlyUsesRSquared" %in% out$qualityFlagsToCheck)
 })

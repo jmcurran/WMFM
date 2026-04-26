@@ -153,7 +153,7 @@ detectUncertainty = function(claimText) {
   text = tolower(claimText %||% "")
 
   grepl(
-    "confidence interval|confidence intervals|confidence limit|confidence limits|uncertain|uncertainty|likely|plausible|consistent with|confidence band|confidence bands|interval estimate",
+    "confidence interval|confidence intervals|confidence limit|confidence limits|uncertain|uncertainty|likely|plausible|consistent with|confidence band|confidence bands|interval estimate|95% confident|95 percent confident",
     text,
     perl = TRUE
   )
@@ -625,19 +625,30 @@ sentenceLooksLikeResearchAnswer = function(
     totalClaims >= 1L && sentenceIndex >= max(totalClaims - 1L, 1L)
 
   explicitAnswerCue = grepl(
-    "^(overall\\b|in summary\\b|to answer the research question\\b|this suggests\\b|this shows\\b)",
+    "^(overall\\b|in summary\\b|to answer the research question\\b|using our data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|this suggests\\b|this shows\\b)",
     text,
     perl = TRUE
   )
 
-  if (!isFinalSentence && !(isNearFinalSentence && explicitAnswerCue)) {
+  estimateAnswerCue = grepl(
+    "^(using our data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|the estimated\\b|the average\\b|the mean\\b|overall,? the average\\b|overall,? the mean\\b)",
+    text,
+    perl = TRUE
+  )
+
+  if (!isFinalSentence && !(isNearFinalSentence && (explicitAnswerCue || estimateAnswerCue))) {
     return(FALSE)
   }
 
   pointEstimateWithUncertainty = isTRUE(uncertaintyTag) &&
     sentenceLooksLikePointEstimate(claimText)
 
-  if (isNearFinalSentence && explicitAnswerCue && pointEstimateWithUncertainty) {
+  if (isNearFinalSentence && (explicitAnswerCue || estimateAnswerCue) && pointEstimateWithUncertainty) {
+    return(TRUE)
+  }
+
+  if (isFinalSentence && pointEstimateWithUncertainty &&
+      (isTRUE(typicalCaseTag) || estimateAnswerCue || isInterceptOnlyExplanationModel(model))) {
     return(TRUE)
   }
 
@@ -667,6 +678,11 @@ sentenceLooksLikeResearchAnswer = function(
   }
 
   if (isTRUE(effectTag) && !isTRUE(uncertaintyTag)) {
+    return(TRUE)
+  }
+
+  if (isTRUE(explicitAnswerCue) &&
+      (isTRUE(effectTag) || isTRUE(comparisonTag) || isTRUE(uncertaintyTag))) {
     return(TRUE)
   }
 

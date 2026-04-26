@@ -100,3 +100,19 @@ testthat::test_that("logistic factor formatted prompt quantities include a direc
   testthat::expect_match(promptBlock, "odds ratio comparing", fixed = TRUE)
   testthat::expect_no_match(promptBlock, "odds scale", fixed = TRUE)
 })
+
+testthat::test_that("intercept-only lm formatted prompt quantities include the mean and interval", {
+  dat = data.frame(
+    Exam = c(60, 70, 80, 90)
+  )
+
+  fit = stats::lm(Exam ~ 1, data = dat)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+
+  testthat::expect_match(promptBlock, "Formatted model quantities for the explanation:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Baseline or fitted values:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Mean Exam", fixed = TRUE)
+  testthat::expect_match(promptBlock, "estimate =", fixed = TRUE)
+  testthat::expect_match(promptBlock, "95% confidence interval", fixed = TRUE)
+  testthat::expect_no_match(promptBlock, "(Intercept)", fixed = TRUE)
+})

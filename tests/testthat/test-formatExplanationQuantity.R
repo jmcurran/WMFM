@@ -40,7 +40,7 @@ test_that("formatExplanationOdds keeps odds as odds", {
 
 test_that("formatExplanationMultiplier and formatExplanationAnchor use explanation number formatting", {
   expect_identical(formatExplanationMultiplier(0.214), "0.21")
-  expect_identical(formatExplanationAnchor(6.247368), "6.2")
+  expect_identical(formatExplanationAnchor(6.247368), "6.25")
 })
 
 test_that("formatExplanationQuantity routes common quantity types", {
@@ -48,6 +48,7 @@ test_that("formatExplanationQuantity routes common quantity types", {
   expect_identical(formatExplanationQuantity(0.001, quantityType = "odds"), "1:1000")
   expect_identical(formatExplanationQuantity(1.567, quantityType = "multiplier"), "1.6")
   expect_identical(formatExplanationQuantity(11.567, quantityType = "number"), "12")
+  expect_identical(formatExplanationQuantity(11.567, quantityType = "anchor"), "11.6")
 })
 
 test_that("formatExplanationQuantity validates impossible values", {

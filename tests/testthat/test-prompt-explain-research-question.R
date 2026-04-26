@@ -80,3 +80,17 @@ test_that("lmToExplanationPrompt includes cautious CI and non-redundant final an
   testthat::expect_match(prompt, "Do not repeat model-fit statistics in the final paragraph", fixed = TRUE)
   testthat::expect_match(prompt, "Do not write that the true effect is likely to fall inside the confidence interval", fixed = TRUE)
 })
+
+
+testthat::test_that("lmToExplanationPrompt gives inferential framing for intercept-only models", {
+  df = getStats20xExamTestData()[, "Exam", drop = FALSE]
+  fit = stats::lm(Exam ~ 1, data = df)
+  attr(fit, "wmfm_research_question") = "What is the average final exam mark in the course data?"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_no_match(prompt, "Approximate proportion of variation explained", fixed = TRUE)
+  testthat::expect_match(prompt, "underlying average", fixed = TRUE)
+  testthat::expect_match(prompt, "one concise answer with the estimate and confidence interval is enough", fixed = TRUE)
+  testthat::expect_match(prompt, "For intercept-only models", fixed = TRUE)
+})

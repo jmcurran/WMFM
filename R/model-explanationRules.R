@@ -164,10 +164,9 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
 
   if (grepl("_interceptOnly$", skeletonId)) {
     return(buildExplanationSkeletonDataFrame(c(
-      modelContext = "State that the model estimates an overall average, probability, or expected count.",
-      evidence = "Give the main fitted value on the interpretation scale.",
-      uncertainty = "Give uncertainty if available, keeping it next to the estimate.",
-      modelConstraint = "State that no predictors are used, so the model does not explain changes or group differences."
+      estimate = "Give the overall estimate on the interpretation scale, using the supplied formatted quantity.",
+      uncertainty = "Give the confidence interval if available, keeping it next to the estimate and framing it as uncertainty about the underlying average, probability, or expected count.",
+      answer = "Answer the research question directly using the numeric estimate and uncertainty, without adding model-mechanics filler."
     )))
   }
 

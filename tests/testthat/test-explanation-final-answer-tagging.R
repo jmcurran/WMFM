@@ -127,3 +127,50 @@ testthat::test_that("buildExplanationClaimEvidenceMap keeps comparison and answe
   testthat::expect_identical(out$claims$claimTags[[2]], c("effect", "comparison", "answer"))
   testthat::expect_identical(out$claims$claimType[[2]], "answer")
 })
+
+testthat::test_that("detectExplanationClaimTags tags intercept-only final estimate and CI as answer", {
+  df = data.frame(Exam = c(45, 55, 65, 75))
+  model = stats::lm(Exam ~ 1, data = df)
+  attr(model, "wmfm_research_question") = "What is the average final exam mark?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "Overall, the average final exam mark is about 60, with a 95% confidence interval of 40 to 80.",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 2
+  )
+
+  testthat::expect_true("typicalCase" %in% tags)
+  testthat::expect_true("uncertainty" %in% tags)
+  testthat::expect_true("answer" %in% tags)
+})
+
+
+testthat::test_that("detectExplanationClaimTags accepts 95 percent confident answer wording", {
+  df = data.frame(Exam = c(45, 55, 65, 75))
+  model = stats::lm(Exam ~ 1, data = df)
+  attr(model, "wmfm_research_question") = "What is the average final exam mark?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "Using our data, we estimate this value to be 60 marks, with a 95% confidence interval of 40 to 80 marks.",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 2
+  )
+
+  testthat::expect_true("typicalCase" %in% tags)
+  testthat::expect_true("uncertainty" %in% tags)
+  testthat::expect_true("answer" %in% tags)
+})

@@ -56,3 +56,24 @@ testthat::test_that("buildModelExplanationAudit records skeleton prompt input", 
     fixed = TRUE
   )
 })
+
+testthat::test_that("lmToExplanationPrompt gives concise intercept-only answer guidance after 12.2.8", {
+  model = stats::lm(Exam ~ 1, data = data.frame(Exam = c(54, 66, 78, 102)))
+  prompt = lmToExplanationPrompt(model)
+
+  testthat::expect_match(
+    prompt,
+    "Answer the research question directly using the numeric estimate and uncertainty",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "Using our data, we estimate this value",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "we can be 95% confident",
+    fixed = TRUE
+  )
+})

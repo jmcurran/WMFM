@@ -4,12 +4,12 @@
 \alias{formatExplanationAnchor}
 \title{Format an anchor value for student-facing explanation text}
 \usage{
-formatExplanationAnchor(anchor, sigDigits = 2)
+formatExplanationAnchor(anchor, sigDigits = 3)
 }
 \arguments{
 \item{anchor}{Numeric vector.}
 
-\item{sigDigits}{Number of significant figures to keep. Defaults to 2.}
+\item{sigDigits}{Number of significant figures to keep. Defaults to 3.}
 }
 \value{
 A character vector.

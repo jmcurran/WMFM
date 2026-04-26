@@ -126,6 +126,14 @@ buildModelNumericAnchorInfo = function(model = NULL, mf = NULL, predictorNames =
     format(round(x, 4), trim = TRUE, scientific = FALSE)
   }
 
+  fmtPromptValue = function(x) {
+    if (is.na(x)) {
+      return("NA")
+    }
+
+    formatExplanationQuantity(x, quantityType = "anchor")
+  }
+
   anchorLines = vapply(
     numericNames,
     function(varName) {
@@ -155,11 +163,7 @@ buildModelNumericAnchorInfo = function(model = NULL, mf = NULL, predictorNames =
         }
       }
 
-      anchorLabel = if (is.na(anchorValue)) {
-        "NA"
-      } else {
-        fmtValue(anchorValue)
-      }
+      anchorLabel = fmtPromptValue(anchorValue)
 
       paste0(
         "- ", varName,

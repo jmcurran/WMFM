@@ -169,12 +169,12 @@ formatExplanationMultiplier = function(multiplier, sigDigits = 2) {
 #' Format an anchor value for student-facing explanation text
 #'
 #' @param anchor Numeric vector.
-#' @param sigDigits Number of significant figures to keep. Defaults to 2.
+#' @param sigDigits Number of significant figures to keep. Defaults to 3.
 #'
 #' @return A character vector.
 #'
 #' @keywords internal
-formatExplanationAnchor = function(anchor, sigDigits = 2) {
+formatExplanationAnchor = function(anchor, sigDigits = 3) {
   formatExplanationNumber(anchor, sigDigits = sigDigits)
 }
 
@@ -204,7 +204,7 @@ formatExplanationQuantity = function(
     probability = formatExplanationProbability(value, sigDigits = sigDigits),
     odds = formatExplanationOdds(value, sigDigits = sigDigits),
     multiplier = formatExplanationMultiplier(value, sigDigits = sigDigits),
-    anchor = formatExplanationAnchor(value, sigDigits = sigDigits)
+    anchor = formatExplanationAnchor(value, sigDigits = max(sigDigits, 3))
   )
 }
 

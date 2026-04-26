@@ -150,6 +150,13 @@ If an R-squared value is shown above, briefly explain what it says about how wel
 the model explains variation in the response.
 For intercept-only models, do not discuss R-squared, variation explained, model fit, or the absence of predictors unless the user specifically asks about them.
 For intercept-only models, answer using the supplied formatted estimate and confidence interval; do not give generic statements about constants or intervals without the numbers.
+For intercept-only models with a confidence interval, frame the estimate as uncertainty about an underlying average, probability, or expected count for the relevant setting, rather than only as the observed sample mean.
+For intercept-only models, prefer wording such as: Using our data, we estimate this value to be X, with a 95% confidence interval of L to U.
+For intercept-only models, it is acceptable to say we can be 95% confident that the true value lies within this interval; do not describe this as a probability and do not say there is a 95% chance.
+For intercept-only models, prefer we can be 95% confident over the true value is likely.
+For intercept-only models, keep exactly one sentence that contains the estimate and confidence interval, and do not repeat the same estimate in a separate final sentence.
+For intercept-only models, one concise answer with the estimate and confidence interval is enough.
+For intercept-only models, do not include standalone sentences explaining what a confidence interval is, and do not include filler such as the analysis combined all observations.
 
 {numericAnchorInfo$promptText}
 

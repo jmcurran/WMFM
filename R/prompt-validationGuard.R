@@ -88,7 +88,7 @@ buildPromptValidationGuardTargets = function(modelProfile = NULL, ruleProfile = 
       "avoid displaying odds as ordinary decimals when odds-format quantities are available",
       "use explicit change language for numeric-predictor effects",
       "include a clear final answer sentence that directly addresses the research question or main model question and uses the key estimate or comparison",
-      "keep uncertainty with the estimate whenever confidence intervals are provided"
+      "keep uncertainty with the estimate whenever confidence intervals are provided and avoid saying the true effect is likely inside the interval"
     ),
     stringsAsFactors = FALSE
   )

@@ -60,3 +60,17 @@ test_that("lmToExplanationPrompt handles logistic models when zero lies inside t
   expect_match(prompt, "Keep the inferential register cautious and evidence-based.", fixed = TRUE)
   expect_match(prompt, 'Do not say that the data "confirm", "prove", "establish", or "demonstrate" an effect.', fixed = TRUE)
 })
+
+
+test_that("buildModelNumericAnchorInfo rounds prompt anchors for student-facing prose", {
+  dat = data.frame(
+    y = c(1, 2, 3, 4, 5, 6),
+    x = c(10.123, 11.234, 11.567, 11.789, 12.345, 12.876)
+  )
+
+  fit = stats::lm(y ~ x, data = dat)
+  info = buildModelNumericAnchorInfo(fit)
+
+  expect_match(info$promptText, "chosen anchor = 11.7", fixed = TRUE)
+  expect_no_match(info$promptText, "11.655", fixed = TRUE)
+})
