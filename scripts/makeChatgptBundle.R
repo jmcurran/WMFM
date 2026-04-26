@@ -5,12 +5,13 @@
 # Run from the package root, for example:
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1 --base master
+#   Rscript scripts/makeChatgptBundle.R --stage 10.1 --base HEAD
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1 --include-tests
 
 readArgs = function(args) {
     out = list(
         stage = NULL,
-        base = "master",
+        base = "HEAD",
         outputDir = "chatgpt-bundles",
         includeTests = FALSE,
         includeAllChangedFiles = TRUE
@@ -58,13 +59,14 @@ printUsage = function() {
             "",
             "Options:",
             "  --stage STAGE            Stage label, for example 10.1",
-            "  --base REF               Git ref to diff against; default: master",
+            "  --base REF               Git ref to diff against; default: HEAD/current branch tip",
             "  --output-dir DIR         Output directory; default: chatgpt-bundles",
             "  --include-tests          Include tests/testthat if present",
             "  --help, -h               Show this help",
             "",
             "Examples:",
             "  Rscript scripts/makeChatgptBundle.R --stage 10.1",
+            "  Rscript scripts/makeChatgptBundle.R --stage 10.1 --base master",
             "  Rscript scripts/makeChatgptBundle.R --stage 10.1 --base stage9_completed",
             sep = "\n"
         ),
@@ -404,6 +406,10 @@ createBundle = function(options) {
     zipStatus = utils::zip(zipfile = zipFile, files = bundleName)
     if (!identical(zipStatus, 0L)) {
         stop("Failed to create zip file: ", zipPath, call. = FALSE)
+    }
+
+    if (dir.exists(bundleName)) {
+        unlink(bundleName, recursive = TRUE, force = TRUE)
     }
 
     normalizePath(zipPath, winslash = "/", mustWork = TRUE)
