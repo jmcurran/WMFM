@@ -12,3 +12,4 @@
 ^\.wmfm_built_pkg_path($|/)
 ^\.positai$
 ^\.claude$
+^\.stage.*_changes($|/)
