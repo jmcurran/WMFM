@@ -18,6 +18,6 @@ second factor level as the fitted probability. This helper extracts readable
 labels for the success and failure outcomes so the app can write
 }
 \details{
-\code{Pr(Pass)} and \code{Odds(Pass)} rather than a generic \code{p}.
+\code{Pr(Pass = Pass)} and \code{Odds(Pass = Pass)} rather than a generic \code{p}.
 }
 \keyword{internal}

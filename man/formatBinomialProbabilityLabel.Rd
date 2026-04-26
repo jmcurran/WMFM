@@ -15,10 +15,10 @@ formatBinomialProbabilityLabel(
 
 \item{outcome}{Either \code{"success"} or \code{"failure"}.}
 
-\item{indexed}{Logical. If \code{TRUE}, append \verb{_i} inside the label.}
+\item{indexed}{Logical. If \code{TRUE}, append \verb{_i} to the response name.}
 }
 \value{
-A character scalar such as \code{"Pr(Pass)"} or \code{"Pr(Fail_i)"}.
+A character scalar such as \code{"Pr(Pass = Pass)"} or \code{"Pr(Pass_i = Pass)"}.
 }
 \description{
 Format a probability label for a binomial model
