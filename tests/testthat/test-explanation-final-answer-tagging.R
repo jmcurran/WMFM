@@ -174,3 +174,50 @@ testthat::test_that("detectExplanationClaimTags accepts 95 percent confident ans
   testthat::expect_true("uncertainty" %in% tags)
   testthat::expect_true("answer" %in% tags)
 })
+
+
+testthat::test_that("detectExplanationClaimTags tags near-final intercept-only estimate and CI as answer", {
+  df = data.frame(Exam = c(45, 55, 65, 75))
+  model = stats::lm(Exam ~ 1, data = df)
+  attr(model, "wmfm_research_question") = "What is the average final exam mark?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "Using the data, the estimated average final exam mark is 60, with a 95% confidence interval of 40 to 80.",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 3
+  )
+
+  testthat::expect_identical(tags, c("typicalCase", "uncertainty", "answer"))
+})
+
+
+testthat::test_that("buildExplanationClaimEvidenceMap keeps answer on final intercept-only estimate and CI", {
+  df = data.frame(Exam = c(45, 55, 65, 75))
+  model = stats::lm(Exam ~ 1, data = df)
+  attr(model, "wmfm_research_question") = "What is the average final exam mark?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "We want to know the typical final exam score that students achieved.",
+      "Using the data, the estimated average final exam mark is 60, with a 95% confidence interval of 40 to 80.",
+      "Thus, on average, students earned about 60 points on the exam, with a 95% confidence interval of 40 to 80."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  testthat::expect_true("answer" %in% out$claims$claimTags[[3]])
+  testthat::expect_identical(out$claims$claimType[[3]], "answer")
+})

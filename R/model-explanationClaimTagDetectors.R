@@ -625,13 +625,13 @@ sentenceLooksLikeResearchAnswer = function(
     totalClaims >= 1L && sentenceIndex >= max(totalClaims - 1L, 1L)
 
   explicitAnswerCue = grepl(
-    "^(overall\\b|in summary\\b|to answer the research question\\b|using our data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|this suggests\\b|this shows\\b)",
+    "^(overall\\b|in summary\\b|to answer the research question\\b|using our data\\b|using the data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|this suggests\\b|this shows\\b)",
     text,
     perl = TRUE
   )
 
   estimateAnswerCue = grepl(
-    "^(using our data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|the estimated\\b|the average\\b|the mean\\b|overall,? the average\\b|overall,? the mean\\b)",
+    "^(using our data\\b|using the data\\b|we estimate\\b|we can be 95% confident\\b|we can be 95 percent confident\\b|the estimated\\b|the average\\b|the mean\\b|overall,? the average\\b|overall,? the mean\\b)",
     text,
     perl = TRUE
   )
@@ -644,6 +644,11 @@ sentenceLooksLikeResearchAnswer = function(
     sentenceLooksLikePointEstimate(claimText)
 
   if (isNearFinalSentence && (explicitAnswerCue || estimateAnswerCue) && pointEstimateWithUncertainty) {
+    return(TRUE)
+  }
+
+  if (isInterceptOnlyExplanationModel(model) && pointEstimateWithUncertainty &&
+      (isNearFinalSentence || explicitAnswerCue || estimateAnswerCue)) {
     return(TRUE)
   }
 

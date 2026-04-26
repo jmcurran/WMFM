@@ -872,13 +872,24 @@ isStructuralAnswerCandidate = function(
 
   tags = normaliseExplanationClaimTags(claimTags)
 
-  if ("researchQuestion" %in% tags || "typicalCase" %in% tags || !("effect" %in% tags)) {
+  if ("researchQuestion" %in% tags) {
     return(FALSE)
   }
 
   text = trimws(tolower(claimText %||% ""))
 
   if (!nzchar(text) || sentenceIsDisclaimerTail(claimText)) {
+    return(FALSE)
+  }
+
+  if (isInterceptOnlyExplanationModel(model) &&
+      "typicalCase" %in% tags &&
+      "uncertainty" %in% tags &&
+      sentenceLooksLikePointEstimate(claimText)) {
+    return(TRUE)
+  }
+
+  if ("typicalCase" %in% tags || !("effect" %in% tags)) {
     return(FALSE)
   }
 
