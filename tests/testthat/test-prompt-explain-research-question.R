@@ -17,7 +17,12 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
   )
   testthat::expect_match(
     prompt,
-    "Start with a short opening paragraph that briefly restates the research question in clear, natural language.",
+    "Start with a short opening paragraph that restates the research question directly in clear, natural language.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "Do not use meta phrasing such as",
     fixed = TRUE
   )
   testthat::expect_match(
@@ -27,7 +32,7 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
   )
   testthat::expect_match(
     prompt,
-    "Start the final paragraph with a clear answer cue",
+    "do not add a duplicate final sentence when the estimate sentence already answers the question",
     fixed = TRUE
   )
   testthat::expect_match(
@@ -50,7 +55,7 @@ testthat::test_that("lmToExplanationPrompt omits research question block when ab
   testthat::expect_no_match(prompt, "Research question supplied by the user", fixed = TRUE)
   testthat::expect_no_match(
     prompt,
-    "Start with a short opening paragraph that briefly restates the research question in clear, natural language.",
+    "Start with a short opening paragraph that restates the research question directly in clear, natural language.",
     fixed = TRUE
   )
   testthat::expect_no_match(
@@ -100,4 +105,26 @@ testthat::test_that("lmToExplanationPrompt gives inferential framing for interce
   testthat::expect_match(prompt, "the range shows", fixed = TRUE)
   testthat::expect_match(prompt, "this gives a reasonable sense", fixed = TRUE)
   testthat::expect_match(prompt, "For intercept-only models", fixed = TRUE)
+})
+
+
+testthat::test_that("lmToExplanationPrompt includes global compression guidance after 12.2.9", {
+  df = data.frame(
+    Exam = c(42, 58, 81, 86, 35, 72, 42, 25, 36, 48),
+    Attend = factor(c("No", "Yes", "Yes", "Yes", "No", "Yes", "No", "No", "No", "Yes")),
+    Gender = factor(c("F", "F", "M", "M", "F", "M", "F", "M", "F", "M"))
+  )
+
+  model = stats::lm(Exam ~ Attend + Gender, data = df)
+  attr(model, "wmfm_research_question") = "How do attendance and gender relate to final exam marks?"
+
+  prompt = lmToExplanationPrompt(model)
+
+  testthat::expect_match(prompt, "Do not use meta phrasing such as", fixed = TRUE)
+  testthat::expect_match(prompt, "The question asks", fixed = TRUE)
+  testthat::expect_match(prompt, "Avoid weak openers such as", fixed = TRUE)
+  testthat::expect_match(prompt, "Based on the data", fixed = TRUE)
+  testthat::expect_match(prompt, "This interval describes", fixed = TRUE)
+  testthat::expect_match(prompt, "For factor comparisons, prefer one combined comparison sentence", fixed = TRUE)
+  testthat::expect_match(prompt, "estimate, confidence interval explanation, then restated estimate", fixed = TRUE)
 })

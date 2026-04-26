@@ -120,17 +120,21 @@ Research question supplied by the user:
 {researchQuestion}
 
 Use the research question to structure the explanation.
-- Start with a short opening paragraph that briefly restates the research question in clear, natural language.
+- Start with a short opening paragraph that restates the research question directly in clear, natural language.
+- Do not use meta phrasing such as \"The question asks...\", \"This question is about...\", or \"The aim is to...\".
 - Do not skip that opening restatement when a research question is present.
-- Then explain the model results as usual in a separate middle paragraph or paragraphs.
+- Then explain the model results as usual in a compact middle paragraph or paragraphs.
 - End with a short final paragraph that directly answers the research question in plain language.
-- Start the final paragraph with a clear answer cue such as \"Overall,\" or \"To answer the research question,\" so the closing takeaway is explicit.
+- Start the final paragraph with a clear answer cue such as \"Overall,\" or \"To answer the research question,\" only when it helps avoid ambiguity; do not add a duplicate final sentence when the estimate sentence already answers the question.
 - The final paragraph must include the most important estimate or comparison that answers the question, unless the model genuinely does not provide one.
-- If a confidence interval or uncertainty range is available for that estimate or comparison, keep it in the same final paragraph or explicitly refer back to it.
+- If a confidence interval or uncertainty range is available for that estimate or comparison, keep it with the estimate or comparison rather than adding a separate generic interval explanation.
 - Do not end with a generic statement such as \"higher values are associated with higher outcomes\" unless it also gives the key numeric effect or comparison.
-- The final paragraph should summarise the answer in one or two sentences rather than repeating the full explanation.
+- The final paragraph should summarise the answer in one sentence where possible rather than repeating the full explanation.
 - In the final paragraph, make it clear that the conclusion is about average or expected outcomes rather than certain outcomes for each individual case.
 - Prefer wording such as \"on average\", \"tend to\", \"is associated with\", or \"is consistent with\" when answering the research question.
+- Avoid weak openers such as \"Based on the data\" or \"Using the data\" unless they are needed for an intercept-only estimate sentence.
+- Do not insert standalone confidence-interval explanation sentences such as \"This interval describes...\" or \"This range shows...\" when the interval is already attached to the estimate.
+- For factor comparisons, prefer one combined comparison sentence with the key estimate and uncertainty rather than separate baseline, comparison, and restatement sentences.
 - Ground that answer in the fitted model results and their uncertainty.
 - Stay cautious: avoid causal claims unless the model and study design justify them.
 - Avoid phrasing that sounds fully predictive, deterministic, or guaranteed for individual cases.
@@ -158,7 +162,7 @@ For intercept-only models, do not discuss R-squared, variation explained, model 
 For intercept-only models, answer using the supplied formatted estimate and confidence interval; do not give generic statements about constants or intervals without the numbers.
 For intercept-only models with a confidence interval, frame the estimate as uncertainty about an underlying average, probability, or expected count for the relevant setting, rather than only as the observed sample mean.
 For intercept-only models, Restate the research question inferentially; do not describe it as only the average in this data set, dataset, course data, or sample.
-For intercept-only models, prefer wording such as: Using our data, we estimate this value to be X, with a 95% confidence interval of L to U.
+For intercept-only models, prefer wording such as: We estimate this value to be X, with a 95% confidence interval of L to U.
 For intercept-only models, it is acceptable to say we can be 95% confident that the true value lies within this interval; do not describe this as a probability and do not say there is a 95% chance.
 For intercept-only models, prefer we can be 95% confident over the true value is likely.
 For intercept-only models, write a maximum of two short paragraphs: one sentence restating the inferential research question, then one answer sentence using the estimate and confidence interval.

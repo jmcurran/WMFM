@@ -78,7 +78,7 @@ testthat::test_that("lmToExplanationPrompt gives concise intercept-only answer g
   )
   testthat::expect_match(
     prompt,
-    "Using our data, we estimate this value",
+    "We estimate this value",
     fixed = TRUE
   )
   testthat::expect_match(
