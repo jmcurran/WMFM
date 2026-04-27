@@ -5,13 +5,12 @@
 # Run from the package root, for example:
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1 --base master
-#   Rscript scripts/makeChatgptBundle.R --stage 10.1 --base HEAD
 #   Rscript scripts/makeChatgptBundle.R --stage 10.1 --include-tests
 
 readArgs = function(args) {
     out = list(
         stage = NULL,
-        base = "HEAD",
+        base = "master",
         outputDir = "chatgpt-bundles",
         includeTests = FALSE,
         includeAllChangedFiles = TRUE
@@ -59,14 +58,13 @@ printUsage = function() {
             "",
             "Options:",
             "  --stage STAGE            Stage label, for example 10.1",
-            "  --base REF               Git ref to diff against; default: HEAD/current branch tip",
+            "  --base REF               Git ref to diff against; default: master",
             "  --output-dir DIR         Output directory; default: chatgpt-bundles",
             "  --include-tests          Include tests/testthat if present",
             "  --help, -h               Show this help",
             "",
             "Examples:",
             "  Rscript scripts/makeChatgptBundle.R --stage 10.1",
-            "  Rscript scripts/makeChatgptBundle.R --stage 10.1 --base master",
             "  Rscript scripts/makeChatgptBundle.R --stage 10.1 --base stage9_completed",
             sep = "\n"
         ),
@@ -107,41 +105,6 @@ safeStageName = function(stage) {
     gsub("[^A-Za-z0-9._-]+", "_", stage)
 }
 
-splitGitLines = function(text) {
-    if (is.null(text) || !nzchar(text)) {
-        return(character())
-    }
-
-    out = strsplit(text, "\n", fixed = TRUE)[[1]]
-    out[nzchar(out)]
-}
-
-normaliseGitPaths = function(paths) {
-    paths = unique(paths)
-    paths = paths[nzchar(paths)]
-    paths = gsub("\\\\", "/", paths)
-    sort(paths)
-}
-
-isInsidePath = function(path, parent) {
-    parent = gsub("\\\\", "/", parent)
-    parent = sub("/+$", "", parent)
-
-    if (!nzchar(parent) || identical(parent, ".")) {
-        return(FALSE)
-    }
-
-    startsWith(path, paste0(parent, "/")) || identical(path, parent)
-}
-
-filterBundleGeneratedFiles = function(paths, outputDir) {
-    paths = normaliseGitPaths(paths)
-    paths = paths[!isInsidePath(paths, outputDir)]
-    paths = paths[!grepl("(^|/)stage[^/]*_chatgpt_bundle_[0-9]{8}-[0-9]{6}(/|$)", paths)]
-    paths = paths[!grepl("(^|/)stage[^/]*_chatgpt_bundle_[0-9]{8}-[0-9]{6}\\.zip$", paths)]
-    paths
-}
-
 checkProjectRoot = function() {
     if (!file.exists("DESCRIPTION")) {
         stop("DESCRIPTION was not found. Please run this script from the package root.", call. = FALSE)
@@ -153,51 +116,40 @@ checkProjectRoot = function() {
     }
 }
 
-getChangedFileSets = function(baseRef, outputDir) {
-    committedFiles = splitGitLines(runCommand(
+getChangedFiles = function(baseRef) {
+    diffFiles = runCommand(
         "git",
         c("diff", "--name-only", paste0(baseRef, "...HEAD")),
         allowFailure = TRUE
-    ))
+    )
 
-    workingFiles = splitGitLines(runCommand(
+    workingFiles = runCommand(
         "git",
         c("diff", "--name-only"),
         allowFailure = TRUE
-    ))
+    )
 
-    stagedFiles = splitGitLines(runCommand(
+    stagedFiles = runCommand(
         "git",
         c("diff", "--cached", "--name-only"),
         allowFailure = TRUE
-    ))
+    )
 
-    untrackedFiles = splitGitLines(runCommand(
+    untrackedFiles = runCommand(
         "git",
         c("ls-files", "--others", "--exclude-standard"),
         allowFailure = TRUE
-    ))
-
-    committedFiles = filterBundleGeneratedFiles(committedFiles, outputDir)
-    workingFiles = filterBundleGeneratedFiles(workingFiles, outputDir)
-    stagedFiles = filterBundleGeneratedFiles(stagedFiles, outputDir)
-    untrackedFiles = filterBundleGeneratedFiles(untrackedFiles, outputDir)
-
-    copiedFiles = normaliseGitPaths(c(
-        committedFiles,
-        workingFiles,
-        stagedFiles,
-        untrackedFiles
-    ))
-    copiedFiles = copiedFiles[file.exists(copiedFiles) & !dir.exists(copiedFiles)]
-
-    list(
-        committedFiles = committedFiles,
-        workingFiles = workingFiles,
-        stagedFiles = stagedFiles,
-        untrackedFiles = untrackedFiles,
-        copiedFiles = copiedFiles
     )
+
+    files = unique(c(
+        strsplit(diffFiles, "\n", fixed = TRUE)[[1]],
+        strsplit(workingFiles, "\n", fixed = TRUE)[[1]],
+        strsplit(stagedFiles, "\n", fixed = TRUE)[[1]],
+        strsplit(untrackedFiles, "\n", fixed = TRUE)[[1]]
+    ))
+
+    files = files[nzchar(files)]
+    files[file.exists(files) & !dir.exists(files)]
 }
 
 copyIfExists = function(path, bundleRoot) {
@@ -231,15 +183,13 @@ writeTextFile = function(path, text) {
     writeLines(text, path, useBytes = TRUE)
 }
 
-formatFileList = function(paths) {
-    if (length(paths) > 0) {
-        paste0("- ", paths, collapse = "\n")
+makeContextMarkdown = function(stage, baseRef, changedFiles) {
+    changedList = if (length(changedFiles) > 0) {
+        paste0("- ", changedFiles, collapse = "\n")
     } else {
-        "- No files detected"
+        "- No changed files detected"
     }
-}
 
-makeContextMarkdown = function(stage, baseRef, fileSets) {
     paste(
         "# ChatGPT stage bundle",
         "",
@@ -262,60 +212,13 @@ makeContextMarkdown = function(stage, baseRef, fileSets) {
         "",
         "## Changed files included",
         "",
-        formatFileList(fileSets$copiedFiles),
-        "",
-        "## Change sources",
-        "",
-        "### Committed changes since base ref",
-        "",
-        formatFileList(fileSets$committedFiles),
-        "",
-        "### Unstaged working-tree changes",
-        "",
-        formatFileList(fileSets$workingFiles),
-        "",
-        "### Staged changes",
-        "",
-        formatFileList(fileSets$stagedFiles),
-        "",
-        "### Untracked files",
-        "",
-        formatFileList(fileSets$untrackedFiles),
+        changedList,
         "",
         "## Notes for this stage",
         "",
         "- Add manual notes here before uploading if needed.",
         "- Mention any tests that failed or any behaviour you want reviewed.",
         sep = "\n"
-    )
-}
-
-writeFileManifest = function(bundleRoot, fileSets) {
-    manifestDir = file.path(bundleRoot, "git")
-
-    writeTextFile(
-        file.path(manifestDir, "changed-files-copied.txt"),
-        paste(fileSets$copiedFiles, collapse = "\n")
-    )
-
-    writeTextFile(
-        file.path(manifestDir, "changed-files-committed.txt"),
-        paste(fileSets$committedFiles, collapse = "\n")
-    )
-
-    writeTextFile(
-        file.path(manifestDir, "changed-files-working-tree.txt"),
-        paste(fileSets$workingFiles, collapse = "\n")
-    )
-
-    writeTextFile(
-        file.path(manifestDir, "changed-files-staged.txt"),
-        paste(fileSets$stagedFiles, collapse = "\n")
-    )
-
-    writeTextFile(
-        file.path(manifestDir, "changed-files-untracked.txt"),
-        paste(fileSets$untrackedFiles, collapse = "\n")
     )
 }
 
@@ -331,11 +234,11 @@ createBundle = function(options) {
     dir.create(file.path(bundleRoot, "git"), recursive = TRUE, showWarnings = FALSE)
     dir.create(file.path(bundleRoot, "project-files"), recursive = TRUE, showWarnings = FALSE)
 
-    fileSets = getChangedFileSets(options$base, options$outputDir)
+    changedFiles = getChangedFiles(options$base)
 
     writeTextFile(
         file.path(bundleRoot, "stage-context.md"),
-        makeContextMarkdown(options$stage, options$base, fileSets)
+        makeContextMarkdown(options$stage, options$base, changedFiles)
     )
 
     writeTextFile(
@@ -359,16 +262,9 @@ createBundle = function(options) {
     )
 
     writeTextFile(
-        file.path(bundleRoot, "git", "untracked-files.txt"),
-        runCommand("git", c("ls-files", "--others", "--exclude-standard"), allowFailure = TRUE)
-    )
-
-    writeTextFile(
         file.path(bundleRoot, "git", "recent-log.txt"),
         runCommand("git", c("log", "--oneline", "--decorate", "-20"), allowFailure = TRUE)
     )
-
-    writeFileManifest(bundleRoot, fileSets)
 
     alwaysInclude = c(
         "DESCRIPTION",
@@ -382,7 +278,7 @@ createBundle = function(options) {
         copyIfExists(path, bundleRoot)
     }
 
-    for (path in fileSets$copiedFiles) {
+    for (path in changedFiles) {
         copyIfExists(path, bundleRoot)
     }
 
@@ -408,9 +304,7 @@ createBundle = function(options) {
         stop("Failed to create zip file: ", zipPath, call. = FALSE)
     }
 
-    if (dir.exists(bundleName)) {
-        unlink(bundleName, recursive = TRUE, force = TRUE)
-    }
+    unlink(file.path(outputDirAbs, bundleName), recursive = TRUE, force = TRUE)
 
     normalizePath(zipPath, winslash = "/", mustWork = TRUE)
 }
