@@ -8,6 +8,7 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
   attr(model, "wmfm_research_question") = "Does Exam tend to increase as Test increases?"
 
   prompt = lmToExplanationPrompt(model)
+  guidanceLines = getResearchQuestionGuidanceLines(context = "explanationBlock")
 
   testthat::expect_match(prompt, "Research question supplied by the user", fixed = TRUE)
   testthat::expect_match(
@@ -17,7 +18,7 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
   )
   testthat::expect_match(
     prompt,
-    "Start with a short opening paragraph that restates the research question directly in clear, natural language.",
+    guidanceLines[[2]],
     fixed = TRUE
   )
   testthat::expect_match(
@@ -27,7 +28,7 @@ testthat::test_that("lmToExplanationPrompt includes research question guidance w
   )
   testthat::expect_match(
     prompt,
-    "End with a short final paragraph that directly answers the research question in plain language.",
+    guidanceLines[[6]],
     fixed = TRUE
   )
   testthat::expect_match(
@@ -51,16 +52,17 @@ testthat::test_that("lmToExplanationPrompt omits research question block when ab
   model = stats::lm(Exam ~ Test, data = df)
 
   prompt = lmToExplanationPrompt(model)
+  guidanceLines = getResearchQuestionGuidanceLines(context = "explanationBlock")
 
   testthat::expect_no_match(prompt, "Research question supplied by the user", fixed = TRUE)
   testthat::expect_no_match(
     prompt,
-    "Start with a short opening paragraph that restates the research question directly in clear, natural language.",
+    guidanceLines[[2]],
     fixed = TRUE
   )
   testthat::expect_no_match(
     prompt,
-    "End with a short final paragraph that directly answers the research question in plain language.",
+    guidanceLines[[6]],
     fixed = TRUE
   )
   testthat::expect_no_match(
