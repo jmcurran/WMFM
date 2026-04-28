@@ -168,6 +168,7 @@ Interpretation rules for numeric predictors:
 - For interaction models, explain conditional comparisons at the chosen anchor value unless another value is explicitly being discussed.
 - It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
 - For multiplicative effects on counts or odds, describe confidence intervals relative to the no-change value of 1, or say they correspond to a decrease throughout the interval.
+- If a multiplicative confidence interval includes 1, say the evidence for a clear multiplicative change is weak or uncertain; report the interval if useful, but do not present the point estimate as a clearly supported difference or effect.
 - Do not say that a multiplicative confidence interval lies below zero.
 
 {anchoredBaselineBlock}
