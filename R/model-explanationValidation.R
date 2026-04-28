@@ -145,10 +145,25 @@ detectExplanationOddsShownAsPlainDecimal = function(text) {
     return(FALSE)
   }
 
-  hasRatio = grepl("[0-9]+(?:\\.[0-9]+)?\\s*:\\s*[0-9]+(?:\\.[0-9]+)?", text, perl = TRUE)
-  hasDecimal = grepl("(?<![A-Za-z0-9])0\\.[0-9]+(?![A-Za-z0-9])", text, perl = TRUE)
+  if (grepl("[0-9]+(?:\\.[0-9]+)?\\s*:\\s*[0-9]+(?:\\.[0-9]+)?", text, perl = TRUE)) {
+    return(FALSE)
+  }
 
-  isTRUE(hasDecimal && !hasRatio)
+  if (grepl("\\bodds ratio\\b|\\bor\\b", text, perl = TRUE)) {
+    return(FALSE)
+  }
+
+  grepl(
+    paste(
+      c(
+        "\\bodds\\b[^.!?]{0,80}\\b(?:are|is|was|were|=|about|roughly|around|approximately)\\b[^.!?]{0,30}(?<![A-Za-z0-9])0\\.[0-9]+(?![A-Za-z0-9])",
+        "(?<![A-Za-z0-9])0\\.[0-9]+(?![A-Za-z0-9])[^.!?]{0,30}\\bodds\\b"
+      ),
+      collapse = "|"
+    ),
+    text,
+    perl = TRUE
+  )
 }
 
 detectExplanationEffectWithoutChangeLanguage = function(text, roles) {
