@@ -76,9 +76,11 @@ buildComparisonControlPromptBlock = function(model, mf = NULL) {
       lines,
       "- For logistic factor effects, use probabilities to describe fitted group outcomes and the supplied odds ratio to describe the direct group comparison.",
       "- Prefer the direct odds-ratio row over separate raw group odds whenever it is available.",
+      "- If a direct odds-ratio confidence interval includes 1, do not write that the factor raises, lowers, increases, decreases, or changes the outcome as a clear finding.",
       "- If a direct odds-ratio confidence interval includes 1 and the comparison is secondary to the main research question, prefer omitting the odds-ratio point estimate.",
-      "- If a direct odds-ratio confidence interval includes 1 and the comparison must be mentioned, say that the model does not show a clear group difference for that comparison.",
-      "- Do not present a secondary odds-ratio point estimate as a clearly supported group difference when its confidence interval includes 1.",
+      "- If a direct odds-ratio confidence interval includes 1 and the comparison must be mentioned, say that the fitted probabilities are different but the interval is wide enough that the model does not show a clear group difference for that comparison.",
+      "- Do not present an odds-ratio point estimate as a clearly supported group difference when its confidence interval includes 1.",
+      "- Do not combine a fitted-probability comparison with an uncertain odds-ratio estimate in a way that makes the factor comparison sound clearly supported.",
       "- Do not compare separate group odds intervals with each other, and do not infer a group difference from CI overlap or non-overlap.",
       "- Do not say the confidence interval for one group's raw odds covering 1:1 means there may be no group difference."
     )

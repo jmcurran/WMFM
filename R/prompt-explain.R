@@ -169,8 +169,9 @@ Interpretation rules for numeric predictors:
 - It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
 - For multiplicative effects on counts or odds, describe confidence intervals relative to the no-change value of 1, or say they correspond to a decrease throughout the interval.
 - If a multiplicative confidence interval includes 1, treat the evidence for a clear multiplicative change as weak or uncertain.
+- For comparisons whose multiplicative confidence interval includes 1, do not write that the predictor raises, lowers, increases, decreases, or changes the outcome as a clear finding.
 - For secondary comparisons whose multiplicative confidence interval includes 1, prefer omitting the point estimate unless the research question specifically asks for that comparison.
-- If such a comparison must be mentioned, say in plain language that the model does not show a clear difference for that comparison; do not present the point estimate as a clearly supported difference or effect.
+- If such a comparison must be mentioned, say in plain language that the fitted values differ but the model does not show a clear difference for that comparison; do not present the point estimate as a clearly supported difference or effect.
 - Do not say that a multiplicative confidence interval lies below zero.
 
 {anchoredBaselineBlock}
