@@ -1,3 +1,48 @@
+#' Get shared research-question guidance lines for WMFM prompts
+#'
+#' These lines define the research-question contract used by prompt builders.
+#' Keeping the wording here avoids prompt-path drift while preserving the
+#' exact text expected by existing prompt tests.
+#'
+#' @param context One of \code{"languageContract"} or
+#'   \code{"explanationBlock"}.
+#'
+#' @return A character vector of prompt guidance lines.
+#' @keywords internal
+#' @noRd
+getResearchQuestionGuidanceLines = function(context = c("languageContract", "explanationBlock")) {
+  context = match.arg(context)
+
+  if (identical(context, "languageContract")) {
+    return(c(
+      "- Start with a short opening paragraph that briefly restates the research question in clear, natural language."
+    ))
+  }
+
+  c(
+    "Use the research question to structure the explanation.",
+    "- Start with a short opening paragraph that restates the research question directly in clear, natural language.",
+    "- Do not use meta phrasing such as \"The question asks...\", \"This question is about...\", or \"The aim is to...\".",
+    "- Do not skip that opening restatement when a research question is present.",
+    "- Then explain the model results as usual in a compact middle paragraph or paragraphs.",
+    "- End with a short final paragraph that directly answers the research question in plain language.",
+    "- Start the final paragraph with a clear answer cue such as \"Overall,\" or \"To answer the research question,\" only when it helps avoid ambiguity; do not add a duplicate final sentence when the estimate sentence already answers the question.",
+    "- The final paragraph must include the most important estimate or comparison that answers the question, unless the model genuinely does not provide one.",
+    "- If a confidence interval or uncertainty range is available for that estimate or comparison, keep it with the estimate or comparison rather than adding a separate generic interval explanation.",
+    "- Do not end with a generic statement such as \"higher values are associated with higher outcomes\" unless it also gives the key numeric effect or comparison.",
+    "- The final paragraph should summarise the answer in one sentence where possible rather than repeating the full explanation.",
+    "- In the final paragraph, make it clear that the conclusion is about average or expected outcomes rather than certain outcomes for each individual case.",
+    "- Prefer wording such as \"on average\", \"tend to\", \"is associated with\", or \"is consistent with\" when answering the research question.",
+    "- Avoid weak openers such as \"Based on the data\" or \"Using the data\" unless they are needed for an intercept-only estimate sentence.",
+    "- Do not insert standalone confidence-interval explanation sentences such as \"This interval describes...\" or \"This range shows...\" when the interval is already attached to the estimate.",
+    "- For factor comparisons, prefer one combined comparison sentence with the key estimate and uncertainty rather than separate baseline, comparison, and restatement sentences.",
+    "- Ground that answer in the fitted model results and their uncertainty.",
+    "- Stay cautious: avoid causal claims unless the model and study design justify them.",
+    "- Avoid phrasing that sounds fully predictive, deterministic, or guaranteed for individual cases.",
+    "- If the model does not fully answer the question, say what the model does and does not support."
+  )
+}
+
 #' Build the shared language contract for WMFM explanations
 #'
 #' Central shared rules used by both overall model summaries and contrasts.
@@ -25,13 +70,13 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     )
   }
 
-  contractBody = paste(
+  contractBodyLines = c(
     "Guidelines:",
     "- If dataset documentation is provided, use it only to define variables when needed; do not guess course level, study level, or other background details from abbreviated data set names.",
     "- Do not infer course level, study level, or other background details from abbreviated data set names such as s20x.",
     "- Briefly explain what the response represents and what the predictors represent, defining predictors in-line without bullet points.",
     "",
-    "- Start with a short opening paragraph that briefly restates the research question in clear, natural language.",
+    getResearchQuestionGuidanceLines(context = "languageContract"),
     "- Start the explanation by describing the outcome and the main comparison in plain language.",
     "- Avoid weak openers such as \"Based on the data\" or \"Using the data\" unless that wording is needed for an intercept-only estimate sentence.",
     "- Do NOT describe what the model does (e.g. avoid phrases like \"the model links\" or \"the model estimates\").",
@@ -99,6 +144,10 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- If a confidence interval includes 0, say there is weak or uncertain evidence for a clear effect, because the data are consistent with anything from a small decrease to a small increase.",
     "- For multiplicative effects on counts or odds, do not say a confidence interval lies below zero.",
     "- For multiplicative effects, describe the interval relative to the no-change value of 1, or say it corresponds to a decrease throughout the interval.",
+    "- If a multiplicative confidence interval includes 1, treat the evidence for a clear multiplicative change as weak or uncertain.",
+    "- For comparisons whose multiplicative confidence interval includes 1, do not write that the predictor raises, lowers, increases, decreases, or changes the outcome as a clear finding.",
+    "- For secondary comparisons whose multiplicative confidence interval includes 1, prefer omitting the point estimate unless the research question specifically asks for that comparison.",
+    "- If such a comparison must be mentioned, say in plain language that the fitted values differ but the model does not show a clear difference for that comparison; do not present the point estimate as a clearly supported difference or effect.",
     "- Do NOT replace \"95% confidence interval\" with phrases like \"plausible range\".",
     "- Do NOT do extra arithmetic in the explanation (e.g. do not multiply effects together or compute implied predicted counts like \"2.9 * 32.5 ~= 94\").",
     "- Avoid mathematical operator symbols such as \"*\", \"~=\", \"+\", or \"/\" in the narrative.",
@@ -142,10 +191,11 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "  - All percentages are written using numerals.",
     "  - No verbal fractions are used for non-integer proportions.",
     "  - Multiplicative confidence intervals are not described as being below zero.",
-    "- If any violations are found, correct them.",
-    sep = "\n"
+    "- If any violations are found, correct them."
   )
 
+
+  contractBody = paste(contractBodyLines, collapse = "\n")
   paste(header, "", contractBody, sep = "\n")
 }
 

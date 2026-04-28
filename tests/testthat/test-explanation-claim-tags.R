@@ -119,3 +119,25 @@ testthat::test_that("detectExplanationClaimTags keeps scale-only sentences separ
 
   testthat::expect_identical(tags, "scale")
 })
+
+testthat::test_that("detectExplanationClaimTags recognises abbreviated CI uncertainty wording", {
+  df = getStats20xExamTestData()[, c("Exam", "Test")]
+
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Test help explain Exam?"
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  tags = detectExplanationClaimTags(
+    claimText = "For each one-point increase, the expected exam mark increases by about 1.8 points (95 % CI 1.4 to 2.2).",
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model,
+    sentenceIndex = 2,
+    totalClaims = 3
+  )
+
+  testthat::expect_true("uncertainty" %in% tags)
+})

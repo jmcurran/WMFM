@@ -153,7 +153,7 @@ detectUncertainty = function(claimText) {
   text = tolower(claimText %||% "")
 
   grepl(
-    "confidence interval|confidence intervals|confidence limit|confidence limits|uncertain|uncertainty|likely|plausible|consistent with|confidence band|confidence bands|interval estimate|95% confident|95 percent confident",
+    "confidence interval|confidence intervals|confidence limit|confidence limits|\\bci\\b|uncertain|uncertainty|likely|plausible|consistent with|confidence band|confidence bands|confidence range|confidence ranges|interval estimate|95% confident|95 percent confident",
     text,
     perl = TRUE
   )
@@ -581,7 +581,7 @@ sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
   }
 
   uncertaintyQualifiedChangeCue = changeCue && grepl(
-    "confidence interval|confidence intervals|confidence limit|confidence limits|likely|plausible|consistent with|positive|negative",
+    "confidence interval|confidence intervals|confidence limit|confidence limits|\\bci\\b|likely|plausible|consistent with|positive|negative",
     text,
     perl = TRUE
   )

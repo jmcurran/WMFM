@@ -16,6 +16,8 @@ NAMESPACE text eol=lf
 .Rbuildignore text eol=lf
 .Renviron text eol=lf
 .gitignore text eol=lf
+.gitattributes text eol=lf
+*.Rproj text eol=lf
 
 *.png binary
 *.jpg binary

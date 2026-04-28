@@ -27,6 +27,23 @@ testthat::test_that("deterministic sentence validation flags odds shown as a dec
 })
 
 
+
+testthat::test_that("deterministic sentence validation does not flag odds-ratio intervals as decimal odds", {
+  flags = buildExplanationDeterministicQualityFlags(
+    claimText = "The odds ratio for attendance is 2.5 (95% CI 0.8 to 7.7), indicating that the evidence for a true difference is weak because the interval includes no change.",
+    roles = c("uncertainty", "evidence")
+  )
+
+  testthat::expect_false("oddsShownAsDecimal" %in% flags)
+
+  flags = buildExplanationDeterministicQualityFlags(
+    claimText = "The odds of passing are about 0.70 (95% CI 0.4 to 1.2).",
+    roles = c("effect", "uncertainty", "evidence")
+  )
+
+  testthat::expect_true("oddsShownAsDecimal" %in% flags)
+})
+
 testthat::test_that("deterministic sentence validation flags vague numeric effect language", {
   flags = buildExplanationDeterministicQualityFlags(
     claimText = "The effect of magnitude is negative.",
