@@ -10,7 +10,7 @@
 readArgs = function(args) {
     out = list(
         stage = NULL,
-        base = "master",
+        base = "HEAD",
         outputDir = "chatgpt-bundles",
         includeTests = FALSE,
         includeAllChangedFiles = TRUE
@@ -58,7 +58,7 @@ printUsage = function() {
             "",
             "Options:",
             "  --stage STAGE            Stage label, for example 10.1",
-            "  --base REF               Git ref to diff against; default: master",
+            "  --base REF               Git ref to diff against; default: HEAD",
             "  --output-dir DIR         Output directory; default: chatgpt-bundles",
             "  --include-tests          Include tests/testthat if present",
             "  --help, -h               Show this help",
