@@ -8,7 +8,12 @@ testthat::test_that("shared prompt contract cautions about multiplicative interv
   )
   testthat::expect_match(
     contract,
-    "do not present the point estimate as a clearly supported difference or effect",
+    "prefer omitting the point estimate unless the research question specifically asks for that comparison",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    contract,
+    "the model does not show a clear difference for that comparison",
     fixed = TRUE
   )
 })
@@ -34,9 +39,14 @@ testthat::test_that("lmToExplanationPrompt includes multiplicative interval caut
     "weak or uncertain",
     fixed = TRUE
   )
+  testthat::expect_match(
+    prompt,
+    "prefer omitting the point estimate unless the research question specifically asks for that comparison",
+    fixed = TRUE
+  )
 })
 
-testthat::test_that("logistic comparison control cautions about odds-ratio intervals crossing 1", {
+testthat::test_that("logistic comparison control suppresses unclear secondary odds-ratio comparisons", {
   dat = data.frame(
     y = c(1, 0, 1, 1, 0, 0, 1, 0),
     group = factor(rep(c("A", "B"), each = 4)),
@@ -53,7 +63,12 @@ testthat::test_that("logistic comparison control cautions about odds-ratio inter
   )
   testthat::expect_match(
     promptBlock,
-    "describe the comparison cautiously",
+    "prefer omitting the odds-ratio point estimate",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    promptBlock,
+    "the model does not show a clear group difference for that comparison",
     fixed = TRUE
   )
 })
