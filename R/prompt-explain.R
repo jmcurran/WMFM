@@ -164,15 +164,22 @@ For intercept-only models, do not include standalone sentences explaining what a
 
 Interpretation rules for numeric predictors:
 - When discussing a baseline fitted value, expected count, mean response, odds, or probability, use the chosen anchor value for each numeric predictor rather than automatically using 0.
+- When reporting group fitted values from a model that also has numeric predictors, say plainly what numeric reference value is being used, such as for a student with an average test mark.
 - If 0 lies outside the observed range for a numeric predictor, do not describe the intercept as if it were directly meaningful at 0.
 - For interaction models, explain conditional comparisons at the chosen anchor value unless another value is explicitly being discussed.
+- For interaction models, include quantitative estimates for the within-group effects or the difference between those effects where available; do not rely only on qualitative terms such as steeper, flatter, or stronger.
 - It is fine to mention that the formal fitted equation is a function of the numeric predictor, but the substantive interpretation should be anchored at the chosen value above.
+- Prefer explicit wording such as for each one-unit increase in the predictor; avoid abstract phrases such as per unit increase.
 - For multiplicative effects on counts or odds, describe confidence intervals relative to the no-change value of 1, or say they correspond to a decrease throughout the interval.
 - If a multiplicative confidence interval includes 1, treat the evidence for a clear multiplicative change as weak or uncertain.
 - For comparisons whose multiplicative confidence interval includes 1, do not write that the predictor raises, lowers, increases, decreases, or changes the outcome as a clear finding.
 - For secondary comparisons whose multiplicative confidence interval includes 1, prefer omitting the point estimate unless the research question specifically asks for that comparison.
 - If such a comparison must be mentioned, say in plain language that the fitted values differ but the model does not show a clear difference for that comparison; do not present the point estimate as a clearly supported difference or effect.
 - Do not say that a multiplicative confidence interval lies below zero.
+- Do not use overlap or non-overlap of separate confidence intervals as the main justification for group differences; use the estimated difference and its uncertainty instead.
+- When evidence for a difference is weak, prefer direct wording such as there is no clear evidence of a difference based on these data.
+- You may say the model when describing results, but do not use qualified labels such as fitted model, linear model, logistic model, or Poisson model in student-facing sentences.
+- Use the same ordinary terminology as the research question and data documentation; for example, do not replace mark with score when the response is described as a mark.
 
 {anchoredBaselineBlock}
 

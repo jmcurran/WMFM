@@ -80,3 +80,47 @@ testthat::test_that("buildExplanationClaimEvidenceMap uses context evidence for 
   testthat::expect_false(any(grepl("Main effect translation", out$claims$evidenceLabels[[1]], fixed = TRUE)))
   testthat::expect_false(any(grepl("Confidence interval rule", out$claims$evidenceLabels[[1]], fixed = TRUE)))
 })
+
+
+testthat::test_that("interaction answer selection keeps answer off intermediate slope statements", {
+  data(course.df, package = "s20x")
+  df = course.df[, c("Exam", "Attend", "Test")]
+
+  model = stats::lm(Exam ~ Attend * Test, data = df)
+  attr(model, "wmfm_research_question") = paste(
+    "Does the relationship between test mark and final exam mark appear to differ",
+    "by attendance group?"
+  )
+  attr(model, "wmfm_response_noun_phrase") = "exam mark"
+
+  audit = buildModelExplanationAudit(model)
+  teachingSummary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  out = buildExplanationClaimEvidenceMap(
+    explanationText = paste(
+      "The question asks whether the link between a student's test mark and their final exam mark is different for those who attend class regularly compared to those who do not.",
+      "In this model, the effect of test mark on exam mark was estimated separately for the two attendance groups.",
+      "For students who regularly attended class, the slope linking test to exam was steeper, indicating that each additional point on the test is associated with a larger increase in the final exam mark.",
+      "For students who did not attend class, the slope was flatter, meaning that increases in test score produce smaller gains in the final exam.",
+      "The comparison of these two slopes shows that the relationship is stronger for regular attendees.",
+      "Overall, the effect of test mark on exam mark is not the same across attendance groups."
+    ),
+    audit = audit,
+    teachingSummary = teachingSummary,
+    model = model
+  )
+
+  intermediateRows = grep(
+    "^(For students who regularly attended class|The comparison of these two slopes)",
+    out$claims$claimText
+  )
+  answerRows = grep("^Overall,", out$claims$claimText)
+
+  testthat::expect_length(intermediateRows, 2)
+  testthat::expect_length(answerRows, 1)
+  testthat::expect_false(any(vapply(out$claims$claimTags[intermediateRows], function(tags) {
+    "answer" %in% tags
+  }, logical(1))))
+  testthat::expect_true("answer" %in% out$claims$claimTags[[answerRows]])
+  testthat::expect_identical(out$claims$primaryRole[[answerRows]], "answer")
+})

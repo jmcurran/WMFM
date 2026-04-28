@@ -84,6 +84,17 @@ buildExplanationSkeletonPromptBlock = function(model, mf = NULL) {
     )
   }
 
+  lines = c(
+    lines,
+    "Explanation wording control:",
+    "- You may say the model when describing results, but do not use qualified labels such as fitted model, linear model, logistic model, or Poisson model in student-facing sentences.",
+    "- Use the same ordinary terminology as the research question and data documentation; do not substitute score for mark when the response is described as a mark.",
+    "- Do not use overlap or non-overlap of separate confidence intervals as the main justification for group differences; use the estimated difference or the uncertainty attached to the relevant comparison.",
+    "- When evidence for a difference is weak, prefer direct wording such as there is no clear evidence of a difference based on these data.",
+    "- When a group fitted value is reported from a model that also has numeric predictors, state the reference value simply, such as for a student with an average test mark.",
+    "- When describing numeric effects, prefer for each one-unit increase in the predictor over abstract wording such as per unit increase."
+  )
+
   if (identical(ruleProfile$modelStructure, "interaction") || grepl("_interaction$", ruleProfile$skeletonId)) {
     lines = c(
       lines,

@@ -174,8 +174,8 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
     return(buildExplanationSkeletonDataFrame(c(
       firstWithinGroupEffect = "Describe the effect within the first relevant group or selected value, keeping the estimate and uncertainty together if available.",
       secondWithinGroupEffect = "Describe the same kind of effect within the second relevant group or selected value, using the same interpretation scale.",
-      effectComparison = "Compare the within-group effects directly, focusing on whether one effect is larger, smaller, steeper, weaker, or in a different direction.",
-      interactionConclusion = "State what the different within-group effects mean for the research question in plain language.",
+      effectComparison = "Compare the within-group effects directly, using numeric estimates where available rather than relying only on words such as larger, smaller, steeper, or weaker.",
+      interactionConclusion = "State what the different within-group effects mean for the research question in plain language, including the relevant difference between effects when available.",
       answer = "Answer the research question with a clear closing takeaway that uses the key within-group comparison and avoids decomposing coefficients or naming the interaction term."
     )))
   }
@@ -184,7 +184,7 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
     return(buildExplanationSkeletonDataFrame(c(
       modelContext = "Identify the groups or treatments being compared.",
       comparisonSummary = buildExplanationSkeletonComparisonStep(comparisonScope),
-      evidence = "Give targeted numeric support only when it helps answer the research question.",
+      evidence = "Give targeted numeric support only when it helps answer the research question; do not use overlap or non-overlap of separate confidence intervals as the justification for a difference.",
       uncertainty = "Give uncertainty if available, keeping it with the comparison or estimate.",
       answer = "Answer the research question with a clear closing takeaway that uses the most relevant comparison and avoids listing unnecessary pairwise comparisons."
     )))
@@ -289,22 +289,31 @@ buildExplanationEffectLanguage = function(modelStructure, predictorTypes, hasInt
   }
 
   if (isTRUE(hasInteractions) || identical(modelStructure, "interaction")) {
-    return("Describe the effect within each relevant group or selected value first, then compare the within-group effects directly.")
+    return(paste(
+      "Describe the effect within each relevant group or selected value first,",
+      "then compare the within-group effects directly using numeric estimates where available."
+    ))
   }
 
   hasNumeric = length(predictorTypes$numeric) > 0
   hasFactor = length(predictorTypes$factor) > 0
 
   if (hasNumeric && hasFactor) {
-    return("Use change language for numeric predictors and comparison language for factor or treatment levels.")
+    return(paste(
+      "Use explicit change language for numeric predictors and comparison language for factor or treatment levels.",
+      "When reporting group fitted values, state the numeric predictor reference value simply."
+    ))
   }
 
   if (hasNumeric) {
-    return("Use explicit change language, such as the effect of a one-unit increase or another meaningful change.")
+    return("Use explicit change language, such as for each one-unit increase in the predictor, rather than abstract per-unit wording.")
   }
 
   if (hasFactor) {
-    return("Use group, level, or treatment comparison language without listing unnecessary pairwise comparisons.")
+    return(paste(
+      "Use group, level, or treatment comparison language without listing unnecessary pairwise comparisons.",
+      "Do not use overlap or non-overlap of separate confidence intervals as the main justification for group differences."
+    ))
   }
 
   "Describe relevant effects in plain language on the interpretation scale."
@@ -314,6 +323,9 @@ buildExplanationAvoidTerms = function(modelFamily, modelStructure, hasInteractio
 
   out = c(
     "fitted model",
+    "linear model",
+    "logistic model",
+    "Poisson model",
     "regression results",
     "coefficient",
     "intercept"

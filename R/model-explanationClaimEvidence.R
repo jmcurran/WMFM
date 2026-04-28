@@ -889,12 +889,12 @@ isStructuralAnswerCandidate = function(
     return(TRUE)
   }
 
-  if ("typicalCase" %in% tags || !("effect" %in% tags)) {
-    return(FALSE)
-  }
-
   if (sentenceHasExplicitAnswerCue(claimText)) {
     return(TRUE)
+  }
+
+  if ("typicalCase" %in% tags || !("effect" %in% tags)) {
+    return(FALSE)
   }
 
   if ("comparison" %in% tags) {
