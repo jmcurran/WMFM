@@ -274,3 +274,73 @@ testthat::test_that("postProcessExplanationText debug mode reports sentence open
   )
   testthat::expect_true("sentenceOpenings" %in% out$rulesApplied)
 })
+
+
+testthat::test_that("findExplanationSurfaceIssues reports known surface issues", {
+  text = c(
+    "The interaction term shows that a one-magnitude rise matters.",
+    "The lower count is only one-third of the original value.",
+    "The estimate is 2.4, with values between 1.2 and 3.6."
+  )
+
+  out = findExplanationSurfaceIssues(text)
+
+  testthat::expect_s3_class(out, "data.frame")
+  testthat::expect_named(out, c("element", "issueType", "pattern", "matchedText"))
+  testthat::expect_true("modelMechanismLanguage" %in% out$issueType)
+  testthat::expect_true("unitChangePhrasing" %in% out$issueType)
+  testthat::expect_true("verbalFractions" %in% out$issueType)
+  testthat::expect_true("longSentencePatterns" %in% out$issueType)
+  testthat::expect_true(any(out$matchedText == "interaction term"))
+  testthat::expect_true(any(out$matchedText == "one-magnitude rise"))
+  testthat::expect_true(any(out$matchedText == "one-third"))
+})
+
+
+testthat::test_that("findExplanationSurfaceIssues returns empty schema for clean text", {
+  text = paste(
+    "The expected mark is 65.2.",
+    "The 95% confidence interval runs from 60.1 to 70.3."
+  )
+
+  out = findExplanationSurfaceIssues(text)
+
+  testthat::expect_s3_class(out, "data.frame")
+  testthat::expect_equal(nrow(out), 0)
+  testthat::expect_named(out, c("element", "issueType", "pattern", "matchedText"))
+})
+
+
+testthat::test_that("findExplanationSurfaceIssues can scan selected issue groups", {
+  text = paste(
+    "The coefficient is positive.",
+    "The lower value is one-third of the original value."
+  )
+
+  out = findExplanationSurfaceIssues(text, issueTypes = "verbalFractions")
+
+  testthat::expect_equal(unique(out$issueType), "verbalFractions")
+  testthat::expect_true(any(out$matchedText == "one-third"))
+  testthat::expect_false(any(grepl("coefficient", out$matchedText, fixed = TRUE)))
+})
+
+
+testthat::test_that("findExplanationSurfaceIssues rejects invalid inputs", {
+  testthat::expect_error(
+    findExplanationSurfaceIssues(1),
+    "`text` must be a character vector or NULL.",
+    fixed = TRUE
+  )
+
+  testthat::expect_error(
+    findExplanationSurfaceIssues("Text", issueTypes = character(0)),
+    "`issueTypes` must be a non-empty character vector.",
+    fixed = TRUE
+  )
+
+  testthat::expect_error(
+    findExplanationSurfaceIssues("Text", issueTypes = "notSupported"),
+    "Unsupported issue type: notSupported.",
+    fixed = TRUE
+  )
+})

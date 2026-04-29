@@ -679,3 +679,156 @@ postProcessWhitespace = function(text) {
   text = gsub("[[:space:]]{2,}", " ", text, perl = TRUE)
   trimws(text)
 }
+
+#' Find remaining surface-language issues in explanation text
+#'
+#' Scans explanation text for recurring surface-language issues that the
+#' deterministic post-processing layer is intended to control. This helper is
+#' diagnostic only: it does not rewrite the text and it does not make any
+#' statistical claims.
+#'
+#' @param text Character vector of explanation text.
+#' @param issueTypes Character vector naming issue groups to scan for. Defaults
+#'   to all supported issue groups.
+#'
+#' @return A data frame with one row per detected issue and columns `element`,
+#'   `issueType`, `pattern`, and `matchedText`.
+#' @export
+findExplanationSurfaceIssues = function(text,
+                                         issueTypes = c(
+                                           "modelMechanismLanguage",
+                                           "unitChangePhrasing",
+                                           "verbalFractions",
+                                           "longSentencePatterns"
+                                         )) {
+  if (is.null(text)) {
+    return(postProcessIssueDataFrame())
+  }
+
+  if (!is.character(text)) {
+    stop("`text` must be a character vector or NULL.", call. = FALSE)
+  }
+
+  if (!is.character(issueTypes) || length(issueTypes) < 1 || anyNA(issueTypes)) {
+    stop("`issueTypes` must be a non-empty character vector.", call. = FALSE)
+  }
+
+  rules = postProcessSurfaceIssueRules()
+  unknownTypes = setdiff(issueTypes, unique(vapply(rules, `[[`, character(1), "issueType")))
+
+  if (length(unknownTypes) > 0) {
+    stop(
+      paste0(
+        "Unsupported issue type: ",
+        paste(unknownTypes, collapse = ", "),
+        "."
+      ),
+      call. = FALSE
+    )
+  }
+
+  rules = rules[vapply(
+    rules,
+    function(rule) {
+      rule$issueType %in% issueTypes
+    },
+    logical(1)
+  )]
+
+  rows = list()
+
+  for (i in seq_along(text)) {
+    textElement = text[[i]]
+
+    if (is.na(textElement)) {
+      next
+    }
+
+    for (rule in rules) {
+      matches = gregexpr(
+        pattern = rule$pattern,
+        text = textElement,
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+      matchedText = regmatches(textElement, matches)[[1]]
+
+      if (length(matchedText) == 1 && identical(matchedText, character(0))) {
+        next
+      }
+
+      for (match in unique(matchedText)) {
+        rows[[length(rows) + 1]] = data.frame(
+          element = i,
+          issueType = rule$issueType,
+          pattern = rule$name,
+          matchedText = match,
+          stringsAsFactors = FALSE
+        )
+      }
+    }
+  }
+
+  if (length(rows) == 0) {
+    return(postProcessIssueDataFrame())
+  }
+
+  do.call(rbind, rows)
+}
+
+#' Create an empty surface issue data frame
+#'
+#' @return An empty data frame using the surface issue schema.
+#' @keywords internal
+postProcessIssueDataFrame = function() {
+  data.frame(
+    element = integer(0),
+    issueType = character(0),
+    pattern = character(0),
+    matchedText = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Surface issue scan rules
+#'
+#' @return A list of diagnostic surface issue rules.
+#' @keywords internal
+postProcessSurfaceIssueRules = function() {
+  list(
+    list(
+      issueType = "modelMechanismLanguage",
+      name = "technicalModelTerms",
+      pattern = paste0(
+        "\\b(?:linear model|regression model|fitted model|interaction term|",
+        "coefficient|intercept|slope|parameter)\\b"
+      )
+    ),
+    list(
+      issueType = "unitChangePhrasing",
+      name = "oneMagnitudeChange",
+      pattern = "\\bone-magnitude (?:rise|increase)\\b"
+    ),
+    list(
+      issueType = "unitChangePhrasing",
+      name = "oneUnitChange",
+      pattern = "\\bone-unit (?:rise|increase) in [[:alnum:]_.]+\\b"
+    ),
+    list(
+      issueType = "verbalFractions",
+      name = "verbalFraction",
+      pattern = paste0(
+        "\\b(?:one-third|two-thirds|three-quarters|one-quarter|",
+        "a quarter|one half|one-half|a half)\\b"
+      )
+    ),
+    list(
+      issueType = "longSentencePatterns",
+      name = "embeddedConfidenceRange",
+      pattern = paste0(
+        ", with (?:plausible values|values|limits|confidence limits|",
+        "a 95% confidence interval) (?:between|from) [^.]+"
+      )
+    )
+  )
+}
