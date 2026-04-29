@@ -54,12 +54,23 @@ cleanExplanationText = function(text) {
 #' @param text Character vector of explanation text.
 #' @param audit Optional explanation audit object. Reserved for future
 #'   audit-aware cleanup rules.
+#' @param debug Logical. If `TRUE`, return the original text, processed text,
+#'   and the names of deterministic rules that changed the text.
 #'
-#' @return A character vector with deterministic surface cleanup applied.
+#' @return A character vector with deterministic surface cleanup applied, or a
+#'   list with `original`, `processed`, and `rulesApplied` when `debug = TRUE`.
 #' @export
-postProcessExplanationText = function(text, audit = NULL) {
+postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   if (is.null(text)) {
+    if (isTRUE(debug)) {
+      return(list(
+        original = NULL,
+        processed = NULL,
+        rulesApplied = character(0)
+      ))
+    }
+
     return(NULL)
   }
 
@@ -67,16 +78,107 @@ postProcessExplanationText = function(text, audit = NULL) {
     stop("`text` must be a character vector or NULL.", call. = FALSE)
   }
 
-  cleaned = cleanExplanationText(text)
-  keep = !is.na(cleaned)
+  if (!is.logical(debug) || length(debug) != 1 || is.na(debug)) {
+    stop("`debug` must be TRUE or FALSE.", call. = FALSE)
+  }
 
-  cleaned[keep] = postProcessUnitChangePhrasing(cleaned[keep])
-  cleaned[keep] = postProcessVerbalFractions(cleaned[keep])
-  cleaned[keep] = postProcessModelMechanismLanguage(cleaned[keep])
-  cleaned[keep] = postProcessLongSentencePatterns(cleaned[keep])
-  cleaned[keep] = postProcessWhitespace(cleaned[keep])
+  original = text
+  cleaned = cleanExplanationText(text)
+  rulesApplied = character(0)
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "cleanExplanationText",
+    ruleFunction = function(x) {
+      x
+    },
+    rulesApplied = rulesApplied,
+    previous = original
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "unitChangePhrasing",
+    ruleFunction = postProcessUnitChangePhrasing,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "verbalFractions",
+    ruleFunction = postProcessVerbalFractions,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "modelMechanismLanguage",
+    ruleFunction = postProcessModelMechanismLanguage,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "longSentencePatterns",
+    ruleFunction = postProcessLongSentencePatterns,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "whitespace",
+    ruleFunction = postProcessWhitespace,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  if (isTRUE(debug)) {
+    return(list(
+      original = original,
+      processed = cleaned,
+      rulesApplied = rulesApplied
+    ))
+  }
 
   cleaned
+}
+
+#' Apply a post-processing rule and record whether it changed text
+#'
+#' @param text Character vector.
+#' @param ruleName Character scalar naming the rule.
+#' @param ruleFunction Function that accepts and returns a character vector.
+#' @param rulesApplied Character vector of rule names already applied.
+#' @param previous Optional previous text to compare against instead of `text`.
+#'
+#' @return A list with `text` and `rulesApplied`.
+#' @keywords internal
+postProcessApplyRule = function(text,
+                                 ruleName,
+                                 ruleFunction,
+                                 rulesApplied,
+                                 previous = text) {
+  changed = ruleFunction(text)
+
+  if (!identical(changed, previous)) {
+    rulesApplied = unique(c(rulesApplied, ruleName))
+  }
+
+  list(
+    text = changed,
+    rulesApplied = rulesApplied
+  )
 }
 
 #' Standardise recurring unit-change phrasing
@@ -129,6 +231,34 @@ postProcessUnitChangePhrasing = function(text) {
   )
 
   text = gsub(
+    pattern = "\\b[Aa] one-unit increase in ([[:alnum:]_.]+) multiplies the ([^.]+?) by\\b",
+    replacement = "If \\1 increases by one unit, the \\2 is multiplied by",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Aa] one-unit rise in ([[:alnum:]_.]+) multiplies the ([^.]+?) by\\b",
+    replacement = "If \\1 increases by one unit, the \\2 is multiplied by",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ff]or a one-unit increase in ([[:alnum:]_.]+),",
+    replacement = "If \\1 increases by one unit,",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ff]or a one-unit rise in ([[:alnum:]_.]+),",
+    replacement = "If \\1 increases by one unit,",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
     pattern = "\\b[Aa] one-unit increase in ([[:alnum:]_.]+)\\b",
     replacement = "If \\1 increases by one unit,",
     x = text,
@@ -136,7 +266,28 @@ postProcessUnitChangePhrasing = function(text) {
   )
 
   text = gsub(
+    pattern = "\\b[Aa] one-unit rise in ([[:alnum:]_.]+)\\b",
+    replacement = "If \\1 increases by one unit,",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ff]or a one-unit increase in ([[:alnum:]_.]+),",
+    replacement = "If \\1 increases by one unit,",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
     pattern = "\\b[Oo]ne-unit increase in ([[:alnum:]_.]+)\\b",
+    replacement = "an increase of one unit in \\1",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Oo]ne-unit rise in ([[:alnum:]_.]+)\\b",
     replacement = "an increase of one unit in \\1",
     x = text,
     perl = TRUE
@@ -159,6 +310,7 @@ postProcessVerbalFractions = function(text) {
     "one-quarter" = "about 25%",
     "a quarter" = "about 25%",
     "one half" = "about 50%",
+    "one-half" = "about 50%",
     "a half" = "about 50%"
   )
 
@@ -210,6 +362,13 @@ postProcessModelMechanismLanguage = function(text) {
   )
 
   text = gsub(
+    pattern = "\\b[Tt]he slope for ([[:alnum:]_.]+) shows that\\b",
+    replacement = "The results suggest that \\1",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
     pattern = "\\b[Ii]nteraction term\\b",
     replacement = "combined pattern",
     x = text,
@@ -226,6 +385,20 @@ postProcessModelMechanismLanguage = function(text) {
   text = gsub(
     pattern = "\\b[Ii]ntercept\\b",
     replacement = "starting estimate",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ss]lope\\b",
+    replacement = "change pattern",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Pp]arameter\\b",
+    replacement = "estimated quantity",
     x = text,
     perl = TRUE
   )
@@ -260,18 +433,54 @@ postProcessModelMechanismLanguage = function(text) {
 #' @return A character vector with a few long sentence patterns split.
 #' @keywords internal
 postProcessLongSentencePatterns = function(text) {
+  numberPattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:e[-+]?[0-9]+)?%?"
+
   text = gsub(
-    pattern = ", with values between ([0-9]+(?:\\.[0-9]+)?) and ([0-9]+(?:\\.[0-9]+)?)\\.",
+    pattern = paste0(", with values between (", numberPattern, ") and (", numberPattern, ")\\."),
     replacement = ". This estimate could plausibly lie between \\1 and \\2.",
     x = text,
-    perl = TRUE
+    perl = TRUE,
+    ignore.case = TRUE
   )
 
   text = gsub(
-    pattern = ", with a 95% confidence interval from ([^.,;]+) to ([^.,;]+)\\.",
+    pattern = paste0(", with plausible values between (", numberPattern, ") and (", numberPattern, ")\\."),
+    replacement = ". This estimate could plausibly lie between \\1 and \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", with limits from (", numberPattern, ") to (", numberPattern, ")\\."),
+    replacement = ". The confidence limits run from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", with limits between (", numberPattern, ") and (", numberPattern, ")\\."),
+    replacement = ". The confidence limits run from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", with a 95% confidence interval from (", numberPattern, ") to (", numberPattern, ")\\."),
     replacement = ". The 95% confidence interval runs from \\1 to \\2.",
     x = text,
-    perl = TRUE
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", with a 95% confidence interval between (", numberPattern, ") and (", numberPattern, ")\\."),
+    replacement = ". The 95% confidence interval runs from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
   )
 
   text = gsub(

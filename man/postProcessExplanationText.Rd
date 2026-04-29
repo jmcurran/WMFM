@@ -4,16 +4,20 @@
 \alias{postProcessExplanationText}
 \title{Post-process generated explanation text before display}
 \usage{
-postProcessExplanationText(text, audit = NULL)
+postProcessExplanationText(text, audit = NULL, debug = FALSE)
 }
 \arguments{
 \item{text}{Character vector of explanation text.}
 
 \item{audit}{Optional explanation audit object. Reserved for future
 audit-aware cleanup rules.}
+
+\item{debug}{Logical. If \code{TRUE}, return the original text, processed text,
+and the names of deterministic rules that changed the text.}
 }
 \value{
-A character vector with deterministic surface cleanup applied.
+A character vector with deterministic surface cleanup applied, or a
+list with \code{original}, \code{processed}, and \code{rulesApplied} when \code{debug = TRUE}.
 }
 \description{
 Applies deterministic surface-level cleanup to generated explanation text.
