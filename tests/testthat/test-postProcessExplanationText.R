@@ -226,3 +226,51 @@ testthat::test_that("postProcessExplanationText cleans small grammar artefacts",
   )
   testthat::expect_false(grepl("odds is", out, fixed = TRUE))
 })
+
+
+testthat::test_that("postProcessExplanationText improves model-centred sentence openings", {
+  text = paste(
+    "In a model that predicts exam mark, the relationship between score and mark is positive.",
+    "Based on the fitted model, the expected mark is 65.2."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    paste(
+      "The relationship between score and mark is positive.",
+      "Based on the results, the expected mark is 65.2."
+    )
+  )
+  testthat::expect_false(grepl("model that predicts|fitted model", out, ignore.case = TRUE))
+  testthat::expect_true(grepl("65.2", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText rewrites simple model prediction sentences", {
+  text = "The model predicts 65.2 for a student with score 12."
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    "For a student with score 12, the expected value is 65.2."
+  )
+  testthat::expect_false(grepl("The model predicts", out, fixed = TRUE))
+  testthat::expect_true(grepl("65.2", out, fixed = TRUE))
+  testthat::expect_true(grepl("12", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText debug mode reports sentence opening rewrites", {
+  text = "In this model, the relationship between score and mark is positive."
+
+  out = postProcessExplanationText(text, debug = TRUE)
+
+  testthat::expect_identical(
+    out$processed,
+    "The relationship between score and mark is positive."
+  )
+  testthat::expect_true("sentenceOpenings" %in% out$rulesApplied)
+})

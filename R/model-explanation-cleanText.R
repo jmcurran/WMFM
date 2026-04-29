@@ -127,6 +127,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "sentenceOpenings",
+    ruleFunction = postProcessSentenceOpenings,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "longSentencePatterns",
     ruleFunction = postProcessLongSentencePatterns,
     rulesApplied = rulesApplied
@@ -492,6 +501,52 @@ postProcessModelMechanismLanguage = function(text) {
   text = gsub(
     pattern = "\\b[Ff]itted model\\b",
     replacement = "model",
+    x = text,
+    perl = TRUE
+  )
+
+  text
+}
+
+#' Improve recurring sentence openings that foreground model mechanics
+#'
+#' @param text Character vector.
+#' @return A character vector with student-facing sentence openings.
+#' @keywords internal
+postProcessSentenceOpenings = function(text) {
+  numberPattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?"
+
+  text = gsub(
+    pattern = "\\b[Ii]n (?:a|this|the) model that predicts [^,]+, the relationship\\b",
+    replacement = "The relationship",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ii]n (?:this|the) model, the relationship\\b",
+    replacement = "The relationship",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Ii]n the fitted model, the relationship\\b",
+    replacement = "The relationship",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Bb]ased on the (?:fitted )?model,",
+    replacement = "Based on the results,",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0("\\b[Tt]he model predicts (", numberPattern, ") for ([^.]+)\\."),
+    replacement = "For \\2, the expected value is \\1.",
     x = text,
     perl = TRUE
   )
