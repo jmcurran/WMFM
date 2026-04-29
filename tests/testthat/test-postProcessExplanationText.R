@@ -35,7 +35,7 @@ testthat::test_that("postProcessExplanationText handles additional unit-change v
     out,
     paste(
       "If score increases by one unit, the expected mark increases by 2.3.",
-      "If age increases by one unit, the odds is multiplied by 1.4."
+      "If age increases by one unit, the odds are multiplied by 1.4."
     )
   )
   testthat::expect_false(grepl("one-unit increase|one-unit rise", out, ignore.case = TRUE))
@@ -177,4 +177,52 @@ testthat::test_that("postProcessExplanationText rejects invalid inputs", {
     "`debug` must be TRUE or FALSE.",
     fixed = TRUE
   )
+})
+
+
+testthat::test_that("postProcessExplanationText guards against numeric token loss in rules", {
+  text = "The expected mark is 65.2, with values between 60.1 and 70.3."
+
+  out = postProcessApplyRule(
+    text = text,
+    ruleName = "badRule",
+    ruleFunction = function(x) {
+      gsub("65.2", "", x, fixed = TRUE)
+    },
+    rulesApplied = character(0)
+  )
+
+  testthat::expect_identical(out$text, text)
+  testthat::expect_identical(out$rulesApplied, character(0))
+})
+
+
+testthat::test_that("postProcessExplanationText handles additional confidence interval wording", {
+  text = paste(
+    "The expected mark is 65.2, with confidence limits from 60.1 to 70.3.",
+    "The estimated change is 2.4, and the 95% confidence interval is 1.2 to 3.6."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    paste(
+      "The expected mark is 65.2. The confidence limits run from 60.1 to 70.3.",
+      "The estimated change is 2.4. The 95% confidence interval runs from 1.2 to 3.6."
+    )
+  )
+})
+
+
+testthat::test_that("postProcessExplanationText cleans small grammar artefacts", {
+  text = "A one-unit increase in age multiplies the odds by 1.4."
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    "If age increases by one unit, the odds are multiplied by 1.4."
+  )
+  testthat::expect_false(grepl("odds is", out, fixed = TRUE))
 })

@@ -136,6 +136,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "grammarCleanup",
+    ruleFunction = postProcessGrammarCleanup,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "whitespace",
     ruleFunction = postProcessWhitespace,
     rulesApplied = rulesApplied
@@ -171,6 +180,10 @@ postProcessApplyRule = function(text,
                                  previous = text) {
   changed = ruleFunction(text)
 
+  if (!postProcessPreservesNumericTokens(previous, changed)) {
+    changed = previous
+  }
+
   if (!identical(changed, previous)) {
     rulesApplied = unique(c(rulesApplied, ruleName))
   }
@@ -181,6 +194,65 @@ postProcessApplyRule = function(text,
   )
 }
 
+
+#' Check whether numeric tokens are preserved by a rewrite
+#'
+#' @param before Character vector before a deterministic rewrite.
+#' @param after Character vector after a deterministic rewrite.
+#'
+#' @return `TRUE` when every numeric token in `before` is still present in the
+#'   matching element of `after`; otherwise `FALSE`.
+#' @keywords internal
+postProcessPreservesNumericTokens = function(before, after) {
+  if (length(before) != length(after)) {
+    return(FALSE)
+  }
+
+  for (i in seq_along(before)) {
+    beforeText = before[[i]]
+    afterText = after[[i]]
+
+    if (is.na(beforeText) || is.na(afterText)) {
+      if (!identical(beforeText, afterText)) {
+        return(FALSE)
+      }
+
+      next
+    }
+
+    numericTokens = postProcessExtractNumericTokens(beforeText)
+
+    for (numericToken in numericTokens) {
+      if (!grepl(numericToken, afterText, fixed = TRUE)) {
+        return(FALSE)
+      }
+    }
+  }
+
+  TRUE
+}
+
+#' Extract numeric tokens from explanation text
+#'
+#' @param text Character scalar.
+#'
+#' @return A character vector of numeric tokens.
+#' @keywords internal
+postProcessExtractNumericTokens = function(text) {
+  matches = gregexpr(
+    pattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?",
+    text = text,
+    perl = TRUE
+  )
+
+  out = regmatches(text, matches)[[1]]
+
+  if (length(out) == 1 && identical(out, character(0))) {
+    return(character(0))
+  }
+
+  unique(out)
+}
 #' Standardise recurring unit-change phrasing
 #'
 #' @param text Character vector.
@@ -484,10 +556,58 @@ postProcessLongSentencePatterns = function(text) {
   )
 
   text = gsub(
+    pattern = paste0(", with confidence limits from (", numberPattern, ") to (", numberPattern, ")\\."),
+    replacement = ". The confidence limits run from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", with confidence limits between (", numberPattern, ") and (", numberPattern, ")\\."),
+    replacement = ". The confidence limits run from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(", and the 95% confidence interval is (", numberPattern, ") to (", numberPattern, ")\\."),
+    replacement = ". The 95% confidence interval runs from \\1 to \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+  text = gsub(
     pattern = ";[[:space:]]+",
     replacement = ". ",
     x = text,
     perl = TRUE
+  )
+
+  text
+}
+
+#' Clean small grammar artefacts created by deterministic rewrites
+#'
+#' @param text Character vector.
+#' @return A character vector with small grammar artefacts cleaned up.
+#' @keywords internal
+postProcessGrammarCleanup = function(text) {
+  text = gsub(
+    pattern = "\\bthe odds is multiplied by\\b",
+    replacement = "the odds are multiplied by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\bthe odds is changed by\\b",
+    replacement = "the odds are changed by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
   )
 
   text
