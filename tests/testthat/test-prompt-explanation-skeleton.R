@@ -88,78 +88,31 @@ testthat::test_that("lmToExplanationPrompt gives concise intercept-only answer g
   )
 })
 
+testthat::test_that("intercept-only skeleton keeps roles but asks for one answer sentence", {
+  model = stats::lm(Exam ~ 1, data = data.frame(Exam = c(54, 66, 78, 102)))
+  modelProfile = buildExplanationModelProfile(model = model, data = stats::model.frame(model))
+  ruleProfile = buildExplanationRuleProfile(modelProfile)
 
-testthat::test_that("lmToExplanationPrompt includes Stage 13.2 wording controls", {
-  dat = data.frame(
-    Exam = c(42, 48, 55, 60, 65, 72, 77, 80),
-    Attend = factor(c("No", "No", "No", "No", "Yes", "Yes", "Yes", "Yes")),
-    Test = c(8, 9, 11, 12, 10, 12, 13, 15)
-  )
-
-  fit = stats::lm(Exam ~ Attend + Test, data = dat)
-  attr(fit, "wmfm_research_question") = paste(
-    "How do attendance and test mark relate to final exam mark,",
-    "without allowing the test-mark slope to differ by attendance?"
-  )
-  prompt = suppressWarnings(lmToExplanationPrompt(fit))
-
-  testthat::expect_match(
-    prompt,
-    "You may say the model when describing results",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "do not use qualified labels such as fitted model, linear model, logistic model, or Poisson model",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "do not replace mark with score",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "When reporting group fitted values from a model that also has numeric predictors",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "for a student with an average test mark",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "avoid abstract phrases such as per unit increase",
-    fixed = TRUE
-  )
-  testthat::expect_match(
-    prompt,
-    "Do not use overlap or non-overlap of separate confidence intervals",
-    fixed = TRUE
-  )
-})
-
-
-testthat::test_that("interaction skeleton asks for numeric support for effect comparisons", {
-  dat = data.frame(
-    Exam = c(42, 48, 55, 60, 65, 72, 77, 80),
-    Attend = factor(c("No", "No", "No", "No", "Yes", "Yes", "Yes", "Yes")),
-    Test = c(8, 9, 11, 12, 10, 12, 13, 15)
+  testthat::expect_identical(ruleProfile$skeletonId, "lm_interceptOnly")
+  testthat::expect_identical(
+    ruleProfile$skeletonSteps$stepRole,
+    c("estimate", "uncertainty", "answer")
   )
 
-  fit = stats::lm(Exam ~ Attend * Test, data = dat)
-  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+  instructionText = paste(ruleProfile$skeletonSteps$instruction, collapse = " ")
 
-  testthat::expect_match(prompt, "Skeleton id: lm_interaction", fixed = TRUE)
   testthat::expect_match(
-    prompt,
-    "using numeric estimates where available rather than relying only on words",
+    instructionText,
+    "one concise sentence",
     fixed = TRUE
   )
   testthat::expect_match(
-    prompt,
-    "include quantitative estimates for the within-group effects or the difference between those effects",
+    instructionText,
+    "Do not create a separate typical-case or duplicate overall estimate",
     fixed = TRUE
+  )
+  testthat::expect_match(
+    instructionText,
+    "confidence interval.*same sentence"
   )
 })
