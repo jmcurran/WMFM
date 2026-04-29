@@ -87,3 +87,32 @@ testthat::test_that("lmToExplanationPrompt gives concise intercept-only answer g
     fixed = TRUE
   )
 })
+
+testthat::test_that("intercept-only skeleton keeps roles but asks for one answer sentence", {
+  model = stats::lm(Exam ~ 1, data = data.frame(Exam = c(54, 66, 78, 102)))
+  modelProfile = buildExplanationModelProfile(model = model, data = stats::model.frame(model))
+  ruleProfile = buildExplanationRuleProfile(modelProfile)
+
+  testthat::expect_identical(ruleProfile$skeletonId, "lm_interceptOnly")
+  testthat::expect_identical(
+    ruleProfile$skeletonSteps$stepRole,
+    c("estimate", "uncertainty", "answer")
+  )
+
+  instructionText = paste(ruleProfile$skeletonSteps$instruction, collapse = " ")
+
+  testthat::expect_match(
+    instructionText,
+    "one concise sentence",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    instructionText,
+    "Do not create a separate typical-case or duplicate overall estimate",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    instructionText,
+    "confidence interval.*same sentence"
+  )
+})

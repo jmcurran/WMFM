@@ -164,12 +164,23 @@ buildExplanationSkeletonSteps = function(skeletonId, comparisonScope) {
 
   if (grepl("_interceptOnly$", skeletonId)) {
     return(buildExplanationSkeletonDataFrame(c(
-      estimate = "Give the supplied point estimate for the underlying average in plain language.",
-      uncertainty = "Give the confidence interval for the underlying average using confidence wording, not chance or probability wording.",
-      answer = "Answer the research question by combining the estimate and confidence interval into one concise inferential takeaway; do not add a separate range explanation, duplicate overall estimate sentence, model-mechanics sentence, or generic closing sentence."
+      estimate = paste(
+        "Use the supplied point estimate as part of one concise inferential answer",
+        "sentence. Do not create a separate typical-case or duplicate overall estimate",
+        "sentence for an intercept-only model."
+      ),
+      uncertainty = paste(
+        "Include the supplied confidence interval for the underlying average in the same sentence as the estimate",
+        "and final answer. Do not add a separate range explanation."
+      ),
+      answer = paste(
+        "Answer the research question in one concise sentence that combines the estimate",
+        "and confidence interval. This sentence is the estimate, uncertainty statement,",
+        "and final answer. Do not add a model-mechanics sentence or generic closing",
+        "sentence."
+      )
     )))
   }
-
   if (grepl("_interaction$", skeletonId)) {
     return(buildExplanationSkeletonDataFrame(c(
       firstWithinGroupEffect = "Describe the effect within the first relevant group or selected value, keeping the estimate and uncertainty together if available.",
