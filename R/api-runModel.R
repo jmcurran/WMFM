@@ -397,7 +397,7 @@ runModel = function(
   }
 
   if (!is.null(explanation)) {
-    explanation = cleanExplanationText(explanation)
+    explanation = postProcessExplanationText(explanation)
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(
