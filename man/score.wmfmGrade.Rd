@@ -16,6 +16,8 @@
   showProgress = TRUE,
   verbose = FALSE,
   nLlm = 1L,
+  confirmLargeLlmJob = FALSE,
+  maxLlmJobsWithoutConfirmation = 20L,
   ...
 )
 }
@@ -43,6 +45,12 @@ scoring?}
 
 \item{nLlm}{Integer. Number of repeated LLM gradings for the student
 explanation.}
+
+\item{confirmLargeLlmJob}{Logical. Whether to allow large LLM grading
+requests for a single grade object.}
+
+\item{maxLlmJobsWithoutConfirmation}{Integer. Maximum number of repeated LLM
+grading calls allowed without explicit confirmation.}
 
 \item{...}{Additional arguments passed to the relevant scoring helper.}
 }

@@ -18,6 +18,10 @@
 #' @param verbose Logical. Passed to LLM scoring.
 #' @param nLlm Integer. Number of repeated LLM gradings for the student
 #'   explanation.
+#' @param confirmLargeLlmJob Logical. Whether to allow large LLM grading
+#'   requests for a single grade object.
+#' @param maxLlmJobsWithoutConfirmation Integer. Maximum number of repeated LLM
+#'   grading calls allowed without explicit confirmation.
 #' @param ... Additional arguments passed to the relevant scoring helper.
 #'
 #' @return A scored `wmfmGrade` object.
@@ -34,6 +38,8 @@ score.wmfmGrade = function(
     showProgress = TRUE,
     verbose = FALSE,
     nLlm = 1L,
+    confirmLargeLlmJob = FALSE,
+    maxLlmJobsWithoutConfirmation = 20L,
     ...
 ) {
 
@@ -51,6 +57,20 @@ score.wmfmGrade = function(
   if (is.na(nLlm) || nLlm < 1L) {
     stop("`nLlm` must be an integer greater than or equal to 1.", call. = FALSE)
   }
+
+  totalLlmCalls = computeWmfmLlmJobCount(
+    nExplanations = 1L,
+    method = method,
+    nLlm = nLlm
+  )
+
+  enforceWmfmLlmJobGuard(
+    totalLlmCalls = totalLlmCalls,
+    nExplanations = 1L,
+    nLlm = nLlm,
+    confirmLargeLlmJob = confirmLargeLlmJob,
+    maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation
+  )
 
   scoreOneRecordDeterministic = function(record) {
     df = as.data.frame(record, stringsAsFactors = FALSE)
@@ -285,6 +305,9 @@ score.wmfmGrade = function(
     x$meta$llmModel = safeWmfmScalar(class(chat)[1], naString = "")
     x$meta$llmUseCache = useCache
     x$meta$nLlm = nLlm
+    x$meta$totalLlmCalls = totalLlmCalls
+    x$meta$confirmLargeLlmJob = confirmLargeLlmJob
+    x$meta$maxLlmJobsWithoutConfirmation = maxLlmJobsWithoutConfirmation
   }
 
   if (identical(method, "llm")) {
