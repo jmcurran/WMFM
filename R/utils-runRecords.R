@@ -560,6 +560,86 @@ buildWmfmRunRecord = function(
   )
 }
 
+#' Extract the expected scoring effect scale from an explanation audit
+#'
+#' Converts the human-readable effect-scale description stored in a
+#' `wmfmExplanationAudit` object into the compact claim categories used by the
+#' deterministic scoring core.
+#'
+#' @param audit A `wmfmExplanationAudit` object, or `NULL`.
+#'
+#' @return A character scalar: `"additive"`, `"multiplicative"`,
+#'   `"probability_or_odds"`, or `NA_character_` when the audit does not supply
+#'   a recognised scale.
+#'
+#' @keywords internal
+#' @noRd
+extractWmfmAuditExpectedEffectScale = function(audit) {
+  if (!inherits(audit, "wmfmExplanationAudit")) {
+    return(NA_character_)
+  }
+
+  effectScale = audit$interpretationScale$effectScale %||% NA_character_
+
+  if (!is.character(effectScale) || length(effectScale) != 1 || is.na(effectScale)) {
+    return(NA_character_)
+  }
+
+  effectScaleLower = tolower(effectScale)
+
+  if (grepl("odds", effectScaleLower, fixed = TRUE)) {
+    return("probability_or_odds")
+  }
+
+  if (grepl("multiplier", effectScaleLower, fixed = TRUE) ||
+      grepl("multiplicative", effectScaleLower, fixed = TRUE) ||
+      grepl("expected-count", effectScaleLower, fixed = TRUE) ||
+      grepl("rate ratio", effectScaleLower, fixed = TRUE)) {
+    return("multiplicative")
+  }
+
+  if (grepl("additive", effectScaleLower, fixed = TRUE) ||
+      grepl("difference", effectScaleLower, fixed = TRUE)) {
+    return("additive")
+  }
+
+  NA_character_
+}
+
+
+#' Resolve model-family metadata for scoring run records
+#'
+#' @param x A `wmfmModel` object.
+#'
+#' @return A named list with `modelFamily` and `linkFunction`.
+#'
+#' @keywords internal
+#' @noRd
+resolveWmfmModelFamilyMetadata = function(x) {
+  modelFamily = NA_character_
+  linkFunction = NA_character_
+
+  if (inherits(x$model, "glm")) {
+    modelFamily = x$model$family$family %||% NA_character_
+    linkFunction = x$model$family$link %||% NA_character_
+  } else if (inherits(x$model, "lm")) {
+    modelFamily = "gaussian"
+    linkFunction = "identity"
+  }
+
+  audit = x$explanationAudit
+
+  if (inherits(audit, "wmfmExplanationAudit")) {
+    modelFamily = audit$overview$modelFamily %||% modelFamily
+    linkFunction = audit$overview$link %||% linkFunction
+  }
+
+  list(
+    modelFamily = modelFamily,
+    linkFunction = linkFunction
+  )
+}
+
 
 #' Build a single run record for WMFM grading
 #'
@@ -593,6 +673,8 @@ buildWmfmGradeRunRecord = function(
 
   exampleName = x$meta$exampleName %||% NA_character_
   packageName = x$meta$package %||% NA_character_
+  audit = x$explanationAudit
+  modelMetadata = resolveWmfmModelFamilyMetadata(x)
 
   out = buildWmfmRunRecord(
     runId = as.integer(runId),
@@ -609,6 +691,21 @@ buildWmfmGradeRunRecord = function(
   )
 
   out$answerRole = answerRole
+  out$hasExplanationAudit = inherits(audit, "wmfmExplanationAudit")
+  out$modelFamily = modelMetadata$modelFamily
+  out$linkFunction = modelMetadata$linkFunction
+  out$auditEffectScale = if (inherits(audit, "wmfmExplanationAudit")) {
+    audit$interpretationScale$effectScale %||% NA_character_
+  } else {
+    NA_character_
+  }
+  out$expectedEffectScale = extractWmfmAuditExpectedEffectScale(audit)
+  out$scoringContext = if (isTRUE(out$hasExplanationAudit)) {
+    "final_text_plus_explanation_audit"
+  } else {
+    "final_text_only"
+  }
+
   out
 }
 
