@@ -6,8 +6,9 @@
 #' WMFM grading rubric.
 #'
 #' @param x A `wmfmModel` object, typically created by `runModel()`.
-#' @param explanation Character vector, character scalar, or list of character
-#'   scalars giving the explanation(s) to grade.
+#' @param explanation Optional character vector, character scalar, or list of
+#'   character scalars giving the explanation(s) to grade. When `NULL`, the
+#'   final explanation stored on `x` is graded.
 #' @param modelAnswer Optional character scalar giving a reference answer.
 #' @param method Character. One of `"deterministic"`, `"llm"`, or `"both"`.
 #' @param autoScore Logical. Should the returned object be scored immediately?
@@ -29,7 +30,7 @@
 #' @export
 grade.wmfmModel = function(
     x,
-    explanation,
+    explanation = NULL,
     modelAnswer = NULL,
     method = c("deterministic", "llm", "both"),
     autoScore = TRUE,
@@ -66,6 +67,20 @@ grade.wmfmModel = function(
 
   if (is.na(nLlm) || nLlm < 1L) {
     stop("`nLlm` must be an integer greater than or equal to 1.", call. = FALSE)
+  }
+
+  explanationSource = "supplied_explanation"
+
+  if (is.null(explanation)) {
+    if (!is.character(x$explanation) || length(x$explanation) != 1 || is.na(x$explanation)) {
+      stop(
+        "`explanation` must be supplied when `x` does not contain a single final explanation.",
+        call. = FALSE
+      )
+    }
+
+    explanation = x$explanation
+    explanationSource = "wmfmModel_final_explanation"
   }
 
   explanationVec = normaliseWmfmExplanations(explanation)
@@ -114,7 +129,8 @@ grade.wmfmModel = function(
         modelAnswer = modelAnswerRecord
       ),
       meta = list(
-        explanationName = explanationName
+        explanationName = explanationName,
+        explanationSource = explanationSource
       )
     )
   }
@@ -148,6 +164,7 @@ grade.wmfmModel = function(
     model = x,
     inputs = list(
       explanations = explanationVec,
+      explanationSource = explanationSource,
       modelAnswer = modelAnswer,
       names = names(explanationVec)
     ),

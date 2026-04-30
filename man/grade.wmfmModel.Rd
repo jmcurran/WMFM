@@ -6,7 +6,7 @@
 \usage{
 \method{grade}{wmfmModel}(
   x,
-  explanation,
+  explanation = NULL,
   modelAnswer = NULL,
   method = c("deterministic", "llm", "both"),
   autoScore = TRUE,
@@ -21,8 +21,9 @@
 \arguments{
 \item{x}{A \code{wmfmModel} object, typically created by \code{runModel()}.}
 
-\item{explanation}{Character vector, character scalar, or list of character
-scalars giving the explanation(s) to grade.}
+\item{explanation}{Optional character vector, character scalar, or list of
+character scalars giving the explanation(s) to grade. When \code{NULL}, the
+final explanation stored on \code{x} is graded.}
 
 \item{modelAnswer}{Optional character scalar giving a reference answer.}
 

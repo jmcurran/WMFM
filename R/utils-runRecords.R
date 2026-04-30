@@ -690,8 +690,42 @@ buildWmfmGradeRunRecord = function(
     interactionAlpha = x$meta$interactionAlpha %||% 0.05
   )
 
+  claimEvidenceMap = x$explanationClaimEvidenceMap
+  hasClaimEvidenceMap = inherits(
+    claimEvidenceMap,
+    "wmfmExplanationClaimEvidenceMap"
+  )
+
+  claimEvidenceQualityFlags = NA_character_
+  claimEvidenceSentenceCount = NA_integer_
+
+  if (isTRUE(hasClaimEvidenceMap)) {
+    if (is.data.frame(claimEvidenceMap$claims)) {
+      claimEvidenceSentenceCount = nrow(claimEvidenceMap$claims)
+    }
+
+    qualityFlags = attr(claimEvidenceMap, "qualityFlags", exact = TRUE)
+
+    if (length(qualityFlags) > 0) {
+      qualityText = names(qualityFlags)[unlist(qualityFlags, use.names = FALSE)]
+
+      if (length(qualityText) == 0) {
+        qualityText = as.character(qualityFlags)
+      }
+
+      qualityText = qualityText[!is.na(qualityText) & nzchar(qualityText)]
+
+      if (length(qualityText) > 0) {
+        claimEvidenceQualityFlags = paste(unique(qualityText), collapse = "|")
+      }
+    }
+  }
+
   out$answerRole = answerRole
   out$hasExplanationAudit = inherits(audit, "wmfmExplanationAudit")
+  out$hasExplanationClaimEvidenceMap = hasClaimEvidenceMap
+  out$claimEvidenceSentenceCount = claimEvidenceSentenceCount
+  out$claimEvidenceQualityFlags = claimEvidenceQualityFlags
   out$modelFamily = modelMetadata$modelFamily
   out$linkFunction = modelMetadata$linkFunction
   out$auditEffectScale = if (inherits(audit, "wmfmExplanationAudit")) {
@@ -700,7 +734,9 @@ buildWmfmGradeRunRecord = function(
     NA_character_
   }
   out$expectedEffectScale = extractWmfmAuditExpectedEffectScale(audit)
-  out$scoringContext = if (isTRUE(out$hasExplanationAudit)) {
+  out$scoringContext = if (isTRUE(out$hasExplanationAudit) && isTRUE(hasClaimEvidenceMap)) {
+    "final_text_plus_explanation_audit_and_claim_evidence"
+  } else if (isTRUE(out$hasExplanationAudit)) {
     "final_text_plus_explanation_audit"
   } else {
     "final_text_only"
