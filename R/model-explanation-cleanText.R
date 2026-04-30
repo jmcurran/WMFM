@@ -832,3 +832,79 @@ postProcessSurfaceIssueRules = function() {
     )
   )
 }
+
+#' Diagnose deterministic explanation surface processing
+#'
+#' Runs the deterministic explanation surface processor in debug mode and
+#' records surface-language issues before and after processing. This helper is
+#' intended for developer review and tests. It does not change the explanation
+#' pipeline and it does not make statistical claims.
+#'
+#' @param text Character vector of explanation text.
+#' @param audit Optional explanation audit object passed to
+#'   `postProcessExplanationText()`.
+#'
+#' @return A list with original text, processed text, applied rule names,
+#'   detected issues before processing, detected issues after processing, and
+#'   the number of unresolved issues.
+#' @export
+#'
+#' @examples
+#' diagnoseExplanationSurfaceProcessing(
+#'   "A one-magnitude rise multiplies the expected count by 0.21."
+#' )
+diagnoseExplanationSurfaceProcessing = function(text, audit = NULL) {
+  if (is.null(text)) {
+    processed = postProcessExplanationText(text, audit = audit, debug = TRUE)
+    out = list(
+      original = processed$original,
+      processed = processed$processed,
+      rulesApplied = processed$rulesApplied,
+      issuesBefore = postProcessIssueDataFrame(),
+      issuesAfter = postProcessIssueDataFrame(),
+      unresolvedIssueCount = 0L
+    )
+    class(out) = "wmfmExplanationSurfaceDiagnosis"
+    return(out)
+  }
+
+  if (!is.character(text)) {
+    stop("`text` must be a character vector or NULL.", call. = FALSE)
+  }
+
+  processed = postProcessExplanationText(text, audit = audit, debug = TRUE)
+  issuesBefore = findExplanationSurfaceIssues(processed$original)
+  issuesAfter = findExplanationSurfaceIssues(processed$processed)
+
+  out = list(
+    original = processed$original,
+    processed = processed$processed,
+    rulesApplied = processed$rulesApplied,
+    issuesBefore = issuesBefore,
+    issuesAfter = issuesAfter,
+    unresolvedIssueCount = nrow(issuesAfter)
+  )
+  class(out) = "wmfmExplanationSurfaceDiagnosis"
+  out
+}
+
+#' Print an explanation surface diagnosis
+#'
+#' @param x A `wmfmExplanationSurfaceDiagnosis` object.
+#' @param ... Additional arguments, currently unused.
+#'
+#' @return The input object, invisibly.
+#' @export
+print.wmfmExplanationSurfaceDiagnosis = function(x, ...) {
+  cat("Explanation surface diagnosis\n")
+  cat("Rules applied:", length(x$rulesApplied), "\n")
+
+  if (length(x$rulesApplied) > 0) {
+    cat("- ", paste(x$rulesApplied, collapse = "\n- "), "\n", sep = "")
+  }
+
+  cat("Issues before processing:", nrow(x$issuesBefore), "\n")
+  cat("Issues after processing:", nrow(x$issuesAfter), "\n")
+
+  invisible(x)
+}
