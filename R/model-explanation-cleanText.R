@@ -118,6 +118,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "confidenceIntervalTerminology",
+    ruleFunction = postProcessConfidenceIntervalTerminology,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "modelMechanismLanguage",
     ruleFunction = postProcessModelMechanismLanguage,
     rulesApplied = rulesApplied
@@ -390,6 +399,9 @@ postProcessVerbalFractions = function(text) {
     "three-quarters" = "about 75%",
     "one-quarter" = "about 25%",
     "a quarter" = "about 25%",
+    "one-fifth" = "about 20%",
+    "a fifth" = "about 20%",
+    "four-fifths" = "about 80%",
     "one half" = "about 50%",
     "one-half" = "about 50%",
     "a half" = "about 50%"
@@ -404,6 +416,36 @@ postProcessVerbalFractions = function(text) {
       ignore.case = TRUE
     )
   }
+
+  text
+}
+
+#' Standardise recurring confidence interval terminology
+#'
+#' @param text Character vector.
+#' @return A character vector with safer confidence interval terminology.
+#' @keywords internal
+postProcessConfidenceIntervalTerminology = function(text) {
+  text = gsub(
+    pattern = "\\b[Mm]ultiplicative confidence interval(s?)\\b",
+    replacement = "confidence interval\\1 for the multiplier",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Mm]ultiplicative confidence limit(s?)\\b",
+    replacement = "confidence limit\\1 for the multiplier",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Mm]ultiplicative interval(s?)\\b",
+    replacement = "interval\\1 for the multiplier",
+    x = text,
+    perl = TRUE
+  )
 
   text
 }
@@ -560,7 +602,7 @@ postProcessSentenceOpenings = function(text) {
 #' @return A character vector with a few long sentence patterns split.
 #' @keywords internal
 postProcessLongSentencePatterns = function(text) {
-  numberPattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:e[-+]?[0-9]+)?%?"
+  numberPattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?"
 
   text = gsub(
     pattern = paste0(", with values between (", numberPattern, ") and (", numberPattern, ")\\."),
@@ -699,6 +741,7 @@ findExplanationSurfaceIssues = function(text,
                                            "modelMechanismLanguage",
                                            "unitChangePhrasing",
                                            "verbalFractions",
+                                           "confidenceIntervalTerminology",
                                            "longSentencePatterns"
                                          )) {
   if (is.null(text)) {
@@ -819,7 +862,15 @@ postProcessSurfaceIssueRules = function() {
       name = "verbalFraction",
       pattern = paste0(
         "\\b(?:one-third|two-thirds|three-quarters|one-quarter|",
-        "a quarter|one half|one-half|a half)\\b"
+        "a quarter|one-fifth|a fifth|four-fifths|one half|one-half|a half)\\b"
+      )
+    ),
+    list(
+      issueType = "confidenceIntervalTerminology",
+      name = "multiplicativeConfidenceInterval",
+      pattern = paste0(
+        "\\b(?:multiplicative confidence intervals?|",
+        "multiplicative confidence limits?|multiplicative intervals?)\\b"
       )
     ),
     list(

@@ -428,3 +428,77 @@ testthat::test_that("print.wmfmExplanationSurfaceDiagnosis returns input invisib
   )
   testthat::expect_identical(printed, out)
 })
+
+
+testthat::test_that("postProcessExplanationText replaces additional verbal fractions", {
+  text = paste(
+    "The smaller count is one-fifth of the original value.",
+    "The larger count is about four-fifths of the original value."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_false(grepl("one-fifth|four-fifths", out, ignore.case = TRUE))
+  testthat::expect_true(grepl("about 20%", out, fixed = TRUE))
+  testthat::expect_true(grepl("about 80%", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText rewrites multiplicative confidence interval language", {
+  text = paste(
+    "This is a multiplicative confidence interval for the odds ratio.",
+    "The multiplicative confidence limits run from 0.13 to 0.31."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_false(grepl("multiplicative confidence", out, ignore.case = TRUE))
+  testthat::expect_true(grepl("confidence interval for the multiplier", out, fixed = TRUE))
+  testthat::expect_true(grepl("confidence limits for the multiplier", out, fixed = TRUE))
+  testthat::expect_true(grepl("0.13", out, fixed = TRUE))
+  testthat::expect_true(grepl("0.31", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText splits confidence ranges with scientific notation", {
+  text = "The estimated multiplier is 1.2e-03, with values between 1.0e-03 and 1.4E-03."
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    "The estimated multiplier is 1.2e-03. This estimate could plausibly lie between 1.0e-03 and 1.4E-03."
+  )
+  testthat::expect_true(grepl("1.2e-03", out, fixed = TRUE))
+  testthat::expect_true(grepl("1.0e-03", out, fixed = TRUE))
+  testthat::expect_true(grepl("1.4E-03", out, fixed = TRUE))
+})
+
+
+testthat::test_that("findExplanationSurfaceIssues reports new surface issue groups", {
+  text = paste(
+    "The value is one-fifth of the original value.",
+    "This is a multiplicative confidence interval."
+  )
+
+  out = findExplanationSurfaceIssues(text)
+
+  testthat::expect_true("verbalFractions" %in% out$issueType)
+  testthat::expect_true("confidenceIntervalTerminology" %in% out$issueType)
+  testthat::expect_true(any(out$matchedText == "one-fifth"))
+  testthat::expect_true(any(out$matchedText == "multiplicative confidence interval"))
+})
+
+
+testthat::test_that("diagnoseExplanationSurfaceProcessing resolves new diagnostic examples", {
+  text = paste(
+    "This is a multiplicative confidence interval.",
+    "The count is one-fifth of the original value."
+  )
+
+  out = diagnoseExplanationSurfaceProcessing(text)
+
+  testthat::expect_true("confidenceIntervalTerminology" %in% out$rulesApplied)
+  testthat::expect_true("verbalFractions" %in% out$rulesApplied)
+  testthat::expect_true(nrow(out$issuesAfter) < nrow(out$issuesBefore))
+})

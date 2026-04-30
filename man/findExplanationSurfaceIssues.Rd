@@ -7,7 +7,7 @@
 findExplanationSurfaceIssues(
   text,
   issueTypes = c("modelMechanismLanguage", "unitChangePhrasing", "verbalFractions",
-    "longSentencePatterns")
+    "confidenceIntervalTerminology", "longSentencePatterns")
 )
 }
 \arguments{
