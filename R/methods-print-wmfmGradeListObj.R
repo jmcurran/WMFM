@@ -28,12 +28,41 @@ print.wmfmGradeListObj = function(
     format(round(value, digits), nsmall = digits, trim = TRUE)
   }
 
+  chooseDisplayMethod = function(gradeObj) {
+    method = gradeObj$meta$lastScoredMethod %||% NA_character_
+
+    if (length(method) == 1 && !is.na(method) && nzchar(method) &&
+        method %in% names(gradeObj$scores$byMethod %||% list())) {
+      return(method)
+    }
+
+    methods = names(gradeObj$scores$byMethod %||% list())
+
+    if (length(methods) < 1) {
+      return(NA_character_)
+    }
+
+    methods[length(methods)]
+  }
+
+  extractMark = function(gradeObj, method) {
+    if (is.na(method) || !method %in% names(gradeObj$scores$byMethod %||% list())) {
+      return(NA_real_)
+    }
+
+    suppressWarnings(as.numeric(gradeObj$scores$byMethod[[method]]$mark)[1])
+  }
+
   cat("WMFM grade list\n")
   cat("---------------\n")
   cat("Number of explanations:", x$meta$nExplanations, "\n")
 
   if (!is.na(x$meta$method)) {
-    cat("Method:", x$meta$method, "\n")
+    cat("Requested method:", x$meta$method, "\n")
+  }
+
+  if (!is.null(x$meta$lastScoredMethod) && !is.na(x$meta$lastScoredMethod)) {
+    cat("Last scored method:", x$meta$lastScoredMethod, "\n")
   }
 
   if (!is.na(x$meta$nLlm) && x$meta$method %in% c("llm", "both")) {
@@ -48,9 +77,18 @@ print.wmfmGradeListObj = function(
     cat("Elapsed time:", formatWmfmElapsedTime(x$meta$elapsedSeconds), "\n")
   }
 
-  markLines = vapply(utils::head(names(x$grades), maxExamples), function(name) {
+  gradeNames = utils::head(names(x$grades), maxExamples)
+  markLines = vapply(gradeNames, function(name) {
     gradeObj = x$grades[[name]]
-    paste0(name, ": ", fmt(gradeObj$scores$mark), " / ", gradeObj$scoreScale)
+    method = chooseDisplayMethod(gradeObj)
+    mark = extractMark(gradeObj, method)
+    methodLabel = if (is.na(method)) "unscored" else method
+
+    paste0(
+      name, ": ",
+      fmt(mark), " / ", gradeObj$scoreScale,
+      " (", methodLabel, ")"
+    )
   }, character(1))
 
   if (length(markLines) > 0) {

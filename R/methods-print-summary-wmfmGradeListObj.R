@@ -31,7 +31,19 @@ print.summary.wmfmGradeListObj = function(
   cat("Number of explanations:", x$nExplanations, "\n")
 
   if (!is.na(x$method)) {
-    cat("Method:", x$method, "\n")
+    cat("Requested method:", x$method, "\n")
+  }
+
+  if (length(x$availableMethods) > 0) {
+    cat("Available scored methods:", paste(x$availableMethods, collapse = ", "), "\n")
+  }
+
+  if (!is.null(x$scoredByMethod$deterministic)) {
+    cat("Deterministic scored explanations:", x$scoredByMethod$deterministic$n, "/", x$nExplanations, "\n")
+  }
+
+  if (!is.null(x$scoredByMethod$llm)) {
+    cat("LLM scored explanations:", x$scoredByMethod$llm$n, "/", x$nExplanations, "\n")
   }
 
   if (!is.na(x$nLlm) && x$nLlm > 0) {
@@ -42,9 +54,17 @@ print.summary.wmfmGradeListObj = function(
     cat("Total LLM calls:", x$totalLlmCalls, "\n")
   }
 
+  if (!is.null(x$latestMark)) {
+    cat(
+      "\nLatest mark mean: ", fmt(x$latestMark$mean),
+      " [", fmt(x$latestMark$min), ", ", fmt(x$latestMark$max), "]\n",
+      sep = ""
+    )
+  }
+
   if (!is.null(x$deterministicMark)) {
     cat(
-      "\nDeterministic mark mean: ", fmt(x$deterministicMark$mean),
+      "Deterministic mark mean: ", fmt(x$deterministicMark$mean),
       " [", fmt(x$deterministicMark$min), ", ", fmt(x$deterministicMark$max), "]\n",
       sep = ""
     )
