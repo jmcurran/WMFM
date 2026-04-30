@@ -3710,7 +3710,7 @@ $$")
         tagList(
           tags$div(
             class = "wmfm-explanation-helper-note",
-            "Read the main explanation first. The sections below unpack the choices the app made so you can see why it described the model this way."
+            "The sections below unpack the choices the app made so you can see why it described the model this way."
           ),
           tags$div(
             class = "wmfm-explanation-box",

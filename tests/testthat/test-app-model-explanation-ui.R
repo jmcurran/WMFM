@@ -216,3 +216,22 @@ testthat::test_that("app server cleans explanation text again at display time", 
     fixed = TRUE
   )
 })
+
+testthat::test_that("app UI avoids duplicated explanation and output labels", {
+  ui = appUI()
+  html = as.character(ui)
+
+  testthat::expect_no_match(html, "<h4>Model explanation</h4>", fixed = TRUE)
+  testthat::expect_match(html, "Summary table", fixed = TRUE)
+  testthat::expect_no_match(html, ">Model outputs</button>.*<h4>Model outputs</h4>", perl = TRUE)
+  testthat::expect_match(html, "sentence support, reading guidance", fixed = TRUE)
+})
+
+testthat::test_that("research question input uses one visible label", {
+  ui = appUI()
+  html = as.character(ui)
+
+  testthat::expect_match(html, "<h5>Research question</h5>", fixed = TRUE)
+  testthat::expect_match(html, "placeholder=\"For example, how does the expected response change", fixed = TRUE)
+  testthat::expect_no_match(html, "<label.*Research question", perl = TRUE)
+})

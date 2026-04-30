@@ -154,7 +154,8 @@ appUI = function() {
           h5("Research question"),
           textInput(
             "researchQuestion",
-            label = "Research question",
+            label = NULL,
+            placeholder = "For example, how does the expected response change as the predictor changes?",
             value = "",
             width = "100%"
           ),
@@ -247,7 +248,7 @@ appUI = function() {
           multiple = TRUE,
           open = NULL,
           accordion_panel(
-            "Model outputs",
+            "Summary table",
             value = "model_output_tabs",
             tabsetPanel(
               tabPanel(
@@ -299,9 +300,8 @@ appUI = function() {
 
       tabPanel(
         "Model Explanation",
-        h4("Model explanation"),
         helpText(
-          "Start with the main explanation, then use the sections below to see how to read it, what information the app relied on, and where each sentence came from."
+          "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
         ),
         uiOutput("model_explanation")
       ),
