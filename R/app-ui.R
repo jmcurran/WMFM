@@ -76,12 +76,12 @@ appUI = function() {
           selectInput(
             "data_package",
             "Choose a package:",
-            choices = character(0)
+            choices = c("Loading packages..." = "")
           ),
           selectInput(
             "package_dataset",
             "Choose a dataset:",
-            choices = character(0)
+            choices = c("Loading datasets..." = "")
           ),
           helpText(
             "Packages listed here are installed packages that appear to contain datasets."
@@ -100,7 +100,7 @@ appUI = function() {
         selectInput(
           "exampleName",
           "Choose an example:",
-          choices = character(0)
+          choices = c("Loading examples..." = "")
         ),
         actionButton(
           "loadExampleBtn",

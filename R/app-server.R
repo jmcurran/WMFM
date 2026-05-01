@@ -39,9 +39,9 @@ appServer = function(input, output, session) {
   # Pre-populate the package selector immediately, then broaden it after
   # the first UI flush so the app feels responsive on startup.
   # -------------------------------------------------------------------
-  packageChoices = reactiveVal(character(0))
+  packageChoices = reactiveVal(c("Loading packages..." = ""))
   packageScanStatus = reactiveVal(NULL)
-  packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
+  packageDatasetStatus = reactiveVal("Loading dataset choices...")
   exampleChoices = reactiveVal(c("Loading examples..." = ""))
   developerModeUnlocked = reactiveVal(FALSE)
   exampleLoadStatus = reactiveVal("Loading the built-in examples.")
@@ -56,7 +56,9 @@ appServer = function(input, output, session) {
     }
   )
 
-  packageChoices(initialPackageChoices)
+  if (length(initialPackageChoices) > 0) {
+    packageChoices(initialPackageChoices)
+  }
 
   if (length(initialPackageChoices) > 0) {
     packageScanStatus("Showing s20x now while other installed packages are checked.")
