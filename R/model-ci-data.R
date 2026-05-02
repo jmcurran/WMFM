@@ -1817,29 +1817,26 @@ buildSimpleInteractionSlopeWeights = function(model, factorName, factorLevel, nu
 #' @keywords internal
 buildConfidenceIntervalNotation = function(model, mf) {
 
-  responseName = names(mf)[1]
-  response = mf[[1]]
+  notation = buildGlmTeachingNotation(model = model)
 
   if (isSupportedLogisticModel(model = model)) {
-    levs = levels(response)
-    success = levs[length(levs)]
-    failure = levs[1]
-
     return(list(
-      probabilitySuccess = paste0("Pr(", responseName, " = ", success, ")"),
-      probabilityFailure = paste0("Pr(", responseName, " = ", failure, ")"),
-      oddsSuccess = paste0("Odds(", responseName, " = ", success, ")"),
-      oddsFailure = paste0("Odds(", responseName, " = ", failure, ")"),
+      probabilitySuccess = notation$probabilitySuccess,
+      probabilityFailure = notation$probabilityFailure,
+      oddsSuccess = notation$oddsSuccess,
+      oddsFailure = notation$oddsFailure,
       responseScale = "response"
     ))
   }
 
   if (isSupportedPoissonModel(model = model)) {
     return(list(
-      mean = "E(Y)",
+      mean = notation$mean,
       responseScale = "response"
     ))
   }
+
+  responseName = names(mf)[1]
 
   list(
     mean = paste0("Expected ", responseName),

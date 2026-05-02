@@ -222,7 +222,7 @@ testthat::test_that("app UI avoids duplicated explanation and output labels", {
   html = as.character(ui)
 
   testthat::expect_no_match(html, "<h4>Model explanation</h4>", fixed = TRUE)
-  testthat::expect_match(html, "Summary table", fixed = TRUE)
+  testthat::expect_no_match(html, "Summary table", fixed = TRUE)
   testthat::expect_no_match(html, ">Model outputs</button>.*<h4>Model outputs</h4>", perl = TRUE)
   testthat::expect_match(html, "sentence support, reading guidance", fixed = TRUE)
 })

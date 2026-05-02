@@ -65,10 +65,13 @@ test_that("package dataset selector shows a loading placeholder before scanning"
   expect_match(serverText, "session\\$onFlushed\\(function\\(\\) \\{", fixed = FALSE)
 })
 
-test_that("model output accordion uses the summary table label", {
+test_that("model outputs use direct tabs without a duplicate summary-table header", {
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(uiText, "Summary table", fixed = TRUE)
+  expect_match(uiText, "Model outputs", fixed = TRUE)
+  expect_match(uiText, "id = \"model_output_tabs\"", fixed = TRUE)
+  expect_false(grepl("Summary table", uiText, fixed = TRUE))
+  expect_false(grepl("id = \"model_outputs\"", uiText, fixed = TRUE))
   expect_false(grepl("Regression output", uiText, fixed = TRUE))
 })
 

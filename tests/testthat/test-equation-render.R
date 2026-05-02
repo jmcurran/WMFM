@@ -83,9 +83,9 @@ test_that("renderEquationCases renders logistic equations on logit, odds, and pr
   cases = buildEquationCases(spec)
   out = renderEquationCases(spec, cases)
 
-  expect_match(out[[1]]$linearPredictor, "^logit\\(Pr\\(Y = Pass\\)\\) = ")
-  expect_match(out[[1]]$oddsScale, "^Odds\\(Y = Pass\\) = exp\\(")
-  expect_match(out[[1]]$responseScale, "^Pr\\(Y = Pass\\) = exp\\(")
+  expect_match(out[[1]]$linearPredictor, '^logit\\(Pr\\(pass = "Pass"\\)\\) = ')
+  expect_match(out[[1]]$oddsScale, '^Odds\\(pass = "Pass" vs pass = "Fail"\\) = exp\\(')
+  expect_match(out[[1]]$responseScale, '^Pr\\(pass = "Pass"\\) = exp\\(')
   expect_true(grepl(out[[1]]$simplifiedRhs, out[[1]]$oddsScale, fixed = TRUE))
   expect_true(grepl(out[[1]]$simplifiedRhs, out[[1]]$responseScale, fixed = TRUE))
 })
@@ -102,8 +102,8 @@ test_that("renderEquationCases renders Poisson equations on log and mean scales"
   cases = buildEquationCases(spec)
   out = renderEquationCases(spec, cases)
 
-  expect_match(out[[1]]$linearPredictor, "^log\\(E\\(Y\\)\\) = ")
-  expect_match(out[[1]]$responseScale, "^E\\(Y\\) = exp\\(")
+  expect_match(out[[1]]$linearPredictor, "^log\\(E\\[y\\]\\) = ")
+  expect_match(out[[1]]$responseScale, "^E\\[y\\] = exp\\(")
   expect_true(grepl(out[[1]]$simplifiedRhs, out[[1]]$responseScale, fixed = TRUE))
   expect_null(out[[1]]$oddsScale)
 })

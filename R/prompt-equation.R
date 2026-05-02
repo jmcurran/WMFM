@@ -65,10 +65,10 @@ For interactions between a factor F and a numeric variable X:
   In the equations you output, you must NEVER show the letters a, b, c, or d.
 
 - For the reference level of F (where all F[level] = 0), write an equation such as
-    logit(Pr(Y = Pass)) = a + c * X    (when F = reference level)
+    logit(Pr({response} = Pass)) = a + c * X    (when F = reference level)
   but in the actual equation you produce, replace a and c with their numeric values,
   for example
-    logit(Pr(Y = Pass)) = -4.71 + 0.42 * Test    (when F = \"No\")
+    logit(Pr({response} = Pass)) = -4.71 + 0.42 * Test    (when F = \"No\")
 
 - For a non-reference level L of F, you MUST show BOTH the intercept and the slope
   as numeric combinations BEFORE simplifying, and then show the simplified numeric version.
@@ -81,7 +81,7 @@ For interactions between a factor F and a numeric variable X:
 - For example, if the coefficients imply
     (Intercept) = -4.71,  F[L] = -5.13,  X = 0.42,  F[L]:X = 0.76,
   then you should write
-    logit(Pr(Y = Pass)) = (-4.71 - 5.13) + (0.42 + 0.76) * Test = -9.84 + 1.18 * Test    (when F = \"Yes\")
+    logit(Pr({response} = Pass)) = (-4.71 - 5.13) + (0.42 + 0.76) * Test = -9.84 + 1.18 * Test    (when F = \"Yes\")
 
 IMPORTANT:
 - Do NOT include symbolic patterns like (a + b) or (c + d) in the output.
@@ -91,7 +91,7 @@ IMPORTANT:
 
 This rule applies to ALL model types:
 - If the model is binomial with logit link, write equations on the logit scale and then also on the odds scale and original probability scale.
-- If the model is Poisson with log link, write equations on the log(E(Y)) scale and then also on the expected-count scale.
+- If the model is Poisson with log link, write equations on the log(E[{response}]) scale and then also on the expected-count scale.
 "
   } else {
     extraRules = "
@@ -116,12 +116,12 @@ then you should output BOTH of the following equations:
 
 Exactly the SAME pattern must be followed for generalised linear models:
 - For a binomial logit model, you might write, for a non-reference level L,
-    logit(Pr(Y = Pass)) = (-7.70 + 2.14) + 0.70 * Test = -5.56 + 0.70 * Test    (when Attend = \"Yes\")
-    Odds(Y = Pass) = exp(-5.56 + 0.70 * Test)    (when Attend = \"Yes\")
-    Pr(Y = Pass) = exp(-5.56 + 0.70 * Test) / (1 + exp(-5.56 + 0.70 * Test))    (when Attend = \"Yes\")
+    logit(Pr({response} = Pass)) = (-7.70 + 2.14) + 0.70 * Test = -5.56 + 0.70 * Test    (when Attend = \"Yes\")
+    Odds({response} = Pass) = exp(-5.56 + 0.70 * Test)    (when Attend = \"Yes\")
+    Pr({response} = Pass) = exp(-5.56 + 0.70 * Test) / (1 + exp(-5.56 + 0.70 * Test))    (when Attend = \"Yes\")
 - For a Poisson log-link model, you might write
-    log(E(Y)) = (1.86 + 0.45) + 0.30 * X = 2.31 + 0.30 * X    (when F = \"High\")
-    E(Y) = exp(2.31 + 0.30 * X)    (when F = \"High\")
+    log(E[{response}]) = (1.86 + 0.45) + 0.30 * X = 2.31 + 0.30 * X    (when F = \"High\")
+    E[{response}] = exp(2.31 + 0.30 * X)    (when F = \"High\")
 
 Apply this idea to every factor in the actual model:
 - First write the baseline equation for the reference level.
@@ -149,6 +149,8 @@ NOT in abstract coefficient or dummy-variable form.
 
 Response: {response}
 
+Use the actual response-variable name in all response-scale notation. For example, write E[{response}] rather than E[Y], and write Pr({response} = level) rather than Pr(Y = level).
+
 Predictors:
 {paste(predInfo, collapse = '\\n')}
 
@@ -174,14 +176,14 @@ General rules:
 - For linear regression (Gaussian, identity link):
   * Write equations like: {response} = b0 + b1 * X1 + ...
 - For binomial GLMs with logit link:
-  * Write equations on the log-odds (logit) scale, e.g. logit(Pr(Y = Success)) = ...
+  * Write equations on the log-odds (logit) scale, e.g. logit(Pr({response} = Success)) = ...
   * Then ALWAYS also give the transformed equation on the odds scale and on the original probability scale:
-    Odds(Y = Success) = exp(eta)
-    Pr(Y = Success) = exp(eta) / (1 + exp(eta)).
+    Odds({response} = Success) = exp(eta)
+    Pr({response} = Success) = exp(eta) / (1 + exp(eta)).
 - For Poisson GLMs with log link:
-  * Write equations on the log scale, e.g. log(E(Y)) = ...
+  * Write equations on the log scale, e.g. log(E[{response}]) = ...
   * Then ALWAYS also give the transformed equation on the expected-count scale:
-    E(Y) = exp(eta).
+    E[{response}] = exp(eta).
 - For factor predictors in ANY model (linear or GLM):
   * Always give separate equations for the reference level and each non-reference level.
   * When you adjust the intercept (and slopes, in interaction models), first show the
@@ -190,11 +192,11 @@ General rules:
 - For any non-identity link, do NOT stop at the linear predictor.
   After each equation on the link scale, also write the corresponding equation
   transformed back to the original response scale.
-- For a Poisson model, each log(E(Y)) equation must be followed by
-  E(Y) = exp(...) for the same condition.
-- For a binomial logit model, each logit(Pr(Y = Success)) equation must be followed by
-  Odds(Y = Success) = exp(...) and
-  Pr(Y = Success) = exp(...) / (1 + exp(...)) for the same condition.
+- For a Poisson model, each log(E[{response}]) equation must be followed by
+  E[{response}] = exp(...) for the same condition.
+- For a binomial logit model, each logit(Pr({response} = Success)) equation must be followed by
+  Odds({response} = Success) = exp(...) and
+  Pr({response} = Success) = exp(...) / (1 + exp(...)) for the same condition.
 - When writing the transformed equation on the original scale, use the simplified form
   of the linear predictor inside exp(...), not the unsimplified combination.
 - Do not add narrative commentary about intercept interpretation.

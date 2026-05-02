@@ -77,8 +77,8 @@ test_that("buildEquationSpec carries binomial notation metadata", {
 
   expect_identical(out$family, "binomial")
   expect_identical(out$link, "logit")
-  expect_identical(out$notation$probabilitySuccess, "Pr(Y = Pass)")
-  expect_identical(out$notation$oddsSuccess, "Odds(Y = Pass)")
+  expect_identical(out$notation$probabilitySuccess, 'Pr(pass = "Pass")')
+  expect_identical(out$notation$oddsSuccess, 'Odds(pass = "Pass" vs pass = "Fail")')
 })
 
 
@@ -93,6 +93,6 @@ test_that("buildEquationSpec carries Poisson family metadata", {
 
   expect_identical(out$family, "poisson")
   expect_identical(out$link, "log")
-  expect_identical(out$notation$mean, "E(Y)")
-  expect_identical(out$notation$logMean, "log(E(Y))")
+  expect_identical(out$notation$mean, "E[y]")
+  expect_identical(out$notation$logMean, "log(E[y])")
 })

@@ -244,55 +244,47 @@ appUI = function() {
         hr(),
 
         h4("Model outputs"),
-        accordion(
-          id = "model_outputs",
-          multiple = TRUE,
-          open = NULL,
-          accordion_panel(
-            "Summary table",
-            value = "model_output_tabs",
-            tabsetPanel(
-              tabPanel(
-                "Summary",
-                verbatimTextOutput("model_output")
+        tabsetPanel(
+          id = "model_output_tabs",
+          tabPanel(
+            "Summary",
+            verbatimTextOutput("model_output")
+          ),
+          tabPanel(
+            "ANOVA",
+            verbatimTextOutput("model_anova")
+          ),
+          tabPanel(
+            "Confidence intervals",
+            uiOutput("modelConfintControlsUi"),
+            uiOutput("modelConfintNoteUi"),
+            uiOutput("modelConfintTableUi"),
+            tags$div(
+              class = "wmfm-ci-drilldown-box",
+              tags$div(
+                class = "wmfm-ci-section-label",
+                "Explain one interval"
               ),
-              tabPanel(
-                "ANOVA",
-                verbatimTextOutput("model_anova")
+              tags$div(
+                class = "wmfm-ci-secondary-note",
+                "Choose a single row when you want to unpack how that interval was constructed."
               ),
-              tabPanel(
-                "Confidence intervals",
-                uiOutput("modelConfintControlsUi"),
-                uiOutput("modelConfintNoteUi"),
-                uiOutput("modelConfintTableUi"),
-                tags$div(
-                  class = "wmfm-ci-drilldown-box",
-                  tags$div(
-                    class = "wmfm-ci-section-label",
-                    "Explain one interval"
-                  ),
-                  tags$div(
-                    class = "wmfm-ci-secondary-note",
-                    "Choose a single row when you want to unpack how that interval was constructed."
-                  ),
-                  uiOutput("modelConfintSelectorUi"),
-                  uiOutput("modelConfintSelectedRowUi")
-                ),
-                accordion(
-                  id = "model_confint_extras",
-                  multiple = TRUE,
-                  open = FALSE,
-                  accordion_panel(
-                    "Teaching note",
-                    value = "model_confint_teaching_note",
-                    uiOutput("modelConfintTeachingNoteUi")
-                  ),
-                  accordion_panel(
-                    "Variance-covariance matrix",
-                    value = "model_confint_vcov",
-                    uiOutput("modelConfintVcovUi")
-                  )
-                )
+              uiOutput("modelConfintSelectorUi"),
+              uiOutput("modelConfintSelectedRowUi")
+            ),
+            accordion(
+              id = "model_confint_extras",
+              multiple = TRUE,
+              open = FALSE,
+              accordion_panel(
+                "Teaching note",
+                value = "model_confint_teaching_note",
+                uiOutput("modelConfintTeachingNoteUi")
+              ),
+              accordion_panel(
+                "Variance-covariance matrix",
+                value = "model_confint_vcov",
+                uiOutput("modelConfintVcovUi")
               )
             )
           )
