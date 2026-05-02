@@ -48,9 +48,9 @@ test_that("startup data choice loading gives immediate visible feedback", {
   uiText = readPackageText("R", "app-ui.R")
 
   expect_match(serverText, "Loading examples\\.\\.\\.", fixed = FALSE)
-  expect_match(serverText, "Loading packages\\.\\.\\.", fixed = FALSE)
   expect_match(uiText, "Loading examples...", fixed = TRUE)
   expect_match(uiText, "Loading packages...", fixed = TRUE)
+  expect_match(serverText, "Checking installed packages for datasets", fixed = TRUE)
   expect_match(uiText, "Loading datasets...", fixed = TRUE)
   expect_match(serverText, "Dataset choices will appear once the package scan has finished", fixed = TRUE)
   expect_match(serverText, "wmfm-startup-data-choices", fixed = TRUE)
@@ -70,4 +70,18 @@ test_that("model output accordion uses the summary table label", {
 
   expect_match(uiText, "Summary table", fixed = TRUE)
   expect_false(grepl("Regression output", uiText, fixed = TRUE))
+})
+
+test_that("model type uses a compact selector", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "selectInput\\(\\s*\\\"model_type\\\"", perl = TRUE)
+  expect_false(grepl("radioButtons\\(\\s*\\\"model_type\\\"", uiText, perl = TRUE))
+})
+
+test_that("example loading updates the compact model type selector", {
+  serverText = readPackageText("R", "app-server.R")
+
+  expect_match(serverText, "updateSelectInput\\(\\s*session,\\s*\\\"model_type\\\"", perl = TRUE)
+  expect_false(grepl("updateRadioButtons\\(\\s*session,\\s*\\\"model_type\\\"", serverText, perl = TRUE))
 })

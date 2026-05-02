@@ -39,9 +39,9 @@ appServer = function(input, output, session) {
   # Pre-populate the package selector immediately, then broaden it after
   # the first UI flush so the app feels responsive on startup.
   # -------------------------------------------------------------------
-  packageChoices = reactiveVal(c("Loading packages..." = ""))
+  packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
-  packageDatasetStatus = reactiveVal("Loading dataset choices...")
+  packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
   exampleChoices = reactiveVal(c("Loading examples..." = ""))
   developerModeUnlocked = reactiveVal(FALSE)
   exampleLoadStatus = reactiveVal("Loading the built-in examples.")
@@ -56,9 +56,7 @@ appServer = function(input, output, session) {
     }
   )
 
-  if (length(initialPackageChoices) > 0) {
-    packageChoices(initialPackageChoices)
-  }
+  packageChoices(initialPackageChoices)
 
   if (length(initialPackageChoices) > 0) {
     packageScanStatus("Showing s20x now while other installed packages are checked.")
@@ -711,7 +709,7 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
 
     # Reset model UI inputs
-    updateRadioButtons(session, "model_type", selected = "lm")
+    updateSelectInput(session, "model_type", selected = "lm")
 
     # Prevent stale widget values from fighting the reset
     freezeReactiveValue(input, "factors")
@@ -767,7 +765,7 @@ appServer = function(input, output, session) {
       selected = responseVar
     )
 
-    updateRadioButtons(
+    updateSelectInput(
       session,
       "model_type",
       selected = spec$modelType %||% "lm"

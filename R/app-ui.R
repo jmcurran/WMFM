@@ -24,7 +24,7 @@
 #' @importFrom shiny fluidPage withMathJax titlePanel
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
-#' @importFrom shiny radioButtons textInput verbatimTextOutput
+#' @importFrom shiny textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
@@ -184,7 +184,7 @@ appUI = function() {
           fluidRow(
             column(
               width = 8,
-              radioButtons(
+              selectInput(
                 "model_type",
                 label = "Model type:",
                 choices = c(
@@ -192,7 +192,8 @@ appUI = function() {
                   "Logistic regression (binomial, logit)" = "logistic",
                   "Poisson regression (log link)" = "poisson"
                 ),
-                selected = "lm"
+                selected = "lm",
+                width = "100%"
               )
             ),
 
