@@ -42,7 +42,7 @@ appServer = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
   packageDatasetStatus = reactiveVal(buildPackageDatasetChoiceStatus())
-  exampleChoices = reactiveVal(c("Loading examples..." = ""))
+  exampleChoices = reactiveVal(buildLoadingExampleChoice())
   developerModeUnlocked = reactiveVal(FALSE)
   exampleLoadStatus = reactiveVal(buildInitialExampleLoadStatus())
 
@@ -124,12 +124,12 @@ appServer = function(input, output, session) {
     startupNotificationId = "wmfm-startup-data-choices"
 
     packageScanStatus("Preparing the built-in examples.")
-    packageDatasetStatus("Dataset choices will appear once the package scan has finished.")
+    packageDatasetStatus(buildPackageDatasetPendingScanStatus())
     exampleLoadStatus("Loading the built-in examples.")
-    exampleChoices(c("Loading examples..." = ""))
+    exampleChoices(buildLoadingExampleChoice())
 
     showNotification(
-      "Preparing built-in examples and installed-package datasets.",
+      buildStartupDataChoicesMessage(),
       id = startupNotificationId,
       type = "message",
       duration = NULL
@@ -137,7 +137,7 @@ appServer = function(input, output, session) {
 
     session$onFlushed(function() {
       exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(developerModeUnlocked()))))
-      exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
+      exampleLoadStatus(buildExampleReadyStatus())
       packageScanStatus("Checking installed packages for datasets.")
 
       session$onFlushed(function() {
@@ -146,12 +146,12 @@ appServer = function(input, output, session) {
         if (length(packageNames) == 0) {
           packageChoices(character(0))
           packageScanStatus("No installed packages with datasets were found.")
-          packageDatasetStatus("No package datasets are available yet.")
+          packageDatasetStatus(buildNoPackageDatasetsStatus())
           removeNotification(startupNotificationId)
           return(NULL)
         }
 
-        packageScanStatus("Updating the package list.")
+        packageScanStatus(buildPackageListUpdatingStatus())
         packageChoices(packageNames)
 
         packageScanStatus(
@@ -2110,7 +2110,7 @@ $$")
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
     rv$loadedExample = NULL
-    exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
+    exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
   }
@@ -2268,7 +2268,7 @@ $$")
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
     rv$loadedExample = NULL
-    exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
+    exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
 

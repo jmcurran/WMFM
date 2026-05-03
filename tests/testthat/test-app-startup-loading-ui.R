@@ -45,14 +45,16 @@ readPackageText = function(...) {
 
 test_that("startup data choice loading gives immediate visible feedback", {
   serverText = readPackageText("R", "app-server.R")
+  startupHelperText = readPackageText("R", "app-server-startup-helpers.R")
+  startupText = paste(serverText, startupHelperText, sep = "\n")
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(serverText, "Loading examples\\.\\.\\.", fixed = FALSE)
+  expect_match(startupText, "Loading examples\\.\\.\\.", fixed = FALSE)
   expect_match(uiText, "Loading examples...", fixed = TRUE)
   expect_match(uiText, "Loading packages...", fixed = TRUE)
   expect_match(serverText, "Checking installed packages for datasets", fixed = TRUE)
   expect_match(uiText, "Loading datasets...", fixed = TRUE)
-  expect_match(serverText, "Dataset choices will appear once the package scan has finished", fixed = TRUE)
+  expect_match(startupText, "Dataset choices will appear once the package scan has finished", fixed = TRUE)
   expect_match(serverText, "wmfm-startup-data-choices", fixed = TRUE)
   expect_match(serverText, "removeNotification\\(startupNotificationId\\)", fixed = FALSE)
 })

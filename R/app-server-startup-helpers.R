@@ -29,6 +29,54 @@ buildInitialExampleLoadStatus = function() {
   "Loading the built-in examples."
 }
 
+#' Build the loading examples choice label
+#'
+#' @return A named character vector for the temporary example selector choice.
+#' @keywords internal
+buildLoadingExampleChoice = function() {
+  c("Loading examples..." = "")
+}
+
+#' Build the startup package dataset pending status message
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildPackageDatasetPendingScanStatus = function() {
+  "Dataset choices will appear once the package scan has finished."
+}
+
+#' Build the startup notification message
+#'
+#' @return A character string for the startup notification.
+#' @keywords internal
+buildStartupDataChoicesMessage = function() {
+  "Preparing built-in examples and installed-package datasets."
+}
+
+#' Build the example ready status message
+#'
+#' @return A character string for the example load status display.
+#' @keywords internal
+buildExampleReadyStatus = function() {
+  "Choose a built-in example if you want the app to load a complete worked setup."
+}
+
+#' Build the no package datasets status message
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildNoPackageDatasetsStatus = function() {
+  "No package datasets are available yet."
+}
+
+#' Build the package list updating status message
+#'
+#' @return A character string for the package scan status display.
+#' @keywords internal
+buildPackageListUpdatingStatus = function() {
+  "Updating the package list."
+}
+
 #' Build the package scan completion status message
 #'
 #' @param packageNames Character vector of packages with datasets.

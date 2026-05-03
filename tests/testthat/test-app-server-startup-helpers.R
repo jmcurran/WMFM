@@ -93,3 +93,36 @@ test_that("package dataset found status helper handles singular and plural count
   )
 })
 
+test_that("startup example helpers centralise loading and ready text", {
+  expect_equal(
+    buildLoadingExampleChoice(),
+    c("Loading examples..." = "")
+  )
+
+  expect_equal(
+    buildExampleReadyStatus(),
+    "Choose a built-in example if you want the app to load a complete worked setup."
+  )
+})
+
+test_that("startup package scan helpers centralise transient status text", {
+  expect_equal(
+    buildPackageDatasetPendingScanStatus(),
+    "Dataset choices will appear once the package scan has finished."
+  )
+
+  expect_equal(
+    buildStartupDataChoicesMessage(),
+    "Preparing built-in examples and installed-package datasets."
+  )
+
+  expect_equal(
+    buildNoPackageDatasetsStatus(),
+    "No package datasets are available yet."
+  )
+
+  expect_equal(
+    buildPackageListUpdatingStatus(),
+    "Updating the package list."
+  )
+})
