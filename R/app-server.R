@@ -170,11 +170,7 @@ appServer = function(input, output, session) {
   }, ignoreInit = TRUE)
 
   output$developerModeStatus = renderText({
-    if (isTRUE(developerModeUnlocked())) {
-      return("Developer mode is unlocked.")
-    }
-
-    "Developer mode is locked."
+    buildDeveloperModeStatus(isUnlocked = developerModeUnlocked())
   })
 
   observeEvent(input$unlockDeveloperModeBtn, {
@@ -190,18 +186,30 @@ appServer = function(input, output, session) {
 
     if (!isTRUE(passwordOk)) {
       developerModeUnlocked(FALSE)
-      showNotification("Incorrect password. Developer mode remains locked.", type = "error", duration = 6)
+      showNotification(
+        buildDeveloperModeIncorrectPasswordMessage(),
+        type = "error",
+        duration = 6
+      )
       return(NULL)
     }
 
     developerModeUnlocked(TRUE)
-    showNotification("Developer mode unlocked.", type = "message", duration = 5)
+    showNotification(
+      buildDeveloperModeUnlockedMessage(),
+      type = "message",
+      duration = 5
+    )
   }, ignoreInit = TRUE)
 
   observeEvent(input$lockDeveloperModeBtn, {
     developerModeUnlocked(FALSE)
     session$sendInputMessage("developerModePassword", list(value = ""))
-    showNotification("Developer mode locked.", type = "message", duration = 5)
+    showNotification(
+      buildDeveloperModeLockedMessage(),
+      type = "message",
+      duration = 5
+    )
   }, ignoreInit = TRUE)
 
   observeEvent(input$data_package, {
