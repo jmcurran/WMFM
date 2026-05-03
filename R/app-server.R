@@ -487,15 +487,10 @@ appServer = function(input, output, session) {
   }, ignoreInit = TRUE)
 
   output$chatProviderStatus = renderText({
-    if (identical(rv$activeChatBackend %||% "ollama", "claude")) {
-      return("Current provider: Claude")
-    }
-
-    paste0(
-      "Current provider: Ollama (model: ",
-      rv$activeOllamaModel %||% "gpt-oss",
-      if (isTRUE(rv$activeOllamaThinkLow)) ", low thinking" else ", normal thinking",
-      ")"
+    buildChatProviderStatus(
+      backend = rv$activeChatBackend %||% "ollama",
+      ollamaModel = rv$activeOllamaModel %||% "gpt-oss",
+      ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)
     )
   })
 
@@ -504,7 +499,7 @@ appServer = function(input, output, session) {
 
     if (!requested %in% c("ollama", "claude")) {
       updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
-      showNotification("Unknown provider selected.", type = "error", duration = 6)
+      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
       return(NULL)
     }
 
@@ -520,7 +515,7 @@ appServer = function(input, output, session) {
       if (!isTRUE(passwordOk)) {
         updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
         session$sendInputMessage("providerSwitchPassword", list(value = ""))
-        showNotification("Incorrect password. Claude was not enabled.", type = "error", duration = 6)
+        showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
         return(NULL)
       }
     }
@@ -542,17 +537,11 @@ appServer = function(input, output, session) {
 
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
 
-    msg = if (identical(requested, "claude")) {
-      "Chat provider set to Claude."
-    } else {
-      paste0(
-        "Chat provider set to Ollama using model '",
-        rv$activeOllamaModel,
-        "' with ",
-        if (isTRUE(rv$activeOllamaThinkLow)) "low" else "normal",
-        " thinking."
-      )
-    }
+    msg = buildChatProviderSetMessage(
+      backend = requested,
+      ollamaModel = rv$activeOllamaModel,
+      ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)
+    )
 
     showNotification(
       msg,
