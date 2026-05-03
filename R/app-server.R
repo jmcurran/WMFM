@@ -1310,7 +1310,7 @@ appServer = function(input, output, session) {
     req(!is.null(a), !is.null(b))
 
     if (identical(a, b)) {
-      showNotification("Please choose two different levels.", type = "warning")
+      showNotification(buildSameContrastLevelsMessage(), type = "warning")
       return(NULL)
     }
 
@@ -1339,7 +1339,7 @@ appServer = function(input, output, session) {
 
     current = contrastPairs()
     if (newLabel %in% current || revLabel %in% current) {
-      showNotification("That contrast is already in the list (possibly reversed).", type = "message")
+      showNotification(buildDuplicateContrastPairMessage(), type = "message")
       return(NULL)
     }
 
@@ -1351,7 +1351,7 @@ appServer = function(input, output, session) {
     sel = input$contrastList %||% character(0)
 
     if (length(sel) == 0) {
-      showNotification("Select one or more contrasts to remove.", type = "message")
+      showNotification(buildNoContrastSelectionMessage(), type = "message")
       return(NULL)
     }
 
@@ -1702,7 +1702,7 @@ appServer = function(input, output, session) {
 
     pairs = contrastPairs()
     if (length(pairs) == 0) {
-      showNotification("Add at least one contrast first.", type = "warning")
+      showNotification(buildNoContrastPairsMessage(), type = "warning")
       return(NULL)
     }
 
@@ -1765,17 +1765,17 @@ appServer = function(input, output, session) {
       rightLevels = input$avgRight %||% character(0)
 
       if (length(leftLevels) == 0 || length(rightLevels) == 0) {
-        showNotification("Drag at least one level into each average box.", type = "warning")
+        showNotification(buildAverageContrastEmptyGroupMessage(), type = "warning")
         return(NULL)
       }
 
       if (any(!(leftLevels %in% levs)) || any(!(rightLevels %in% levs))) {
-        showNotification("One or more selected levels are not valid for this factor.", type = "warning")
+        showNotification(buildAverageContrastInvalidLevelMessage(), type = "warning")
         return(NULL)
       }
 
       if (length(intersect(leftLevels, rightLevels)) > 0) {
-        showNotification("A level cannot appear in both average boxes.", type = "warning")
+        showNotification(buildAverageContrastOverlappingLevelMessage(), type = "warning")
         return(NULL)
       }
 
@@ -1818,16 +1818,16 @@ appServer = function(input, output, session) {
       label = paste0(targetFactor, ": custom weights")
 
       if (any(is.na(w))) {
-        showNotification("Custom weights must be numeric (decimals) or simple fractions like 1/2.", type = "warning")
+        showNotification(buildInvalidCustomContrastWeightMessage(), type = "warning")
         return(NULL)
       }
 
       if (abs(sum(w)) > 1e-8) {
-        showNotification("Custom weights must sum to 0.", type = "warning")
+        showNotification(buildCustomContrastWeightsMustSumToZeroMessage(), type = "warning")
         return(NULL)
       }
       if (sum(w != 0) < 2) {
-        showNotification("Use at least two non-zero weights.", type = "warning")
+        showNotification(buildCustomContrastTooFewWeightsMessage(), type = "warning")
         return(NULL)
       }
     }
