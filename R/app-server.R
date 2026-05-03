@@ -333,6 +333,7 @@ appServer = function(input, output, session) {
     isResetting = FALSE,
     activeChatBackend = "ollama",
     activeOllamaModel = "gpt-oss",
+    activeOllamaThinkLow = FALSE,
     availableOllamaModels = "gpt-oss",
     userDatasetContext = "",
     researchQuestion = "",
@@ -506,6 +507,7 @@ appServer = function(input, output, session) {
     paste0(
       "Current provider: Ollama (model: ",
       rv$activeOllamaModel %||% "gpt-oss",
+      if (isTRUE(rv$activeOllamaThinkLow)) ", low thinking" else ", normal thinking",
       ")"
     )
   })
@@ -548,6 +550,7 @@ appServer = function(input, output, session) {
     rv$activeChatBackend = requested
     if (identical(requested, "ollama")) {
       rv$activeOllamaModel = selectedModel
+      rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)
     }
 
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
@@ -555,7 +558,13 @@ appServer = function(input, output, session) {
     msg = if (identical(requested, "claude")) {
       "Chat provider set to Claude."
     } else {
-      paste0("Chat provider set to Ollama using model '", rv$activeOllamaModel, "'.")
+      paste0(
+        "Chat provider set to Ollama using model '",
+        rv$activeOllamaModel,
+        "' with ",
+        if (isTRUE(rv$activeOllamaThinkLow)) "low" else "normal",
+        " thinking."
+      )
     }
 
     showNotification(
@@ -3119,7 +3128,8 @@ $$")
     chatProvider = tryCatch(
       getChatProvider(
         backend = rv$activeChatBackend %||% "ollama",
-        model = rv$activeOllamaModel %||% "gpt-oss"
+        model = rv$activeOllamaModel %||% "gpt-oss",
+        ollamaThinkLow = rv$activeOllamaThinkLow %||% FALSE
       ),
       error = function(e) {
         showNotification(

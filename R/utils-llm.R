@@ -5,7 +5,7 @@
 #'
 #' @name llmHelpers-internal
 #' @keywords internal
-#' @importFrom ellmer chat_ollama type_object type_array type_string
+#' @importFrom ellmer chat_ollama params type_object type_array type_string
 #' @importFrom glue glue
 #' @importFrom tibble as_tibble
 #' @importFrom stats model.frame coef terms
@@ -34,6 +34,8 @@ NULL
 #' @param backend Character scalar giving the backend to use. Supported values
 #'   are `"ollama"` and `"claude"`.
 #' @param model Optional Ollama model name to use when `backend = "ollama"`.
+#' @param ollamaThinkLow Logical; when `TRUE`, request low thinking effort
+#'   from Ollama models that support the `think` parameter.
 #'
 #' @return
 #' A chat provider object created by `ellmer::chat_ollama()` or
@@ -49,7 +51,8 @@ NULL
 #'
 #' @keywords internal
 getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama"),
-                           model = NULL) {
+                           model = NULL,
+                           ollamaThinkLow = getOption("wmfm.ollama_think_low", default = FALSE)) {
 
   backend = tolower(trimws(backend %||% "ollama"))
 
@@ -141,11 +144,17 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     modelName = "gpt-oss"
   }
 
+  ollamaArgs = list(
+    base_url = baseUrl,
+    model = modelName
+  )
+
+  if (isTRUE(ollamaThinkLow)) {
+    ollamaArgs$params = params(think = "low")
+  }
+
   safeProvider = try(
-    ellmer::chat_ollama(
-      base_url = baseUrl,
-      model = modelName
-    ),
+    do.call(chat_ollama, ollamaArgs),
     silent = TRUE
   )
 

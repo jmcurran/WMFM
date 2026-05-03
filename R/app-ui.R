@@ -377,13 +377,18 @@ appUI = function() {
             choices = c("gpt-oss"),
             selected = "gpt-oss"
           ),
+          checkboxInput(
+            inputId = "ollama_think_low",
+            label = "Use low thinking effort for Ollama",
+            value = FALSE
+          ),
           actionButton(
             inputId = "refreshOllamaModelsBtn",
             label = "Refresh available models",
             class = "btn btn-secondary btn-sm"
           ),
           helpText(
-            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available."
+            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available. The low thinking option sends think = \"low\" to Ollama models that support it."
           )
         ),
         passwordInput(

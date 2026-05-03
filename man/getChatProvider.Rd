@@ -6,7 +6,8 @@
 \usage{
 getChatProvider(
   backend = getOption("wmfm.chat_backend", default = "ollama"),
-  model = NULL
+  model = NULL,
+  ollamaThinkLow = getOption("wmfm.ollama_think_low", default = FALSE)
 )
 }
 \arguments{
@@ -14,6 +15,9 @@ getChatProvider(
 are \code{"ollama"} and \code{"claude"}.}
 
 \item{model}{Optional Ollama model name to use when \code{backend = "ollama"}.}
+
+\item{ollamaThinkLow}{Logical; when \code{TRUE}, request low thinking effort
+from Ollama models that support the \code{think} parameter.}
 }
 \value{
 A chat provider object created by \code{ellmer::chat_ollama()} or
