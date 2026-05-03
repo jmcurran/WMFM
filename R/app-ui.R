@@ -382,10 +382,13 @@ appUI = function() {
             label = "Use low thinking effort for Ollama",
             value = FALSE
           ),
-          actionButton(
-            inputId = "refreshOllamaModelsBtn",
-            label = "Refresh available models",
-            class = "btn btn-secondary btn-sm"
+          tags$div(
+            style = "margin-bottom: 6px;",
+            actionButton(
+              inputId = "refreshOllamaModelsBtn",
+              label = "Refresh available models",
+              class = "btn btn-secondary btn-sm"
+            )
           ),
           helpText(
             "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available. The low thinking option sends think = \"low\" to Ollama models that support it."

@@ -47,6 +47,7 @@ test_that("settings page includes an Ollama low-thinking switch", {
 
   expect_match(uiText, "checkboxInput\\(\\s*inputId = \"ollama_think_low\"", perl = TRUE)
   expect_match(uiText, "Use low thinking effort for Ollama", fixed = TRUE)
+  expect_match(uiText, "style = \"margin-bottom: 6px;\"", fixed = TRUE)
   expect_match(uiText, "think = \\\"low\\\"", fixed = TRUE)
 })
 
