@@ -2297,13 +2297,7 @@ $$")
     updateRadioButtons(session, "data_source", selected = "upload")
     applyLoadedExampleToInputs(exampleInfo)
 
-    exampleLoadStatus(
-      paste0(
-        "Loaded example: ",
-        exampleName,
-        ". The data, research question, and model settings are ready on the Model tab."
-      )
-    )
+    exampleLoadStatus(buildLoadedExampleStatus(exampleName))
 
     updateTabsetPanel(session, "main_tabs", selected = "Model")
   }, ignoreInit = TRUE)

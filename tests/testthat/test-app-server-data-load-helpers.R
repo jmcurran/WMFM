@@ -36,3 +36,14 @@ test_that("data load helper messages preserve dataset wording", {
     "Choose an example first."
   )
 })
+
+
+test_that("data load helper messages preserve loaded example status wording", {
+  expect_identical(
+    buildLoadedExampleStatus("linear-regression"),
+    paste0(
+      "Loaded example: linear-regression",
+      ". The data, research question, and model settings are ready on the Model tab."
+    )
+  )
+})

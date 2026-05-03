@@ -63,3 +63,19 @@ buildSelectedObjectNotDataFrameMessage = function() {
 buildChooseExampleFirstMessage = function() {
   "Choose an example first."
 }
+
+
+#' Build status text for a successfully loaded example.
+#'
+#' @param exampleName Character scalar example name.
+#'
+#' @return A character scalar status message.
+#'
+#' @keywords internal
+buildLoadedExampleStatus = function(exampleName) {
+  paste0(
+    "Loaded example: ",
+    exampleName,
+    ". The data, research question, and model settings are ready on the Model tab."
+  )
+}
