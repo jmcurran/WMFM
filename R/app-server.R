@@ -41,10 +41,10 @@ appServer = function(input, output, session) {
   # -------------------------------------------------------------------
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
-  packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
+  packageDatasetStatus = reactiveVal(buildPackageDatasetChoiceStatus())
   exampleChoices = reactiveVal(c("Loading examples..." = ""))
   developerModeUnlocked = reactiveVal(FALSE)
-  exampleLoadStatus = reactiveVal("Loading the built-in examples.")
+  exampleLoadStatus = reactiveVal(buildInitialExampleLoadStatus())
 
   initialPackageChoices = tryCatch(
     {
@@ -58,11 +58,7 @@ appServer = function(input, output, session) {
 
   packageChoices(initialPackageChoices)
 
-  if (length(initialPackageChoices) > 0) {
-    packageScanStatus("Showing s20x now while other installed packages are checked.")
-  } else {
-    packageScanStatus("Checking installed packages for datasets.")
-  }
+  packageScanStatus(buildInitialPackageScanStatus(initialPackageChoices))
 
   output$packageScanStatus = renderText({
     packageScanStatus() %||% ""
@@ -158,19 +154,12 @@ appServer = function(input, output, session) {
         packageScanStatus("Updating the package list.")
         packageChoices(packageNames)
 
-        if (length(setdiff(packageNames, initialPackageChoices)) > 0) {
-          packageScanStatus(
-            paste0(
-              "Found ",
-              length(packageNames),
-              " installed package",
-              if (length(packageNames) == 1) "" else "s",
-              " with datasets."
-            )
+        packageScanStatus(
+          buildPackageScanCompleteStatus(
+            packageNames = packageNames,
+            initialPackageChoices = initialPackageChoices
           )
-        } else {
-          packageScanStatus(NULL)
-        }
+        )
 
         removeNotification(startupNotificationId)
       }, once = TRUE)
@@ -222,7 +211,7 @@ appServer = function(input, output, session) {
     pkg = input$data_package %||% ""
 
     if (!nzchar(pkg)) {
-      packageDatasetStatus("Choose a package to see its available datasets.")
+      packageDatasetStatus(buildPackageDatasetChoiceStatus())
       updateSelectInput(
         session,
         "package_dataset",
