@@ -46,3 +46,50 @@ test_that("package scan completion status reports discovered package counts", {
     "Found 1 installed package with datasets."
   )
 })
+
+test_that("package dataset status helpers centralise package scan text", {
+  expect_equal(
+    buildPackageDatasetCheckingStatus("s20x"),
+    "Checking datasets in s20x."
+  )
+
+  expect_equal(
+    buildPackageDatasetFindingMessage("datasets"),
+    "Finding datasets in datasets."
+  )
+})
+
+test_that("package dataset status helpers handle unavailable datasets", {
+  expect_equal(
+    buildS20xPackageMissingStatus(),
+    "The s20x package is not installed."
+  )
+
+  expect_equal(
+    buildS20xPackageMissingChoiceLabel(),
+    "s20x is not installed"
+  )
+
+  expect_equal(
+    buildPackageDatasetEmptyStatus("MASS"),
+    "No datasets were found in MASS."
+  )
+
+  expect_equal(
+    buildPackageDatasetEmptyChoiceLabel(),
+    "No datasets found"
+  )
+})
+
+test_that("package dataset found status helper handles singular and plural counts", {
+  expect_equal(
+    buildPackageDatasetFoundStatus("s20x", "fuel"),
+    "Found 1 dataset in s20x."
+  )
+
+  expect_equal(
+    buildPackageDatasetFoundStatus("datasets", c("airquality", "iris")),
+    "Found 2 datasets in datasets."
+  )
+})
+

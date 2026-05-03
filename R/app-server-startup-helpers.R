@@ -56,3 +56,77 @@ buildPackageScanCompleteStatus = function(packageNames, initialPackageChoices) {
     " with datasets."
   )
 }
+
+#' Build the package dataset checking status message
+#'
+#' @param packageName Name of the package being checked.
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildPackageDatasetCheckingStatus = function(packageName) {
+  paste0("Checking datasets in ", packageName, ".")
+}
+
+#' Build the package dataset loading notification message
+#'
+#' @param packageName Name of the package being scanned.
+#'
+#' @return A character string for the package dataset loading notification.
+#' @keywords internal
+buildPackageDatasetFindingMessage = function(packageName) {
+  paste0("Finding datasets in ", packageName, ".")
+}
+
+#' Build the missing s20x package dataset status message
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildS20xPackageMissingStatus = function() {
+  "The s20x package is not installed."
+}
+
+#' Build the missing s20x package dataset choice label
+#'
+#' @return A character string for the disabled dataset choice label.
+#' @keywords internal
+buildS20xPackageMissingChoiceLabel = function() {
+  "s20x is not installed"
+}
+
+#' Build the package dataset empty status message
+#'
+#' @param packageName Name of the package that has no datasets.
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildPackageDatasetEmptyStatus = function(packageName) {
+  paste0("No datasets were found in ", packageName, ".")
+}
+
+#' Build the package dataset empty choice label
+#'
+#' @return A character string for the disabled dataset choice label.
+#' @keywords internal
+buildPackageDatasetEmptyChoiceLabel = function() {
+  "No datasets found"
+}
+
+#' Build the package dataset found status message
+#'
+#' @param packageName Name of the package that was scanned.
+#' @param datasetNames Character vector of dataset names found in the package.
+#'
+#' @return A character string for the package dataset status display.
+#' @keywords internal
+buildPackageDatasetFoundStatus = function(packageName, datasetNames) {
+  paste0(
+    "Found ",
+    length(datasetNames),
+    " dataset",
+    if (length(datasetNames) == 1) "" else "s",
+    " in ",
+    packageName,
+    "."
+  )
+}
+

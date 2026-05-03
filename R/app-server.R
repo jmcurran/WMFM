@@ -229,7 +229,7 @@ appServer = function(input, output, session) {
       return(NULL)
     }
 
-    packageDatasetStatus(paste0("Checking datasets in ", pkg, "."))
+    packageDatasetStatus(buildPackageDatasetCheckingStatus(pkg))
     updateSelectInput(
       session,
       "package_dataset",
@@ -244,7 +244,7 @@ appServer = function(input, output, session) {
 
       datasetNotificationId = "wmfm-package-dataset-list"
       showNotification(
-        paste0("Finding datasets in ", pkg, "."),
+        buildPackageDatasetFindingMessage(pkg),
         id = datasetNotificationId,
         type = "message",
         duration = NULL
@@ -264,11 +264,11 @@ appServer = function(input, output, session) {
         )
 
         if (!isTRUE(s20xOk)) {
-          packageDatasetStatus("The s20x package is not installed.")
+          packageDatasetStatus(buildS20xPackageMissingStatus())
           updateSelectInput(
             session,
             "package_dataset",
-            choices = c("s20x is not installed" = ""),
+            choices = setNames("", buildS20xPackageMissingChoiceLabel()),
             selected = ""
           )
           return(NULL)
@@ -278,27 +278,17 @@ appServer = function(input, output, session) {
       dsNames = getPackageDatasetNames(pkg)
 
       if (length(dsNames) == 0) {
-        packageDatasetStatus(paste0("No datasets were found in ", pkg, "."))
+        packageDatasetStatus(buildPackageDatasetEmptyStatus(pkg))
         updateSelectInput(
           session,
           "package_dataset",
-          choices = c("No datasets found" = ""),
+          choices = setNames("", buildPackageDatasetEmptyChoiceLabel()),
           selected = ""
         )
         return(NULL)
       }
 
-      packageDatasetStatus(
-        paste0(
-          "Found ",
-          length(dsNames),
-          " dataset",
-          if (length(dsNames) == 1) "" else "s",
-          " in ",
-          pkg,
-          "."
-        )
-      )
+      packageDatasetStatus(buildPackageDatasetFoundStatus(pkg, dsNames))
       choices = c("Choose a data set..." = "", dsNames)
 
       updateSelectInput(
