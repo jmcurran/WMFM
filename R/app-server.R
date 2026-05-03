@@ -2548,17 +2548,12 @@ $$")
   observeEvent(input$modelHelpBtn, {
 
     if (is.null(rv$data)) {
-      showNotification("Load a data set first.", type = "message")
+      showNotification(buildLoadDataFirstMessage(), type = "message")
       return(NULL)
     }
 
     if (identical(input$data_source %||% "", "package")) {
-      titleText =
-        if (!is.null(input$package_dataset) && nzchar(input$package_dataset)) {
-          paste0("Data description: ", input$package_dataset)
-        } else {
-          "Data description"
-        }
+      titleText = buildDataDescriptionTitle(input$package_dataset %||% "")
 
       showModal(
         modalDialog(
@@ -2577,18 +2572,18 @@ $$")
 
     showModal(
       modalDialog(
-        title = "Provide data context",
+        title = buildProvideDataContextTitle(),
         size = "l",
         easyClose = TRUE,
         tagList(
           helpText(
-            "Describe the dataset in a way that will help the model explanation. For example, explain what the variables mean, how the data were collected, and what research question you want to answer."
+            buildProvideDataContextHelpText()
           ),
           tags$textarea(
             id = "userDatasetContextModal",
             class = "form-control",
             rows = 8,
-            placeholder = "Example: Each row is a student. pass is 0/1. test is a score out of 20. attendance is days attended. We want to understand how test and attendance relate to passing.",
+            placeholder = buildProvideDataContextPlaceholder(),
             rv$userDatasetContext %||% ""
           )
         ),
@@ -2605,9 +2600,9 @@ $$")
     removeModal()
 
     if (nzchar(rv$userDatasetContext)) {
-      showNotification("Data context saved.", type = "message", duration = 4)
+      showNotification(buildDataContextSavedMessage(), type = "message", duration = 4)
     } else {
-      showNotification("Data context cleared.", type = "message", duration = 4)
+      showNotification(buildDataContextClearedMessage(), type = "message", duration = 4)
     }
   }, ignoreInit = TRUE)
 

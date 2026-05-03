@@ -79,3 +79,73 @@ buildLoadedExampleStatus = function(exampleName) {
     ". The data, research question, and model settings are ready on the Model tab."
   )
 }
+
+#' Build message shown when data is required before opening model help.
+#'
+#' @return A character scalar notification message.
+#'
+#' @keywords internal
+buildLoadDataFirstMessage = function() {
+  "Load a data set first."
+}
+
+#' Build title for the package data description modal.
+#'
+#' @param datasetName Character scalar dataset name.
+#'
+#' @return A character scalar modal title.
+#'
+#' @keywords internal
+buildDataDescriptionTitle = function(datasetName = "") {
+  if (!is.null(datasetName) && nzchar(datasetName)) {
+    return(paste0("Data description: ", datasetName))
+  }
+
+  "Data description"
+}
+
+#' Build title for the user data context modal.
+#'
+#' @return A character scalar modal title.
+#'
+#' @keywords internal
+buildProvideDataContextTitle = function() {
+  "Provide data context"
+}
+
+#' Build help text for the user data context modal.
+#'
+#' @return A character scalar help text.
+#'
+#' @keywords internal
+buildProvideDataContextHelpText = function() {
+  "Describe the dataset in a way that will help the model explanation. For example, explain what the variables mean, how the data were collected, and what research question you want to answer."
+}
+
+#' Build placeholder text for the user data context modal.
+#'
+#' @return A character scalar placeholder text.
+#'
+#' @keywords internal
+buildProvideDataContextPlaceholder = function() {
+  "Example: Each row is a student. pass is 0/1. test is a score out of 20. attendance is days attended. We want to understand how test and attendance relate to passing."
+}
+
+#' Build message shown after saving user data context.
+#'
+#' @return A character scalar notification message.
+#'
+#' @keywords internal
+buildDataContextSavedMessage = function() {
+  "Data context saved."
+}
+
+#' Build message shown after clearing user data context.
+#'
+#' @return A character scalar notification message.
+#'
+#' @keywords internal
+buildDataContextClearedMessage = function() {
+  "Data context cleared."
+}
+

@@ -47,3 +47,47 @@ test_that("data load helper messages preserve loaded example status wording", {
     )
   )
 })
+
+test_that("data load helper messages preserve data context wording", {
+  expect_identical(
+    buildLoadDataFirstMessage(),
+    "Load a data set first."
+  )
+
+  expect_identical(
+    buildDataDescriptionTitle("myData"),
+    "Data description: myData"
+  )
+
+  expect_identical(
+    buildDataDescriptionTitle(""),
+    "Data description"
+  )
+
+  expect_identical(
+    buildProvideDataContextTitle(),
+    "Provide data context"
+  )
+
+  expect_match(
+    buildProvideDataContextHelpText(),
+    "Describe the dataset in a way that will help the model explanation",
+    fixed = TRUE
+  )
+
+  expect_match(
+    buildProvideDataContextPlaceholder(),
+    "Each row is a student",
+    fixed = TRUE
+  )
+
+  expect_identical(
+    buildDataContextSavedMessage(),
+    "Data context saved."
+  )
+
+  expect_identical(
+    buildDataContextClearedMessage(),
+    "Data context cleared."
+  )
+})
