@@ -2090,7 +2090,7 @@ $$")
     })
 
     if (is.null(df)) {
-      showNotification("Failed to read file with the chosen separator.", type = "error")
+      showNotification(buildDelimitedFileReadFailedMessage(), type = "error")
       return(NULL)
     }
 
@@ -2122,7 +2122,7 @@ $$")
       })]
 
       if (length(dfNames) == 0) {
-        showNotification("No data frame in RDA file.", type = "error")
+        showNotification(buildNoDataFrameInRdaMessage(), type = "error")
         return(NULL)
       }
 
@@ -2175,7 +2175,7 @@ $$")
     }
 
     # Unsupported extension
-    showNotification("Unsupported file type. Please upload CSV, TXT, or RDA.", type = "error")
+    showNotification(buildUnsupportedUploadFileTypeMessage(), type = "error")
   })
 
   # -------------------------------------------------------------------
@@ -2190,7 +2190,7 @@ $$")
     }
 
     if (is.null(chosen) || chosen == "") {
-      showNotification("Please specify a separator.", type = "error")
+      showNotification(buildMissingSeparatorMessage(), type = "error")
       return(NULL)
     }
 
@@ -2239,7 +2239,7 @@ $$")
 
     if (!ok || !exists(dsName, envir = env, inherits = FALSE)) {
       showNotification(
-        paste0("Could not load dataset '", dsName, "' from package '", pkg, "'."),
+        buildPackageDatasetLoadFailedMessage(dsName, pkg),
         type = "error"
       )
       return(NULL)
@@ -2248,7 +2248,7 @@ $$")
     df = env[[dsName]]
 
     if (!is.data.frame(df)) {
-      showNotification("Selected object is not a data frame.", type = "error")
+      showNotification(buildSelectedObjectNotDataFrameMessage(), type = "error")
       return(NULL)
     }
 
@@ -2269,7 +2269,7 @@ $$")
     exampleName = trimws(input$exampleName %||% "")
 
     if (!nzchar(exampleName)) {
-      showNotification("Choose an example first.", type = "warning", duration = 6)
+      showNotification(buildChooseExampleFirstMessage(), type = "warning", duration = 6)
       return(NULL)
     }
 
