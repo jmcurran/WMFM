@@ -2739,15 +2739,11 @@ $$")
 
       showModal(
         modalDialog(
-          title = "Treat numeric variable as factor?",
-          paste0(
-            "You moved '", v, "' into the Factors bucket, ",
-            "but in the data it is numeric.\n\n",
-            "Do you want to treat this variable as a factor in the model?"
-          ),
+          title = buildNumericFactorConfirmTitle(),
+          buildNumericFactorConfirmMessage(v),
           footer = tagList(
-            actionButton("cancel_factor_numeric", "No, I'll move it back"),
-            actionButton("confirm_factor_numeric", "Yes, treat as factor")
+            actionButton("cancel_factor_numeric", buildNumericFactorCancelLabel()),
+            actionButton("confirm_factor_numeric", buildNumericFactorConfirmLabel())
           )
         )
       )
@@ -2763,28 +2759,32 @@ $$")
   # -------------------------------------------------------------------
   observeEvent(input$addDerivedVarBtn, {
     if (is.null(rv$data)) {
-      showNotification("Load a data set first.", type = "message")
+      showNotification(buildLoadDataFirstMessage(), type = "message")
       return(NULL)
     }
 
     showModal(
       modalDialog(
-        title = "Add derived variable",
+        title = buildAddDerivedVariableTitle(),
         easyClose = TRUE,
         tagList(
           helpText(
-            "Enter a single R expression of the form newVariable = ... . The new variable will be added to the dataset and will then be available in the response picker and variable buckets."
+            buildAddDerivedVariableHelpText()
           ),
           textInput(
             inputId = "derivedVarTextModal",
             label = NULL,
-            placeholder = "e.g. t = 1:nrow(data)    or    month = factor(rep(1:12, 12))",
+            placeholder = buildAddDerivedVariablePlaceholder(),
             value = ""
           )
         ),
         footer = tagList(
           modalButton("Cancel"),
-          actionButton("confirmAddDerivedVarBtn", "Add variable", class = "btn-success")
+          actionButton(
+            "confirmAddDerivedVarBtn",
+            buildAddDerivedVariableConfirmLabel(),
+            class = "btn-success"
+          )
         )
       )
     )
@@ -2792,7 +2792,7 @@ $$")
 
   observeEvent(input$confirmAddDerivedVarBtn, {
     if (is.null(rv$data)) {
-      showNotification("Load a data set first.", type = "message")
+      showNotification(buildLoadDataFirstMessage(), type = "message")
       return(NULL)
     }
 
