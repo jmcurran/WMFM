@@ -183,6 +183,32 @@ writeTextFile = function(path, text) {
     writeLines(text, path, useBytes = TRUE)
 }
 
+
+removeBundleDirectory = function(bundleRoot, attempts = 5, waitSeconds = 0.2) {
+    if (!dir.exists(bundleRoot)) {
+        return(invisible(TRUE))
+    }
+
+    for (attempt in seq_len(attempts)) {
+        gc()
+        unlink(bundleRoot, recursive = TRUE, force = TRUE)
+
+        if (!dir.exists(bundleRoot)) {
+            return(invisible(TRUE))
+        }
+
+        if (attempt < attempts) {
+            Sys.sleep(waitSeconds)
+        }
+    }
+
+    stop(
+        "Created the ChatGPT bundle zip, but could not remove the temporary bundle directory: ",
+        bundleRoot,
+        call. = FALSE
+    )
+}
+
 makeContextMarkdown = function(stage, baseRef, changedFiles) {
     changedList = if (length(changedFiles) > 0) {
         paste0("- ", changedFiles, collapse = "\n")
@@ -289,7 +315,11 @@ createBundle = function(options) {
     outputDirAbs = normalizePath(options$outputDir, winslash = "/", mustWork = TRUE)
 
     oldWd = getwd()
-    on.exit(setwd(oldWd), add = TRUE)
+    on.exit({
+        if (!is.null(oldWd)) {
+            setwd(oldWd)
+        }
+    }, add = TRUE)
     setwd(outputDirAbs)
 
     zipFile = paste0(bundleName, ".zip")
@@ -304,7 +334,9 @@ createBundle = function(options) {
         stop("Failed to create zip file: ", zipPath, call. = FALSE)
     }
 
-    unlink(file.path(outputDirAbs, bundleName), recursive = TRUE, force = TRUE)
+    setwd(oldWd)
+    oldWd = NULL
+    removeBundleDirectory(bundleRoot)
 
     normalizePath(zipPath, winslash = "/", mustWork = TRUE)
 }

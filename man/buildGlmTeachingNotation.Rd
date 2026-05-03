@@ -17,12 +17,13 @@ Creates a small bundle of notation strings used in equations and confidence
 interval output for common GLM families.
 }
 \details{
-For binomial models, the helper extracts the two observed outcome levels from
-the model response and returns labels such as
-\code{"Pr(Y = Pass)"} and \code{"Odds(Y = Pass)"}. The second level is
-treated as the success level to match R's usual treatment coding for a
+For binomial models, the helper extracts the response-variable name and the
+two observed outcome levels from the model response and returns labels such
+as \code{"Pr(Pass = Yes)"} and \code{"Odds(Pass = Yes)"}. The second level
+is treated as the success level to match R's usual treatment coding for a
 two-level factor response.
 
-For Poisson models, the helper returns labels based on \code{"E(Y)"}.
+For Poisson models, the helper returns labels based on the response-variable
+name, such as \code{"E[Freq]"}.
 }
 \keyword{internal}

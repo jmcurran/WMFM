@@ -24,7 +24,7 @@
 #' @importFrom shiny fluidPage withMathJax titlePanel
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
-#' @importFrom shiny radioButtons textInput verbatimTextOutput
+#' @importFrom shiny textInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
@@ -76,12 +76,12 @@ appUI = function() {
           selectInput(
             "data_package",
             "Choose a package:",
-            choices = character(0)
+            choices = c("Loading packages..." = "")
           ),
           selectInput(
             "package_dataset",
             "Choose a dataset:",
-            choices = character(0)
+            choices = c("Loading datasets..." = "")
           ),
           helpText(
             "Packages listed here are installed packages that appear to contain datasets."
@@ -100,7 +100,7 @@ appUI = function() {
         selectInput(
           "exampleName",
           "Choose an example:",
-          choices = character(0)
+          choices = c("Loading examples..." = "")
         ),
         actionButton(
           "loadExampleBtn",
@@ -154,7 +154,8 @@ appUI = function() {
           h5("Research question"),
           textInput(
             "researchQuestion",
-            label = "Research question",
+            label = NULL,
+            placeholder = "For example, how does the expected response change as the predictor changes?",
             value = "",
             width = "100%"
           ),
@@ -183,7 +184,7 @@ appUI = function() {
           fluidRow(
             column(
               width = 8,
-              radioButtons(
+              selectInput(
                 "model_type",
                 label = "Model type:",
                 choices = c(
@@ -191,7 +192,8 @@ appUI = function() {
                   "Logistic regression (binomial, logit)" = "logistic",
                   "Poisson regression (log link)" = "poisson"
                 ),
-                selected = "lm"
+                selected = "lm",
+                width = "100%"
               )
             ),
 
@@ -242,55 +244,47 @@ appUI = function() {
         hr(),
 
         h4("Model outputs"),
-        accordion(
-          id = "model_outputs",
-          multiple = TRUE,
-          open = NULL,
-          accordion_panel(
-            "Model outputs",
-            value = "model_output_tabs",
-            tabsetPanel(
-              tabPanel(
-                "Summary",
-                verbatimTextOutput("model_output")
+        tabsetPanel(
+          id = "model_output_tabs",
+          tabPanel(
+            "Summary",
+            verbatimTextOutput("model_output")
+          ),
+          tabPanel(
+            "ANOVA",
+            verbatimTextOutput("model_anova")
+          ),
+          tabPanel(
+            "Confidence intervals",
+            uiOutput("modelConfintControlsUi"),
+            uiOutput("modelConfintNoteUi"),
+            uiOutput("modelConfintTableUi"),
+            tags$div(
+              class = "wmfm-ci-drilldown-box",
+              tags$div(
+                class = "wmfm-ci-section-label",
+                "Explain one interval"
               ),
-              tabPanel(
-                "ANOVA",
-                verbatimTextOutput("model_anova")
+              tags$div(
+                class = "wmfm-ci-secondary-note",
+                "Choose a single row when you want to unpack how that interval was constructed."
               ),
-              tabPanel(
-                "Confidence intervals",
-                uiOutput("modelConfintControlsUi"),
-                uiOutput("modelConfintNoteUi"),
-                uiOutput("modelConfintTableUi"),
-                tags$div(
-                  class = "wmfm-ci-drilldown-box",
-                  tags$div(
-                    class = "wmfm-ci-section-label",
-                    "Explain one interval"
-                  ),
-                  tags$div(
-                    class = "wmfm-ci-secondary-note",
-                    "Choose a single row when you want to unpack how that interval was constructed."
-                  ),
-                  uiOutput("modelConfintSelectorUi"),
-                  uiOutput("modelConfintSelectedRowUi")
-                ),
-                accordion(
-                  id = "model_confint_extras",
-                  multiple = TRUE,
-                  open = FALSE,
-                  accordion_panel(
-                    "Teaching note",
-                    value = "model_confint_teaching_note",
-                    uiOutput("modelConfintTeachingNoteUi")
-                  ),
-                  accordion_panel(
-                    "Variance-covariance matrix",
-                    value = "model_confint_vcov",
-                    uiOutput("modelConfintVcovUi")
-                  )
-                )
+              uiOutput("modelConfintSelectorUi"),
+              uiOutput("modelConfintSelectedRowUi")
+            ),
+            accordion(
+              id = "model_confint_extras",
+              multiple = TRUE,
+              open = FALSE,
+              accordion_panel(
+                "Teaching note",
+                value = "model_confint_teaching_note",
+                uiOutput("modelConfintTeachingNoteUi")
+              ),
+              accordion_panel(
+                "Variance-covariance matrix",
+                value = "model_confint_vcov",
+                uiOutput("modelConfintVcovUi")
               )
             )
           )
@@ -299,9 +293,8 @@ appUI = function() {
 
       tabPanel(
         "Model Explanation",
-        h4("Model explanation"),
         helpText(
-          "Start with the main explanation, then use the sections below to see how to read it, what information the app relied on, and where each sentence came from."
+          "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
         ),
         uiOutput("model_explanation")
       ),
@@ -384,13 +377,21 @@ appUI = function() {
             choices = c("gpt-oss"),
             selected = "gpt-oss"
           ),
-          actionButton(
-            inputId = "refreshOllamaModelsBtn",
-            label = "Refresh available models",
-            class = "btn btn-secondary btn-sm"
+          checkboxInput(
+            inputId = "ollama_think_low",
+            label = "Use low thinking effort for Ollama",
+            value = FALSE
+          ),
+          tags$div(
+            style = "margin-bottom: 6px;",
+            actionButton(
+              inputId = "refreshOllamaModelsBtn",
+              label = "Refresh available models",
+              class = "btn btn-secondary btn-sm"
+            )
           ),
           helpText(
-            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available."
+            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available. The low thinking option sends think = \"low\" to Ollama models that support it."
           )
         ),
         passwordInput(

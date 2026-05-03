@@ -68,11 +68,11 @@ testthat::test_that("buildModelConfidenceIntervalData gives derived odds-scale r
   out = buildModelConfidenceIntervalData(fit, numericReference = "zero")
 
   testthat::expect_identical(out$mode, "derived")
-  testthat::expect_true(any(grepl("Pr(Pass = Yes) when Attend = No", out$table$quantity, fixed = TRUE)))
-  testthat::expect_true(any(grepl("Pr(Pass = No) when Attend = No", out$table$quantity, fixed = TRUE)))
-  testthat::expect_true(any(grepl("Odds(Pass = Yes) when Attend = No", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Pr(Pass = \"Yes\") when Attend = No", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Pr(Pass = \"No\") when Attend = No", out$table$quantity, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Odds(Pass = \"Yes\" vs Pass = \"No\") when Attend = No", out$table$quantity, fixed = TRUE)))
   testthat::expect_true(any(grepl(
-    "Odds(Pass = Yes) multiplier for a 1-unit increase in Score when Attend = Yes",
+    "Odds(Pass = \"Yes\" vs Pass = \"No\") multiplier for a 1-unit increase in Score when Attend = Yes",
     out$table$quantity,
     fixed = TRUE
   )))
@@ -80,7 +80,7 @@ testthat::test_that("buildModelConfidenceIntervalData gives derived odds-scale r
   detailIndex = which(vapply(
     out$details,
     function(x) {
-      identical(x$quantity, "Odds(Pass = Yes) multiplier for a 1-unit increase in Score when Attend = Yes")
+      identical(x$quantity, "Odds(Pass = \"Yes\" vs Pass = \"No\") multiplier for a 1-unit increase in Score when Attend = Yes")
     },
     logical(1)
   ))

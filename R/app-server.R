@@ -16,7 +16,7 @@
 #' @importFrom shiny reactive reactiveValues reactiveVal renderPlot renderUI renderText
 #' @importFrom shiny renderPrint observeEvent observe req showNotification withProgress
 #' @importFrom shiny incProgress helpText updateRadioButtons updateTextInput updateCheckboxInput
-#' @importFrom shiny updateSelectInput showModal removeModal modalDialog
+#' @importFrom shiny updateSelectInput showModal removeModal modalDialog removeNotification
 #' @importFrom shiny renderTable tableOutput downloadButton downloadHandler
 #' @importFrom shiny radioButtons textInput textAreaInput modalButton actionButton
 #' @importFrom shiny updateTabsetPanel tagList selectInput div tags htmlOutput
@@ -42,9 +42,9 @@ appServer = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
   packageDatasetStatus = reactiveVal("Choose a package to see its available datasets.")
-  exampleChoices = reactiveVal(character(0))
+  exampleChoices = reactiveVal(c("Loading examples..." = ""))
   developerModeUnlocked = reactiveVal(FALSE)
-  exampleLoadStatus = reactiveVal("Choose a built-in example if you want the app to load a complete worked setup.")
+  exampleLoadStatus = reactiveVal("Loading the built-in examples.")
 
   initialPackageChoices = tryCatch(
     {
@@ -125,27 +125,37 @@ appServer = function(input, output, session) {
   })
 
   session$onFlushed(function() {
-    withProgress(
-      message = "Preparing the data choices",
-      value = 0,
-      {
-        packageScanStatus("Preparing the built-in examples.")
-        incProgress(0.25, detail = "Checking built-in examples")
-        exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(developerModeUnlocked()))))
+    startupNotificationId = "wmfm-startup-data-choices"
 
-        packageScanStatus("Checking installed packages for datasets.")
-        incProgress(0.45, detail = "Checking installed packages")
+    packageScanStatus("Preparing the built-in examples.")
+    packageDatasetStatus("Dataset choices will appear once the package scan has finished.")
+    exampleLoadStatus("Loading the built-in examples.")
+    exampleChoices(c("Loading examples..." = ""))
+
+    showNotification(
+      "Preparing built-in examples and installed-package datasets.",
+      id = startupNotificationId,
+      type = "message",
+      duration = NULL
+    )
+
+    session$onFlushed(function() {
+      exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(isolate(developerModeUnlocked()))))
+      exampleLoadStatus("Choose a built-in example if you want the app to load a complete worked setup.")
+      packageScanStatus("Checking installed packages for datasets.")
+
+      session$onFlushed(function() {
         packageNames = getInstalledPackagesWithData()
 
         if (length(packageNames) == 0) {
           packageChoices(character(0))
           packageScanStatus("No installed packages with datasets were found.")
           packageDatasetStatus("No package datasets are available yet.")
+          removeNotification(startupNotificationId)
           return(NULL)
         }
 
         packageScanStatus("Updating the package list.")
-        incProgress(0.25, detail = "Updating the package list")
         packageChoices(packageNames)
 
         if (length(setdiff(packageNames, initialPackageChoices)) > 0) {
@@ -162,9 +172,9 @@ appServer = function(input, output, session) {
           packageScanStatus(NULL)
         }
 
-        incProgress(0.05, detail = "Ready")
-      }
-    )
+        removeNotification(startupNotificationId)
+      }, once = TRUE)
+    }, once = TRUE)
   }, once = TRUE)
   observeEvent(developerModeUnlocked(), {
     exampleChoices(listWMFMExamples(includeTestExamples = isTRUE(developerModeUnlocked())))
@@ -222,73 +232,85 @@ appServer = function(input, output, session) {
       return(NULL)
     }
 
-    withProgress(
-      message = "Preparing the dataset list",
-      value = 0,
-      {
-        packageDatasetStatus(paste0("Checking datasets in ", pkg, "."))
-        incProgress(0.2, detail = "Checking the selected package")
+    packageDatasetStatus(paste0("Checking datasets in ", pkg, "."))
+    updateSelectInput(
+      session,
+      "package_dataset",
+      choices = c("Loading datasets..." = ""),
+      selected = ""
+    )
 
-        if (identical(pkg, "s20x")) {
-          s20xOk = tryCatch(
-            {
-              ensureS20xInstalled()
-              TRUE
-            },
-            error = function(e) {
-              showNotification(conditionMessage(e), type = "error")
-              FALSE
-            }
-          )
+    session$onFlushed(function() {
+      if (!identical(isolate(input$data_package %||% ""), pkg)) {
+        return(NULL)
+      }
 
-          if (!isTRUE(s20xOk)) {
-            packageDatasetStatus("The s20x package is not installed.")
-            updateSelectInput(
-              session,
-              "package_dataset",
-              choices = c("s20x is not installed" = ""),
-              selected = ""
-            )
-            return(NULL)
+      datasetNotificationId = "wmfm-package-dataset-list"
+      showNotification(
+        paste0("Finding datasets in ", pkg, "."),
+        id = datasetNotificationId,
+        type = "message",
+        duration = NULL
+      )
+      on.exit(removeNotification(datasetNotificationId), add = TRUE)
+
+      if (identical(pkg, "s20x")) {
+        s20xOk = tryCatch(
+          {
+            ensureS20xInstalled()
+            TRUE
+          },
+          error = function(e) {
+            showNotification(conditionMessage(e), type = "error")
+            FALSE
           }
-        }
+        )
 
-        incProgress(0.55, detail = "Finding available datasets")
-        dsNames = getPackageDatasetNames(pkg)
-
-        if (length(dsNames) == 0) {
-          packageDatasetStatus(paste0("No datasets were found in ", pkg, "."))
+        if (!isTRUE(s20xOk)) {
+          packageDatasetStatus("The s20x package is not installed.")
           updateSelectInput(
             session,
             "package_dataset",
-            choices = c("No datasets found" = ""),
+            choices = c("s20x is not installed" = ""),
             selected = ""
           )
           return(NULL)
         }
+      }
 
-        packageDatasetStatus(
-          paste0(
-            "Found ",
-            length(dsNames),
-            " dataset",
-            if (length(dsNames) == 1) "" else "s",
-            " in ",
-            pkg,
-            "."
-          )
-        )
-        choices = c("Choose a data set..." = "", dsNames)
+      dsNames = getPackageDatasetNames(pkg)
 
-        incProgress(0.25, detail = "Updating the dataset list")
+      if (length(dsNames) == 0) {
+        packageDatasetStatus(paste0("No datasets were found in ", pkg, "."))
         updateSelectInput(
           session,
           "package_dataset",
-          choices = choices,
+          choices = c("No datasets found" = ""),
           selected = ""
         )
+        return(NULL)
       }
-    )
+
+      packageDatasetStatus(
+        paste0(
+          "Found ",
+          length(dsNames),
+          " dataset",
+          if (length(dsNames) == 1) "" else "s",
+          " in ",
+          pkg,
+          "."
+        )
+      )
+      choices = c("Choose a data set..." = "", dsNames)
+
+      updateSelectInput(
+        session,
+        "package_dataset",
+        choices = choices,
+        selected = ""
+      )
+    }, once = TRUE)
   }, ignoreInit = FALSE)
   rv = reactiveValues(
     data = NULL,
@@ -311,6 +333,7 @@ appServer = function(input, output, session) {
     isResetting = FALSE,
     activeChatBackend = "ollama",
     activeOllamaModel = "gpt-oss",
+    activeOllamaThinkLow = FALSE,
     availableOllamaModels = "gpt-oss",
     userDatasetContext = "",
     researchQuestion = "",
@@ -484,6 +507,7 @@ appServer = function(input, output, session) {
     paste0(
       "Current provider: Ollama (model: ",
       rv$activeOllamaModel %||% "gpt-oss",
+      if (isTRUE(rv$activeOllamaThinkLow)) ", low thinking" else ", normal thinking",
       ")"
     )
   })
@@ -526,6 +550,7 @@ appServer = function(input, output, session) {
     rv$activeChatBackend = requested
     if (identical(requested, "ollama")) {
       rv$activeOllamaModel = selectedModel
+      rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)
     }
 
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
@@ -533,7 +558,13 @@ appServer = function(input, output, session) {
     msg = if (identical(requested, "claude")) {
       "Chat provider set to Claude."
     } else {
-      paste0("Chat provider set to Ollama using model '", rv$activeOllamaModel, "'.")
+      paste0(
+        "Chat provider set to Ollama using model '",
+        rv$activeOllamaModel,
+        "' with ",
+        if (isTRUE(rv$activeOllamaThinkLow)) "low" else "normal",
+        " thinking."
+      )
     }
 
     showNotification(
@@ -687,7 +718,7 @@ appServer = function(input, output, session) {
     rv$bucketGroupId = rv$bucketGroupId + 1L
 
     # Reset model UI inputs
-    updateRadioButtons(session, "model_type", selected = "lm")
+    updateSelectInput(session, "model_type", selected = "lm")
 
     # Prevent stale widget values from fighting the reset
     freezeReactiveValue(input, "factors")
@@ -743,7 +774,7 @@ appServer = function(input, output, session) {
       selected = responseVar
     )
 
-    updateRadioButtons(
+    updateSelectInput(
       session,
       "model_type",
       selected = spec$modelType %||% "lm"
@@ -3097,7 +3128,8 @@ $$")
     chatProvider = tryCatch(
       getChatProvider(
         backend = rv$activeChatBackend %||% "ollama",
-        model = rv$activeOllamaModel %||% "gpt-oss"
+        model = rv$activeOllamaModel %||% "gpt-oss",
+        ollamaThinkLow = rv$activeOllamaThinkLow %||% FALSE
       ),
       error = function(e) {
         showNotification(
@@ -3710,7 +3742,7 @@ $$")
         tagList(
           tags$div(
             class = "wmfm-explanation-helper-note",
-            "Read the main explanation first. The sections below unpack the choices the app made so you can see why it described the model this way."
+            "The sections below unpack the choices the app made so you can see why it described the model this way."
           ),
           tags$div(
             class = "wmfm-explanation-box",
