@@ -3098,12 +3098,7 @@ $$")
       ),
       error = function(e) {
         showNotification(
-          paste(
-            "Could not connect to the language model server.",
-            "The model will still be fitted, but equations/explanation\n",
-            "from the language model will be unavailable.\n\nDetails: ",
-            conditionMessage(e)
-          ),
+          buildChatProviderConnectionFailedMessage(conditionMessage(e)),
           type     = "error",
           duration = 10
         )
@@ -3113,11 +3108,7 @@ $$")
 
     if (is.null(chatProvider)) {
       showNotification(
-        paste(
-          "No language model is available at the moment.",
-          "The model will still be fitted and deterministic equations will be shown,",
-          "but no narrative explanation can be generated."
-        ),
+        buildNoLanguageModelAvailableMessage(),
         type     = "message",
         duration = 10
       )
@@ -3153,14 +3144,7 @@ $$")
     predNames = unique(predNames)
 
     if (length(predNames) > 3) {
-      showNotification(
-        paste0(
-          "This app only allows models with at most 3 covariates. ",
-          "Your formula currently uses ", length(predNames), " predictors: ",
-          paste(predNames, collapse = ", "), "."
-        ),
-        type = "error"
-      )
+      showNotification(buildTooManyPredictorsMessage(predNames), type = "error")
       return(NULL)
     }
 
@@ -3192,11 +3176,7 @@ $$")
         newY = as.numeric(resp == levs[2])
 
         showNotification(
-          paste0(
-            "The response variable '", respName, "' is a 2-level factor.\n",
-            "For linear regression, it has been recoded to numeric.\n",
-            "Coding used:  ", levs[1], " -> 0,   ", levs[2], " -> 1"
-          ),
+          buildLinearModelBinaryFactorRecodingMessage(respName, levs),
           type     = "warning",
           duration = 10
         )
@@ -3221,13 +3201,7 @@ $$")
           dfMod[[respName]] = factor(y)
           y = dfMod[[respName]]
         } else {
-          showNotification(
-            paste0(
-              "Logistic regression requires a binary response. ",
-              respName, " is a character vector with ", length(u), " distinct values."
-            ),
-            type = "error"
-          )
+          showNotification(buildLogisticCharacterResponseMessage(respName, length(u)), type = "error")
           return(NULL)
         }
       }
@@ -3236,13 +3210,7 @@ $$")
       if (is.factor(y)) {
         levs = levels(y)
         if (length(levs) != 2) {
-          showNotification(
-            paste0(
-              "Logistic regression requires a factor with 2 levels. ",
-              respName, " has ", length(levs), " levels."
-            ),
-            type = "error"
-          )
+          showNotification(buildLogisticFactorResponseMessage(respName, length(levs)), type = "error")
           return(NULL)
         }
       }
@@ -3251,24 +3219,14 @@ $$")
       else if (is.numeric(y)) {
         uy = unique(na.omit(y))
         if (!all(uy %in% c(0, 1))) {
-          showNotification(
-            paste0(
-              "Numeric logistic responses must be 0/1. ",
-              respName, " has values: ",
-              paste(head(sort(uy), 5), collapse = ", "), " ..."
-            ),
-            type = "error"
-          )
+          showNotification(buildLogisticNumericResponseMessage(respName, uy), type = "error")
           return(NULL)
         }
       }
 
       # ---- Case 4: Anything else -> reject ----
       else {
-        showNotification(
-          "Logistic regression requires either a binary factor, numeric 0/1, or a 2-level character vector.",
-          type = "error"
-        )
+        showNotification(buildLogisticUnsupportedResponseMessage(), type = "error")
         return(NULL)
       }
 
@@ -3277,15 +3235,12 @@ $$")
 
     } else if (input$model_type == "poisson") {
       if (any(na.omit(y) < 0) || any(na.omit(y) %% 1 != 0)) {
-        showNotification(
-          "Warning: response has negative or non-integer values. Poisson regression expects non-negative counts.",
-          type = "warning"
-        )
+        showNotification(buildPoissonResponseWarningMessage(), type = "warning")
       }
       m = glm(f, data = dfMod, family = poisson(link = "log"))
 
     } else {
-      showNotification("Unknown model type.", type = "error")
+      showNotification(buildUnknownModelTypeMessage(), type = "error")
       return(NULL)
     }
 
