@@ -53,10 +53,20 @@ test_that("settings page includes an Ollama low-thinking switch", {
 
 test_that("app server passes the low-thinking setting to the chat provider", {
   serverText = readPackageText("R", "app-server.R")
+  chatProviderText = readPackageText("R", "app-server-chat-provider.R")
+  combinedServerText = paste(serverText, chatProviderText, sep = "\n")
 
   expect_match(serverText, "activeOllamaThinkLow = FALSE", fixed = TRUE)
-  expect_match(serverText, "rv\\$activeOllamaThinkLow = isTRUE\\(input\\$ollama_think_low\\)", perl = TRUE)
-  expect_match(serverText, "ollamaThinkLow = rv\\$activeOllamaThinkLow %\\|\\|% FALSE", perl = TRUE)
+  expect_match(
+    combinedServerText,
+    "rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)",
+    fixed = TRUE
+  )
+  expect_match(
+    combinedServerText,
+    "ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)",
+    fixed = TRUE
+  )
 })
 
 test_that("getChatProvider sends think low through ellmer params", {
