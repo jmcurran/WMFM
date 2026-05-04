@@ -46,25 +46,26 @@ readPackageText = function(...) {
 test_that("startup data choice loading gives immediate visible feedback", {
   serverText = readPackageText("R", "app-server.R")
   startupHelperText = readPackageText("R", "app-server-startup-helpers.R")
-  startupText = paste(serverText, startupHelperText, sep = "\n")
+  startupObserverText = readPackageText("R", "app-server-startup.R")
+  startupText = paste(serverText, startupHelperText, startupObserverText, sep = "\n")
   uiText = readPackageText("R", "app-ui.R")
 
   expect_match(startupText, "Loading examples\\.\\.\\.", fixed = FALSE)
   expect_match(uiText, "Loading examples...", fixed = TRUE)
   expect_match(uiText, "Loading packages...", fixed = TRUE)
-  expect_match(serverText, "Checking installed packages for datasets", fixed = TRUE)
+  expect_match(startupObserverText, "Checking installed packages for datasets", fixed = TRUE)
   expect_match(uiText, "Loading datasets...", fixed = TRUE)
   expect_match(startupText, "Dataset choices will appear once the package scan has finished", fixed = TRUE)
-  expect_match(serverText, "wmfm-startup-data-choices", fixed = TRUE)
-  expect_match(serverText, "removeNotification\\(startupNotificationId\\)", fixed = FALSE)
+  expect_match(startupObserverText, "wmfm-startup-data-choices", fixed = TRUE)
+  expect_match(startupObserverText, "removeNotification\\(startupNotificationId\\)", fixed = FALSE)
 })
 
 test_that("package dataset selector shows a loading placeholder before scanning", {
-  serverText = readPackageText("R", "app-server.R")
+  startupObserverText = readPackageText("R", "app-server-startup.R")
 
-  expect_match(serverText, "Loading datasets\\.\\.\\.", fixed = FALSE)
-  expect_match(serverText, "wmfm-package-dataset-list", fixed = TRUE)
-  expect_match(serverText, "session\\$onFlushed\\(function\\(\\) \\{", fixed = FALSE)
+  expect_match(startupObserverText, "Loading datasets\\.\\.\\.", fixed = FALSE)
+  expect_match(startupObserverText, "wmfm-package-dataset-list", fixed = TRUE)
+  expect_match(startupObserverText, "session\\$onFlushed\\(function\\(\\) \\{", fixed = FALSE)
 })
 
 test_that("model outputs use direct tabs without a duplicate summary-table header", {

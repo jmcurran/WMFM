@@ -143,6 +143,16 @@ test_that("developer mode source controls are password protected", {
 
   uiText = readProjectFileTextForExampleTests("app-ui.R")
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  startupObserverText = readProjectFileTextForExampleTests("app-server-startup.R")
+  developerModeHelperText = readProjectFileTextForExampleTests("app-server-developer-mode-helpers.R")
+  developerModeAuthText = readProjectFileTextForExampleTests("utils-developerModeAuth.R")
+  developerModeText = paste(
+    serverText,
+    startupObserverText,
+    developerModeHelperText,
+    developerModeAuthText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     'inputId = "developerModePassword"',
@@ -158,13 +168,13 @@ test_that("developer mode source controls are password protected", {
 
   expect_true(grepl(
     "verifyDeveloperModePassword",
-    serverText,
+    developerModeText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "includeTestExamples = isTRUE(developerModeUnlocked())",
-    serverText,
+    developerModeText,
     fixed = TRUE
   ))
 })
