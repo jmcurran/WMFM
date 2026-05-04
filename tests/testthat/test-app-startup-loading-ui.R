@@ -87,7 +87,17 @@ test_that("model type uses a compact selector", {
 
 test_that("example loading updates the compact model type selector", {
   serverText = readPackageText("R", "app-server.R")
+  stateHelperText = readPackageText("R", "app-server-state-helpers.R")
+  serverAndStateHelperText = paste(serverText, stateHelperText, sep = "\n")
 
-  expect_match(serverText, "updateSelectInput\\(\\s*session,\\s*\\\"model_type\\\"", perl = TRUE)
-  expect_false(grepl("updateRadioButtons\\(\\s*session,\\s*\\\"model_type\\\"", serverText, perl = TRUE))
+  expect_match(
+    serverAndStateHelperText,
+    'updateSelectInput\\(\\s*session,\\s*"model_type"',
+    perl = TRUE
+  )
+  expect_false(grepl(
+    'updateRadioButtons\\(\\s*session,\\s*"model_type"',
+    serverAndStateHelperText,
+    perl = TRUE
+  ))
 })

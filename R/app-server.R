@@ -261,134 +261,16 @@ appServer = function(input, output, session) {
   })
 
 
-  setBucketState = function(factors = NULL, continuous = NULL) {
-    vars = rv$allVars %||% character(0)
+  serverStateHelpers = createAppServerStateHelpers(
+    input = input,
+    session = session,
+    rv = rv,
+    modelFit = modelFit
+  )
 
-    nextFactors = intersect(factors %||% character(0), vars)
-    nextContinuous = intersect(continuous %||% character(0), vars)
-
-    currentFactors = rv$bucketFactors %||% character(0)
-    currentContinuous = rv$bucketContinuous %||% character(0)
-
-    changed = FALSE
-
-    if (!identical(currentFactors, nextFactors)) {
-      rv$bucketFactors = nextFactors
-      changed = TRUE
-    }
-
-    if (!identical(currentContinuous, nextContinuous)) {
-      rv$bucketContinuous = nextContinuous
-      changed = TRUE
-    }
-
-    invisible(changed)
-  }
-
-  resetModelPage = function(resetResponse = TRUE) {
-
-    rv$isResetting = TRUE
-    on.exit({
-      rv$isResetting = FALSE
-    }, add = TRUE)
-
-    # Clear fitted model + LLM outputs
-    modelFit(NULL)
-    rv$modelEquations = NULL
-    rv$modelExplanation = NULL
-    rv$modelExplanationAudit = NULL
-    rv$modelExplanationTutor = NULL
-    rv$modelContext = NULL
-
-    # Reset tracking + factor prompt state
-    rv$autoFormula = ""
-    rv$lastResponse = NULL
-    rv$lastFactors = character(0)
-    rv$pendingFactorVar = NULL
-    rv$pendingExampleInteractions = character(0)
-
-    # Clear bucket state
-    setBucketState(
-      factors = character(0),
-      continuous = character(0)
-    )
-
-    # Force buckets to re-render empty (Variables/Factors/Continuous)
-    rv$bucketGroupId = rv$bucketGroupId + 1L
-
-    # Reset model UI inputs
-    updateSelectInput(session, "model_type", selected = "lm")
-
-    # Prevent stale widget values from fighting the reset
-    freezeReactiveValue(input, "factors")
-    freezeReactiveValue(input, "continuous")
-    freezeReactiveValue(input, "interactions")
-    freezeReactiveValue(input, "formula_text")
-    freezeReactiveValue(input, "response_var")
-
-    updateTextInput(session, "formula_text", value = "")
-    updateSelectInput(session, "interactions", selected = character(0))
-    updateTextInput(session, "researchQuestion", value = rv$researchQuestion %||% "")
-
-    # Reset response var to first column of new data (optional)
-    if (resetResponse && !is.null(rv$data) && length(rv$allVars) > 0) {
-      updateSelectInput(
-        session,
-        "response_var",
-        choices = rv$allVars,
-        selected = rv$allVars[1]
-      )
-    }
-  }
-
-  applyLoadedExampleToInputs = function(exampleInfo) {
-
-    spec = exampleInfo$spec %||% list()
-    exampleFormula = stats::as.formula(spec$formula)
-    responseVar = all.vars(exampleFormula[[2]])[1] %||% rv$allVars[1]
-    termLabels = attr(stats::terms(exampleFormula), "term.labels") %||% character(0)
-    interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-    mainEffectTerms = termLabels[!grepl(":", termLabels, fixed = TRUE)]
-
-    factorVars = mainEffectTerms[vapply(mainEffectTerms, function(varName) {
-      column = rv$data[[varName]]
-      is.factor(column) || is.character(column)
-    }, logical(1))]
-
-    continuousVars = setdiff(mainEffectTerms, factorVars)
-
-    setBucketState(
-      factors = intersect(factorVars, rv$allVars),
-      continuous = intersect(continuousVars, rv$allVars)
-    )
-    rv$bucketGroupId = rv$bucketGroupId + 1L
-    rv$lastFactors = rv$bucketFactors
-    rv$lastResponse = responseVar
-    rv$pendingExampleInteractions = interactionTerms
-
-    updateSelectInput(
-      session,
-      "response_var",
-      choices = rv$allVars,
-      selected = responseVar
-    )
-
-    updateSelectInput(
-      session,
-      "model_type",
-      selected = spec$modelType %||% "lm"
-    )
-
-    updateSelectInput(
-      session,
-      "interactions",
-      selected = interactionTerms
-    )
-
-    rv$autoFormula = spec$formula %||% ""
-    updateTextInput(session, "formula_text", value = spec$formula %||% "")
-    updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
-  }
+  setBucketState = serverStateHelpers$setBucketState
+  resetModelPage = serverStateHelpers$resetModelPage
+  applyLoadedExampleToInputs = serverStateHelpers$applyLoadedExampleToInputs
 
   # -------------------------------------------------------------------
   # Plot of data + fitted model

@@ -51,6 +51,12 @@ skipIfExampleSourceFilesUnavailable = function() {
       "Skipping source-inspection test because R/app-ui.R is not available in this test environment"
     )
   }
+
+  if (!sourceFileAvailableForExampleTests("app-server-state-helpers.R")) {
+    testthat::skip(
+      "Skipping source-inspection test because R/app-server-state-helpers.R is not available in this test environment"
+    )
+  }
 }
 
 test_that("example-loading source files are present", {
@@ -64,34 +70,36 @@ test_that("app server keeps the guarded bucket-sync logic", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
+  serverAndStateHelperText = paste(serverText, stateHelperText, sep = "\n")
 
   expect_true(grepl(
     "cur = input$factors %||% character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "cur = input$continuous %||% character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "setBucketState(",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$bucketFactors",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$bucketContinuous",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 })
@@ -118,22 +126,24 @@ test_that("app server keeps pending example interactions available", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
+  serverAndStateHelperText = paste(serverText, stateHelperText, sep = "\n")
 
   expect_true(grepl(
     "pendingExampleInteractions = character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$pendingExampleInteractions = interactionTerms",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "input$interactions",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 })
