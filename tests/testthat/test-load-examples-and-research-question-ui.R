@@ -133,7 +133,13 @@ test_that("app server keeps pending example interactions available", {
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
   stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
-  serverAndStateHelperText = paste(serverText, stateHelperText, sep = "\n")
+  modelSetupText = readProjectFileTextForExampleTests("app-server-model-setup.R")
+  serverAndStateHelperText = paste(
+    serverText,
+    stateHelperText,
+    modelSetupText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     "pendingExampleInteractions = character(0)",
