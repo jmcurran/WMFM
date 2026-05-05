@@ -184,6 +184,16 @@ getAppServerFitModelTextForTest = function() {
   )
 }
 
+getAppServerExplanationTextForTest = function() {
+  paste(
+    c(
+      getAppServerTextForTest(),
+      readPackageTextForModelExplanationUiTest("R", "app-server-explanation.R")
+    ),
+    collapse = "\n"
+  )
+}
+
 testthat::test_that("app server keeps fitted model as the post-fit landing tab", {
   serverText = getAppServerFitModelTextForTest()
 
@@ -195,7 +205,7 @@ testthat::test_that("app server keeps fitted model as the post-fit landing tab",
 })
 
 testthat::test_that("optional AI tutor sits in the explanation support accordion after the deterministic sections", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   accordionPos = regexpr('model_explanation_support_accordion', serverText, fixed = TRUE)[1]
   claimHeadingPos = regexpr('How each sentence was supported', serverText, fixed = TRUE)[1]
@@ -248,7 +258,7 @@ testthat::test_that("renderExplanationTutorUi explains unavailable and available
 
 
 testthat::test_that("app server includes explicit fallback text for missing teaching-guide pieces", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   testthat::expect_match(
     serverText,
@@ -268,7 +278,7 @@ testthat::test_that("app server includes explicit fallback text for missing teac
 })
 
 testthat::test_that("app server cleans explanation text again at display time", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   testthat::expect_match(
     serverText,
