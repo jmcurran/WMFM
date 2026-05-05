@@ -77,16 +77,16 @@ appServer = function(input, output, session) {
   )
 
 
-  serverStateHelpers = createAppServerStateHelpers(
+  observerDependencies = createAppServerObserverDependencies(
     input = input,
     session = session,
     rv = rv,
     modelFit = modelFit
   )
 
-  setBucketState = serverStateHelpers$setBucketState
-  resetModelPage = serverStateHelpers$resetModelPage
-  applyLoadedExampleToInputs = serverStateHelpers$applyLoadedExampleToInputs
+  setBucketState = observerDependencies$setBucketState
+  resetModelPage = observerDependencies$resetModelPage
+  applyLoadedExampleToInputs = observerDependencies$applyLoadedExampleToInputs
 
   registerContrastObservers(
     input = input,
