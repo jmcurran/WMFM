@@ -44,36 +44,9 @@ appServer = function(input, output, session) {
   developerModeUnlocked = startupState$developerModeUnlocked
   exampleLoadStatus = startupState$exampleLoadStatus
 
-  rv = reactiveValues(
-    data = NULL,
-    allVars = character(0),
-    autoFormula = "",
-    modelEquations = NULL,
-    modelExplanation = NULL,
-    modelExplanationAudit = NULL,
-    modelExplanationTutor = NULL,
-    bucketGroupId = 0,
-    lastResponse = NULL,
-    lastFactors = character(0),
-    pendingFactorVar = NULL,
-    pendingExampleInteractions = character(0),
-    chatProvider = NULL,
-    contrastLlmCache = new.env(parent = emptyenv()),
-    modelContext = NULL,
-    bucketFactors = character(0),
-    bucketContinuous = character(0),
-    isResetting = FALSE,
-    activeChatBackend = "ollama",
-    activeOllamaModel = "gpt-oss",
-    activeOllamaThinkLow = FALSE,
-    availableOllamaModels = "gpt-oss",
-    userDatasetContext = "",
-    researchQuestion = "",
-    loadedExample = NULL
-  )
-
-
-  modelFit = reactiveVal(NULL)
+  reactiveState = createAppServerReactiveState()
+  rv = reactiveState$rv
+  modelFit = reactiveState$modelFit
 
   registerModelOutputTabs(
     output = output,
@@ -81,7 +54,7 @@ appServer = function(input, output, session) {
     modelFit = modelFit
   )
 
-  contrastPairs = reactiveVal(character(0))
+  contrastPairs = reactiveState$contrastPairs
 
   modelExplanationObservers = registerModelExplanationObservers(
     input = input,
@@ -94,7 +67,7 @@ appServer = function(input, output, session) {
   modelExplanationTeachingSummary = modelExplanationObservers$modelExplanationTeachingSummary
   modelExplanationClaimEvidenceMap = modelExplanationObservers$modelExplanationClaimEvidenceMap
 
-  contrastResultText = reactiveVal("")
+  contrastResultText = reactiveState$contrastResultText
 
   registerChatProviderObservers(
     input = input,
