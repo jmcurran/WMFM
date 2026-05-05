@@ -167,14 +167,25 @@ getAppServerDataLoadTextForTest = function() {
   paste(
     c(
       getAppServerTextForTest(),
-      readPackageTextForModelExplanationUiTest("R", "app-server-data-observers.R")
+      readPackageTextForModelExplanationUiTest("R", "app-server-data-observers.R"),
+      readPackageTextForModelExplanationUiTest("R", "app-server-fit-model.R")
+    ),
+    collapse = "\n"
+  )
+}
+
+getAppServerFitModelTextForTest = function() {
+  paste(
+    c(
+      getAppServerTextForTest(),
+      readPackageTextForModelExplanationUiTest("R", "app-server-fit-model.R")
     ),
     collapse = "\n"
   )
 }
 
 testthat::test_that("app server keeps fitted model as the post-fit landing tab", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerFitModelTextForTest()
 
   testthat::expect_match(
     serverText,

@@ -57,6 +57,12 @@ skipIfExampleSourceFilesUnavailable = function() {
       "Skipping source-inspection test because R/app-server-state-helpers.R is not available in this test environment"
     )
   }
+
+  if (!sourceFileAvailableForExampleTests("app-server-fit-model.R")) {
+    testthat::skip(
+      "Skipping source-inspection test because R/app-server-fit-model.R is not available in this test environment"
+    )
+  }
 }
 
 test_that("example-loading source files are present", {
@@ -114,16 +120,22 @@ test_that("app server requires a research question before fitting", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  fitModelText = readProjectFileTextForExampleTests("app-server-fit-model.R")
+  serverAndFitModelText = paste(
+    serverText,
+    fitModelText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     'trimws(input$researchQuestion %||% rv$researchQuestion %||% "")',
-    serverText,
+    serverAndFitModelText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "Please enter the research question before fitting the model.",
-    serverText,
+    serverAndFitModelText,
     fixed = TRUE
   ))
 })
