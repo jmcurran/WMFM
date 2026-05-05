@@ -71,7 +71,13 @@ test_that("app server keeps the guarded bucket-sync logic", {
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
   stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
-  serverAndStateHelperText = paste(serverText, stateHelperText, sep = "\n")
+  contrastObserverText = readProjectFileTextForExampleTests("app-server-contrasts.R")
+  serverAndStateHelperText = paste(
+    serverText,
+    stateHelperText,
+    contrastObserverText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     "cur = input$factors %||% character(0)",
