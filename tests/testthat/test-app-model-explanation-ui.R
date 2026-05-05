@@ -119,8 +119,39 @@ getAppServerTextForTest = function() {
   paste(deparse(body(appServer)), collapse = "\n")
 }
 
+getAppServerDataLoadTextForTest = function() {
+  paste(
+    c(
+      getAppServerTextForTest(),
+      readPackageText("R", "app-server-data-observers.R"),
+      readPackageText("R", "app-server-fit-model.R")
+    ),
+    collapse = "\n"
+  )
+}
+
+getAppServerFitModelTextForTest = function() {
+  paste(
+    c(
+      getAppServerTextForTest(),
+      readPackageText("R", "app-server-fit-model.R")
+    ),
+    collapse = "\n"
+  )
+}
+
+getAppServerExplanationTextForTest = function() {
+  paste(
+    c(
+      getAppServerTextForTest(),
+      readPackageText("R", "app-server-explanation.R")
+    ),
+    collapse = "\n"
+  )
+}
+
 testthat::test_that("app server keeps fitted model as the post-fit landing tab", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerFitModelTextForTest()
 
   testthat::expect_match(
     serverText,
@@ -130,7 +161,7 @@ testthat::test_that("app server keeps fitted model as the post-fit landing tab",
 })
 
 testthat::test_that("optional AI tutor sits in the explanation support accordion after the deterministic sections", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   accordionPos = regexpr('model_explanation_support_accordion', serverText, fixed = TRUE)[1]
   claimHeadingPos = regexpr('How each sentence was supported', serverText, fixed = TRUE)[1]
@@ -146,7 +177,7 @@ testthat::test_that("optional AI tutor sits in the explanation support accordion
 })
 
 testthat::test_that("app server includes load-example support and research-question requirement", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerDataLoadTextForTest()
 
   testthat::expect_match(serverText, 'observeEvent(input$loadExampleBtn,', fixed = TRUE)
   testthat::expect_match(serverText, 'loadExampleSpec(exampleName)', fixed = TRUE)
@@ -183,7 +214,7 @@ testthat::test_that("renderExplanationTutorUi explains unavailable and available
 
 
 testthat::test_that("app server includes explicit fallback text for missing teaching-guide pieces", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   testthat::expect_match(
     serverText,
@@ -203,7 +234,7 @@ testthat::test_that("app server includes explicit fallback text for missing teac
 })
 
 testthat::test_that("app server cleans explanation text again at display time", {
-  serverText = getAppServerTextForTest()
+  serverText = getAppServerExplanationTextForTest()
 
   testthat::expect_match(
     serverText,

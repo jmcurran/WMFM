@@ -51,6 +51,18 @@ skipIfExampleSourceFilesUnavailable = function() {
       "Skipping source-inspection test because R/app-ui.R is not available in this test environment"
     )
   }
+
+  if (!sourceFileAvailableForExampleTests("app-server-state-helpers.R")) {
+    testthat::skip(
+      "Skipping source-inspection test because R/app-server-state-helpers.R is not available in this test environment"
+    )
+  }
+
+  if (!sourceFileAvailableForExampleTests("app-server-fit-model.R")) {
+    testthat::skip(
+      "Skipping source-inspection test because R/app-server-fit-model.R is not available in this test environment"
+    )
+  }
 }
 
 test_that("example-loading source files are present", {
@@ -64,34 +76,42 @@ test_that("app server keeps the guarded bucket-sync logic", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
+  contrastObserverText = readProjectFileTextForExampleTests("app-server-contrasts.R")
+  serverAndStateHelperText = paste(
+    serverText,
+    stateHelperText,
+    contrastObserverText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     "cur = input$factors %||% character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "cur = input$continuous %||% character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "setBucketState(",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$bucketFactors",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$bucketContinuous",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 })
@@ -100,16 +120,22 @@ test_that("app server requires a research question before fitting", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  fitModelText = readProjectFileTextForExampleTests("app-server-fit-model.R")
+  serverAndFitModelText = paste(
+    serverText,
+    fitModelText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
-    'trimws(input$researchQuestion %||% "")',
-    serverText,
+    'trimws(input$researchQuestion %||% rv$researchQuestion %||% "")',
+    serverAndFitModelText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "Please enter the research question before fitting the model.",
-    serverText,
+    serverAndFitModelText,
     fixed = TRUE
   ))
 })
@@ -118,22 +144,30 @@ test_that("app server keeps pending example interactions available", {
   skipIfExampleSourceFilesUnavailable()
 
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
+  modelSetupText = readProjectFileTextForExampleTests("app-server-model-setup.R")
+  serverAndStateHelperText = paste(
+    serverText,
+    stateHelperText,
+    modelSetupText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     "pendingExampleInteractions = character(0)",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "rv$pendingExampleInteractions = interactionTerms",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "input$interactions",
-    serverText,
+    serverAndStateHelperText,
     fixed = TRUE
   ))
 })
@@ -143,6 +177,16 @@ test_that("developer mode source controls are password protected", {
 
   uiText = readProjectFileTextForExampleTests("app-ui.R")
   serverText = readProjectFileTextForExampleTests("app-server.R")
+  startupObserverText = readProjectFileTextForExampleTests("app-server-startup.R")
+  developerModeHelperText = readProjectFileTextForExampleTests("app-server-developer-mode-helpers.R")
+  developerModeAuthText = readProjectFileTextForExampleTests("utils-developerModeAuth.R")
+  developerModeText = paste(
+    serverText,
+    startupObserverText,
+    developerModeHelperText,
+    developerModeAuthText,
+    sep = "\n"
+  )
 
   expect_true(grepl(
     'inputId = "developerModePassword"',
@@ -158,13 +202,13 @@ test_that("developer mode source controls are password protected", {
 
   expect_true(grepl(
     "verifyDeveloperModePassword",
-    serverText,
+    developerModeText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
     "includeTestExamples = isTRUE(developerModeUnlocked())",
-    serverText,
+    developerModeText,
     fixed = TRUE
   ))
 })

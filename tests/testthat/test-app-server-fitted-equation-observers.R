@@ -1,0 +1,15 @@
+test_that("fitted equation observer registration is extracted from app server", {
+  appServerText = readPackageText("R", "app-server.R")
+  fittedEquationObserverText = readPackageText("R", "app-server-fitted-equations.R")
+
+  expect_true(grepl("registerFittedEquationObservers", appServerText, fixed = TRUE))
+  expect_true(grepl("registerFittedEquationObservers = function", fittedEquationObserverText, fixed = TRUE))
+  expect_true(grepl("output = output", appServerText, fixed = TRUE))
+  expect_true(grepl("rv = rv", appServerText, fixed = TRUE))
+  expect_true(grepl("modelFit = modelFit", appServerText, fixed = TRUE))
+  expect_true(grepl("output$model_equations", fittedEquationObserverText, fixed = TRUE))
+  expect_true(grepl("output$model_equations_header", fittedEquationObserverText, fixed = TRUE))
+  expect_true(grepl("output$fitted_means", fittedEquationObserverText, fixed = TRUE))
+  expect_false(grepl("output$model_equations = renderUI", appServerText, fixed = TRUE))
+  expect_false(grepl("output$fitted_means = renderUI", appServerText, fixed = TRUE))
+})
