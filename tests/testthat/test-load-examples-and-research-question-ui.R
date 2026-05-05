@@ -116,7 +116,7 @@ test_that("app server requires a research question before fitting", {
   serverText = readProjectFileTextForExampleTests("app-server.R")
 
   expect_true(grepl(
-    'trimws(input$researchQuestion %||% "")',
+    'trimws(input$researchQuestion %||% rv$researchQuestion %||% "")',
     serverText,
     fixed = TRUE
   ))
