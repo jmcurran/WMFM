@@ -115,50 +115,6 @@ testthat::test_that("buildAppTeachingTutorExplanation uses a chat provider when 
   testthat::expect_identical(out, "This is a simpler tutor-style explanation.")
 })
 
-findPackageRootForModelExplanationUiTest = function(startDir = getwd()) {
-  startDir = normalizePath(startDir, winslash = "/", mustWork = TRUE)
-
-  candidates = unique(c(
-    startDir,
-    dirname(startDir),
-    dirname(dirname(startDir)),
-    dirname(dirname(dirname(startDir))),
-    Sys.getenv("TESTTHAT_PKG_PATH", unset = "")
-  ))
-
-  candidates = candidates[nzchar(candidates)]
-
-  for (candidate in candidates) {
-    descriptionPath = file.path(candidate, "DESCRIPTION")
-    rPath = file.path(candidate, "R")
-
-    if (file.exists(descriptionPath) && dir.exists(rPath)) {
-      return(candidate)
-    }
-  }
-
-  NA_character_
-}
-
-readPackageTextForModelExplanationUiTest = function(...) {
-  packageRoot = findPackageRootForModelExplanationUiTest()
-
-  if (is.na(packageRoot)) {
-    testthat::skip("Package source tree is not available in this test environment")
-  }
-
-  filePath = file.path(packageRoot, ...)
-
-  if (!file.exists(filePath)) {
-    testthat::skip(paste0(
-      "Package source file is not available in this test environment: ",
-      paste(..., collapse = "/")
-    ))
-  }
-
-  paste(readLines(filePath, warn = FALSE), collapse = "\n")
-}
-
 getAppServerTextForTest = function() {
   paste(deparse(body(appServer)), collapse = "\n")
 }
@@ -167,8 +123,8 @@ getAppServerDataLoadTextForTest = function() {
   paste(
     c(
       getAppServerTextForTest(),
-      readPackageTextForModelExplanationUiTest("R", "app-server-data-observers.R"),
-      readPackageTextForModelExplanationUiTest("R", "app-server-fit-model.R")
+      readPackageText("R", "app-server-data-observers.R"),
+      readPackageText("R", "app-server-fit-model.R")
     ),
     collapse = "\n"
   )
@@ -178,7 +134,7 @@ getAppServerFitModelTextForTest = function() {
   paste(
     c(
       getAppServerTextForTest(),
-      readPackageTextForModelExplanationUiTest("R", "app-server-fit-model.R")
+      readPackageText("R", "app-server-fit-model.R")
     ),
     collapse = "\n"
   )
@@ -188,7 +144,7 @@ getAppServerExplanationTextForTest = function() {
   paste(
     c(
       getAppServerTextForTest(),
-      readPackageTextForModelExplanationUiTest("R", "app-server-explanation.R")
+      readPackageText("R", "app-server-explanation.R")
     ),
     collapse = "\n"
   )
