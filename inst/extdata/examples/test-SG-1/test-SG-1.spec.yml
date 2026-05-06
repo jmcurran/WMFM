@@ -1,0 +1,5 @@
+modelType: lm
+formula: Exam ~ Test
+data: sg-course.csv
+context: context.md
+researchQuestion: How does the mid-term test mark relate to the final exam mark?

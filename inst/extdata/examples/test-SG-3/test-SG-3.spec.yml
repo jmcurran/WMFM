@@ -1,0 +1,5 @@
+modelType: lm
+formula: Exam ~ Gender
+data: sg-course.csv
+context: context.md
+researchQuestion: Do average final exam marks differ by gender in this synthetic course example?

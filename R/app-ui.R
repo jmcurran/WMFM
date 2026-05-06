@@ -333,6 +333,11 @@ appUI = function() {
       ),
 
       tabPanel(
+        "Scoring & Grading",
+        uiOutput("developerScoringGradingUi")
+      ),
+
+      tabPanel(
         "Settings",
         h4("Developer mode"),
         passwordInput(

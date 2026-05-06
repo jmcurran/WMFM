@@ -1,0 +1,5 @@
+modelType: logistic
+formula: Pass ~ StudyHours
+data: sg-course.csv
+context: context.md
+researchQuestion: How do study hours relate to the probability of passing?

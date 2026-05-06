@@ -1,0 +1,5 @@
+modelType: lm
+formula: Exam ~ Assignment
+data: sg-course.csv
+context: context.md
+researchQuestion: How does the assignment mark relate to the final exam mark?

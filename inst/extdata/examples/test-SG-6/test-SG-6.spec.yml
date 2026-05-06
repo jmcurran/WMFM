@@ -1,0 +1,5 @@
+modelType: poisson
+formula: Errors ~ PracticeHours
+data: sg-errors.csv
+context: context.md
+researchQuestion: How do practice hours relate to the expected number of errors?
