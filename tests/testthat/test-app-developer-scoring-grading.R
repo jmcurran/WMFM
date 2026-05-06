@@ -142,3 +142,94 @@ testthat::test_that("developer scoring resolves GLM scale-sensitive model types"
   testthat::expect_equal(resolveDeveloperScoringModelType(poissonModel), "poisson")
   testthat::expect_equal(resolveDeveloperScoringModelType(logisticModel, "lm"), "lm")
 })
+
+testthat::test_that("developer scoring JSON payload uses stable export schema", {
+  gradeObj = list(
+    scoreScale = 100,
+    meta = list(scored = TRUE),
+    scores = list(
+      byMethod = list(
+        deterministic = list(
+          overallScore = 91.2,
+          mark = 91.2,
+          metricSummary = data.frame(
+            label = "Scale",
+            studentValue = 1,
+            maxValue = 1,
+            marksLost = 0,
+            reason = "Correct",
+            stringsAsFactors = FALSE
+          )
+        )
+      )
+    ),
+    feedback = list(
+      byMethod = list(
+        deterministic = list(
+          whereMarksLost = data.frame(reason = character(0), stringsAsFactors = FALSE),
+          strengths = data.frame(reason = "Clear scale language", stringsAsFactors = FALSE)
+        )
+      )
+    )
+  )
+  class(gradeObj) = c("wmfmGrade", "list")
+
+  data = data.frame(Exam = c(60, 65, 70), Test = c(55, 60, 68))
+  model = stats::lm(Exam ~ Test, data = data)
+  rv = list(
+    modelExplanation = "Higher Test values are associated with higher Exam values.",
+    researchQuestion = "Does Test predict Exam?"
+  )
+  input = list(formula_text = "Exam ~ Test", model_type = "lm")
+  repeatedResult = list(
+    totalRuns = 1,
+    elapsedSeconds = 2.5,
+    createdAt = "2026-05-06 22:00:00",
+    runTable = data.frame(
+      run = 1,
+      scored = TRUE,
+      overallScore = 91.2,
+      mark = 91.2,
+      elapsedSeconds = 2.5,
+      status = "scored",
+      stringsAsFactors = FALSE
+    ),
+    runDetails = list(list(
+      run = 1,
+      status = "scored",
+      elapsedSeconds = 2.5,
+      explanation = "Higher Test values are associated with higher Exam values.",
+      grade = gradeObj
+    ))
+  )
+
+  payload = buildDeveloperScoringJsonPayload(
+    model = model,
+    rv = rv,
+    input = input,
+    gradeObj = gradeObj,
+    repeatedResult = repeatedResult
+  )
+  jsonText = buildDeveloperScoringJsonText(payload)
+  parsed = jsonlite::fromJSON(jsonText)
+
+  testthat::expect_equal(payload$schema, "wmfm-developer-scoring-export")
+  testthat::expect_equal(payload$schemaVersion, "1.0.0")
+  testthat::expect_equal(payload$appState$modelType, "lm")
+  testthat::expect_equal(payload$repeated$totalRuns, 1)
+  testthat::expect_equal(payload$repeated$runs[[1]]$status, "scored")
+  testthat::expect_match(jsonText, '"schema": "wmfm-developer-scoring-export"', fixed = TRUE)
+  testthat::expect_equal(parsed$schema, "wmfm-developer-scoring-export")
+})
+
+
+testthat::test_that("developer scoring UI exposes JSON download control", {
+  developerObserverText = paste(
+    deparse(body(registerDeveloperScoringGradingObservers)),
+    collapse = "\n"
+  )
+
+  testthat::expect_match(developerObserverText, "developerScoringJsonDownload", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "downloadHandler", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "buildDeveloperScoringJsonPayload", fixed = TRUE)
+})

@@ -494,6 +494,155 @@ scoreDeveloperExplanation = function(
   )
 }
 
+
+
+#' Build a compact developer scoring grade export
+#'
+#' @param gradeObj A `wmfmGrade` object.
+#' @param method Character scalar naming the scoring method to inspect.
+#'
+#' @return A list suitable for JSON serialisation.
+#' @keywords internal
+buildDeveloperScoringGradeExport = function(gradeObj, method = "deterministic") {
+  if (!inherits(gradeObj, "wmfmGrade")) {
+    return(NULL)
+  }
+
+  list(
+    class = class(gradeObj),
+    scoreScale = suppressWarnings(as.numeric(gradeObj$scoreScale)[1]),
+    scored = isTRUE(gradeObj$meta$scored),
+    method = method,
+    summary = buildDeveloperScoringSummaryTable(gradeObj, method = method),
+    metrics = buildDeveloperScoringMetricTable(gradeObj, method = method),
+    whereMarksLost = buildDeveloperScoringLossTable(
+      gradeObj = gradeObj,
+      tableName = "whereMarksLost",
+      method = method
+    ),
+    strengths = buildDeveloperScoringLossTable(
+      gradeObj = gradeObj,
+      tableName = "strengths",
+      method = method
+    ),
+    objectSummaryText = buildDeveloperScoringObjectText(gradeObj)
+  )
+}
+
+#' Build a compact developer repeated scoring export
+#'
+#' @param repeatedResult A developer repeated scoring result object.
+#' @param method Character scalar naming the scoring method to inspect.
+#'
+#' @return A list suitable for JSON serialisation.
+#' @keywords internal
+buildDeveloperRepeatedScoringExport = function(
+    repeatedResult,
+    method = "deterministic"
+) {
+  if (is.null(repeatedResult) || !is.list(repeatedResult)) {
+    return(NULL)
+  }
+
+  runDetails = repeatedResult$runDetails %||% list()
+
+  list(
+    totalRuns = repeatedResult$totalRuns %||% NA_integer_,
+    elapsedSeconds = repeatedResult$elapsedSeconds %||% NA_real_,
+    createdAt = repeatedResult$createdAt %||% NA_character_,
+    summary = buildDeveloperRepeatedScoringSummaryTable(repeatedResult),
+    runTable = buildDeveloperRepeatedScoringRunTable(repeatedResult),
+    runs = lapply(runDetails, function(runDetail) {
+      list(
+        run = runDetail$run %||% NA_integer_,
+        status = runDetail$status %||% NA_character_,
+        elapsedSeconds = runDetail$elapsedSeconds %||% NA_real_,
+        explanation = runDetail$explanation %||% NA_character_,
+        grade = buildDeveloperScoringGradeExport(
+          gradeObj = runDetail$grade,
+          method = method
+        )
+      )
+    })
+  )
+}
+
+#' Build developer scoring JSON export payload
+#'
+#' @param model A fitted model object from the app.
+#' @param rv App reactive values object.
+#' @param input Shiny input object.
+#' @param gradeObj Current single-run grade object.
+#' @param repeatedResult Current repeated-run result object.
+#' @param method Character scalar naming the scoring method to inspect.
+#'
+#' @return A list suitable for JSON serialisation.
+#' @keywords internal
+buildDeveloperScoringJsonPayload = function(
+    model = NULL,
+    rv = NULL,
+    input = NULL,
+    gradeObj = NULL,
+    repeatedResult = NULL,
+    method = "deterministic"
+) {
+  formulaText = tryCatch(
+    paste(deparse(stats::formula(model)), collapse = " "),
+    error = function(e) {
+      trimws(as.character(input$formula_text %||% ""))[1]
+    }
+  )
+
+  list(
+    schema = "wmfm-developer-scoring-export",
+    schemaVersion = "1.0.0",
+    createdAt = as.character(Sys.time()),
+    purpose = "developer scoring and grading diagnostics",
+    method = method,
+    appState = list(
+      modelClass = class(model),
+      modelType = resolveDeveloperScoringModelType(
+        model = model,
+        modelType = input$model_type %||% NULL
+      ),
+      formula = formulaText,
+      exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
+      package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_,
+      researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||%
+        rv$researchQuestion %||% NA_character_
+    ),
+    current = list(
+      explanation = rv$modelExplanation %||% NA_character_,
+      grade = buildDeveloperScoringGradeExport(
+        gradeObj = gradeObj,
+        method = method
+      )
+    ),
+    repeated = buildDeveloperRepeatedScoringExport(
+      repeatedResult = repeatedResult,
+      method = method
+    )
+  )
+}
+
+#' Build developer scoring JSON export text
+#'
+#' @param payload A developer scoring export payload.
+#'
+#' @return A JSON character scalar.
+#' @keywords internal
+buildDeveloperScoringJsonText = function(payload) {
+  jsonlite::toJSON(
+    payload,
+    auto_unbox = TRUE,
+    pretty = TRUE,
+    null = "null",
+    dataframe = "rows",
+    POSIXt = "ISO8601",
+    na = "null"
+  )
+}
+
 #' Register developer scoring and grading observers
 #'
 #' Adds a developer-mode diagnostics panel for deterministic scoring of the
@@ -585,7 +734,20 @@ registerDeveloperScoringGradingObservers = function(
       shiny::h5("Repeated-run summary"),
       shiny::tableOutput("developerRepeatedScoreSummaryTable"),
       shiny::h5("Repeated-run detail"),
-      shiny::tableOutput("developerRepeatedScoreRunTable")
+      shiny::tableOutput("developerRepeatedScoreRunTable"),
+      shiny::tags$hr(class = "hr-tight"),
+      shiny::h5("Export scoring results"),
+      shiny::helpText(
+        "Download this JSON file and upload it in ChatGPT when you want help evaluating scoring and grading behaviour."
+      ),
+      shiny::downloadButton(
+        outputId = "developerScoringJsonDownload",
+        label = "Download scoring JSON",
+        class = "btn btn-secondary btn-sm"
+      ),
+      shiny::tags$br(),
+      shiny::tags$br(),
+      shiny::verbatimTextOutput("developerScoringJsonPreview")
     )
   })
 
@@ -672,6 +834,7 @@ registerDeveloperScoringGradingObservers = function(
     totalRuns = min(totalRuns, 50L)
     grades = vector("list", totalRuns)
     runRows = vector("list", totalRuns)
+    runDetails = vector("list", totalRuns)
     startTime = Sys.time()
 
     shiny::withProgress(
@@ -742,6 +905,14 @@ registerDeveloperScoringGradingObservers = function(
             stringsAsFactors = FALSE
           )
 
+          runDetails[[runIdx]] = list(
+            run = runIdx,
+            status = statusText,
+            elapsedSeconds = round(runElapsed, 1),
+            explanation = explanationText %||% NA_character_,
+            grade = scoredGrade
+          )
+
           elapsedAfterRun = as.numeric(difftime(Sys.time(), startTime, units = "secs"))
           progressText = buildDeveloperScoringProgressText(
             completed = runIdx,
@@ -763,6 +934,7 @@ registerDeveloperScoringGradingObservers = function(
 
     developerRepeatedResult(list(
       grades = grades,
+      runDetails = runDetails,
       runTable = runTable,
       totalRuns = totalRuns,
       elapsedSeconds = elapsedSeconds,
@@ -808,6 +980,44 @@ registerDeveloperScoringGradingObservers = function(
   output$developerRepeatedScoreRunTable = shiny::renderTable({
     buildDeveloperRepeatedScoringRunTable(developerRepeatedResult())
   })
+
+  developerScoringJsonPayload = shiny::reactive({
+    buildDeveloperScoringJsonPayload(
+      model = modelFit(),
+      rv = rv,
+      input = input,
+      gradeObj = developerGrade(),
+      repeatedResult = developerRepeatedResult(),
+      method = "deterministic"
+    )
+  })
+
+  output$developerScoringJsonPreview = shiny::renderText({
+    payload = developerScoringJsonPayload()
+    paste(
+      "JSON export ready.",
+      paste0("Schema: ", payload$schema, " v", payload$schemaVersion),
+      paste0("Repeated runs: ", payload$repeated$totalRuns %||% 0),
+      sep = "\n"
+    )
+  })
+
+  output$developerScoringJsonDownload = shiny::downloadHandler(
+    filename = function() {
+      paste0(
+        "wmfm-scoring-export-",
+        format(Sys.time(), "%Y%m%d-%H%M%S"),
+        ".json"
+      )
+    },
+    content = function(file) {
+      writeLines(
+        buildDeveloperScoringJsonText(developerScoringJsonPayload()),
+        con = file,
+        useBytes = TRUE
+      )
+    }
+  )
 
   list(
     developerGrade = developerGrade,
