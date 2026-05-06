@@ -14,7 +14,7 @@
 #' @keywords internal
 #'
 #' @importFrom shiny reactiveVal renderText observe observeEvent isolate req
-#' @importFrom shiny updateSelectInput showNotification removeNotification
+#' @importFrom shiny updateSelectInput updateTextInput showNotification removeNotification
 registerStartupDataChoiceObservers = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
@@ -48,6 +48,46 @@ registerStartupDataChoiceObservers = function(input, output, session) {
   output$exampleLoadStatus = renderText({
     exampleLoadStatus() %||% ""
   })
+
+  output$developerModeStatus = renderText({
+    buildDeveloperModeStatus(developerModeUnlocked())
+  })
+
+  observeEvent(input$unlockDeveloperModeBtn, {
+    password = input$developerModePassword %||% ""
+
+    passwordOk = tryCatch(
+      verifyDeveloperModePassword(password),
+      error = function(e) {
+        showNotification(conditionMessage(e), type = "error")
+        FALSE
+      }
+    )
+
+    if (isTRUE(passwordOk)) {
+      developerModeUnlocked(TRUE)
+      updateTextInput(session, "developerModePassword", value = "")
+      showNotification(
+        buildDeveloperModeUnlockedMessage(),
+        type = "message"
+      )
+    } else {
+      developerModeUnlocked(FALSE)
+      showNotification(
+        buildDeveloperModeIncorrectPasswordMessage(),
+        type = "error"
+      )
+    }
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$lockDeveloperModeBtn, {
+    developerModeUnlocked(FALSE)
+    updateTextInput(session, "developerModePassword", value = "")
+    showNotification(
+      buildDeveloperModeLockedMessage(),
+      type = "message"
+    )
+  }, ignoreInit = TRUE)
 
   observe({
     choices = exampleChoices()
