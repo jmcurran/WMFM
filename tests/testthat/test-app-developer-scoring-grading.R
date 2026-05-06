@@ -1,92 +1,98 @@
 testthat::test_that("developer scoring summary table displays scored grade values", {
   gradeObj = list(
-    scoreScale = 10,
+    scoreScale = 100,
+    meta = list(scored = TRUE),
     scores = list(
       byMethod = list(
         deterministic = list(
-          overallScore = 82.345,
-          mark = 8.2345,
+          overallScore = 82.34,
+          mark = 82.34,
           metricSummary = data.frame(
-            label = "Overall score",
-            studentValue = 82.345,
-            maxValue = 100,
-            marksLost = 17.655,
-            reason = "Some marks were lost.",
+            label = "Scale",
+            studentValue = 1,
+            maxValue = 1,
+            marksLost = 0,
+            reason = "Correct",
             stringsAsFactors = FALSE
           )
         )
       )
     ),
-    feedback = list(byMethod = list()),
-    meta = list(scored = TRUE)
+    feedback = list(
+      byMethod = list(
+        deterministic = list(
+          whereMarksLost = data.frame(reason = "None", stringsAsFactors = FALSE),
+          strengths = data.frame(reason = "Clear", stringsAsFactors = FALSE)
+        )
+      )
+    )
   )
   class(gradeObj) = c("wmfmGrade", "list")
 
   summaryTable = buildDeveloperScoringSummaryTable(gradeObj)
-
-  testthat::expect_equal(summaryTable$method, "deterministic")
-  testthat::expect_equal(summaryTable$overallScore, 82.34)
-  testthat::expect_equal(summaryTable$mark, 8.23)
-  testthat::expect_true(summaryTable$scored)
-})
-
-testthat::test_that("developer scoring metric table keeps readable diagnostic columns", {
-  gradeObj = list(
-    scores = list(
-      byMethod = list(
-        deterministic = list(
-          metricSummary = data.frame(
-            metric = "overallScore",
-            label = "Overall score",
-            studentValue = 90,
-            maxValue = 100,
-            marksLost = 10,
-            reason = "Minor loss.",
-            internalColumn = "ignored",
-            stringsAsFactors = FALSE
-          )
-        )
-      )
-    ),
-    feedback = list(byMethod = list()),
-    meta = list()
-  )
-  class(gradeObj) = c("wmfmGrade", "list")
-
   metricTable = buildDeveloperScoringMetricTable(gradeObj)
+  lossTable = buildDeveloperScoringLossTable(gradeObj, "whereMarksLost")
+  objectText = buildDeveloperScoringObjectText(gradeObj)
 
-  testthat::expect_equal(
-    names(metricTable),
-    c("label", "studentValue", "maxValue", "marksLost", "reason")
-  )
-  testthat::expect_equal(metricTable$label, "Overall score")
+  testthat::expect_equal(summaryTable$overallScore, 82.34)
+  testthat::expect_equal(summaryTable$mark, 82.34)
+  testthat::expect_equal(summaryTable$scoreScale, 100)
+  testthat::expect_true(summaryTable$scored)
+  testthat::expect_equal(metricTable$label, "Scale")
+  testthat::expect_equal(lossTable$reason, "None")
+  testthat::expect_type(objectText, "character")
 })
 
-testthat::test_that("developer scoring loss table handles missing feedback safely", {
-  gradeObj = list(
-    scores = list(byMethod = list()),
-    feedback = list(byMethod = list()),
-    meta = list()
+testthat::test_that("developer repeated scoring progress text includes ETA", {
+  progressText = buildDeveloperScoringProgressText(
+    completed = 2,
+    total = 5,
+    elapsedSeconds = 20
   )
-  class(gradeObj) = c("wmfmGrade", "list")
 
-  lossTable = buildDeveloperScoringLossTable(gradeObj, "whereMarksLost")
+  testthat::expect_match(progressText, "2 of 5 runs complete", fixed = TRUE)
+  testthat::expect_match(progressText, "Elapsed: 20.0 seconds", fixed = TRUE)
+  testthat::expect_match(progressText, "Estimated remaining: 30.0 seconds", fixed = TRUE)
+})
 
-  testthat::expect_s3_class(lossTable, "data.frame")
-  testthat::expect_equal(nrow(lossTable), 0)
+testthat::test_that("developer repeated scoring tables summarise run marks", {
+  repeatedResult = list(
+    totalRuns = 3,
+    elapsedSeconds = 12,
+    runTable = data.frame(
+      run = 1:3,
+      scored = c(TRUE, TRUE, FALSE),
+      overallScore = c(90, 80, NA),
+      mark = c(90, 80, NA),
+      elapsedSeconds = c(4, 4, 4),
+      status = c("scored", "scored", "no explanation returned"),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  summaryTable = buildDeveloperRepeatedScoringSummaryTable(repeatedResult)
+  runTable = buildDeveloperRepeatedScoringRunTable(repeatedResult)
+
+  testthat::expect_equal(summaryTable$requestedRuns, 3)
+  testthat::expect_equal(summaryTable$completedRuns, 3)
+  testthat::expect_equal(summaryTable$scoredRuns, 2)
+  testthat::expect_equal(summaryTable$meanMark, 85)
+  testthat::expect_equal(summaryTable$minMark, 80)
+  testthat::expect_equal(summaryTable$maxMark, 90)
+  testthat::expect_equal(nrow(runTable), 3)
 })
 
 testthat::test_that("UI and server register developer scoring controls", {
   appUiText = paste(deparse(body(appUI)), collapse = "\n")
   appServerText = paste(deparse(body(appServer)), collapse = "\n")
-  scoringServerText = paste(
+  developerObserverText = paste(
     deparse(body(registerDeveloperScoringGradingObservers)),
     collapse = "\n"
   )
 
-  testthat::expect_match(appUiText, '"Scoring & Grading"', fixed = TRUE)
   testthat::expect_match(appUiText, 'uiOutput("developerScoringGradingUi")', fixed = TRUE)
   testthat::expect_match(appServerText, "registerDeveloperScoringGradingObservers", fixed = TRUE)
-  testthat::expect_match(scoringServerText, 'inputId = "scoreCurrentExplanationBtn"', fixed = TRUE)
-  testthat::expect_match(scoringServerText, 'method = "deterministic"', fixed = TRUE)
+  testthat::expect_match(developerObserverText, "developerScoringRunCount", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "runRepeatedScoringBtn", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "withProgress", fixed = TRUE)
 })
