@@ -96,3 +96,49 @@ testthat::test_that("UI and server register developer scoring controls", {
   testthat::expect_match(developerObserverText, "runRepeatedScoringBtn", fixed = TRUE)
   testthat::expect_match(developerObserverText, "withProgress", fixed = TRUE)
 })
+
+testthat::test_that("developer scoring wraps native app model as wmfmModel", {
+  data = data.frame(
+    Exam = c(60, 65, 70, 75, 80),
+    Test = c(55, 60, 68, 72, 78)
+  )
+  model = stats::lm(Exam ~ Test, data = data)
+  rv = list(
+    data = data,
+    userDatasetContext = "Synthetic scoring test data.",
+    researchQuestion = "Does Test predict Exam?",
+    modelEquations = NULL,
+    modelExplanation = "Higher Test values are associated with higher Exam values.",
+    modelExplanationAudit = NULL
+  )
+  input = list(
+    formula_text = "Exam ~ Test",
+    model_type = "lm"
+  )
+
+  wmfmModel = buildDeveloperScoringWmfmModel(
+    model = model,
+    rv = rv,
+    input = input,
+    explanationText = rv$modelExplanation
+  )
+
+  testthat::expect_s3_class(wmfmModel, "wmfmModel")
+  testthat::expect_identical(wmfmModel$model, model)
+  testthat::expect_equal(wmfmModel$modelType, "lm")
+  testthat::expect_equal(paste(deparse(wmfmModel$formula), collapse = " "), "Exam ~ Test")
+})
+
+testthat::test_that("developer scoring resolves GLM scale-sensitive model types", {
+  data = data.frame(
+    Pass = c(0, 0, 1, 0, 1, 1),
+    StudyHours = c(1, 2, 3, 4, 5, 6),
+    Errors = c(8, 6, 5, 4, 3, 2)
+  )
+  logisticModel = stats::glm(Pass ~ StudyHours, data = data, family = stats::binomial())
+  poissonModel = stats::glm(Errors ~ StudyHours, data = data, family = stats::poisson())
+
+  testthat::expect_equal(resolveDeveloperScoringModelType(logisticModel), "logistic")
+  testthat::expect_equal(resolveDeveloperScoringModelType(poissonModel), "poisson")
+  testthat::expect_equal(resolveDeveloperScoringModelType(logisticModel, "lm"), "lm")
+})

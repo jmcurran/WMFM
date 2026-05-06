@@ -276,6 +276,224 @@ extractDeveloperGradeOverallScore = function(gradeObj, method = "deterministic")
   suppressWarnings(as.numeric(methodScore$overallScore)[1])
 }
 
+
+
+#' Extract developer scoring interaction metadata
+#'
+#' @param model A fitted model object.
+#'
+#' @return A list with interaction term metadata.
+#'
+#' @keywords internal
+extractDeveloperScoringInteractionInfo = function(model) {
+  out = list(
+    interactionTerms = character(0),
+    interactionMinPValue = NA_real_
+  )
+
+  coefficientTable = tryCatch(
+    withCallingHandlers(
+      summary(model)$coefficients,
+      warning = function(w) {
+        if (grepl("essentially perfect fit", conditionMessage(w), fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    ),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(coefficientTable) || !is.matrix(coefficientTable)) {
+    return(out)
+  }
+
+  termNames = rownames(coefficientTable)
+
+  if (is.null(termNames) || length(termNames) == 0) {
+    return(out)
+  }
+
+  interactionIdx = grepl(":", termNames, fixed = TRUE)
+
+  if (!any(interactionIdx)) {
+    return(out)
+  }
+
+  pColumnIdx = grep("^Pr\\(", colnames(coefficientTable))
+  interactionMinPValue = NA_real_
+
+  if (length(pColumnIdx) >= 1) {
+    interactionPValues = suppressWarnings(
+      as.numeric(coefficientTable[interactionIdx, pColumnIdx[1]])
+    )
+    interactionPValues = interactionPValues[!is.na(interactionPValues)]
+
+    if (length(interactionPValues) > 0) {
+      interactionMinPValue = min(interactionPValues)
+    }
+  }
+
+  list(
+    interactionTerms = termNames[interactionIdx],
+    interactionMinPValue = interactionMinPValue
+  )
+}
+
+#' Resolve the developer scoring model type
+#'
+#' @param model A fitted model object.
+#' @param modelType Optional UI model type.
+#'
+#' @return A character scalar.
+#' @keywords internal
+resolveDeveloperScoringModelType = function(model, modelType = NULL) {
+  modelType = trimws(as.character(modelType %||% ""))[1]
+
+  if (nzchar(modelType) && modelType %in% c("lm", "logistic", "poisson")) {
+    return(modelType)
+  }
+
+  if (inherits(model, "glm")) {
+    familyName = tryCatch(model$family$family, error = function(e) NA_character_)
+
+    if (identical(familyName, "binomial")) {
+      return("logistic")
+    }
+
+    if (identical(familyName, "poisson")) {
+      return("poisson")
+    }
+  }
+
+  "lm"
+}
+
+#' Build a WMFM model object for developer scoring
+#'
+#' The app stores the current fitted model as a native fitted model object. The
+#' grading API is intentionally defined on `wmfmModel`, so this helper wraps the
+#' current app state in the same classed object before calling `grade()`.
+#'
+#' @param model A fitted model object from the app.
+#' @param rv App reactive values object.
+#' @param input Shiny input object.
+#' @param explanationText Character scalar explanation text.
+#'
+#' @return A `wmfmModel` object, or `NULL` when the current state is incomplete.
+#' @keywords internal
+buildDeveloperScoringWmfmModel = function(
+    model,
+    rv,
+    input,
+    explanationText = NULL
+) {
+  if (is.null(model)) {
+    return(NULL)
+  }
+
+  if (inherits(model, "wmfmModel")) {
+    return(model)
+  }
+
+  formula = tryCatch(stats::formula(model), error = function(e) NULL)
+
+  if (is.null(formula) || !inherits(formula, "formula")) {
+    formulaText = trimws(as.character(input$formula_text %||% ""))[1]
+
+    if (nzchar(formulaText)) {
+      formula = tryCatch(stats::as.formula(formulaText), error = function(e) NULL)
+    }
+  }
+
+  if (is.null(formula) || !inherits(formula, "formula")) {
+    return(NULL)
+  }
+
+  data = rv$data
+
+  if (!is.data.frame(data)) {
+    data = tryCatch(stats::model.frame(model), error = function(e) NULL)
+  }
+
+  if (!is.data.frame(data)) {
+    return(NULL)
+  }
+
+  interactionInfo = extractDeveloperScoringInteractionInfo(model)
+  modelType = resolveDeveloperScoringModelType(
+    model = model,
+    modelType = input$model_type %||% NULL
+  )
+
+  newWmfmModel(
+    model = model,
+    formula = formula,
+    modelType = modelType,
+    data = data,
+    dataContext = attr(model, "wmfm_dataset_doc", exact = TRUE) %||% rv$userDatasetContext %||% NULL,
+    researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% rv$researchQuestion %||% NULL,
+    equations = rv$modelEquations,
+    explanation = explanationText %||% rv$modelExplanation,
+    explanationAudit = rv$modelExplanationAudit,
+    explanationClaimEvidenceMap = NULL,
+    modelProfile = tryCatch(
+      buildExplanationModelProfile(
+        model = model,
+        data = data,
+        modelType = modelType
+      ),
+      error = function(e) {
+        NULL
+      }
+    ),
+    interactionTerms = interactionInfo$interactionTerms,
+    interactionMinPValue = interactionInfo$interactionMinPValue,
+    meta = list(
+      sourceFunction = "appDeveloperScoring",
+      exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
+      package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_
+    )
+  )
+}
+
+#' Grade the current app explanation for developer scoring
+#'
+#' @param model A fitted model object from the app.
+#' @param rv App reactive values object.
+#' @param input Shiny input object.
+#' @param explanationText Character scalar explanation text.
+#' @param method Character scalar naming the scoring method.
+#'
+#' @return A scored `wmfmGrade` object.
+#' @keywords internal
+scoreDeveloperExplanation = function(
+    model,
+    rv,
+    input,
+    explanationText,
+    method = "deterministic"
+) {
+  wmfmModel = buildDeveloperScoringWmfmModel(
+    model = model,
+    rv = rv,
+    input = input,
+    explanationText = explanationText
+  )
+
+  if (is.null(wmfmModel)) {
+    stop("Could not construct a WMFM grading object from the current app state.", call. = FALSE)
+  }
+
+  grade(
+    x = wmfmModel,
+    explanation = explanationText,
+    method = method,
+    autoScore = TRUE
+  )
+}
+
 #' Register developer scoring and grading observers
 #'
 #' Adds a developer-mode diagnostics panel for deterministic scoring of the
@@ -402,11 +620,12 @@ registerDeveloperScoringGradingObservers = function(
     }
 
     scoredGrade = tryCatch(
-      grade(
-        x = m,
-        explanation = explanationText,
-        method = "deterministic",
-        autoScore = TRUE
+      scoreDeveloperExplanation(
+        model = m,
+        rv = rv,
+        input = input,
+        explanationText = explanationText,
+        method = "deterministic"
       ),
       error = function(e) {
         developerScoreStatus(
@@ -496,11 +715,12 @@ registerDeveloperScoringGradingObservers = function(
             statusText = "no explanation returned"
           } else {
             scoredGrade = tryCatch(
-              grade(
-                x = m,
-                explanation = explanationText,
-                method = "deterministic",
-                autoScore = TRUE
+              scoreDeveloperExplanation(
+                model = m,
+                rv = rv,
+                input = input,
+                explanationText = explanationText,
+                method = "deterministic"
               ),
               error = function(e) {
                 statusText <<- paste("scoring failed:", conditionMessage(e))
