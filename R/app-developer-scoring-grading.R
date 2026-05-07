@@ -95,7 +95,10 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
   }
 
   keepCols = intersect(
-    c("label", "studentValue", "maxValue", "marksLost", "status", "reason"),
+    c(
+      "label", "studentValue", "maxValue", "marksLost", "status",
+      "confidence", "evidenceStrength", "reason"
+    ),
     names(metricTable)
   )
 
@@ -686,7 +689,7 @@ buildDeveloperScoringJsonPayload = function(
 
   list(
     schema = "wmfm-developer-scoring-export",
-    schemaVersion = "1.0.0",
+    schemaVersion = "1.1.0",
     createdAt = as.character(Sys.time()),
     purpose = "developer scoring and grading diagnostics",
     method = method,

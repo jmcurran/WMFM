@@ -216,12 +216,54 @@ testthat::test_that("developer scoring JSON payload uses stable export schema", 
   parsed = jsonlite::fromJSON(jsonText)
 
   testthat::expect_equal(payload$schema, "wmfm-developer-scoring-export")
-  testthat::expect_equal(payload$schemaVersion, "1.0.0")
+  testthat::expect_equal(payload$schemaVersion, "1.1.0")
   testthat::expect_equal(payload$appState$modelType, "lm")
   testthat::expect_equal(payload$repeated$totalRuns, 1)
   testthat::expect_equal(payload$repeated$runs[[1]]$status, "scored")
   testthat::expect_match(jsonText, '"schema": "wmfm-developer-scoring-export"', fixed = TRUE)
   testthat::expect_equal(parsed$schema, "wmfm-developer-scoring-export")
+})
+
+
+testthat::test_that("developer scoring metric export uses conditional feedback and metadata", {
+  scored = data.frame(
+    overallScore = 100,
+    factualScore = 2,
+    inferenceScore = 2,
+    completenessScore = 2,
+    clarityScore = 1.667,
+    calibrationScore = 2,
+    effectDirectionCorrect = 2,
+    effectScaleAppropriate = 2,
+    referenceGroupHandledCorrectly = NA_real_,
+    interactionCoverageAdequate = NA_real_,
+    interactionSubstantiveCorrect = NA_real_,
+    uncertaintyHandlingAppropriate = 2,
+    inferentialRegisterAppropriate = 2,
+    mainEffectCoverageAdequate = 2,
+    referenceGroupCoverageAdequate = NA_real_,
+    clarityAdequate = 1,
+    numericExpressionAdequate = 2,
+    comparisonStructureClear = NA_real_,
+    explanationText = paste(
+      "Each one-point increase in Test is associated with a 0.8 point",
+      "increase in Exam, with a 95 percent confidence interval."
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  feedback = summariseWmfmGradeLosses(scored, method = "deterministic")
+  metricSummary = feedback$metricSummary
+  effectRow = metricSummary[metricSummary$metric == "effectScaleAppropriate", , drop = FALSE]
+  clarityRow = metricSummary[metricSummary$metric == "clarityScore", , drop = FALSE]
+  interactionRow = metricSummary[metricSummary$metric == "interactionCoverageAdequate", , drop = FALSE]
+
+  testthat::expect_equal(effectRow$reason, "The effect was described on an appropriate scale.")
+  testthat::expect_equal(clarityRow$studentValue, 1.75)
+  testthat::expect_true("confidence" %in% names(metricSummary))
+  testthat::expect_true("evidenceStrength" %in% names(metricSummary))
+  testthat::expect_equal(effectRow$confidence, "high")
+  testthat::expect_equal(interactionRow$confidence, "not_applicable")
 })
 
 
