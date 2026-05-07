@@ -54,28 +54,44 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
   metricTable = methodScore$metricSummary
 
   hasFactorPredictors = FALSE
+  hasInteractionTerms = FALSE
+
   if (!is.null(methodScore$student) && "hasFactorPredictors" %in% names(methodScore$student)) {
     hasFactorPredictors = isTRUE(methodScore$student$hasFactorPredictors[1])
   }
 
-  if (!isTRUE(hasFactorPredictors)) {
-    factorMetricLabels = c(
-      "Reference group handled correctly",
-      "Reference-group coverage adequate",
-      "Comparison structure clear"
-    )
-    factorRows = metricTable$label %in% factorMetricLabels
+  if (!is.null(methodScore$student) && "hasInteractionTerms" %in% names(methodScore$student)) {
+    hasInteractionTerms = isTRUE(methodScore$student$hasInteractionTerms[1])
+  }
 
-    if (any(factorRows)) {
-      metricTable$studentValue[factorRows] = NA_real_
-      metricTable$maxValue[factorRows] = 0
-      metricTable$marksLost[factorRows] = 0
-      metricTable$status[factorRows] = "not_applicable"
-      metricTable$reason[factorRows] = paste0(
-        metricTable$label[factorRows],
+  markMetricsNotApplicable = function(labels) {
+    rows = metricTable$label %in% labels
+
+    if (any(rows)) {
+      metricTable$studentValue[rows] <<- NA_real_
+      metricTable$maxValue[rows] <<- 0
+      metricTable$marksLost[rows] <<- 0
+      metricTable$status[rows] <<- "not_applicable"
+      metricTable$reason[rows] <<- paste0(
+        metricTable$label[rows],
         " was not applicable to this model."
       )
     }
+  }
+
+  if (!isTRUE(hasFactorPredictors)) {
+    markMetricsNotApplicable(c(
+      "Reference group handled correctly",
+      "Reference-group coverage adequate",
+      "Comparison structure clear"
+    ))
+  }
+
+  if (!isTRUE(hasInteractionTerms)) {
+    markMetricsNotApplicable(c(
+      "Interaction coverage adequate",
+      "Interaction substance correct"
+    ))
   }
 
   keepCols = intersect(
@@ -372,6 +388,21 @@ extractDeveloperScoringInteractionInfo = function(model) {
 #'
 #' @return Logical scalar.
 #' @keywords internal
+#' Detect whether a developer scoring model has interaction terms
+#'
+#' @param model A fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectDeveloperScoringInteractionTerms = function(model) {
+  tryCatch({
+    termLabels = attr(stats::terms(model), "term.labels")
+    any(grepl(":", termLabels, fixed = TRUE))
+  }, error = function(e) {
+    FALSE
+  })
+}
+
 detectDeveloperScoringFactorPredictors = function(model) {
   if (is.null(model)) {
     return(FALSE)
@@ -512,7 +543,8 @@ buildDeveloperScoringWmfmModel = function(
       sourceFunction = "appDeveloperScoring",
       exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
       package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_,
-      hasFactorPredictors = detectDeveloperScoringFactorPredictors(model)
+      hasFactorPredictors = detectDeveloperScoringFactorPredictors(model),
+      hasInteractionTerms = detectDeveloperScoringInteractionTerms(model)
     )
   )
 }
@@ -665,6 +697,7 @@ buildDeveloperScoringJsonPayload = function(
         modelType = input$model_type %||% NULL
       ),
       hasFactorPredictors = detectDeveloperScoringFactorPredictors(model),
+      hasInteractionTerms = detectDeveloperScoringInteractionTerms(model),
       formula = formulaText,
       exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
       package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_,

@@ -367,3 +367,81 @@ testthat::test_that("factor group mean comparisons count as effect-scale interpr
   testthat::expect_equal(scored$numericExpressionAdequate, 2L)
   testthat::expect_equal(scored$mainEffectCoverageAdequate, 2L)
 })
+
+
+testthat::test_that("non-interaction models mark interaction criteria not applicable", {
+  rawRecord = data.frame(
+    explanationText = paste(
+      "Female students have a predicted mean exam mark of 82,",
+      "while male students have a predicted mean exam mark of 63.",
+      "Overall, female students achieve higher final exam marks than male students."
+    ),
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = FALSE,
+    comparisonLanguageMention = TRUE,
+    effectDirectionClaim = "increase",
+    effectScaleClaim = "not_stated",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = FALSE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecord, penaliseDuplicates = FALSE)
+  feedback = summariseWmfmGradeLosses(scored, method = "deterministic")
+  metricSummary = feedback$metricSummary
+  interactionRows = metricSummary$metric %in% c(
+    "interactionCoverageAdequate",
+    "interactionSubstantiveCorrect"
+  )
+
+  testthat::expect_true(all(is.na(scored$interactionCoverageAdequate)))
+  testthat::expect_true(all(is.na(scored$interactionSubstantiveCorrect)))
+  testthat::expect_true(all(metricSummary$status[interactionRows] == "not_applicable"))
+  testthat::expect_true(all(metricSummary$maxValue[interactionRows] == 0))
+  testthat::expect_true(all(metricSummary$marksLost[interactionRows] == 0))
+})
+
+
+testthat::test_that("interaction models continue to score interaction criteria", {
+  rawRecord = data.frame(
+    explanationText = paste(
+      "The effect of attendance differs by gender.",
+      "The attendance slope is steeper for female students than for male students."
+    ),
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = TRUE,
+    interactionMinPValue = 0.01,
+    interactionAlpha = 0.05,
+    comparisonLanguageMention = TRUE,
+    conditionalLanguageMention = TRUE,
+    interactionMention = TRUE,
+    interactionSubstantiveClaim = "difference_claimed_cautiously",
+    effectDirectionClaim = "mixed_or_both",
+    effectScaleClaim = "additive",
+    referenceGroupMention = TRUE,
+    uncertaintyMention = TRUE,
+    ciMention = FALSE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecord, penaliseDuplicates = FALSE)
+
+  testthat::expect_false(is.na(scored$interactionCoverageAdequate))
+  testthat::expect_false(is.na(scored$interactionSubstantiveCorrect))
+  testthat::expect_equal(scored$interactionCoverageAdequate, 2L)
+  testthat::expect_equal(scored$interactionSubstantiveCorrect, 2L)
+})
