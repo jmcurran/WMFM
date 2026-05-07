@@ -53,6 +53,31 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
 
   metricTable = methodScore$metricSummary
 
+  hasFactorPredictors = FALSE
+  if (!is.null(methodScore$student) && "hasFactorPredictors" %in% names(methodScore$student)) {
+    hasFactorPredictors = isTRUE(methodScore$student$hasFactorPredictors[1])
+  }
+
+  if (!isTRUE(hasFactorPredictors)) {
+    factorMetricLabels = c(
+      "Reference group handled correctly",
+      "Reference-group coverage adequate",
+      "Comparison structure clear"
+    )
+    factorRows = metricTable$label %in% factorMetricLabels
+
+    if (any(factorRows)) {
+      metricTable$studentValue[factorRows] = NA_real_
+      metricTable$maxValue[factorRows] = 0
+      metricTable$marksLost[factorRows] = 0
+      metricTable$status[factorRows] = "not_applicable"
+      metricTable$reason[factorRows] = paste0(
+        metricTable$label[factorRows],
+        " was not applicable to this model."
+      )
+    }
+  }
+
   keepCols = intersect(
     c("label", "studentValue", "maxValue", "marksLost", "status", "reason"),
     names(metricTable)
@@ -878,6 +903,21 @@ registerDeveloperScoringGradingObservers = function(
   developerRepeatedStatus = shiny::reactiveVal(
     "Repeated scoring has not been run in this session. Start with 3 runs for a new example."
   )
+
+  resetDeveloperScoringState = function() {
+    developerGrade(NULL)
+    developerRepeatedResult(NULL)
+    developerScoreStatus(
+      "Score the current explanation to inspect the deterministic grading object."
+    )
+    developerRepeatedStatus(
+      "Repeated scoring has not been run in this session. Start with 3 runs for a new example."
+    )
+  }
+
+  shiny::observeEvent(rv$loadedExample, {
+    resetDeveloperScoringState()
+  }, ignoreInit = TRUE)
 
   developerScoringTabInserted = shiny::reactiveVal(FALSE)
 

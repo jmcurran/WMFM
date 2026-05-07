@@ -16,7 +16,7 @@ buildWmfmRunRecord(
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   interactionAlpha = 0.05,
-  hasFactorPredictors = NA
+  hasFactorPredictors = FALSE
 )
 }
 \arguments{
@@ -46,9 +46,10 @@ extracted.}
 \item{interactionAlpha}{Numeric interaction threshold metadata stored with
 the run record.}
 
-\item{hasFactorPredictors}{Logical scalar. Does the fitted model contain at
-least one factor or character predictor? Used to mark factor-only scoring
-criteria as not applicable.}
+\item{hasFactorPredictors}{Logical. Whether the fitted model includes at
+least one factor or character predictor. Used by downstream scoring gates
+to distinguish genuinely applicable factor criteria from numeric-only
+models.}
 }
 \value{
 Named list containing one structured raw run record.

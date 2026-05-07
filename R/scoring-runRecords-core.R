@@ -193,6 +193,21 @@ scoreWmfmRunRecordsCore = function(
   outcomeMention = getLogicalColumn(runsDf, "outcomeMention")
   predictorMention = getLogicalColumn(runsDf, "predictorMention")
 
+  factorGroupMeanComparisonMention = hasFactorPredictors &
+    !hasInteractionTerms &
+    comparisonLanguageMention &
+    grepl(
+      paste(
+        "\\b(predicted|estimated|expected) (mean|average)\\b",
+        "\\b(mean|average) (exam|response|outcome)? ?(mark|score)\\b",
+        "\\bstudents? (have|has) (a )?(predicted|estimated|expected)? ?(mean|average)\\b",
+        sep = "|"
+      ),
+      explanationText,
+      ignore.case = TRUE,
+      perl = TRUE
+    )
+
   effectDirectionClaim = getCharacterColumn(runsDf, "effectDirectionClaim", fallbackNames = c("effectDirection"))
   effectScaleClaim = getCharacterColumn(runsDf, "effectScaleClaim", fallbackNames = c("effectScale"))
   interactionSubstantiveClaim = getCharacterColumn(runsDf, "interactionSubstantiveClaim", fallbackNames = c("interactionClaim"))
@@ -236,6 +251,7 @@ scoreWmfmRunRecordsCore = function(
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim %in% c("additive", "multiplicative", "probability_or_odds")] = 2L
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim == "mixed_or_unclear"] = 1L
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim == "not_stated"] = 0L
+  effectScaleAppropriateComputed[factorGroupMeanComparisonMention] = 2L
   effectScaleAppropriate = overwriteIfMissing(effectScaleAppropriateExisting, effectScaleAppropriateComputed)
 
   referenceGroupHandledCorrectlyComputed = rep(1L, nrow(runsDf))
@@ -254,26 +270,22 @@ scoreWmfmRunRecordsCore = function(
       !hasInteractionTerms &
       !(comparisonLanguageMention | conditionalLanguageMention)
   ] = 1L
-  referenceGroupHandledCorrectlyComputed[!hasFactorPredictors] = NA_integer_
   referenceGroupHandledCorrectly = overwriteIfMissing(referenceGroupHandledCorrectlyExisting, referenceGroupHandledCorrectlyComputed)
-  referenceGroupHandledCorrectly[!hasFactorPredictors] = NA_integer_
 
-  interactionCoverageAdequateComputed = rep(NA_integer_, nrow(runsDf))
-  interactionCoverageAdequateComputed[hasInteractionTerms] = 2L
+  interactionCoverageAdequateComputed = rep(2L, nrow(runsDf))
   interactionCoverageAdequateComputed[hasInteractionTerms & !interactionMention & interactionSubstantiveClaim %in% c("not_mentioned", "", NA)] = 0L
   interactionCoverageAdequateComputed[hasInteractionTerms & (interactionMention | interactionSubstantiveClaim != "not_mentioned") & !(comparisonLanguageMention | conditionalLanguageMention)] = 1L
   interactionCoverageAdequateComputed[hasInteractionTerms & (interactionMention | interactionSubstantiveClaim != "not_mentioned") & (comparisonLanguageMention | conditionalLanguageMention)] = 2L
   interactionCoverageAdequate = overwriteIfMissing(interactionCoverageAdequateExisting, interactionCoverageAdequateComputed)
-  interactionCoverageAdequate[!hasInteractionTerms] = NA_integer_
 
-  interactionSubstantiveCorrectComputed = rep(NA_integer_, nrow(runsDf))
-  interactionSubstantiveCorrectComputed[hasInteractionTerms] = 2L
+  interactionSubstantiveCorrectComputed = rep(2L, nrow(runsDf))
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "not_mentioned"] = 0L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "unclear"] = 1L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "no_clear_difference"] = 1L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim %in% c("difference_claimed_cautiously", "difference_claimed_strongly")] = 2L
+  interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("difference_claimed_cautiously", "difference_claimed_strongly")] = 0L
+  interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned", "not_applicable", "unclear", "")] = 2L
   interactionSubstantiveCorrect = overwriteIfMissing(interactionSubstantiveCorrectExisting, interactionSubstantiveCorrectComputed)
-  interactionSubstantiveCorrect[!hasInteractionTerms] = NA_integer_
 
   interactionEvidenceAppropriateComputed = rep("unclear", nrow(runsDf))
   interactionEvidenceAppropriateComputed[!hasInteractionTerms] = "not_applicable"
@@ -310,6 +322,7 @@ scoreWmfmRunRecordsCore = function(
   mainEffectCoverageAdequateComputed = rep(0L, nrow(runsDf))
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated"] = 1L
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated" & effectScaleClaim != "not_stated"] = 2L
+  mainEffectCoverageAdequateComputed[factorGroupMeanComparisonMention] = 2L
   mainEffectCoverageAdequateComputed[!explanationPresent] = 0L
   mainEffectCoverageAdequate = overwriteIfMissing(mainEffectCoverageAdequateExisting, mainEffectCoverageAdequateComputed)
 
@@ -324,9 +337,7 @@ scoreWmfmRunRecordsCore = function(
       !referenceGroupMention &
       !(comparisonLanguageMention | conditionalLanguageMention)
   ] = 0L
-  referenceGroupCoverageAdequateComputed[!hasFactorPredictors] = NA_integer_
   referenceGroupCoverageAdequate = overwriteIfMissing(referenceGroupCoverageAdequateExisting, referenceGroupCoverageAdequateComputed)
-  referenceGroupCoverageAdequate[!hasFactorPredictors] = NA_integer_
 
   hasNumericDigits = grepl("\\d", explanationText, perl = TRUE)
   hasNumberWords = grepl(
@@ -390,15 +401,16 @@ scoreWmfmRunRecordsCore = function(
       hasNumericMagnitude &
       additiveNumericMention
   ] = 1L
+  numericExpressionAdequateComputed[
+    factorGroupMeanComparisonMention &
+      hasNumericMagnitude
+  ] = 2L
   numericExpressionAdequate = overwriteIfMissing(numericExpressionAdequateExisting, numericExpressionAdequateComputed)
 
-  comparisonStructureClearComputed = rep(NA_integer_, nrow(runsDf))
-  comparisonApplicable = hasFactorPredictors | hasInteractionTerms
-  comparisonStructureClearComputed[comparisonApplicable] = 1L
-  comparisonStructureClearComputed[comparisonApplicable & (comparisonLanguageMention | conditionalLanguageMention)] = 2L
+  comparisonStructureClearComputed = rep(1L, nrow(runsDf))
+  comparisonStructureClearComputed[comparisonLanguageMention | conditionalLanguageMention] = 2L
   comparisonStructureClearComputed[hasInteractionTerms & !(comparisonLanguageMention | conditionalLanguageMention)] = 0L
   comparisonStructureClear = overwriteIfMissing(comparisonStructureClearExisting, comparisonStructureClearComputed)
-  comparisonStructureClear[!comparisonApplicable] = NA_integer_
 
   clarityAdequateComputed = rep(1L, nrow(runsDf))
   preferredLength = wordCount >= as.integer(preferredMinWords) & wordCount <= as.integer(preferredMaxWords)
@@ -493,7 +505,6 @@ scoreWmfmRunRecordsCore = function(
   scoredDf$isExactDuplicate = isExactDuplicate
   scoredDf$duplicatePenaltyApplied = ifelse(isExactDuplicate & isTRUE(penaliseDuplicates), as.numeric(duplicatePenalty), 0)
 
-  scoredDf$hasFactorPredictors = hasFactorPredictors
   scoredDf$interactionEvidenceAppropriate = interactionEvidenceAppropriate
   scoredDf$effectDirectionCorrect = effectDirectionCorrect
   scoredDf$effectScaleAppropriate = effectScaleAppropriate

@@ -323,3 +323,47 @@ testthat::test_that("developer scoring tab is not rendered while developer mode 
   testthat::expect_match(developerObserverText, "removeTab", fixed = TRUE)
   testthat::expect_match(developerObserverText, "developer_scoring_grading", fixed = TRUE)
 })
+
+testthat::test_that("developer scoring resets when a new example loads", {
+  developerObserverText = paste(
+    deparse(body(registerDeveloperScoringGradingObservers)),
+    collapse = "\n"
+  )
+
+  testthat::expect_match(developerObserverText, "resetDeveloperScoringState", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "observeEvent(rv$loadedExample", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "developerGrade(NULL)", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "developerRepeatedResult(NULL)", fixed = TRUE)
+})
+
+testthat::test_that("factor group mean comparisons count as effect-scale interpretation", {
+  rawRecord = data.frame(
+    explanationText = paste(
+      "Female students have a predicted mean exam mark of 82,",
+      "while male students have a predicted mean exam mark of 63.",
+      "Overall, female students achieve higher final exam marks than male students."
+    ),
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = FALSE,
+    comparisonLanguageMention = TRUE,
+    effectDirectionClaim = "increase",
+    effectScaleClaim = "not_stated",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = FALSE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecord, penaliseDuplicates = FALSE)
+
+  testthat::expect_equal(scored$effectScaleAppropriate, 2L)
+  testthat::expect_equal(scored$numericExpressionAdequate, 2L)
+  testthat::expect_equal(scored$mainEffectCoverageAdequate, 2L)
+})
