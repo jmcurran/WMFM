@@ -332,7 +332,10 @@ summariseWmfmGradeLosses = function(
 
   studentVals = suppressWarnings(as.numeric(studentScoreDf[1, metricOrder, drop = FALSE]))
   maxVals = unname(maxScoreMap[metricOrder])
+  applicable = !is.na(studentVals)
   marksLost = pmax(maxVals - studentVals, 0)
+  marksLost[!applicable] = 0
+  maxVals[!applicable] = 0
 
   referenceVals = NULL
   referenceDelta = NULL
@@ -348,12 +351,18 @@ summariseWmfmGradeLosses = function(
     studentValue = studentVals,
     maxValue = maxVals,
     marksLost = marksLost,
+    applicable = applicable,
+    status = ifelse(applicable, "scored", "not_applicable"),
     stringsAsFactors = FALSE
   )
 
   metricSummary$reason = vapply(
     seq_len(nrow(metricSummary)),
     function(i) {
+      if (!isTRUE(metricSummary$applicable[i])) {
+        return(paste0(metricSummary$label[i], " was not applicable to this model."))
+      }
+
       buildReason(
         metric = metricSummary$metric[i],
         marksLost = metricSummary$marksLost[i],
@@ -375,7 +384,8 @@ summariseWmfmGradeLosses = function(
   }
 
   whereMarksLost = metricSummary[
-    metricSummary$metric %in% scoreMetrics & metricSummary$marksLost > 0,
+    metricSummary$applicable &
+      metricSummary$metric %in% scoreMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -390,7 +400,8 @@ summariseWmfmGradeLosses = function(
   }
 
   strengths = metricSummary[
-    metricSummary$marksLost == 0 & metricSummary$metric != "overallScore",
+    metricSummary$applicable &
+      metricSummary$marksLost == 0 & metricSummary$metric != "overallScore",
     c("metric", "label", "studentValue", "maxValue"),
     drop = FALSE
   ]
@@ -415,7 +426,8 @@ summariseWmfmGradeLosses = function(
   }
 
   missingElements = metricSummary[
-    metricSummary$metric %in% missingElementMetrics & metricSummary$marksLost > 0,
+    metricSummary$applicable &
+      metricSummary$metric %in% missingElementMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost"),
     drop = FALSE
   ]
@@ -442,7 +454,8 @@ summariseWmfmGradeLosses = function(
   }
 
   weaknesses = metricSummary[
-    metricSummary$marksLost > 0 & metricSummary$metric %in% setdiff(scoreMetrics, c("overallScore", missingElementMetrics)),
+    metricSummary$applicable &
+      metricSummary$marksLost > 0 & metricSummary$metric %in% setdiff(scoreMetrics, c("overallScore", missingElementMetrics)),
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -460,7 +473,8 @@ summariseWmfmGradeLosses = function(
 
   if (identical(method, "llm")) {
     advisoryFlags = metricSummary[
-      metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0,
+      metricSummary$applicable &
+        metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0,
       c("metric", "label", "studentValue", "maxValue", "marksLost"),
       drop = FALSE
     ]

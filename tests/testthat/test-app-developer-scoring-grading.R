@@ -233,3 +233,62 @@ testthat::test_that("developer scoring UI exposes JSON download control", {
   testthat::expect_match(developerObserverText, "downloadHandler", fixed = TRUE)
   testthat::expect_match(developerObserverText, "buildDeveloperScoringJsonPayload", fixed = TRUE)
 })
+
+testthat::test_that("developer scoring JSON sanitises provider S3 objects", {
+  providerObject = list(content = "hello", meta = list(cost = 1))
+  class(providerObject) = c("ellmer_output", "list")
+
+  payload = list(
+    schema = "wmfm-developer-scoring-export",
+    providerObject = providerObject
+  )
+
+  jsonText = buildDeveloperScoringJsonText(payload)
+  parsed = jsonlite::fromJSON(jsonText, simplifyVector = FALSE)
+
+  testthat::expect_equal(parsed$schema, "wmfm-developer-scoring-export")
+  testthat::expect_equal(parsed$providerObject$content, "hello")
+  testthat::expect_equal(parsed$providerObject$meta$cost, 1)
+})
+
+testthat::test_that("numeric-only developer scoring marks factor criteria not applicable", {
+  data = data.frame(
+    Exam = c(60, 65, 70, 75, 80),
+    Test = c(55, 60, 68, 72, 78)
+  )
+  model = stats::lm(Exam ~ Test, data = data)
+  rv = list(
+    data = data,
+    userDatasetContext = "Synthetic scoring test data.",
+    researchQuestion = "Does Test predict Exam?",
+    modelEquations = NULL,
+    modelExplanation = paste(
+      "Higher Test values are associated with higher Exam values.",
+      "The fitted line gives an additive change in Exam for each one-unit change in Test."
+    ),
+    modelExplanationAudit = NULL
+  )
+  input = list(
+    formula_text = "Exam ~ Test",
+    model_type = "lm"
+  )
+
+  gradeObj = scoreDeveloperExplanation(
+    model = model,
+    rv = rv,
+    input = input,
+    explanationText = rv$modelExplanation,
+    method = "deterministic"
+  )
+  metricTable = buildDeveloperScoringMetricTable(gradeObj)
+
+  factorRows = metricTable$label %in% c(
+    "Reference group handled correctly",
+    "Reference-group coverage adequate",
+    "Comparison structure clear"
+  )
+
+  testthat::expect_true(all(metricTable$status[factorRows] == "not_applicable"))
+  testthat::expect_true(all(metricTable$maxValue[factorRows] == 0))
+  testthat::expect_true(all(metricTable$marksLost[factorRows] == 0))
+})

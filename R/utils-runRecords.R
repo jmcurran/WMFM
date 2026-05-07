@@ -85,6 +85,9 @@
 #'   extracted.
 #' @param interactionAlpha Numeric interaction threshold metadata stored with
 #'   the run record.
+#' @param hasFactorPredictors Logical scalar. Does the fitted model contain at
+#'   least one factor or character predictor? Used to mark factor-only scoring
+#'   criteria as not applicable.
 #'
 #' @return Named list containing one structured raw run record.
 #' @export
@@ -99,7 +102,8 @@ buildWmfmRunRecord = function(
     errorMessage = NA_character_,
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
-    interactionAlpha = 0.05
+    interactionAlpha = 0.05,
+    hasFactorPredictors = NA
 ) {
   detectPatternLocal = function(text, pattern) {
     if (is.na(text) || !nzchar(trimws(text))) {
@@ -321,6 +325,11 @@ buildWmfmRunRecord = function(
   equationsText = normaliseScalarText(equationsText)
   errorMessage = normaliseScalarText(errorMessage)
   interactionTerms = as.character(interactionTerms)
+  hasFactorPredictors = as.logical(hasFactorPredictors)[1]
+
+  if (is.na(hasFactorPredictors)) {
+    hasFactorPredictors = FALSE
+  }
 
   if (length(interactionTerms) == 1 && is.na(interactionTerms)) {
     interactionTerms = character(0)
@@ -529,6 +538,7 @@ buildWmfmRunRecord = function(
     equationsText = equationsText,
     interactionTerms = paste(interactionTerms, collapse = " | "),
     hasInteractionTerms = hasInteractionTerms,
+    hasFactorPredictors = hasFactorPredictors,
     nInteractionTerms = nInteractionTerms,
     interactionMinPValue = interactionMinPValue,
     interactionAlpha = interactionAlpha,
@@ -594,6 +604,31 @@ buildWmfmGradeRunRecord = function(
   exampleName = x$meta$exampleName %||% NA_character_
   packageName = x$meta$package %||% NA_character_
 
+  hasFactorPredictors = isTRUE(x$meta$hasFactorPredictors)
+
+  if (!isTRUE(hasFactorPredictors)) {
+    hasFactorPredictors = tryCatch({
+      modelFrame = stats::model.frame(x$model)
+      termLabels = attr(stats::terms(x$model), "term.labels")
+      predictorNames = unique(unlist(strsplit(termLabels, ":", fixed = TRUE)))
+      predictorNames = intersect(predictorNames, names(modelFrame))
+
+      if (length(predictorNames) < 1L) {
+        FALSE
+      } else {
+        any(vapply(
+          modelFrame[predictorNames],
+          function(column) {
+            is.factor(column) || is.character(column)
+          },
+          logical(1)
+        ))
+      }
+    }, error = function(e) {
+      FALSE
+    })
+  }
+
   out = buildWmfmRunRecord(
     runId = as.integer(runId),
     exampleName = exampleName,
@@ -605,7 +640,8 @@ buildWmfmGradeRunRecord = function(
     errorMessage = NA_character_,
     interactionTerms = x$interactionTerms %||% character(0),
     interactionMinPValue = x$interactionMinPValue %||% NA_real_,
-    interactionAlpha = x$meta$interactionAlpha %||% 0.05
+    interactionAlpha = x$meta$interactionAlpha %||% 0.05,
+    hasFactorPredictors = hasFactorPredictors
   )
 
   out$answerRole = answerRole

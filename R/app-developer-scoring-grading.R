@@ -54,7 +54,7 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
   metricTable = methodScore$metricSummary
 
   keepCols = intersect(
-    c("label", "studentValue", "maxValue", "marksLost", "reason"),
+    c("label", "studentValue", "maxValue", "marksLost", "status", "reason"),
     names(metricTable)
   )
 
@@ -341,6 +341,39 @@ extractDeveloperScoringInteractionInfo = function(model) {
   )
 }
 
+#' Detect whether a model contains factor predictors
+#'
+#' @param model A fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+detectDeveloperScoringFactorPredictors = function(model) {
+  if (is.null(model)) {
+    return(FALSE)
+  }
+
+  tryCatch({
+    modelFrame = stats::model.frame(model)
+    termLabels = attr(stats::terms(model), "term.labels")
+    predictorNames = unique(unlist(strsplit(termLabels, ":", fixed = TRUE)))
+    predictorNames = intersect(predictorNames, names(modelFrame))
+
+    if (length(predictorNames) < 1L) {
+      return(FALSE)
+    }
+
+    any(vapply(
+      modelFrame[predictorNames],
+      function(column) {
+        is.factor(column) || is.character(column)
+      },
+      logical(1)
+    ))
+  }, error = function(e) {
+    FALSE
+  })
+}
+
 #' Resolve the developer scoring model type
 #'
 #' @param model A fitted model object.
@@ -453,7 +486,8 @@ buildDeveloperScoringWmfmModel = function(
     meta = list(
       sourceFunction = "appDeveloperScoring",
       exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
-      package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_
+      package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_,
+      hasFactorPredictors = detectDeveloperScoringFactorPredictors(model)
     )
   )
 }
@@ -605,6 +639,7 @@ buildDeveloperScoringJsonPayload = function(
         model = model,
         modelType = input$model_type %||% NULL
       ),
+      hasFactorPredictors = detectDeveloperScoringFactorPredictors(model),
       formula = formulaText,
       exampleName = attr(model, "wmfm_example_name", exact = TRUE) %||% NA_character_,
       package = attr(model, "wmfm_dataset_package", exact = TRUE) %||% NA_character_,
@@ -625,6 +660,81 @@ buildDeveloperScoringJsonPayload = function(
   )
 }
 
+#' Sanitise developer scoring export values for JSON
+#'
+#' Converts classed objects returned by providers or grade internals into plain
+#' JSON-safe values before serialisation.
+#'
+#' @param x Object to sanitise.
+#' @param depth Current recursion depth.
+#' @param maxDepth Maximum recursion depth.
+#'
+#' @return A plain JSON-safe object.
+#' @keywords internal
+sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
+  if (depth > maxDepth) {
+    return("<max depth reached>")
+  }
+
+  if (is.null(x)) {
+    return(NULL)
+  }
+
+  if (inherits(x, "POSIXt")) {
+    return(as.character(x))
+  }
+
+  if (is.data.frame(x)) {
+    out = as.data.frame(x, stringsAsFactors = FALSE)
+    for (colName in names(out)) {
+      out[[colName]] = sanitiseDeveloperScoringJsonValue(
+        out[[colName]],
+        depth = depth + 1L,
+        maxDepth = maxDepth
+      )
+    }
+    rownames(out) = NULL
+    return(out)
+  }
+
+  if (is.factor(x)) {
+    return(as.character(x))
+  }
+
+  if (is.atomic(x)) {
+    if (is.numeric(x)) {
+      x[!is.finite(x)] = NA_real_
+    }
+    return(unname(x))
+  }
+
+  if (is.function(x) || is.environment(x) || inherits(x, "externalptr")) {
+    return(paste0("<", paste(class(x), collapse = "/"), ">"))
+  }
+
+  if (is.list(x)) {
+    if (!is.null(class(x)) && length(class(x)) > 0L) {
+      x = unclass(x)
+    }
+
+    out = lapply(
+      x,
+      sanitiseDeveloperScoringJsonValue,
+      depth = depth + 1L,
+      maxDepth = maxDepth
+    )
+
+    if (is.null(names(out))) {
+      return(out)
+    }
+
+    names(out) = make.names(names(out), unique = TRUE)
+    return(out)
+  }
+
+  as.character(x)
+}
+
 #' Build developer scoring JSON export text
 #'
 #' @param payload A developer scoring export payload.
@@ -632,6 +742,8 @@ buildDeveloperScoringJsonPayload = function(
 #' @return A JSON character scalar.
 #' @keywords internal
 buildDeveloperScoringJsonText = function(payload) {
+  payload = sanitiseDeveloperScoringJsonValue(payload)
+
   jsonlite::toJSON(
     payload,
     auto_unbox = TRUE,
@@ -1011,12 +1123,12 @@ registerDeveloperScoringGradingObservers = function(
       )
     },
     content = function(file) {
-      writeLines(
-        buildDeveloperScoringJsonText(developerScoringJsonPayload()),
-        con = file,
-        useBytes = TRUE
-      )
-    }
+      jsonText = buildDeveloperScoringJsonText(developerScoringJsonPayload())
+      con = file(file, open = "wb")
+      on.exit(close(con), add = TRUE)
+      writeBin(charToRaw(jsonText), con = con)
+    },
+    contentType = "application/json"
   )
 
   list(
