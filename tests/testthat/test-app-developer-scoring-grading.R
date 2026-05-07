@@ -90,8 +90,10 @@ testthat::test_that("UI and server register developer scoring controls", {
     collapse = "\n"
   )
 
-  testthat::expect_match(appUiText, 'uiOutput("developerScoringGradingUi")', fixed = TRUE)
+  testthat::expect_false(grepl('tabPanel\\("Scoring & Grading"', appUiText))
   testthat::expect_match(appServerText, "registerDeveloperScoringGradingObservers", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "insertTab", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "developer_scoring_grading", fixed = TRUE)
   testthat::expect_match(developerObserverText, "developerScoringRunCount", fixed = TRUE)
   testthat::expect_match(developerObserverText, "runRepeatedScoringBtn", fixed = TRUE)
   testthat::expect_match(developerObserverText, "withProgress", fixed = TRUE)
@@ -291,4 +293,33 @@ testthat::test_that("numeric-only developer scoring marks factor criteria not ap
   testthat::expect_true(all(metricTable$status[factorRows] == "not_applicable"))
   testthat::expect_true(all(metricTable$maxValue[factorRows] == 0))
   testthat::expect_true(all(metricTable$marksLost[factorRows] == 0))
+})
+
+
+testthat::test_that("developer scoring JSON sanitises classed atomic provider values", {
+  providerObject = structure("hello", class = c("ellmer_output", "character"))
+
+  payload = list(
+    schema = "wmfm-developer-scoring-export",
+    providerObject = providerObject
+  )
+
+  jsonText = buildDeveloperScoringJsonText(payload)
+  parsed = jsonlite::fromJSON(jsonText, simplifyVector = FALSE)
+
+  testthat::expect_equal(parsed$schema, "wmfm-developer-scoring-export")
+  testthat::expect_equal(parsed$providerObject, "hello")
+})
+
+testthat::test_that("developer scoring tab is not rendered while developer mode is locked", {
+  appUiText = paste(deparse(body(appUI)), collapse = "\n")
+  developerObserverText = paste(
+    deparse(body(registerDeveloperScoringGradingObservers)),
+    collapse = "\n"
+  )
+
+  testthat::expect_false(grepl('tabPanel\\("Scoring & Grading"', appUiText))
+  testthat::expect_match(developerObserverText, "insertTab", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "removeTab", fixed = TRUE)
+  testthat::expect_match(developerObserverText, "developer_scoring_grading", fixed = TRUE)
 })

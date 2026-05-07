@@ -332,10 +332,6 @@ appUI = function() {
         )
       ),
 
-      tabPanel(
-        "Scoring & Grading",
-        uiOutput("developerScoringGradingUi")
-      ),
 
       tabPanel(
         "Settings",
@@ -357,7 +353,6 @@ appUI = function() {
         ),
         tags$br(), tags$br(),
         textOutput("developerModeStatus"),
-        textOutput("developerModeSessionState"),
         helpText(
           "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
         ),

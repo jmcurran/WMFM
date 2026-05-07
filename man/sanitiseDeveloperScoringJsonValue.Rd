@@ -4,7 +4,7 @@
 \alias{sanitiseDeveloperScoringJsonValue}
 \title{Sanitise developer scoring export values for JSON}
 \usage{
-sanitiseDeveloperScoringJsonValue(x, depth = 0L, maxDepth = 8L)
+sanitiseDeveloperScoringJsonValue(x, depth = 0L, maxDepth = 10L)
 }
 \arguments{
 \item{x}{Object to sanitise.}
@@ -17,7 +17,7 @@ sanitiseDeveloperScoringJsonValue(x, depth = 0L, maxDepth = 8L)
 A plain JSON-safe object.
 }
 \description{
-Converts classed objects returned by providers or grade internals into plain
-JSON-safe values before serialisation.
+Converts provider objects, grade internals, and classed values into plain
+JSON-safe lists, data frames, vectors, and scalars before serialisation.
 }
 \keyword{internal}

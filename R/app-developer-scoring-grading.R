@@ -662,8 +662,8 @@ buildDeveloperScoringJsonPayload = function(
 
 #' Sanitise developer scoring export values for JSON
 #'
-#' Converts classed objects returned by providers or grade internals into plain
-#' JSON-safe values before serialisation.
+#' Converts provider objects, grade internals, and classed values into plain
+#' JSON-safe lists, data frames, vectors, and scalars before serialisation.
 #'
 #' @param x Object to sanitise.
 #' @param depth Current recursion depth.
@@ -671,7 +671,7 @@ buildDeveloperScoringJsonPayload = function(
 #'
 #' @return A plain JSON-safe object.
 #' @keywords internal
-sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
+sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 10L) {
   if (depth > maxDepth) {
     return("<max depth reached>")
   }
@@ -682,6 +682,10 @@ sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
 
   if (inherits(x, "POSIXt")) {
     return(as.character(x))
+  }
+
+  if (is.function(x) || is.environment(x) || inherits(x, "externalptr")) {
+    return(paste0("<", paste(class(x), collapse = "/"), ">"))
   }
 
   if (is.data.frame(x)) {
@@ -702,20 +706,19 @@ sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
   }
 
   if (is.atomic(x)) {
-    if (is.numeric(x)) {
-      x[!is.finite(x)] = NA_real_
-    }
-    return(unname(x))
-  }
+    out = unclass(x)
+    attributes(out) = NULL
 
-  if (is.function(x) || is.environment(x) || inherits(x, "externalptr")) {
-    return(paste0("<", paste(class(x), collapse = "/"), ">"))
+    if (is.numeric(out)) {
+      out[!is.finite(out)] = NA_real_
+    }
+
+    return(unname(out))
   }
 
   if (is.list(x)) {
-    if (!is.null(class(x)) && length(class(x)) > 0L) {
-      x = unclass(x)
-    }
+    x = unclass(x)
+    attributes(x) = attributes(x)[intersect(names(attributes(x)), "names")]
 
     out = lapply(
       x,
@@ -724,15 +727,92 @@ sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
       maxDepth = maxDepth
     )
 
-    if (is.null(names(out))) {
-      return(out)
+    itemNames = names(out)
+
+    if (!is.null(itemNames)) {
+      names(out) = make.names(itemNames, unique = TRUE)
     }
 
-    names(out) = make.names(names(out), unique = TRUE)
     return(out)
   }
 
   as.character(x)
+}
+
+#' Detect remaining non-JSON-safe developer scoring values
+#'
+#' @param x Object to inspect.
+#' @param path Character path used in diagnostics.
+#' @param depth Current recursion depth.
+#' @param maxDepth Maximum recursion depth.
+#'
+#' @return Character vector of problematic paths.
+#' @keywords internal
+findDeveloperScoringJsonUnsafePaths = function(
+    x,
+    path = "payload",
+    depth = 0L,
+    maxDepth = 12L
+) {
+  if (depth > maxDepth || is.null(x)) {
+    return(character(0))
+  }
+
+  if (is.function(x) || is.environment(x) || inherits(x, "externalptr")) {
+    return(path)
+  }
+
+  if (is.data.frame(x)) {
+    return(unlist(lapply(names(x), function(colName) {
+      findDeveloperScoringJsonUnsafePaths(
+        x[[colName]],
+        path = paste0(path, "$", colName),
+        depth = depth + 1L,
+        maxDepth = maxDepth
+      )
+    }), use.names = FALSE))
+  }
+
+  if (is.list(x)) {
+    objectClass = attr(x, "class", exact = TRUE)
+
+    if (!is.null(objectClass) && !identical(objectClass, "list")) {
+      return(path)
+    }
+
+    itemNames = names(x)
+
+    if (is.null(itemNames)) {
+      itemNames = as.character(seq_along(x))
+    }
+
+    return(unlist(lapply(seq_along(x), function(idx) {
+      findDeveloperScoringJsonUnsafePaths(
+        x[[idx]],
+        path = paste0(path, "$", make.names(itemNames[[idx]])),
+        depth = depth + 1L,
+        maxDepth = maxDepth
+      )
+    }), use.names = FALSE))
+  }
+
+  if (is.atomic(x)) {
+    objectClass = attr(x, "class", exact = TRUE)
+
+    if (!is.null(objectClass)) {
+      return(path)
+    }
+
+    return(character(0))
+  }
+
+  objectClass = attr(x, "class", exact = TRUE)
+
+  if (!is.null(objectClass)) {
+    return(path)
+  }
+
+  character(0)
 }
 
 #' Build developer scoring JSON export text
@@ -743,6 +823,17 @@ sanitiseDeveloperScoringJsonValue = function(x, depth = 0L, maxDepth = 8L) {
 #' @keywords internal
 buildDeveloperScoringJsonText = function(payload) {
   payload = sanitiseDeveloperScoringJsonValue(payload)
+  unsafePaths = findDeveloperScoringJsonUnsafePaths(payload)
+
+  if (length(unsafePaths) > 0L) {
+    stop(
+      paste(
+        "Developer scoring JSON still contains non-serialisable values at:",
+        paste(unsafePaths, collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
 
   jsonlite::toJSON(
     payload,
@@ -788,14 +879,38 @@ registerDeveloperScoringGradingObservers = function(
     "Repeated scoring has not been run in this session. Start with 3 runs for a new example."
   )
 
+  developerScoringTabInserted = shiny::reactiveVal(FALSE)
+
+  shiny::observe({
+    if (isTRUE(developerModeUnlocked())) {
+      if (!isTRUE(developerScoringTabInserted())) {
+        shiny::insertTab(
+          inputId = "main_tabs",
+          target = "Plot",
+          position = "after",
+          select = FALSE,
+          tab = shiny::tabPanel(
+            "Scoring & Grading",
+            value = "developer_scoring_grading",
+            shiny::uiOutput("developerScoringGradingUi")
+          ),
+          session = session
+        )
+        developerScoringTabInserted(TRUE)
+      }
+    } else if (isTRUE(developerScoringTabInserted())) {
+      shiny::removeTab(
+        inputId = "main_tabs",
+        target = "developer_scoring_grading",
+        session = session
+      )
+      developerScoringTabInserted(FALSE)
+    }
+  })
+
   output$developerScoringGradingUi = shiny::renderUI({
     if (!isTRUE(developerModeUnlocked())) {
-      return(shiny::tagList(
-        shiny::h4("Scoring and grading"),
-        shiny::helpText(
-          "Unlock developer mode in Settings to inspect scoring and grading diagnostics."
-        )
-      ))
+      return(NULL)
     }
 
     shiny::tagList(
@@ -1105,6 +1220,10 @@ registerDeveloperScoringGradingObservers = function(
   })
 
   output$developerScoringJsonPreview = shiny::renderText({
+    if (!isTRUE(developerModeUnlocked())) {
+      return("")
+    }
+
     payload = developerScoringJsonPayload()
     paste(
       "JSON export ready.",
@@ -1123,6 +1242,10 @@ registerDeveloperScoringGradingObservers = function(
       )
     },
     content = function(file) {
+      if (!isTRUE(developerModeUnlocked())) {
+        stop("Developer mode is locked.", call. = FALSE)
+      }
+
       jsonText = buildDeveloperScoringJsonText(developerScoringJsonPayload())
       con = file(file, open = "wb")
       on.exit(close(con), add = TRUE)
