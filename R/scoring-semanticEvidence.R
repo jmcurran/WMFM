@@ -49,6 +49,17 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     suppressWarnings(as.numeric(regmatches(matchedText, numberMatch)))
   }
 
+  extractCapturedNumber = function(pattern) {
+    match = regexec(pattern, lowerText, perl = TRUE)
+    captures = regmatches(lowerText, match)[[1]]
+
+    if (length(captures) < 2) {
+      return(NA_real_)
+    }
+
+    suppressWarnings(as.numeric(captures[2]))
+  }
+
   formulaText = tolower(as.character(getInfo("formula", ""))[1])
   researchQuestion = tolower(as.character(getInfo("researchQuestion", ""))[1])
 
@@ -87,21 +98,11 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     )
   )
 
-  extractNumberFromMatchedText = function(matchedText) {
-    numberMatches = gregexpr("[-+]?[0-9]+([.][0-9]+)?", matchedText, perl = TRUE)
-    numbers = regmatches(matchedText, numberMatches)[[1]]
-
-    if (length(numbers) == 0) {
-      return(NA_real_)
-    }
-
-    suppressWarnings(as.numeric(numbers[1]))
-  }
-
   extractGroupEstimate = function(groupPattern) {
+    numberPattern = "([-+]?[0-9]+([.][0-9]+)?)"
     numberBeforeGroupPattern = paste0(
-      "([-+]?[0-9]+([.][0-9]+)?)",
-      "[^.;,]{0,80}\\b(?:",
+      numberPattern,
+      "[^0-9.;,]{0,80}\\b(?:",
       groupPattern,
       ")\\b"
     )
@@ -109,20 +110,15 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
       "\\b(?:",
       groupPattern,
       ")\\b",
-      "(?:(?!confidence interval|95 ?%|95 percent|ci).){0,80}",
-      "([-+]?[0-9]+([.][0-9]+)?)"
+      "(?:(?!confidence interval|95 ?%|95 percent|ci)[^0-9.;,]){0,80}",
+      numberPattern
     )
 
     for (pattern in c(numberBeforeGroupPattern, groupBeforeNumberPattern)) {
-      match = regexpr(pattern, lowerText, perl = TRUE)
+      estimate = extractCapturedNumber(pattern)
 
-      if (match[1] >= 0) {
-        matchedText = regmatches(lowerText, match)
-        estimate = extractNumberFromMatchedText(matchedText)
-
-        if (!is.na(estimate)) {
-          return(estimate)
-        }
+      if (!is.na(estimate)) {
+        return(estimate)
       }
     }
 
@@ -141,7 +137,7 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
   positiveEvidence = detectPattern(
     paste(
       "higher|raises?|increase[sd]?|additional|extra|positive|larger|more",
-      "double[sd]?|multiplied|odds.*2|associated with.*higher",
+      "double[sd]?|multiplied|odds[^.;]{0,40}2|associated with[^.;]{0,80}higher",
       sep = "|"
     )
   ) || numericPositiveComparison
@@ -157,25 +153,24 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     effectDirection = "negative"
   }
 
-  scaleAdditive = detectPattern("point|mark|score|unit|slope|mean|average")
-  scaleMultiplicative = detectPattern("odds|multiplier|double[sd]?|times|probability")
+  multiplicativeEvidence = detectPattern("odds|multiplier|double[sd]?|multiplied|times")
+  additiveEvidence = detectPattern("point|mark|score|unit|slope|mean|average|difference") &&
+    !multiplicativeEvidence
   effectScale = "not_stated"
-  if (scaleAdditive && scaleMultiplicative) {
-    effectScale = "mixed_or_unclear"
-  } else if (scaleAdditive) {
+  if (additiveEvidence) {
     effectScale = "additive"
-  } else if (scaleMultiplicative) {
+  } else if (multiplicativeEvidence) {
     effectScale = "multiplicative"
   }
 
   list(
     effectDirection = effectDirection,
     effectMagnitude = extractFirstNumber(
-      "(increase|raises?|higher|additional|extra|difference|multiplier|double[sd]?)[^0-9-+]{0,40}[-+]?[0-9]+([.][0-9]+)?"
+      "(increase|raises?|higher|additional|extra|difference|multiplier|double[sd]?|multiplied)[^0-9-+]{0,40}[-+]?[0-9]+([.][0-9]+)?"
     ),
     effectScale = effectScale,
     uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|overlap|crosses zero|includes zero|contains zero|not clear|no clear"),
-    interactionAcknowledged = detectPattern("interaction|product|differs? by|difference between.*slopes|attendance effect differs"),
+    interactionAcknowledged = detectPattern("interaction|product|differs? by|difference between[^.;]{0,80}slopes|attendance effect differs"),
     comparisonMentioned = detectPattern("female|male|boys|girls|versus|compared|between|groups|similarly|difference"),
     noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|perform similarly|similar|overlap|includes zero|contains zero|crosses zero"),
     modelCannotAnswerQuestion = modelCannotAnswer,
