@@ -93,3 +93,51 @@ test_that("semantic evidence repairs missing deterministic claims before metric 
   expect_equal(scored$mainEffectCoverageAdequate, c(2L, 2L))
   expect_false(any(scored$fatalFlawDetected))
 })
+
+test_that("semantic evidence repairs comparison, uncertainty, and interaction mentions", {
+  fixtures = readDeveloperScoringFixtures()
+  sg3 = fixtures[["test-SG-3"]]
+  sg5 = fixtures[["test-SG-5"]]
+
+  rawRecords = data.frame(
+    explanationText = c(
+      sg3$repeated$runs[[2]]$explanation,
+      sg5$repeated$runs[[1]]$explanation
+    ),
+    formula = c(sg3$appState$formula, sg5$appState$formula),
+    researchQuestion = c(sg3$appState$researchQuestion, sg5$appState$researchQuestion),
+    modelType = c("lm", "lm"),
+    hasFactorPredictors = c(TRUE, TRUE),
+    hasInteractionTerms = c(FALSE, TRUE),
+    comparisonLanguageMention = c(FALSE, FALSE),
+    interactionMention = c(FALSE, FALSE),
+    effectDirectionClaim = c("not_stated", "increase"),
+    effectScaleClaim = c("not_stated", "additive"),
+    interactionSubstantiveClaim = c("not_applicable", "no_clear_difference"),
+    expectedEffectDirection = c("increase", "increase"),
+    expectedEffectScale = c("additive", "additive"),
+    referenceGroupMention = c(FALSE, FALSE),
+    uncertaintyMention = c(FALSE, FALSE),
+    ciMention = c(FALSE, FALSE),
+    usesInferentialLanguage = c(TRUE, TRUE),
+    usesDescriptiveOnlyLanguage = c(FALSE, FALSE),
+    overclaimDetected = c(FALSE, FALSE),
+    underclaimDetected = c(FALSE, FALSE),
+    conditionalLanguageMention = c(FALSE, FALSE),
+    outcomeMention = c(TRUE, TRUE),
+    predictorMention = c(TRUE, TRUE),
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_true(all(scored$semanticComparisonMentioned))
+  expect_true(all(scored$semanticUncertaintyMentioned))
+  expect_true(scored$semanticInteractionAcknowledged[2])
+
+  expect_equal(scored$referenceGroupHandledCorrectly[1], 2L)
+  expect_equal(scored$referenceGroupCoverageAdequate[1], 2L)
+  expect_equal(scored$comparisonStructureClear[1], 2L)
+  expect_equal(scored$uncertaintyHandlingAppropriate, c(2L, 2L))
+  expect_equal(scored$interactionCoverageAdequate[2], 2L)
+})

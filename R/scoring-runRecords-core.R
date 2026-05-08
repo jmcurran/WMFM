@@ -215,6 +215,13 @@ scoreWmfmRunRecordsCore = function(
   semanticDirectionClaim = semanticEvidence$semanticEffectDirectionClaim
   semanticScaleClaim = semanticEvidence$semanticEffectScaleClaim
 
+  comparisonLanguageMention = comparisonLanguageMention |
+    semanticEvidence$semanticComparisonMentioned
+  uncertaintyMention = uncertaintyMention |
+    semanticEvidence$semanticUncertaintyMentioned
+  interactionMention = interactionMention |
+    semanticEvidence$semanticInteractionAcknowledged
+
   repairDirectionIdx = effectDirectionClaim %in% c("", "not_stated", "unclear") &
     semanticDirectionClaim != "not_stated"
   effectDirectionClaim[repairDirectionIdx] = semanticDirectionClaim[repairDirectionIdx]
@@ -537,6 +544,7 @@ scoreWmfmRunRecordsCore = function(
   scoredDf$semanticComparisonMentioned = semanticEvidence$semanticComparisonMentioned
   scoredDf$semanticUncertaintyMentioned = semanticEvidence$semanticUncertaintyMentioned
   scoredDf$semanticNoClearDifferenceMentioned = semanticEvidence$semanticNoClearDifferenceMentioned
+  scoredDf$semanticInteractionAcknowledged = semanticEvidence$semanticInteractionAcknowledged
   scoredDf$semanticModelCannotAnswerQuestion = semanticEvidence$semanticModelCannotAnswerQuestion
   scoredDf$semanticAlternativeModelInterpretationProvided = semanticEvidence$semanticAlternativeModelInterpretationProvided
 
