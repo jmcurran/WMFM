@@ -612,6 +612,31 @@ scoreDeveloperExplanation = function(
 
 
 
+
+#' Extracts semantic evidence diagnostics from a scored `wmfmGrade` object.
+#'
+#' @param gradeObj A `wmfmGrade` object.
+#' @param method Character scalar naming the scoring method to inspect.
+#'
+#' @return A semantic evidence diagnostics data frame, or `NULL`.
+#' @keywords internal
+buildDeveloperScoringSemanticEvidenceTable = function(gradeObj, method = "deterministic") {
+  if (!inherits(gradeObj, "wmfmGrade")) {
+    return(NULL)
+  }
+
+  methodFeedback = gradeObj$feedback$byMethod[[method]]
+  if (!is.null(methodFeedback$semanticEvidence)) {
+    return(methodFeedback$semanticEvidence)
+  }
+
+  if (!is.null(gradeObj$feedback$semanticEvidence)) {
+    return(gradeObj$feedback$semanticEvidence)
+  }
+
+  NULL
+}
+
 #' Build a compact developer scoring grade export
 #'
 #' @param gradeObj A `wmfmGrade` object.
@@ -639,6 +664,10 @@ buildDeveloperScoringGradeExport = function(gradeObj, method = "deterministic") 
     strengths = buildDeveloperScoringLossTable(
       gradeObj = gradeObj,
       tableName = "strengths",
+      method = method
+    ),
+    semanticEvidence = buildDeveloperScoringSemanticEvidenceTable(
+      gradeObj = gradeObj,
       method = method
     ),
     objectSummaryText = buildDeveloperScoringObjectText(gradeObj)

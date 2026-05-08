@@ -239,9 +239,12 @@ score.wmfmGrade = function(
     methodScore$nRuns = nLlm
   }
 
+  semanticEvidence = buildWmfmGradeSemanticEvidenceDiagnostics(x)
+
   methodScore$student = studentScoreDf
   methodScore$modelAnswer = modelAnswerScoreDf
   methodScore$metricSummary = feedback$metricSummary
+  methodScore$semanticEvidence = semanticEvidence
   methodScore$overallScore = overallScore
   methodScore$mark = mark
   methodScore$rawOverallScore = rawOverallScore
@@ -254,7 +257,8 @@ score.wmfmGrade = function(
     weaknesses = feedback$weaknesses,
     missingElements = feedback$missingElements,
     advisoryFlags = feedback$advisoryFlags,
-    modelAnswerComparison = feedback$modelAnswerComparison
+    modelAnswerComparison = feedback$modelAnswerComparison,
+    semanticEvidence = semanticEvidence
   )
 
   x$scores$student = methodScore$student
@@ -269,6 +273,7 @@ score.wmfmGrade = function(
   x$feedback$missingElements = feedback$missingElements
   x$feedback$advisoryFlags = feedback$advisoryFlags
   x$feedback$modelAnswerComparison = feedback$modelAnswerComparison
+  x$feedback$semanticEvidence = semanticEvidence
 
   scoredMethods = unique(c(x$meta$scoredMethods %||% character(0), method))
 

@@ -178,3 +178,157 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     alternativeModelInterpretationProvided = modelCannotAnswer && detectPattern("study|study effort|study hours|additional hour|odds|passing")
   )
 }
+
+#' Build semantic evidence diagnostics from extracted evidence
+#'
+#' Converts the compact semantic evidence list into a stable diagnostics table.
+#' This table is informational only and is not used to calculate marks.
+#'
+#' @param evidence A named list produced by `extractWmfmSemanticEvidence()`.
+#'
+#' @return A data frame with one row per semantic evidence field.
+#'
+#' @keywords internal
+#' @noRd
+buildWmfmSemanticEvidenceDiagnostics = function(evidence) {
+  if (!is.list(evidence)) {
+    evidence = list()
+  }
+
+  fieldOrder = c(
+    "effectDirection",
+    "effectMagnitude",
+    "effectScale",
+    "uncertaintyMentioned",
+    "interactionAcknowledged",
+    "comparisonMentioned",
+    "noClearDifferenceMentioned",
+    "modelCannotAnswerQuestion",
+    "researchQuestionAnsweredDirectly",
+    "alternativeModelInterpretationProvided"
+  )
+
+  labelMap = c(
+    effectDirection = "Effect direction",
+    effectMagnitude = "Effect magnitude",
+    effectScale = "Effect scale",
+    uncertaintyMentioned = "Uncertainty mentioned",
+    interactionAcknowledged = "Interaction acknowledged",
+    comparisonMentioned = "Comparison mentioned",
+    noClearDifferenceMentioned = "No-clear-difference language",
+    modelCannotAnswerQuestion = "Model cannot answer question",
+    researchQuestionAnsweredDirectly = "Research question answered directly",
+    alternativeModelInterpretationProvided = "Alternative model interpretation provided"
+  )
+
+  describeValue = function(field, value) {
+    if (length(value) == 0 || is.null(value)) {
+      value = NA
+    }
+
+    if (is.logical(value)) {
+      if (isTRUE(value)) {
+        return("present")
+      }
+
+      if (identical(value, FALSE)) {
+        return("absent")
+      }
+
+      return("unknown")
+    }
+
+    if (is.numeric(value)) {
+      if (length(value) < 1 || is.na(value[1])) {
+        return("not stated")
+      }
+
+      return(as.character(round(value[1], 4)))
+    }
+
+    valueText = as.character(value[1])
+    if (is.na(valueText) || !nzchar(valueText)) {
+      return("not stated")
+    }
+
+    valueText
+  }
+
+  evidencePresent = function(field, value) {
+    if (length(value) == 0 || is.null(value)) {
+      return(FALSE)
+    }
+
+    if (is.logical(value)) {
+      return(isTRUE(value))
+    }
+
+    if (is.numeric(value)) {
+      return(!is.na(value[1]))
+    }
+
+    valueText = as.character(value[1])
+    !is.na(valueText) && nzchar(valueText) && !valueText %in% c("not_stated", "unknown")
+  }
+
+  detailMap = c(
+    effectDirection = "Direction inferred from directional wording or group estimates.",
+    effectMagnitude = "First clearly stated fitted magnitude found near effect wording.",
+    effectScale = "Scale inferred from additive or multiplicative model language.",
+    uncertaintyMentioned = "Uncertainty language such as confidence intervals, overlap, or weak evidence.",
+    interactionAcknowledged = "Interaction or slope-difference structure mentioned.",
+    comparisonMentioned = "Group comparison or contrast language mentioned.",
+    noClearDifferenceMentioned = "Language indicating no clear or well-supported difference.",
+    modelCannotAnswerQuestion = "Explanation says the fitted model cannot directly answer the research question.",
+    researchQuestionAnsweredDirectly = "Whether the fitted model is treated as directly answering the research question.",
+    alternativeModelInterpretationProvided = "Explanation gives the fitted predictor interpretation when the research question predictor is absent."
+  )
+
+  data.frame(
+    field = fieldOrder,
+    label = unname(labelMap[fieldOrder]),
+    value = vapply(fieldOrder, function(field) {
+      describeValue(field, evidence[[field]])
+    }, character(1)),
+    evidencePresent = vapply(fieldOrder, function(field) {
+      evidencePresent(field, evidence[[field]])
+    }, logical(1)),
+    detail = unname(detailMap[fieldOrder]),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Extract semantic evidence diagnostics for a grade object
+#'
+#' Builds semantic evidence diagnostics using the explanation and model context
+#' stored in a `wmfmGrade` object. This helper does not score or rescore the
+#' explanation.
+#'
+#' @param gradeObj A `wmfmGrade` object.
+#'
+#' @return A semantic evidence diagnostics data frame.
+#'
+#' @keywords internal
+#' @noRd
+buildWmfmGradeSemanticEvidenceDiagnostics = function(gradeObj) {
+  if (!inherits(gradeObj, "wmfmGrade")) {
+    stop("`gradeObj` must inherit from `wmfmGrade`.", call. = FALSE)
+  }
+
+  modelObj = gradeObj$model
+  modelInfo = list(
+    formula = paste(deparse(modelObj$formula), collapse = " "),
+    researchQuestion = modelObj$researchQuestion %||% "",
+    modelType = modelObj$modelType %||% "",
+    hasFactorPredictors = length(modelObj$modelProfile$factorTerms %||% character(0)) > 0,
+    hasInteractionTerms = length(modelObj$interactionTerms %||% character(0)) > 0
+  )
+
+  evidence = extractWmfmSemanticEvidence(
+    explanationText = gradeObj$input$explanation,
+    modelInfo = modelInfo
+  )
+
+  buildWmfmSemanticEvidenceDiagnostics(evidence)
+}
+

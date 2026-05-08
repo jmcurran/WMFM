@@ -496,3 +496,54 @@ testthat::test_that("interaction models continue to score interaction criteria",
   testthat::expect_equal(scored$interactionCoverageAdequate, 2L)
   testthat::expect_equal(scored$interactionSubstantiveCorrect, 2L)
 })
+
+testthat::test_that("developer scoring export includes semantic evidence diagnostics when present", {
+  semanticEvidence = data.frame(
+    field = "effectDirection",
+    label = "Effect direction",
+    value = "positive",
+    evidencePresent = TRUE,
+    detail = "Direction inferred from wording.",
+    stringsAsFactors = FALSE
+  )
+
+  gradeObj = list(
+    scoreScale = 100,
+    meta = list(scored = TRUE),
+    scores = list(
+      byMethod = list(
+        deterministic = list(
+          overallScore = 100,
+          mark = 100,
+          metricSummary = data.frame(
+            label = "Overall score",
+            studentValue = 100,
+            maxValue = 100,
+            marksLost = 0,
+            reason = "Correct",
+            stringsAsFactors = FALSE
+          ),
+          semanticEvidence = semanticEvidence
+        )
+      )
+    ),
+    feedback = list(
+      byMethod = list(
+        deterministic = list(
+          whereMarksLost = data.frame(reason = character(0), stringsAsFactors = FALSE),
+          strengths = data.frame(reason = "Clear", stringsAsFactors = FALSE),
+          semanticEvidence = semanticEvidence
+        )
+      ),
+      semanticEvidence = semanticEvidence
+    )
+  )
+  class(gradeObj) = c("wmfmGrade", "list")
+
+  exported = buildDeveloperScoringGradeExport(gradeObj)
+
+  testthat::expect_s3_class(exported$semanticEvidence, "data.frame")
+  testthat::expect_equal(exported$semanticEvidence$field, "effectDirection")
+  testthat::expect_equal(exported$semanticEvidence$value, "positive")
+})
+
