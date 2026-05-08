@@ -12,6 +12,7 @@ buildWmfmRunRecord(
   formula,
   equationsText,
   explanationText,
+  researchQuestion = "",
   errorMessage = NA_character_,
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
@@ -33,6 +34,8 @@ buildWmfmRunRecord(
 \item{equationsText}{Character fitted-equation text.}
 
 \item{explanationText}{Character explanation text.}
+
+\item{researchQuestion}{Character research question associated with the model.}
 
 \item{errorMessage}{Character error message, or \code{NA}.}
 

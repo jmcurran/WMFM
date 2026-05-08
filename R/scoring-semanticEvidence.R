@@ -332,3 +332,94 @@ buildWmfmGradeSemanticEvidenceDiagnostics = function(gradeObj) {
   buildWmfmSemanticEvidenceDiagnostics(evidence)
 }
 
+
+
+#' Build semantic evidence for run-record scoring
+#'
+#' Extracts semantic evidence row-by-row from run records and returns a compact
+#' data frame that can be joined to deterministic scoring diagnostics. This
+#' helper is intentionally conservative: it can strengthen missing or unclear
+#' extracted claims, but it does not assign marks directly.
+#'
+#' @param runsDf A run-record data frame.
+#'
+#' @return A data frame with one row per run record.
+#'
+#' @keywords internal
+#' @noRd
+buildWmfmRunRecordSemanticEvidence = function(runsDf) {
+  if (!is.data.frame(runsDf)) {
+    stop("`runsDf` must be a data.frame.", call. = FALSE)
+  }
+
+  getColumnValue = function(row, name, default = "") {
+    if (!(name %in% names(row))) {
+      return(default)
+    }
+
+    value = row[[name]][1]
+
+    if (length(value) == 0 || is.na(value)) {
+      return(default)
+    }
+
+    value
+  }
+
+  normaliseDirection = function(value) {
+    value = as.character(value %||% "not_stated")[1]
+
+    if (identical(value, "positive")) {
+      return("increase")
+    }
+
+    if (identical(value, "negative")) {
+      return("decrease")
+    }
+
+    if (identical(value, "mixed_or_both")) {
+      return("mixed_or_both")
+    }
+
+    "not_stated"
+  }
+
+  normaliseScale = function(value) {
+    value = as.character(value %||% "not_stated")[1]
+
+    if (value %in% c("additive", "multiplicative")) {
+      return(value)
+    }
+
+    "not_stated"
+  }
+
+  rows = lapply(seq_len(nrow(runsDf)), function(i) {
+    row = runsDf[i, , drop = FALSE]
+    evidence = extractWmfmSemanticEvidence(
+      explanationText = getColumnValue(row, "explanationText", ""),
+      modelInfo = list(
+        formula = getColumnValue(row, "formula", ""),
+        researchQuestion = getColumnValue(row, "researchQuestion", ""),
+        modelType = getColumnValue(row, "modelType", ""),
+        hasFactorPredictors = isTRUE(as.logical(getColumnValue(row, "hasFactorPredictors", FALSE))),
+        hasInteractionTerms = isTRUE(as.logical(getColumnValue(row, "hasInteractionTerms", FALSE)))
+      )
+    )
+
+    data.frame(
+      semanticEffectDirection = evidence$effectDirection,
+      semanticEffectDirectionClaim = normaliseDirection(evidence$effectDirection),
+      semanticEffectScale = evidence$effectScale,
+      semanticEffectScaleClaim = normaliseScale(evidence$effectScale),
+      semanticComparisonMentioned = isTRUE(evidence$comparisonMentioned),
+      semanticUncertaintyMentioned = isTRUE(evidence$uncertaintyMentioned),
+      semanticNoClearDifferenceMentioned = isTRUE(evidence$noClearDifferenceMentioned),
+      semanticModelCannotAnswerQuestion = isTRUE(evidence$modelCannotAnswerQuestion),
+      semanticAlternativeModelInterpretationProvided = isTRUE(evidence$alternativeModelInterpretationProvided),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, rows)
+}

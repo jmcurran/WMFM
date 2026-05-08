@@ -76,6 +76,7 @@
 #' @param modelType Character model class.
 #' @param formula Character model formula.
 #' @param equationsText Character fitted-equation text.
+#' @param researchQuestion Character research question associated with the model.
 #' @param explanationText Character explanation text.
 #' @param errorMessage Character error message, or `NA`.
 #' @param interactionTerms Character vector of interaction-term names from the
@@ -100,6 +101,7 @@ buildWmfmRunRecord = function(
     formula,
     equationsText,
     explanationText,
+    researchQuestion = "",
     errorMessage = NA_character_,
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
@@ -324,6 +326,7 @@ buildWmfmRunRecord = function(
 
   explanationText = normaliseScalarText(explanationText)
   equationsText = normaliseScalarText(equationsText)
+  researchQuestion = normaliseScalarText(researchQuestion)
   errorMessage = normaliseScalarText(errorMessage)
   interactionTerms = as.character(interactionTerms)
 
@@ -532,6 +535,7 @@ buildWmfmRunRecord = function(
     linkFunction = NA_character_,
     formula = formula,
     equationsText = equationsText,
+    researchQuestion = researchQuestion,
     interactionTerms = paste(interactionTerms, collapse = " | "),
     hasInteractionTerms = hasInteractionTerms,
     nInteractionTerms = nInteractionTerms,
@@ -607,6 +611,7 @@ buildWmfmGradeRunRecord = function(
     modelType = x$modelType,
     formula = paste(deparse(x$formula), collapse = " "),
     equationsText = extractWmfmText(x$equations),
+    researchQuestion = x$researchQuestion %||% "",
     explanationText = explanation,
     errorMessage = NA_character_,
     interactionTerms = x$interactionTerms %||% character(0),

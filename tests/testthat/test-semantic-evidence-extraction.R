@@ -50,3 +50,46 @@ test_that("semantic evidence diagnostics expose stable fields without scoring ma
   )
 })
 
+
+test_that("semantic evidence repairs missing deterministic claims before metric scoring", {
+  fixtures = readDeveloperScoringFixtures()
+  sg3 = fixtures[["test-SG-3"]]
+  sg4 = fixtures[["test-SG-4"]]
+
+  rawRecords = data.frame(
+    explanationText = c(
+      sg3$repeated$runs[[2]]$explanation,
+      sg4$repeated$runs[[2]]$explanation
+    ),
+    formula = c(sg3$appState$formula, sg4$appState$formula),
+    researchQuestion = c(sg3$appState$researchQuestion, sg4$appState$researchQuestion),
+    modelType = c("lm", "logistic"),
+    hasFactorPredictors = c(TRUE, FALSE),
+    hasInteractionTerms = c(FALSE, FALSE),
+    comparisonLanguageMention = c(TRUE, FALSE),
+    effectDirectionClaim = c("not_stated", "not_stated"),
+    effectScaleClaim = c("not_stated", "not_stated"),
+    expectedEffectDirection = c("increase", "increase"),
+    expectedEffectScale = c("additive", "multiplicative"),
+    referenceGroupMention = c(FALSE, FALSE),
+    uncertaintyMention = c(TRUE, TRUE),
+    ciMention = c(TRUE, TRUE),
+    usesInferentialLanguage = c(TRUE, TRUE),
+    usesDescriptiveOnlyLanguage = c(FALSE, FALSE),
+    overclaimDetected = c(FALSE, FALSE),
+    underclaimDetected = c(FALSE, FALSE),
+    conditionalLanguageMention = c(FALSE, FALSE),
+    outcomeMention = c(TRUE, TRUE),
+    predictorMention = c(TRUE, TRUE),
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_equal(scored$effectDirectionClaimAdjusted, c("increase", "increase"))
+  expect_equal(scored$effectScaleClaimAdjusted, c("additive", "multiplicative"))
+  expect_equal(scored$effectDirectionCorrect, c(2L, 2L))
+  expect_equal(scored$effectScaleAppropriate, c(2L, 2L))
+  expect_equal(scored$mainEffectCoverageAdequate, c(2L, 2L))
+  expect_false(any(scored$fatalFlawDetected))
+})

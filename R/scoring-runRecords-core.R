@@ -210,6 +210,24 @@ scoreWmfmRunRecordsCore = function(
 
   effectDirectionClaim = getCharacterColumn(runsDf, "effectDirectionClaim", fallbackNames = c("effectDirection"))
   effectScaleClaim = getCharacterColumn(runsDf, "effectScaleClaim", fallbackNames = c("effectScale"))
+
+  semanticEvidence = buildWmfmRunRecordSemanticEvidence(runsDf)
+  semanticDirectionClaim = semanticEvidence$semanticEffectDirectionClaim
+  semanticScaleClaim = semanticEvidence$semanticEffectScaleClaim
+
+  repairDirectionIdx = effectDirectionClaim %in% c("", "not_stated", "unclear") &
+    semanticDirectionClaim != "not_stated"
+  effectDirectionClaim[repairDirectionIdx] = semanticDirectionClaim[repairDirectionIdx]
+
+  repairScaleIdx = effectScaleClaim %in% c("", "not_stated", "mixed_or_unclear", "unclear") &
+    semanticScaleClaim != "not_stated"
+  effectScaleClaim[repairScaleIdx] = semanticScaleClaim[repairScaleIdx]
+
+  semanticFactorComparisonMention = hasFactorPredictors &
+    !hasInteractionTerms &
+    semanticEvidence$semanticComparisonMentioned &
+    semanticScaleClaim == "additive"
+
   interactionSubstantiveClaim = getCharacterColumn(runsDf, "interactionSubstantiveClaim", fallbackNames = c("interactionClaim"))
   inferentialRegister = getCharacterColumn(runsDf, "inferentialRegister", fallbackNames = c("inferentialStyle"))
   uncertaintyTypeClaim = getCharacterColumn(runsDf, "uncertaintyTypeClaim")
@@ -251,7 +269,7 @@ scoreWmfmRunRecordsCore = function(
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim %in% c("additive", "multiplicative", "probability_or_odds")] = 2L
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim == "mixed_or_unclear"] = 1L
   effectScaleAppropriateComputed[!hasExpectedScale & effectScaleClaim == "not_stated"] = 0L
-  effectScaleAppropriateComputed[factorGroupMeanComparisonMention] = 2L
+  effectScaleAppropriateComputed[factorGroupMeanComparisonMention | semanticFactorComparisonMention] = 2L
   effectScaleAppropriate = overwriteIfMissing(effectScaleAppropriateExisting, effectScaleAppropriateComputed)
 
   referenceGroupHandledCorrectlyComputed = rep(1L, nrow(runsDf))
@@ -322,7 +340,7 @@ scoreWmfmRunRecordsCore = function(
   mainEffectCoverageAdequateComputed = rep(0L, nrow(runsDf))
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated"] = 1L
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated" & effectScaleClaim != "not_stated"] = 2L
-  mainEffectCoverageAdequateComputed[factorGroupMeanComparisonMention] = 2L
+  mainEffectCoverageAdequateComputed[factorGroupMeanComparisonMention | semanticFactorComparisonMention] = 2L
   mainEffectCoverageAdequateComputed[!explanationPresent] = 0L
   mainEffectCoverageAdequate = overwriteIfMissing(mainEffectCoverageAdequateExisting, mainEffectCoverageAdequateComputed)
 
@@ -402,7 +420,7 @@ scoreWmfmRunRecordsCore = function(
       additiveNumericMention
   ] = 1L
   numericExpressionAdequateComputed[
-    factorGroupMeanComparisonMention &
+    (factorGroupMeanComparisonMention | semanticFactorComparisonMention) &
       hasNumericMagnitude
   ] = 2L
   numericExpressionAdequate = overwriteIfMissing(numericExpressionAdequateExisting, numericExpressionAdequateComputed)
@@ -511,6 +529,19 @@ scoreWmfmRunRecordsCore = function(
   scoredDf$duplicateCount = duplicateCount
   scoredDf$isExactDuplicate = isExactDuplicate
   scoredDf$duplicatePenaltyApplied = ifelse(isExactDuplicate & isTRUE(penaliseDuplicates), as.numeric(duplicatePenalty), 0)
+
+  scoredDf$semanticEffectDirection = semanticEvidence$semanticEffectDirection
+  scoredDf$semanticEffectDirectionClaim = semanticEvidence$semanticEffectDirectionClaim
+  scoredDf$semanticEffectScale = semanticEvidence$semanticEffectScale
+  scoredDf$semanticEffectScaleClaim = semanticEvidence$semanticEffectScaleClaim
+  scoredDf$semanticComparisonMentioned = semanticEvidence$semanticComparisonMentioned
+  scoredDf$semanticUncertaintyMentioned = semanticEvidence$semanticUncertaintyMentioned
+  scoredDf$semanticNoClearDifferenceMentioned = semanticEvidence$semanticNoClearDifferenceMentioned
+  scoredDf$semanticModelCannotAnswerQuestion = semanticEvidence$semanticModelCannotAnswerQuestion
+  scoredDf$semanticAlternativeModelInterpretationProvided = semanticEvidence$semanticAlternativeModelInterpretationProvided
+
+  scoredDf$effectDirectionClaimAdjusted = effectDirectionClaim
+  scoredDf$effectScaleClaimAdjusted = effectScaleClaim
 
   scoredDf$interactionEvidenceAppropriate = interactionEvidenceAppropriate
   scoredDf$effectDirectionCorrect = effectDirectionCorrect
