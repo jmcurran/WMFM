@@ -1,5 +1,8 @@
 modelType: logistic
 formula: Pass ~ StudyHours
-data: sg-course.csv
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+dataTransform: courseDfScoringGradingAliases
 context: context.md
-researchQuestion: How do study hours relate to the probability of passing?
+researchQuestion: How does the test mark relate to the probability of passing?

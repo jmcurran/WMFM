@@ -1,5 +1,8 @@
 modelType: lm
 formula: Exam ~ Gender
-data: sg-course.csv
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+dataTransform: courseDfScoringGradingAliases
 context: context.md
-researchQuestion: Do average final exam marks differ by gender in this synthetic course example?
+researchQuestion: Do average final exam marks differ by gender in this course example?

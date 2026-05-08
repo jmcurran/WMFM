@@ -287,7 +287,8 @@ loadWMFMExampleData = function(spec, basePath) {
       )
     }
 
-    return(get(spec$dataObject, envir = loadEnv, inherits = FALSE))
+    data = get(spec$dataObject, envir = loadEnv, inherits = FALSE)
+    return(applyWMFMExampleDataTransform(data = data, spec = spec))
   }
 
   stop(
@@ -296,6 +297,66 @@ loadWMFMExampleData = function(spec, basePath) {
     ". Supported values are `file` and `package`.",
     call. = FALSE
   )
+}
+
+
+#' Apply an optional packaged-example data transform
+#'
+#' Applies small, named compatibility transforms used by packaged examples.
+#' The raw package dataset remains the source of truth; transforms only add
+#' aliases needed by stable example specifications.
+#'
+#' @param data A data object loaded from an example source.
+#' @param spec A list read from the example specification file.
+#'
+#' @return The possibly transformed data object.
+#'
+#' @keywords internal
+#' @noRd
+applyWMFMExampleDataTransform = function(data, spec) {
+  transformName = spec$dataTransform
+
+  if (is.null(transformName) || !nzchar(transformName)) {
+    return(data)
+  }
+
+  if (identical(transformName, "courseDfScoringGradingAliases")) {
+    return(addCourseDfScoringGradingAliases(data))
+  }
+
+  stop(
+    "Unsupported `dataTransform`: ",
+    transformName,
+    call. = FALSE
+  )
+}
+
+#' Add stable scoring-and-grading aliases to s20x course.df
+#'
+#' Adds the historical Stage 18 scoring variable names to `s20x::course.df`
+#' without changing the source rows. This lets the SG examples use the package
+#' dataset while retaining their original formula names.
+#'
+#' @param data A data frame loaded from `s20x::course.df`.
+#'
+#' @return A data frame with added alias columns where needed.
+#'
+#' @keywords internal
+#' @noRd
+addCourseDfScoringGradingAliases = function(data) {
+  if (!is.data.frame(data)) {
+    return(data)
+  }
+
+  if ("Assign" %in% names(data) && !("Assignment" %in% names(data))) {
+    data$Assignment = data$Assign
+  }
+
+  if ("Test" %in% names(data) && !("StudyHours" %in% names(data))) {
+    data$StudyHours = data$Test
+  }
+
+  data
 }
 
 #' Load example context for a packaged WMFM example

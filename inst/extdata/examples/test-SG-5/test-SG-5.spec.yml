@@ -1,5 +1,8 @@
 modelType: lm
 formula: Exam ~ Attend * Gender + Test
-data: sg-course.csv
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+dataTransform: courseDfScoringGradingAliases
 context: context.md
 researchQuestion: Does the relationship between attendance and final exam mark differ by gender after accounting for the mid-term test mark?
