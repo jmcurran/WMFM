@@ -72,6 +72,15 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
       metricTable$maxValue[rows] <<- 0
       metricTable$marksLost[rows] <<- 0
       metricTable$status[rows] <<- "not_applicable"
+
+      if ("confidence" %in% names(metricTable)) {
+        metricTable$confidence[rows] <<- "not_applicable"
+      }
+
+      if ("evidenceStrength" %in% names(metricTable)) {
+        metricTable$evidenceStrength[rows] <<- NA_real_
+      }
+
       metricTable$reason[rows] <<- paste0(
         metricTable$label[rows],
         " was not applicable to this model."
@@ -135,6 +144,19 @@ buildDeveloperScoringLossTable = function(
 
   if (!is.data.frame(out)) {
     return(data.frame())
+  }
+
+  if (tableName %in% c("whereMarksLost", "strengths") && "label" %in% names(out)) {
+    metricTable = buildDeveloperScoringMetricTable(
+      gradeObj = gradeObj,
+      method = method
+    )
+
+    if (is.data.frame(metricTable) && nrow(metricTable) > 0 && all(c("label", "status") %in% names(metricTable))) {
+      scoredLabels = metricTable$label[metricTable$status == "scored"]
+      out = out[out$label %in% scoredLabels, , drop = FALSE]
+      rownames(out) = NULL
+    }
   }
 
   out

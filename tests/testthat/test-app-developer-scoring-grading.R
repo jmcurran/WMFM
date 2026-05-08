@@ -335,6 +335,15 @@ testthat::test_that("numeric-only developer scoring marks factor criteria not ap
   testthat::expect_true(all(metricTable$status[factorRows] == "not_applicable"))
   testthat::expect_true(all(metricTable$maxValue[factorRows] == 0))
   testthat::expect_true(all(metricTable$marksLost[factorRows] == 0))
+  testthat::expect_true(all(metricTable$confidence[factorRows] == "not_applicable"))
+
+  lossTable = buildDeveloperScoringLossTable(gradeObj, "whereMarksLost")
+
+  testthat::expect_false(any(lossTable$label %in% c(
+    "Reference group handled correctly",
+    "Reference-group coverage adequate",
+    "Comparison structure clear"
+  )))
 })
 
 
