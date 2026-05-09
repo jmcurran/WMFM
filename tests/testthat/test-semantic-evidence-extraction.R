@@ -294,3 +294,25 @@ test_that("semantic evidence recognises unsupported-difference wording", {
   expect_true(evidence$uncertaintyMentioned)
   expect_true(evidence$noClearDifferenceMentioned)
 })
+
+test_that("semantic evidence recognises cautious no-evidence interaction wording", {
+  modelInfo = list(
+    formula = "Exam ~ Attend * Gender + Test",
+    researchQuestion = "Does the relationship between attendance and final exam mark differ by gender after accounting for the mid-term test mark?",
+    modelType = "lm",
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = TRUE
+  )
+  explanation = paste(
+    "The fitted model includes the attendance by gender interaction.",
+    "Attendance is positively associated with final exam marks for both groups.",
+    "There is no evidence that the attendance relationship differs by gender,",
+    "so we cannot conclude that one group benefits more than the other."
+  )
+
+  evidence = extractWmfmSemanticEvidence(explanation, modelInfo)
+
+  expect_true(evidence$interactionAcknowledged)
+  expect_true(evidence$uncertaintyMentioned)
+  expect_true(evidence$noClearDifferenceMentioned)
+})

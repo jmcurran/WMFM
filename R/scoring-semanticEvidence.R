@@ -169,10 +169,10 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
       "(increase|raises?|higher|additional|extra|difference|multiplier|double[sd]?|multiplied)[^0-9-+]{0,40}[-+]?[0-9]+([.][0-9]+)?"
     ),
     effectScale = effectScale,
-    uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|lack(s)? evidence|insufficient evidence|not enough evidence|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear|cannot confirm|do(es)? not support"),
+    uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established"),
     interactionAcknowledged = detectPattern("interaction|product|differs? by|difference between[^.;]{0,80}slopes|attendance effect differs"),
     comparisonMentioned = detectPattern("female|male|boys|girls|versus|compared|between|groups|similarly|difference"),
-    noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|lack(s)? evidence|insufficient evidence|not enough evidence|perform similarly|similar|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|cannot confirm|do(es)? not support|does not appear to differ|do not show a consistent pattern"),
+    noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|perform similarly|similar|same|essentially the same|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|does not appear to differ|do not show a consistent pattern"),
     modelCannotAnswerQuestion = modelCannotAnswer,
     researchQuestionAnsweredDirectly = !(questionPredictorAbsent && modelCannotAnswer),
     alternativeModelInterpretationProvided = modelCannotAnswer && detectPattern("study|study effort|study hours|additional hour|odds|passing")
