@@ -163,8 +163,86 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     effectScale = "multiplicative"
   }
 
-  uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|unlikely")
-  noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|perform similarly|similar|same|essentially the same|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|does not appear to differ|do not show a consistent pattern|unlikely")
+  uncertaintyPatterns = c(
+    "confidence interval",
+    "95 ?%",
+    "95 percent",
+    "uncertain",
+    "weak evidence",
+    "lack(s)? evidence",
+    "no evidence",
+    "little evidence",
+    "limited evidence",
+    "weak support",
+    "insufficient evidence",
+    "not enough evidence",
+    "not enough support",
+    "not enough to (show|say|conclude|confirm)",
+    "overlap",
+    "crosses zero",
+    "includes zero",
+    "contains zero",
+    "includes no change",
+    "compatible with no (change|difference)",
+    "no change",
+    "not clear",
+    "no clear",
+    "not statistically clear",
+    "cannot confirm",
+    "cannot conclude",
+    "cannot say",
+    "cannot distinguish",
+    "do(es)? not support",
+    "does not establish",
+    "not established",
+    "not convincing",
+    "not compelling",
+    "not strong enough",
+    "unlikely"
+  )
+  noClearDifferencePatterns = c(
+    "no clear",
+    "not clear",
+    "weak evidence",
+    "lack(s)? evidence",
+    "no evidence",
+    "little evidence",
+    "limited evidence",
+    "weak support",
+    "insufficient evidence",
+    "not enough evidence",
+    "not enough support",
+    "not enough to (show|say|conclude|confirm)",
+    "perform similarly",
+    "similar",
+    "same",
+    "essentially the same",
+    "overlap",
+    "includes zero",
+    "contains zero",
+    "crosses zero",
+    "includes no change",
+    "compatible with no (change|difference)",
+    "no change",
+    "not statistically clear",
+    "not clearly distinguishable",
+    "cannot confirm",
+    "cannot conclude",
+    "cannot say",
+    "cannot distinguish",
+    "do(es)? not support",
+    "does not establish",
+    "not established",
+    "does not appear to differ",
+    "do not show a consistent pattern",
+    "not convincing",
+    "not compelling",
+    "not strong enough",
+    "unlikely"
+  )
+
+  uncertaintyMentioned = detectPattern(paste(uncertaintyPatterns, collapse = "|"))
+  noClearDifferenceMentioned = detectPattern(paste(noClearDifferencePatterns, collapse = "|"))
 
   list(
     effectDirection = effectDirection,

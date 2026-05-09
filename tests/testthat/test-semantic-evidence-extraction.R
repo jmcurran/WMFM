@@ -326,3 +326,25 @@ test_that("semantic evidence recognises unlikely interaction wording", {
   expect_true(isTRUE(evidence$uncertaintyPresent))
   expect_true(isTRUE(evidence$noClearDifference))
 })
+
+test_that("semantic evidence recognises consolidated cautious interaction wording", {
+  cautiousPhrases = c(
+    "The interaction is compatible with no difference between groups.",
+    "The fitted interaction is not convincing evidence of a gender difference.",
+    "The data are not strong enough to confirm a different attendance effect.",
+    "We cannot distinguish the attendance slopes clearly from this model."
+  )
+
+  for (phrase in cautiousPhrases) {
+    evidence = extractWmfmSemanticEvidence(phrase)
+
+    expect_true(
+      isTRUE(evidence$uncertaintyPresent),
+      info = phrase
+    )
+    expect_true(
+      isTRUE(evidence$noClearDifference),
+      info = phrase
+    )
+  }
+})
