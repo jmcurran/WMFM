@@ -169,10 +169,10 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
       "(increase|raises?|higher|additional|extra|difference|multiplier|double[sd]?|multiplied)[^0-9-+]{0,40}[-+]?[0-9]+([.][0-9]+)?"
     ),
     effectScale = effectScale,
-    uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|overlap|crosses zero|includes zero|contains zero|not clear|no clear"),
+    uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear"),
     interactionAcknowledged = detectPattern("interaction|product|differs? by|difference between[^.;]{0,80}slopes|attendance effect differs"),
     comparisonMentioned = detectPattern("female|male|boys|girls|versus|compared|between|groups|similarly|difference"),
-    noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|perform similarly|similar|overlap|includes zero|contains zero|crosses zero"),
+    noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|perform similarly|similar|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|does not appear to differ|do not show a consistent pattern"),
     modelCannotAnswerQuestion = modelCannotAnswer,
     researchQuestionAnsweredDirectly = !(questionPredictorAbsent && modelCannotAnswer),
     alternativeModelInterpretationProvided = modelCannotAnswer && detectPattern("study|study effort|study hours|additional hour|odds|passing")

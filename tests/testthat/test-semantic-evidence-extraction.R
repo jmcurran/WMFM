@@ -224,3 +224,51 @@ test_that("semantic evidence treats no-clear-interaction explanations as substan
   expect_equal(scored$interactionCoverageAdequate, 2L)
   expect_false(scored$fatalFlawDetected)
 })
+
+test_that("semantic evidence recognises no-change interaction uncertainty", {
+  fixtures = readDeveloperScoringFixtures()
+  sg5 = fixtures[["test-SG-5"]]
+
+  explanation = sg5$current$explanation
+  evidence = extractWmfmSemanticEvidence(explanation, sg5$appState)
+
+  expect_true(evidence$interactionAcknowledged)
+  expect_true(evidence$uncertaintyMentioned)
+  expect_true(evidence$noClearDifferenceMentioned)
+
+  rawRecords = data.frame(
+    explanationText = explanation,
+    formula = sg5$appState$formula,
+    researchQuestion = sg5$appState$researchQuestion,
+    modelType = "lm",
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = TRUE,
+    interactionMinPValue = 0.40,
+    interactionAlpha = 0.05,
+    comparisonLanguageMention = FALSE,
+    interactionMention = FALSE,
+    effectDirectionClaim = "not_stated",
+    effectScaleClaim = "not_stated",
+    interactionSubstantiveClaim = "unclear",
+    expectedEffectDirection = "increase",
+    expectedEffectScale = "additive",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = FALSE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_true(scored$semanticInteractionAcknowledged)
+  expect_true(scored$semanticNoClearDifferenceMentioned)
+  expect_equal(scored$interactionSubstantiveCorrect, 2L)
+  expect_equal(scored$interactionCoverageAdequate, 2L)
+})
