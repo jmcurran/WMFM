@@ -348,3 +348,16 @@ test_that("semantic evidence recognises consolidated cautious interaction wordin
     )
   }
 })
+
+test_that("semantic cautious wording patterns are maintained centrally", {
+  uncertaintyPatterns = wmfmSemanticUncertaintyPatterns()
+  noClearDifferencePatterns = wmfmSemanticNoClearDifferencePatterns()
+
+  expect_true("unlikely" %in% uncertaintyPatterns)
+  expect_true("unlikely" %in% noClearDifferencePatterns)
+  expect_true("compatible with no (change|difference)" %in% uncertaintyPatterns)
+  expect_true("compatible with no (change|difference)" %in% noClearDifferencePatterns)
+  expect_true("not strong enough" %in% uncertaintyPatterns)
+  expect_true("not strong enough" %in% noClearDifferencePatterns)
+})
+
