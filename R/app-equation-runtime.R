@@ -74,6 +74,10 @@ buildAppExplanation = function(model, chatProvider = NULL, useExplanationCache =
     return(NULL)
   }
 
+  if (isWmfmDummyChatProvider(chatProvider)) {
+    return(NULL)
+  }
+
   tryCatch(
     lmExplanation(
       model = model,

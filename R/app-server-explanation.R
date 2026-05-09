@@ -105,6 +105,7 @@ registerModelExplanationObservers = function(
     audit = rv$modelExplanationAudit
     claimMap = modelExplanationClaimEvidenceMap()
     tutorText = rv$modelExplanationTutor
+    explanationMessage = rv$modelExplanationMessage
 
     if (is.null(expl) && is.null(audit)) {
       return(helpText("Fit a model to see a textual explanation."))
@@ -138,6 +139,13 @@ registerModelExplanationObservers = function(
               style = "white-space: pre-wrap; word-wrap: break-word; margin-bottom: 0;",
               displayExplanation
             )
+          )
+        )
+      } else if (!is.null(explanationMessage) && nzchar(trimws(explanationMessage))) {
+        helpText(
+          paste(
+            explanationMessage,
+            "The teaching summary is still available below."
           )
         )
       } else {

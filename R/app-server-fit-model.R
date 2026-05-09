@@ -86,11 +86,21 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       }
     )
 
+    rv$modelExplanationMessage = NULL
+
     if (is.null(chatProvider)) {
+      rv$modelExplanationMessage = buildNoLanguageModelAvailableMessage()
       showNotification(
-        buildNoLanguageModelAvailableMessage(),
+        rv$modelExplanationMessage,
         type     = "message",
         duration = 10
+      )
+    } else if (isWmfmDummyChatProvider(chatProvider)) {
+      rv$modelExplanationMessage = getWmfmDummyChatProviderMessage(chatProvider)
+      showNotification(
+        rv$modelExplanationMessage,
+        type     = "error",
+        duration = 12
       )
     } else {
       rv$chatProvider = chatProvider
@@ -390,6 +400,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       rv$modelExplanation = explanation
       rv$modelExplanationAudit = explanationAudit
       rv$modelExplanationTutor = NULL
+
+      if (!is.null(explanation)) {
+        rv$modelExplanationMessage = NULL
+      }
 
       finishMessages = buildAppOutputMessages(
         equationMethod = equationResults$equationMethodUsed %||% "deterministic",
