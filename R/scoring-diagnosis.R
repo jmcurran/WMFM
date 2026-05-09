@@ -55,6 +55,8 @@ classifyEffectScaleClaim = function(text) {
     "\\bdifference of\\b",
     "\\bincrease of\\b",
     "\\bdecrease of\\b",
+    "\\b(predicted|estimated|expected) (mean|average).*\\b(mark|score)\\b",
+    "\\b(mean|average) (exam|response|outcome)? ?(mark|score)\\b",
     sep = "|"
   )
 

@@ -105,6 +105,15 @@ appServer = function(input, output, session) {
     modelFit = modelFit
   )
 
+  registerDeveloperScoringGradingObservers(
+    input = input,
+    output = output,
+    session = session,
+    rv = rv,
+    modelFit = modelFit,
+    developerModeUnlocked = developerModeUnlocked
+  )
+
 
   registerModelFormulaObservers(
     output = output,

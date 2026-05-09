@@ -76,6 +76,7 @@
 #' @param modelType Character model class.
 #' @param formula Character model formula.
 #' @param equationsText Character fitted-equation text.
+#' @param researchQuestion Character research question associated with the model.
 #' @param explanationText Character explanation text.
 #' @param errorMessage Character error message, or `NA`.
 #' @param interactionTerms Character vector of interaction-term names from the
@@ -85,6 +86,10 @@
 #'   extracted.
 #' @param interactionAlpha Numeric interaction threshold metadata stored with
 #'   the run record.
+#' @param hasFactorPredictors Logical. Whether the fitted model includes at
+#'   least one factor or character predictor. Used by downstream scoring gates
+#'   to distinguish genuinely applicable factor criteria from numeric-only
+#'   models.
 #'
 #' @return Named list containing one structured raw run record.
 #' @export
@@ -96,10 +101,12 @@ buildWmfmRunRecord = function(
     formula,
     equationsText,
     explanationText,
+    researchQuestion = "",
     errorMessage = NA_character_,
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
-    interactionAlpha = 0.05
+    interactionAlpha = 0.05,
+    hasFactorPredictors = FALSE
 ) {
   detectPatternLocal = function(text, pattern) {
     if (is.na(text) || !nzchar(trimws(text))) {
@@ -319,6 +326,7 @@ buildWmfmRunRecord = function(
 
   explanationText = normaliseScalarText(explanationText)
   equationsText = normaliseScalarText(equationsText)
+  researchQuestion = normaliseScalarText(researchQuestion)
   errorMessage = normaliseScalarText(errorMessage)
   interactionTerms = as.character(interactionTerms)
 
@@ -527,11 +535,13 @@ buildWmfmRunRecord = function(
     linkFunction = NA_character_,
     formula = formula,
     equationsText = equationsText,
+    researchQuestion = researchQuestion,
     interactionTerms = paste(interactionTerms, collapse = " | "),
     hasInteractionTerms = hasInteractionTerms,
     nInteractionTerms = nInteractionTerms,
     interactionMinPValue = interactionMinPValue,
     interactionAlpha = interactionAlpha,
+    hasFactorPredictors = isTRUE(hasFactorPredictors),
     hasError = !is.na(errorMessage),
     errorMessage = errorMessage,
     explanationText = explanationText,
@@ -601,11 +611,13 @@ buildWmfmGradeRunRecord = function(
     modelType = x$modelType,
     formula = paste(deparse(x$formula), collapse = " "),
     equationsText = extractWmfmText(x$equations),
+    researchQuestion = x$researchQuestion %||% "",
     explanationText = explanation,
     errorMessage = NA_character_,
     interactionTerms = x$interactionTerms %||% character(0),
     interactionMinPValue = x$interactionMinPValue %||% NA_real_,
-    interactionAlpha = x$meta$interactionAlpha %||% 0.05
+    interactionAlpha = x$meta$interactionAlpha %||% 0.05,
+    hasFactorPredictors = isTRUE(x$meta$hasFactorPredictors)
   )
 
   out$answerRole = answerRole

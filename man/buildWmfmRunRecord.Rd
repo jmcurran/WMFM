@@ -12,10 +12,12 @@ buildWmfmRunRecord(
   formula,
   equationsText,
   explanationText,
+  researchQuestion = "",
   errorMessage = NA_character_,
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
-  interactionAlpha = 0.05
+  interactionAlpha = 0.05,
+  hasFactorPredictors = FALSE
 )
 }
 \arguments{
@@ -33,6 +35,8 @@ buildWmfmRunRecord(
 
 \item{explanationText}{Character explanation text.}
 
+\item{researchQuestion}{Character research question associated with the model.}
+
 \item{errorMessage}{Character error message, or \code{NA}.}
 
 \item{interactionTerms}{Character vector of interaction-term names from the
@@ -44,6 +48,11 @@ extracted.}
 
 \item{interactionAlpha}{Numeric interaction threshold metadata stored with
 the run record.}
+
+\item{hasFactorPredictors}{Logical. Whether the fitted model includes at
+least one factor or character predictor. Used by downstream scoring gates
+to distinguish genuinely applicable factor criteria from numeric-only
+models.}
 }
 \value{
 Named list containing one structured raw run record.

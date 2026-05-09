@@ -166,6 +166,41 @@ summariseWmfmGradeLosses = function(
   studentFieldReasons = parseFieldReasons(studentScoreDf$llmFieldReasons[1])
   referenceFieldReasons = list()
 
+  roundMetricValue = function(x, maxValue) {
+    out = suppressWarnings(as.numeric(x))
+    maxValue = suppressWarnings(as.numeric(maxValue))
+
+    quarterIdx = !is.na(out) & !is.na(maxValue) & maxValue <= 2
+    out[quarterIdx] = round(out[quarterIdx] * 4) / 4
+
+    percentIdx = !is.na(out) & !is.na(maxValue) & maxValue > 2
+    out[percentIdx] = round(out[percentIdx], 1)
+
+    out
+  }
+
+  buildMetricEvidence = function(studentValue, maxValue, applicable) {
+    evidenceStrength = rep(NA_real_, length(studentValue))
+    validIdx = isTRUE(any(applicable)) | length(applicable) > 0
+
+    if (isTRUE(validIdx)) {
+      scoredIdx = applicable & !is.na(studentValue) & !is.na(maxValue) & maxValue > 0
+      evidenceStrength[scoredIdx] = pmax(0, pmin(1, studentValue[scoredIdx] / maxValue[scoredIdx]))
+    }
+
+    confidence = rep("not_applicable", length(studentValue))
+    confidence[applicable & !is.na(evidenceStrength) & evidenceStrength >= 0.99] = "high"
+    confidence[applicable & !is.na(evidenceStrength) & evidenceStrength < 0.99 & evidenceStrength >= 0.50] = "medium"
+    confidence[applicable & !is.na(evidenceStrength) & evidenceStrength < 0.50] = "low"
+    confidence[applicable & is.na(evidenceStrength)] = "medium"
+
+    data.frame(
+      confidence = confidence,
+      evidenceStrength = round(evidenceStrength, 2),
+      stringsAsFactors = FALSE
+    )
+  }
+
   if (!is.null(modelAnswerScoreDf) && "llmFieldReasons" %in% names(modelAnswerScoreDf)) {
     referenceFieldReasons = parseFieldReasons(modelAnswerScoreDf$llmFieldReasons[1])
   }
@@ -205,6 +240,20 @@ summariseWmfmGradeLosses = function(
       return(as.character(studentFieldReasons[[metric]]))
     }
 
+    if (isTRUE(marksLost <= 0)) {
+      if (identical(metric, "overallScore")) {
+        return("The explanation met all applicable deterministic rubric criteria.")
+      }
+
+      strengthReason = unname(strengthMap[metric])
+
+      if (!is.na(strengthReason) && nzchar(strengthReason)) {
+        return(strengthReason)
+      }
+
+      return("The explanation handled this rubric area well.")
+    }
+
     if (identical(metric, "numericExpressionAdequate")) {
       if (!isTRUE(hasNumericLiteral)) {
         return("No clear numeric effect size or magnitude was stated.")
@@ -238,7 +287,7 @@ summariseWmfmGradeLosses = function(
         return("The explanation used an inappropriate effect scale or omitted it entirely.")
       }
 
-      return("The explanation could use a more appropriate effect scale.")
+      return("The explanation stated the effect scale, but it could be made clearer or more direct.")
     }
 
     partialReasonMap = c(
@@ -332,7 +381,12 @@ summariseWmfmGradeLosses = function(
 
   studentVals = suppressWarnings(as.numeric(studentScoreDf[1, metricOrder, drop = FALSE]))
   maxVals = unname(maxScoreMap[metricOrder])
+  applicable = !is.na(studentVals)
+  studentVals = roundMetricValue(studentVals, maxVals)
   marksLost = pmax(maxVals - studentVals, 0)
+  marksLost = roundMetricValue(marksLost, maxVals)
+  marksLost[!applicable] = 0
+  maxVals[!applicable] = 0
 
   referenceVals = NULL
   referenceDelta = NULL
@@ -348,12 +402,26 @@ summariseWmfmGradeLosses = function(
     studentValue = studentVals,
     maxValue = maxVals,
     marksLost = marksLost,
+    applicable = applicable,
+    status = ifelse(applicable, "scored", "not_applicable"),
     stringsAsFactors = FALSE
   )
+
+  metricEvidence = buildMetricEvidence(
+    studentValue = metricSummary$studentValue,
+    maxValue = metricSummary$maxValue,
+    applicable = metricSummary$applicable
+  )
+  metricSummary$confidence = metricEvidence$confidence
+  metricSummary$evidenceStrength = metricEvidence$evidenceStrength
 
   metricSummary$reason = vapply(
     seq_len(nrow(metricSummary)),
     function(i) {
+      if (!isTRUE(metricSummary$applicable[i])) {
+        return(paste0(metricSummary$label[i], " was not applicable to this model."))
+      }
+
       buildReason(
         metric = metricSummary$metric[i],
         marksLost = metricSummary$marksLost[i],
@@ -375,7 +443,8 @@ summariseWmfmGradeLosses = function(
   }
 
   whereMarksLost = metricSummary[
-    metricSummary$metric %in% scoreMetrics & metricSummary$marksLost > 0,
+    metricSummary$applicable &
+      metricSummary$metric %in% scoreMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -390,7 +459,8 @@ summariseWmfmGradeLosses = function(
   }
 
   strengths = metricSummary[
-    metricSummary$marksLost == 0 & metricSummary$metric != "overallScore",
+    metricSummary$applicable &
+      metricSummary$marksLost == 0 & metricSummary$metric != "overallScore",
     c("metric", "label", "studentValue", "maxValue"),
     drop = FALSE
   ]
@@ -415,7 +485,8 @@ summariseWmfmGradeLosses = function(
   }
 
   missingElements = metricSummary[
-    metricSummary$metric %in% missingElementMetrics & metricSummary$marksLost > 0,
+    metricSummary$applicable &
+      metricSummary$metric %in% missingElementMetrics & metricSummary$marksLost > 0,
     c("metric", "label", "studentValue", "maxValue", "marksLost"),
     drop = FALSE
   ]
@@ -442,7 +513,8 @@ summariseWmfmGradeLosses = function(
   }
 
   weaknesses = metricSummary[
-    metricSummary$marksLost > 0 & metricSummary$metric %in% setdiff(scoreMetrics, c("overallScore", missingElementMetrics)),
+    metricSummary$applicable &
+      metricSummary$marksLost > 0 & metricSummary$metric %in% setdiff(scoreMetrics, c("overallScore", missingElementMetrics)),
     c("metric", "label", "studentValue", "maxValue", "marksLost", "reason"),
     drop = FALSE
   ]
@@ -460,7 +532,8 @@ summariseWmfmGradeLosses = function(
 
   if (identical(method, "llm")) {
     advisoryFlags = metricSummary[
-      metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0,
+      metricSummary$applicable &
+        metricSummary$metric %in% llmAdvisoryMetrics & metricSummary$marksLost > 0,
       c("metric", "label", "studentValue", "maxValue", "marksLost"),
       drop = FALSE
     ]

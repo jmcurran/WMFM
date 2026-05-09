@@ -332,6 +332,7 @@ appUI = function() {
         )
       ),
 
+
       tabPanel(
         "Settings",
         h4("Developer mode"),

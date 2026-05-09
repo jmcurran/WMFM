@@ -1,0 +1,8 @@
+modelType: lm
+formula: Exam ~ Assignment
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+dataTransform: courseDfScoringGradingAliases
+context: context.md
+researchQuestion: How does the assignment mark relate to the final exam mark?
