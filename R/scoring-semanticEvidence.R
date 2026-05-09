@@ -163,16 +163,21 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     effectScale = "multiplicative"
   }
 
+  uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|unlikely")
+  noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|perform similarly|similar|same|essentially the same|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|does not appear to differ|do not show a consistent pattern|unlikely")
+
   list(
     effectDirection = effectDirection,
     effectMagnitude = extractFirstNumber(
       "(increase|raises?|higher|additional|extra|difference|multiplier|double[sd]?|multiplied)[^0-9-+]{0,40}[-+]?[0-9]+([.][0-9]+)?"
     ),
     effectScale = effectScale,
-    uncertaintyMentioned = detectPattern("confidence interval|95 ?%|95 percent|uncertain|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|overlap|crosses zero|includes zero|contains zero|includes no change|no change|not clear|no clear|not statistically clear|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established"),
+    uncertaintyMentioned = uncertaintyMentioned,
+    uncertaintyPresent = uncertaintyMentioned,
     interactionAcknowledged = detectPattern("interaction|product|differs? by|difference between[^.;]{0,80}slopes|attendance effect differs"),
     comparisonMentioned = detectPattern("female|male|boys|girls|versus|compared|between|groups|similarly|difference"),
-    noClearDifferenceMentioned = detectPattern("no clear|not clear|weak evidence|lack(s)? evidence|no evidence|little evidence|limited evidence|weak support|insufficient evidence|not enough evidence|not enough support|perform similarly|similar|same|essentially the same|overlap|includes zero|contains zero|crosses zero|includes no change|no change|not statistically clear|not clearly distinguishable|cannot confirm|cannot conclude|cannot say|do(es)? not support|does not establish|not established|does not appear to differ|do not show a consistent pattern"),
+    noClearDifferenceMentioned = noClearDifferenceMentioned,
+    noClearDifference = noClearDifferenceMentioned,
     modelCannotAnswerQuestion = modelCannotAnswer,
     researchQuestionAnsweredDirectly = !(questionPredictorAbsent && modelCannotAnswer),
     alternativeModelInterpretationProvided = modelCannotAnswer && detectPattern("study|study effort|study hours|additional hour|odds|passing")

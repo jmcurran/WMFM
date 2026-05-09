@@ -316,3 +316,13 @@ test_that("semantic evidence recognises cautious no-evidence interaction wording
   expect_true(evidence$uncertaintyMentioned)
   expect_true(evidence$noClearDifferenceMentioned)
 })
+
+
+test_that("semantic evidence recognises unlikely interaction wording", {
+  evidence = extractWmfmSemanticEvidence(
+    "The interaction is unlikely and the data do not support a meaningful difference."
+  )
+
+  expect_true(isTRUE(evidence$uncertaintyPresent))
+  expect_true(isTRUE(evidence$noClearDifference))
+})
