@@ -316,6 +316,12 @@ scoreWmfmRunRecordsCore = function(
   interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("difference_claimed_cautiously", "difference_claimed_strongly")] = 0L
   interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned", "not_applicable", "unclear", "")] = 2L
   interactionSubstantiveCorrect = overwriteIfMissing(interactionSubstantiveCorrectExisting, interactionSubstantiveCorrectComputed)
+  interactionSubstantiveCorrect[
+    hasInteractionTerms &
+      semanticEvidence$semanticInteractionAcknowledged &
+      semanticEvidence$semanticNoClearDifferenceMentioned &
+      uncertaintyMention
+  ] = 2L
 
   interactionEvidenceAppropriateComputed = rep("unclear", nrow(runsDf))
   interactionEvidenceAppropriateComputed[!hasInteractionTerms] = "not_applicable"

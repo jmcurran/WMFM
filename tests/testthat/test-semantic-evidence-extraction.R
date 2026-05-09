@@ -183,3 +183,44 @@ test_that("semantic evidence repairs question-model mismatch coverage", {
   expect_false(scored$fatalFlawDetected)
 })
 
+test_that("semantic evidence treats no-clear-interaction explanations as substantively correct", {
+  fixtures = readDeveloperScoringFixtures()
+  sg5 = fixtures[["test-SG-5"]]
+
+  rawRecords = data.frame(
+    explanationText = sg5$repeated$runs[[3]]$explanation,
+    formula = sg5$appState$formula,
+    researchQuestion = sg5$appState$researchQuestion,
+    modelType = "lm",
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = TRUE,
+    interactionMinPValue = 0.40,
+    interactionAlpha = 0.05,
+    comparisonLanguageMention = FALSE,
+    interactionMention = FALSE,
+    effectDirectionClaim = "increase",
+    effectScaleClaim = "additive",
+    interactionSubstantiveClaim = "no_clear_difference",
+    expectedEffectDirection = "increase",
+    expectedEffectScale = "additive",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = FALSE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_true(scored$semanticInteractionAcknowledged)
+  expect_true(scored$semanticNoClearDifferenceMentioned)
+  expect_equal(scored$interactionSubstantiveCorrect, 2L)
+  expect_equal(scored$interactionCoverageAdequate, 2L)
+  expect_false(scored$fatalFlawDetected)
+})
