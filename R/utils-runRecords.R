@@ -162,6 +162,10 @@ buildWmfmRunRecord = function(
       "\\bmore likely\\b",
       "\\bmore frequent\\b",
       "\\bmore abundant\\b",
+      "\\badditional\\b",
+      "\\bextra\\b",
+      "\\bdoubles?\\b",
+      "\\bmultiplied by\\b",
       "\\bsteeper rise\\b",
       sep = "|"
     )
