@@ -141,3 +141,45 @@ test_that("semantic evidence repairs comparison, uncertainty, and interaction me
   expect_equal(scored$uncertaintyHandlingAppropriate, c(2L, 2L))
   expect_equal(scored$interactionCoverageAdequate[2], 2L)
 })
+
+test_that("semantic evidence repairs question-model mismatch coverage", {
+  fixtures = readDeveloperScoringFixtures()
+  sg4 = fixtures[["test-SG-4"]]
+
+  rawRecords = data.frame(
+    explanationText = sg4$repeated$runs[[2]]$explanation,
+    formula = sg4$appState$formula,
+    researchQuestion = sg4$appState$researchQuestion,
+    modelType = "logistic",
+    hasFactorPredictors = FALSE,
+    hasInteractionTerms = FALSE,
+    comparisonLanguageMention = FALSE,
+    effectDirectionClaim = "not_stated",
+    effectScaleClaim = "not_stated",
+    expectedEffectDirection = "increase",
+    expectedEffectScale = "multiplicative",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = TRUE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = FALSE,
+    predictorMention = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_true(scored$semanticModelCannotAnswerQuestion)
+  expect_false(scored$semanticResearchQuestionAnsweredDirectly)
+  expect_true(scored$semanticAlternativeModelInterpretationProvided)
+  expect_true(scored$semanticModelMismatchExplained)
+  expect_true(scored$outcomeMentionAdjusted)
+  expect_true(scored$predictorMentionAdjusted)
+  expect_equal(scored$clarityScore, 2)
+  expect_false(scored$fatalFlawDetected)
+})
+

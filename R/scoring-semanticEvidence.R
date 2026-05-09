@@ -417,6 +417,7 @@ buildWmfmRunRecordSemanticEvidence = function(runsDf) {
       semanticNoClearDifferenceMentioned = isTRUE(evidence$noClearDifferenceMentioned),
       semanticInteractionAcknowledged = isTRUE(evidence$interactionAcknowledged),
       semanticModelCannotAnswerQuestion = isTRUE(evidence$modelCannotAnswerQuestion),
+      semanticResearchQuestionAnsweredDirectly = isTRUE(evidence$researchQuestionAnsweredDirectly),
       semanticAlternativeModelInterpretationProvided = isTRUE(evidence$alternativeModelInterpretationProvided),
       stringsAsFactors = FALSE
     )

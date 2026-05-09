@@ -222,6 +222,11 @@ scoreWmfmRunRecordsCore = function(
   interactionMention = interactionMention |
     semanticEvidence$semanticInteractionAcknowledged
 
+  semanticModelMismatchExplained = semanticEvidence$semanticModelCannotAnswerQuestion &
+    semanticEvidence$semanticAlternativeModelInterpretationProvided
+  outcomeMention = outcomeMention | semanticEvidence$semanticModelCannotAnswerQuestion
+  predictorMention = predictorMention | semanticEvidence$semanticAlternativeModelInterpretationProvided
+
   repairDirectionIdx = effectDirectionClaim %in% c("", "not_stated", "unclear") &
     semanticDirectionClaim != "not_stated"
   effectDirectionClaim[repairDirectionIdx] = semanticDirectionClaim[repairDirectionIdx]
@@ -436,6 +441,10 @@ scoreWmfmRunRecordsCore = function(
   comparisonStructureClearComputed[comparisonLanguageMention | conditionalLanguageMention] = 2L
   comparisonStructureClearComputed[hasInteractionTerms & !(comparisonLanguageMention | conditionalLanguageMention)] = 0L
   comparisonStructureClear = overwriteIfMissing(comparisonStructureClearExisting, comparisonStructureClearComputed)
+  comparisonStructureClear[
+    semanticModelMismatchExplained &
+      explanationPresent
+  ] = 2L
 
   clarityAdequateComputed = rep(1L, nrow(runsDf))
   preferredLength = wordCount >= as.integer(preferredMinWords) & wordCount <= as.integer(preferredMaxWords)
@@ -445,6 +454,11 @@ scoreWmfmRunRecordsCore = function(
   clarityAdequateComputed[comparisonStructureClear == 2L & numericExpressionAdequate == 2L & preferredLength] = 2L
   clarityAdequateComputed[!explanationPresent] = 0L
   clarityAdequate = overwriteIfMissing(clarityAdequateExisting, clarityAdequateComputed)
+  clarityAdequate[
+    semanticModelMismatchExplained &
+      explanationPresent &
+      numericExpressionAdequate == 2L
+  ] = 2L
 
   fatalFlawDetectedComputed = rep(FALSE, nrow(runsDf))
   fatalFlawDetectedComputed[hasError] = TRUE
@@ -546,8 +560,12 @@ scoreWmfmRunRecordsCore = function(
   scoredDf$semanticNoClearDifferenceMentioned = semanticEvidence$semanticNoClearDifferenceMentioned
   scoredDf$semanticInteractionAcknowledged = semanticEvidence$semanticInteractionAcknowledged
   scoredDf$semanticModelCannotAnswerQuestion = semanticEvidence$semanticModelCannotAnswerQuestion
+  scoredDf$semanticResearchQuestionAnsweredDirectly = semanticEvidence$semanticResearchQuestionAnsweredDirectly
   scoredDf$semanticAlternativeModelInterpretationProvided = semanticEvidence$semanticAlternativeModelInterpretationProvided
+  scoredDf$semanticModelMismatchExplained = semanticModelMismatchExplained
 
+  scoredDf$outcomeMentionAdjusted = outcomeMention
+  scoredDf$predictorMentionAdjusted = predictorMention
   scoredDf$effectDirectionClaimAdjusted = effectDirectionClaim
   scoredDf$effectScaleClaimAdjusted = effectScaleClaim
 
