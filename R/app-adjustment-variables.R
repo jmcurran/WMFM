@@ -36,3 +36,72 @@ sanitizeAdjustmentVariables = function(selectedVariables, eligibleVariables) {
 
   intersect(selected, eligibleVariables %||% character(0))
 }
+
+
+#' Render adjustment-variable selection UI
+#'
+#' Builds the Stage B adjustment-variable checkbox input from current bucket
+#' assignments and keeps stored selections synchronized to eligible choices.
+#'
+#' @param rv App reactive values object.
+#' @param responseVariable Name of the current response variable.
+#'
+#' @return A Shiny tag object or `NULL` when no choices are available.
+#'
+#' @keywords internal
+#'
+#' @importFrom shiny checkboxGroupInput
+renderAdjustmentVariablesUi = function(rv, responseVariable) {
+  if (is.null(rv$data)) {
+    return(NULL)
+  }
+
+  eligibleVariables = buildEligibleAdjustmentVariables(
+    responseVariable = responseVariable,
+    factorVariables = rv$bucketFactors,
+    continuousVariables = rv$bucketContinuous
+  )
+
+  selectedVariables = sanitizeAdjustmentVariables(
+    selectedVariables = rv$adjustmentVariables,
+    eligibleVariables = eligibleVariables
+  )
+
+  rv$adjustmentVariables = selectedVariables
+
+  if (length(eligibleVariables) == 0) {
+    return(NULL)
+  }
+
+  checkboxGroupInput(
+    inputId = "adjustment_variables",
+    label = "Adjust for this variable",
+    choices = eligibleVariables,
+    selected = selectedVariables
+  )
+}
+
+#' Sync selected adjustment variables from user input
+#'
+#' Sanitizes user checkbox selections against current eligible variables and
+#' stores the synchronized values in reactive state.
+#'
+#' @param rv App reactive values object.
+#' @param responseVariable Name of the current response variable.
+#' @param selectedVariables Character vector selected by the user.
+#'
+#' @return No return value; updates `rv$adjustmentVariables`.
+#'
+#' @keywords internal
+syncAdjustmentVariablesSelection = function(rv, responseVariable, selectedVariables) {
+  eligibleVariables = buildEligibleAdjustmentVariables(
+    responseVariable = responseVariable,
+    factorVariables = rv$bucketFactors,
+    continuousVariables = rv$bucketContinuous
+  )
+
+  rv$adjustmentVariables = sanitizeAdjustmentVariables(
+    selectedVariables = selectedVariables,
+    eligibleVariables = eligibleVariables
+  )
+}

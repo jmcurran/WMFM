@@ -57,45 +57,17 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
 
 
   output$adjustment_variables_ui = renderUI({
-    if (is.null(rv$data)) {
-      return(NULL)
-    }
-
-    eligibleVariables = buildEligibleAdjustmentVariables(
-      responseVariable = input$response_var,
-      factorVariables = rv$bucketFactors,
-      continuousVariables = rv$bucketContinuous
-    )
-
-    selectedVariables = sanitizeAdjustmentVariables(
-      selectedVariables = rv$adjustmentVariables,
-      eligibleVariables = eligibleVariables
-    )
-
-    rv$adjustmentVariables = selectedVariables
-
-    if (length(eligibleVariables) == 0) {
-      return(NULL)
-    }
-
-    checkboxGroupInput(
-      inputId = "adjustment_variables",
-      label = "Adjust for this variable",
-      choices = eligibleVariables,
-      selected = selectedVariables
+    renderAdjustmentVariablesUi(
+      rv = rv,
+      responseVariable = input$response_var
     )
   })
 
   observeEvent(input$adjustment_variables, {
-    eligibleVariables = buildEligibleAdjustmentVariables(
+    syncAdjustmentVariablesSelection(
+      rv = rv,
       responseVariable = input$response_var,
-      factorVariables = rv$bucketFactors,
-      continuousVariables = rv$bucketContinuous
-    )
-
-    rv$adjustmentVariables = sanitizeAdjustmentVariables(
-      selectedVariables = input$adjustment_variables,
-      eligibleVariables = eligibleVariables
+      selectedVariables = input$adjustment_variables
     )
   }, ignoreInit = TRUE)
 
