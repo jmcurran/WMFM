@@ -1,0 +1,91 @@
+"exampleName","metricLabel","runCount","minValue","medianValue","maxValue","valueSpread","unstableMetric"
+"test-SG-1","Calibration score",3,2,2,2,0,FALSE
+"test-SG-1","Clarity adequate",3,2,2,2,0,FALSE
+"test-SG-1","Clarity score",3,2,2,2,0,FALSE
+"test-SG-1","Completeness score",3,2,2,2,0,FALSE
+"test-SG-1","Effect direction correct",3,2,2,2,0,FALSE
+"test-SG-1","Effect scale appropriate",3,2,2,2,0,FALSE
+"test-SG-1","Factual score",3,2,2,2,0,FALSE
+"test-SG-1","Inference score",3,2,2,2,0,FALSE
+"test-SG-1","Inferential register appropriate",3,2,2,2,0,FALSE
+"test-SG-1","Main-effect coverage adequate",3,2,2,2,0,FALSE
+"test-SG-1","Numeric expression adequate",3,2,2,2,0,FALSE
+"test-SG-1","Overall score",3,100,100,100,0,FALSE
+"test-SG-1","Uncertainty handling appropriate",3,2,2,2,0,FALSE
+"test-SG-1","Comparison structure clear",3,NA,NA,NA,NA,FALSE
+"test-SG-1","Interaction coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-1","Interaction substance correct",3,NA,NA,NA,NA,FALSE
+"test-SG-1","Reference-group coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-1","Reference group handled correctly",3,NA,NA,NA,NA,FALSE
+"test-SG-2","Calibration score",3,2,2,2,0,FALSE
+"test-SG-2","Clarity adequate",3,2,2,2,0,FALSE
+"test-SG-2","Clarity score",3,2,2,2,0,FALSE
+"test-SG-2","Completeness score",3,2,2,2,0,FALSE
+"test-SG-2","Effect direction correct",3,2,2,2,0,FALSE
+"test-SG-2","Effect scale appropriate",3,2,2,2,0,FALSE
+"test-SG-2","Factual score",3,2,2,2,0,FALSE
+"test-SG-2","Inference score",3,2,2,2,0,FALSE
+"test-SG-2","Inferential register appropriate",3,2,2,2,0,FALSE
+"test-SG-2","Main-effect coverage adequate",3,2,2,2,0,FALSE
+"test-SG-2","Numeric expression adequate",3,2,2,2,0,FALSE
+"test-SG-2","Overall score",3,100,100,100,0,FALSE
+"test-SG-2","Uncertainty handling appropriate",3,2,2,2,0,FALSE
+"test-SG-2","Comparison structure clear",3,NA,NA,NA,NA,FALSE
+"test-SG-2","Interaction coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-2","Interaction substance correct",3,NA,NA,NA,NA,FALSE
+"test-SG-2","Reference-group coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-2","Reference group handled correctly",3,NA,NA,NA,NA,FALSE
+"test-SG-3","Calibration score",3,2,2,2,0,FALSE
+"test-SG-3","Clarity adequate",3,2,2,2,0,FALSE
+"test-SG-3","Clarity score",3,2,2,2,0,FALSE
+"test-SG-3","Comparison structure clear",3,2,2,2,0,FALSE
+"test-SG-3","Completeness score",3,2,2,2,0,FALSE
+"test-SG-3","Effect direction correct",3,2,2,2,0,FALSE
+"test-SG-3","Effect scale appropriate",3,2,2,2,0,FALSE
+"test-SG-3","Factual score",3,2,2,2,0,FALSE
+"test-SG-3","Inference score",3,2,2,2,0,FALSE
+"test-SG-3","Inferential register appropriate",3,2,2,2,0,FALSE
+"test-SG-3","Main-effect coverage adequate",3,2,2,2,0,FALSE
+"test-SG-3","Numeric expression adequate",3,2,2,2,0,FALSE
+"test-SG-3","Overall score",3,100,100,100,0,FALSE
+"test-SG-3","Reference-group coverage adequate",3,2,2,2,0,FALSE
+"test-SG-3","Reference group handled correctly",3,2,2,2,0,FALSE
+"test-SG-3","Uncertainty handling appropriate",3,2,2,2,0,FALSE
+"test-SG-3","Interaction coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-3","Interaction substance correct",3,NA,NA,NA,NA,FALSE
+"test-SG-4","Calibration score",3,2,2,2,0,FALSE
+"test-SG-4","Clarity adequate",3,2,2,2,0,FALSE
+"test-SG-4","Clarity score",3,2,2,2,0,FALSE
+"test-SG-4","Completeness score",3,2,2,2,0,FALSE
+"test-SG-4","Effect direction correct",3,2,2,2,0,FALSE
+"test-SG-4","Effect scale appropriate",3,2,2,2,0,FALSE
+"test-SG-4","Factual score",3,2,2,2,0,FALSE
+"test-SG-4","Inference score",3,2,2,2,0,FALSE
+"test-SG-4","Inferential register appropriate",3,2,2,2,0,FALSE
+"test-SG-4","Main-effect coverage adequate",3,2,2,2,0,FALSE
+"test-SG-4","Numeric expression adequate",3,2,2,2,0,FALSE
+"test-SG-4","Overall score",3,100,100,100,0,FALSE
+"test-SG-4","Uncertainty handling appropriate",3,2,2,2,0,FALSE
+"test-SG-4","Comparison structure clear",3,NA,NA,NA,NA,FALSE
+"test-SG-4","Interaction coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-4","Interaction substance correct",3,NA,NA,NA,NA,FALSE
+"test-SG-4","Reference-group coverage adequate",3,NA,NA,NA,NA,FALSE
+"test-SG-4","Reference group handled correctly",3,NA,NA,NA,NA,FALSE
+"test-SG-5","Overall score",3,96.2,100,100,3.8,TRUE
+"test-SG-5","Effect direction correct",3,1,2,2,1,TRUE
+"test-SG-5","Factual score",3,1.75,2,2,0.25,FALSE
+"test-SG-5","Calibration score",3,2,2,2,0,FALSE
+"test-SG-5","Clarity adequate",3,2,2,2,0,FALSE
+"test-SG-5","Clarity score",3,2,2,2,0,FALSE
+"test-SG-5","Comparison structure clear",3,2,2,2,0,FALSE
+"test-SG-5","Completeness score",3,2,2,2,0,FALSE
+"test-SG-5","Effect scale appropriate",3,2,2,2,0,FALSE
+"test-SG-5","Inference score",3,2,2,2,0,FALSE
+"test-SG-5","Inferential register appropriate",3,2,2,2,0,FALSE
+"test-SG-5","Interaction coverage adequate",3,2,2,2,0,FALSE
+"test-SG-5","Interaction substance correct",3,2,2,2,0,FALSE
+"test-SG-5","Main-effect coverage adequate",3,2,2,2,0,FALSE
+"test-SG-5","Numeric expression adequate",3,2,2,2,0,FALSE
+"test-SG-5","Reference-group coverage adequate",3,2,2,2,0,FALSE
+"test-SG-5","Reference group handled correctly",3,2,2,2,0,FALSE
+"test-SG-5","Uncertainty handling appropriate",3,2,2,2,0,FALSE
