@@ -48,6 +48,7 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     rv$modelExplanation = NULL
     rv$modelExplanationAudit = NULL
     rv$modelExplanationTutor = NULL
+    rv$modelExplanationMessage = NULL
     rv$modelContext = NULL
 
     rv$autoFormula = ""

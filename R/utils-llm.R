@@ -56,12 +56,14 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
 
   backend = tolower(trimws(backend %||% "ollama"))
 
-  makeDummyProvider = function(msg) {
+  makeDummyProvider = function(msg, backendName = backend) {
     structure(
       list(
         chat = function(...) {
-          stop(msg)
-        }
+          stop(msg, call. = FALSE)
+        },
+        errorMessage = msg,
+        backend = backendName
       ),
       class = "wmfm_dummy_chat_provider"
     )
@@ -178,4 +180,35 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
   }
 
   safeProvider
+}
+
+#' Test whether a chat provider is a WMFM dummy provider
+#'
+#' @param x Object to test.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmDummyChatProvider = function(x) {
+  inherits(x, "wmfm_dummy_chat_provider")
+}
+
+#' Get a WMFM dummy chat provider message
+#'
+#' @param x Chat provider object.
+#'
+#' @return Character scalar with the stored message, or `NULL`.
+#' @keywords internal
+getWmfmDummyChatProviderMessage = function(x) {
+  if (!isWmfmDummyChatProvider(x)) {
+    return(NULL)
+  }
+
+  msg = x$errorMessage %||% "The selected language model provider is not available."
+  msg = trimws(as.character(msg))
+
+  if (!nzchar(msg)) {
+    return(NULL)
+  }
+
+  msg
 }

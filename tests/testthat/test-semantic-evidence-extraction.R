@@ -361,3 +361,92 @@ test_that("semantic cautious wording patterns are maintained centrally", {
   expect_true("not strong enough" %in% noClearDifferencePatterns)
 })
 
+
+test_that("semantic calibration stabilises saved SG-3 repeated explanations", {
+  fixtures = readDeveloperScoringFixtures()
+  sg3 = fixtures[["test-SG-3"]]
+  explanations = vapply(sg3$repeated$runs, function(run) {
+    run$explanation
+  }, character(1))
+
+  rawRecords = data.frame(
+    explanationText = explanations,
+    formula = sg3$appState$formula,
+    researchQuestion = sg3$appState$researchQuestion,
+    modelType = "lm",
+    hasFactorPredictors = TRUE,
+    hasInteractionTerms = FALSE,
+    comparisonLanguageMention = FALSE,
+    effectDirectionClaim = "not_stated",
+    effectScaleClaim = "not_stated",
+    expectedEffectDirection = "increase",
+    expectedEffectScale = "additive",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = TRUE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = TRUE,
+    predictorMention = TRUE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_equal(scored$effectDirectionClaimAdjusted, rep("increase", 3))
+  expect_equal(scored$effectScaleClaimAdjusted, rep("additive", 3))
+  expect_equal(scored$effectDirectionCorrect, rep(2L, 3))
+  expect_equal(scored$effectScaleAppropriate, rep(2L, 3))
+  expect_equal(scored$mainEffectCoverageAdequate, rep(2L, 3))
+  expect_equal(scored$referenceGroupHandledCorrectly, rep(2L, 3))
+  expect_equal(scored$referenceGroupCoverageAdequate, rep(2L, 3))
+  expect_equal(scored$comparisonStructureClear, rep(2L, 3))
+  expect_false(any(scored$fatalFlawDetected))
+})
+
+test_that("semantic calibration stabilises saved SG-4 mismatch explanations", {
+  fixtures = readDeveloperScoringFixtures()
+  sg4 = fixtures[["test-SG-4"]]
+  explanations = vapply(sg4$repeated$runs, function(run) {
+    run$explanation
+  }, character(1))
+
+  rawRecords = data.frame(
+    explanationText = explanations,
+    formula = sg4$appState$formula,
+    researchQuestion = sg4$appState$researchQuestion,
+    modelType = "logistic",
+    hasFactorPredictors = FALSE,
+    hasInteractionTerms = FALSE,
+    comparisonLanguageMention = FALSE,
+    effectDirectionClaim = "not_stated",
+    effectScaleClaim = "not_stated",
+    expectedEffectDirection = "increase",
+    expectedEffectScale = "multiplicative",
+    referenceGroupMention = FALSE,
+    uncertaintyMention = FALSE,
+    ciMention = TRUE,
+    usesInferentialLanguage = TRUE,
+    usesDescriptiveOnlyLanguage = FALSE,
+    overclaimDetected = FALSE,
+    underclaimDetected = FALSE,
+    conditionalLanguageMention = FALSE,
+    outcomeMention = FALSE,
+    predictorMention = FALSE,
+    stringsAsFactors = FALSE
+  )
+
+  scored = scoreWmfmRunRecordsCore(rawRecords, penaliseDuplicates = FALSE)
+
+  expect_equal(scored$effectDirectionClaimAdjusted, rep("increase", 3))
+  expect_equal(scored$effectScaleClaimAdjusted, rep("multiplicative", 3))
+  expect_equal(scored$effectDirectionCorrect, rep(2L, 3))
+  expect_equal(scored$mainEffectCoverageAdequate, rep(2L, 3))
+  expect_true(all(scored$semanticModelMismatchExplained))
+  expect_true(all(scored$outcomeMentionAdjusted))
+  expect_true(all(scored$predictorMentionAdjusted))
+  expect_false(any(scored$fatalFlawDetected))
+})

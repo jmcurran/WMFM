@@ -69,3 +69,43 @@ test_that("chat provider confirmation helper reports selected backend", {
     "Chat provider set to Ollama using model 'llama3.2' with low thinking."
   )
 })
+
+
+test_that("dummy chat provider helpers expose stored messages", {
+  provider = structure(
+    list(
+      errorMessage = "ANTHROPIC_API_KEY is not set.",
+      backend = "claude"
+    ),
+    class = "wmfm_dummy_chat_provider"
+  )
+
+  expect_true(isWmfmDummyChatProvider(provider))
+  expect_equal(
+    getWmfmDummyChatProviderMessage(provider),
+    "ANTHROPIC_API_KEY is not set."
+  )
+  expect_false(isWmfmDummyChatProvider(list()))
+  expect_null(getWmfmDummyChatProviderMessage(list()))
+})
+
+test_that("Claude provider without an API key gives a clear dummy-provider message", {
+  oldKey = Sys.getenv("ANTHROPIC_API_KEY", unset = NA_character_)
+  Sys.unsetenv("ANTHROPIC_API_KEY")
+  on.exit({
+    if (is.na(oldKey)) {
+      Sys.unsetenv("ANTHROPIC_API_KEY")
+    } else {
+      Sys.setenv(ANTHROPIC_API_KEY = oldKey)
+    }
+  }, add = TRUE)
+
+  provider = getChatProvider(backend = "claude")
+
+  expect_true(isWmfmDummyChatProvider(provider))
+  expect_match(
+    getWmfmDummyChatProviderMessage(provider),
+    "ANTHROPIC_API_KEY is not set",
+    fixed = TRUE
+  )
+})

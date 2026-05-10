@@ -14,6 +14,7 @@ createAppServerReactiveState = function() {
     modelExplanation = NULL,
     modelExplanationAudit = NULL,
     modelExplanationTutor = NULL,
+    modelExplanationMessage = NULL,
     bucketGroupId = 0,
     lastResponse = NULL,
     lastFactors = character(0),

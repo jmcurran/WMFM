@@ -1,0 +1,1510 @@
+{
+  "schema": "wmfm-developer-scoring-export",
+  "schemaVersion": "1.1.0",
+  "createdAt": "2026-05-10 11:24:17.844764",
+  "purpose": "developer scoring and grading diagnostics",
+  "method": "deterministic",
+  "appState": {
+    "modelClass": ["glm", "lm"],
+    "modelType": "logistic",
+    "hasFactorPredictors": false,
+    "hasInteractionTerms": false,
+    "formula": "Pass ~ StudyHours",
+    "exampleName": "test-SG-4",
+    "package": null,
+    "researchQuestion": "How does the test mark relate to the probability of passing?"
+  },
+  "current": {
+    "explanation": "We want to understand how a student's test mark is related to the probability that they will pass. The outcome is whether a student passes (coded as yes or no). The predictor is the test mark, recorded out of 100. For a student with an average test mark of around 11.6, the estimated probability of passing is 84%. The 95% confidence interval runs from 73% to 91%. As the test mark increases, the odds of passing rise substantially. For each additional an increase of one unit in the test mark, the odds of passing are multiplied by about 2. The 95% confidence interval runs from 1.6 to 2.5. This means that even modest increases in the test mark are associated with considerably higher chances of passing. Overall, higher test marks are strongly associated with a greater probability of passing, with the data indicating that each an increase of one unit in the test mark roughly doubles the odds of passing.",
+    "grade": {
+      "class": ["wmfmGrade", "list"],
+      "scoreScale": 10,
+      "scored": true,
+      "method": "deterministic",
+      "summary": [
+        {
+          "method": "deterministic",
+          "overallScore": 100,
+          "mark": 10,
+          "scoreScale": 10,
+          "scored": true
+        }
+      ],
+      "metrics": [
+        {
+          "label": "Overall score",
+          "studentValue": 100,
+          "maxValue": 100,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation met all applicable deterministic rubric criteria."
+        },
+        {
+          "label": "Factual score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation stayed close to the fitted model facts."
+        },
+        {
+          "label": "Inference score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation used an appropriate inferential tone."
+        },
+        {
+          "label": "Completeness score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation covered the main parts of the model story."
+        },
+        {
+          "label": "Clarity score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation was generally clear and readable."
+        },
+        {
+          "label": "Calibration score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation kept its claims reasonably well calibrated."
+        },
+        {
+          "label": "Effect direction correct",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The direction of the fitted effect was described correctly."
+        },
+        {
+          "label": "Effect scale appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The effect was described on an appropriate scale."
+        },
+        {
+          "label": "Reference group handled correctly",
+          "studentValue": null,
+          "maxValue": 0,
+          "marksLost": 0,
+          "status": "not_applicable",
+          "confidence": "not_applicable",
+          "evidenceStrength": null,
+          "reason": "Reference group handled correctly was not applicable to this model."
+        },
+        {
+          "label": "Interaction coverage adequate",
+          "studentValue": null,
+          "maxValue": 0,
+          "marksLost": 0,
+          "status": "not_applicable",
+          "confidence": "not_applicable",
+          "evidenceStrength": null,
+          "reason": "Interaction coverage adequate was not applicable to this model."
+        },
+        {
+          "label": "Interaction substance correct",
+          "studentValue": null,
+          "maxValue": 0,
+          "marksLost": 0,
+          "status": "not_applicable",
+          "confidence": "not_applicable",
+          "evidenceStrength": null,
+          "reason": "Interaction substance correct was not applicable to this model."
+        },
+        {
+          "label": "Uncertainty handling appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "Uncertainty was handled appropriately for this model."
+        },
+        {
+          "label": "Inferential register appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The wording matched the evidence level well."
+        },
+        {
+          "label": "Main-effect coverage adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The main effect was described adequately."
+        },
+        {
+          "label": "Reference-group coverage adequate",
+          "studentValue": null,
+          "maxValue": 0,
+          "marksLost": 0,
+          "status": "not_applicable",
+          "confidence": "not_applicable",
+          "evidenceStrength": null,
+          "reason": "Reference-group coverage adequate was not applicable to this model."
+        },
+        {
+          "label": "Clarity adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation wording was acceptably clear."
+        },
+        {
+          "label": "Numeric expression adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "marksLost": 0,
+          "status": "scored",
+          "confidence": "high",
+          "evidenceStrength": 1,
+          "reason": "The explanation handled numeric information adequately."
+        },
+        {
+          "label": "Comparison structure clear",
+          "studentValue": null,
+          "maxValue": 0,
+          "marksLost": 0,
+          "status": "not_applicable",
+          "confidence": "not_applicable",
+          "evidenceStrength": null,
+          "reason": "Comparison structure clear was not applicable to this model."
+        }
+      ],
+      "whereMarksLost": [],
+      "strengths": [
+        {
+          "metric": "calibrationScore",
+          "label": "Calibration score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation kept its claims reasonably well calibrated."
+        },
+        {
+          "metric": "clarityAdequate",
+          "label": "Clarity adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation wording was acceptably clear."
+        },
+        {
+          "metric": "clarityScore",
+          "label": "Clarity score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation was generally clear and readable."
+        },
+        {
+          "metric": "completenessScore",
+          "label": "Completeness score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation covered the main parts of the model story."
+        },
+        {
+          "metric": "effectDirectionCorrect",
+          "label": "Effect direction correct",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The direction of the fitted effect was described correctly."
+        },
+        {
+          "metric": "effectScaleAppropriate",
+          "label": "Effect scale appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The effect was described on an appropriate scale."
+        },
+        {
+          "metric": "factualScore",
+          "label": "Factual score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation stayed close to the fitted model facts."
+        },
+        {
+          "metric": "inferenceScore",
+          "label": "Inference score",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation used an appropriate inferential tone."
+        },
+        {
+          "metric": "inferentialRegisterAppropriate",
+          "label": "Inferential register appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The wording matched the evidence level well."
+        },
+        {
+          "metric": "mainEffectCoverageAdequate",
+          "label": "Main-effect coverage adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The main effect was described adequately."
+        },
+        {
+          "metric": "numericExpressionAdequate",
+          "label": "Numeric expression adequate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "The explanation handled numeric information adequately."
+        },
+        {
+          "metric": "uncertaintyHandlingAppropriate",
+          "label": "Uncertainty handling appropriate",
+          "studentValue": 2,
+          "maxValue": 2,
+          "comment": "Uncertainty was handled appropriately for this model."
+        }
+      ],
+      "semanticEvidence": [
+        {
+          "field": "effectDirection",
+          "label": "Effect direction",
+          "value": "positive",
+          "evidencePresent": true,
+          "detail": "Direction inferred from directional wording or group estimates."
+        },
+        {
+          "field": "effectMagnitude",
+          "label": "Effect magnitude",
+          "value": "2",
+          "evidencePresent": true,
+          "detail": "First clearly stated fitted magnitude found near effect wording."
+        },
+        {
+          "field": "effectScale",
+          "label": "Effect scale",
+          "value": "multiplicative",
+          "evidencePresent": true,
+          "detail": "Scale inferred from additive or multiplicative model language."
+        },
+        {
+          "field": "uncertaintyMentioned",
+          "label": "Uncertainty mentioned",
+          "value": "present",
+          "evidencePresent": true,
+          "detail": "Uncertainty language such as confidence intervals, overlap, or weak evidence."
+        },
+        {
+          "field": "interactionAcknowledged",
+          "label": "Interaction acknowledged",
+          "value": "absent",
+          "evidencePresent": false,
+          "detail": "Interaction or slope-difference structure mentioned."
+        },
+        {
+          "field": "comparisonMentioned",
+          "label": "Comparison mentioned",
+          "value": "absent",
+          "evidencePresent": false,
+          "detail": "Group comparison or contrast language mentioned."
+        },
+        {
+          "field": "noClearDifferenceMentioned",
+          "label": "No-clear-difference language",
+          "value": "absent",
+          "evidencePresent": false,
+          "detail": "Language indicating no clear or well-supported difference."
+        },
+        {
+          "field": "modelCannotAnswerQuestion",
+          "label": "Model cannot answer question",
+          "value": "absent",
+          "evidencePresent": false,
+          "detail": "Explanation says the fitted model cannot directly answer the research question."
+        },
+        {
+          "field": "researchQuestionAnsweredDirectly",
+          "label": "Research question answered directly",
+          "value": "present",
+          "evidencePresent": true,
+          "detail": "Whether the fitted model is treated as directly answering the research question."
+        },
+        {
+          "field": "alternativeModelInterpretationProvided",
+          "label": "Alternative model interpretation provided",
+          "value": "absent",
+          "evidencePresent": false,
+          "detail": "Explanation gives the fitted predictor interpretation when the research question predictor is absent."
+        }
+      ],
+      "objectSummaryText": "WMFM grade summary\n------------------\nMethod: deterministic \nRuns: 1 \nMark mean:10.00[10.00, 10.00]\nOverall score mean:100.00[100.00, 100.00]\n\nElapsed time: 0s \nMean time per run: 0s "
+    }
+  },
+  "repeated": {
+    "totalRuns": 3,
+    "elapsedSeconds": 21.762,
+    "createdAt": "2026-05-10 11:24:17.833251",
+    "summary": [
+      {
+        "requestedRuns": 3,
+        "completedRuns": 3,
+        "scoredRuns": 3,
+        "meanMark": 10,
+        "minMark": 10,
+        "maxMark": 10,
+        "elapsed": "21.8 seconds"
+      }
+    ],
+    "runTable": [
+      {
+        "run": 1,
+        "scored": true,
+        "overallScore": 100,
+        "mark": 10,
+        "elapsedSeconds": 5.8,
+        "status": "scored"
+      },
+      {
+        "run": 2,
+        "scored": true,
+        "overallScore": 100,
+        "mark": 10,
+        "elapsedSeconds": 6,
+        "status": "scored"
+      },
+      {
+        "run": 3,
+        "scored": true,
+        "overallScore": 100,
+        "mark": 10,
+        "elapsedSeconds": 10,
+        "status": "scored"
+      }
+    ],
+    "runs": [
+      {
+        "run": 1,
+        "status": "scored",
+        "elapsedSeconds": 5.8,
+        "explanation": "We want to understand how a student's test mark is related to the probability that they will pass. The outcome is whether a student passes (coded as yes or no), and the predictor is the test mark (out of 100). For a student with an average study time of around 11.6 hours, the estimated probability of passing is 84%. The 95% confidence interval runs from 73% to 91%. For each an increase of one unit in the test mark, the odds of passing are multiplied by about 2. The 95% confidence interval runs from 1.6 to 2.5, indicating that even modest increases in the test mark are associated with substantially higher odds of passing. Overall, higher test marks are strongly associated with greater probability of passing, with each an increase of one unit in the test mark roughly doubling the odds of passing on average.",
+        "grade": {
+          "class": ["wmfmGrade", "list"],
+          "scoreScale": 10,
+          "scored": true,
+          "method": "deterministic",
+          "summary": [
+            {
+              "method": "deterministic",
+              "overallScore": 100,
+              "mark": 10,
+              "scoreScale": 10,
+              "scored": true
+            }
+          ],
+          "metrics": [
+            {
+              "label": "Overall score",
+              "studentValue": 100,
+              "maxValue": 100,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation met all applicable deterministic rubric criteria."
+            },
+            {
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation covered the main parts of the model story."
+            },
+            {
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation was generally clear and readable."
+            },
+            {
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The effect was described on an appropriate scale."
+            },
+            {
+              "label": "Reference group handled correctly",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference group handled correctly was not applicable to this model."
+            },
+            {
+              "label": "Interaction coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Interaction substance correct",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction substance correct was not applicable to this model."
+            },
+            {
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "Uncertainty was handled appropriately for this model."
+            },
+            {
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The wording matched the evidence level well."
+            },
+            {
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The main effect was described adequately."
+            },
+            {
+              "label": "Reference-group coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference-group coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation wording was acceptably clear."
+            },
+            {
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation handled numeric information adequately."
+            },
+            {
+              "label": "Comparison structure clear",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Comparison structure clear was not applicable to this model."
+            }
+          ],
+          "whereMarksLost": [],
+          "strengths": [
+            {
+              "metric": "calibrationScore",
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "metric": "clarityAdequate",
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation wording was acceptably clear."
+            },
+            {
+              "metric": "clarityScore",
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation was generally clear and readable."
+            },
+            {
+              "metric": "completenessScore",
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation covered the main parts of the model story."
+            },
+            {
+              "metric": "effectDirectionCorrect",
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "metric": "effectScaleAppropriate",
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The effect was described on an appropriate scale."
+            },
+            {
+              "metric": "factualScore",
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "metric": "inferenceScore",
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "metric": "inferentialRegisterAppropriate",
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The wording matched the evidence level well."
+            },
+            {
+              "metric": "mainEffectCoverageAdequate",
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The main effect was described adequately."
+            },
+            {
+              "metric": "numericExpressionAdequate",
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation handled numeric information adequately."
+            },
+            {
+              "metric": "uncertaintyHandlingAppropriate",
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "Uncertainty was handled appropriately for this model."
+            }
+          ],
+          "semanticEvidence": [
+            {
+              "field": "effectDirection",
+              "label": "Effect direction",
+              "value": "positive",
+              "evidencePresent": true,
+              "detail": "Direction inferred from directional wording or group estimates."
+            },
+            {
+              "field": "effectMagnitude",
+              "label": "Effect magnitude",
+              "value": "2",
+              "evidencePresent": true,
+              "detail": "First clearly stated fitted magnitude found near effect wording."
+            },
+            {
+              "field": "effectScale",
+              "label": "Effect scale",
+              "value": "multiplicative",
+              "evidencePresent": true,
+              "detail": "Scale inferred from additive or multiplicative model language."
+            },
+            {
+              "field": "uncertaintyMentioned",
+              "label": "Uncertainty mentioned",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Uncertainty language such as confidence intervals, overlap, or weak evidence."
+            },
+            {
+              "field": "interactionAcknowledged",
+              "label": "Interaction acknowledged",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Interaction or slope-difference structure mentioned."
+            },
+            {
+              "field": "comparisonMentioned",
+              "label": "Comparison mentioned",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Group comparison or contrast language mentioned."
+            },
+            {
+              "field": "noClearDifferenceMentioned",
+              "label": "No-clear-difference language",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Language indicating no clear or well-supported difference."
+            },
+            {
+              "field": "modelCannotAnswerQuestion",
+              "label": "Model cannot answer question",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation says the fitted model cannot directly answer the research question."
+            },
+            {
+              "field": "researchQuestionAnsweredDirectly",
+              "label": "Research question answered directly",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Whether the fitted model is treated as directly answering the research question."
+            },
+            {
+              "field": "alternativeModelInterpretationProvided",
+              "label": "Alternative model interpretation provided",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation gives the fitted predictor interpretation when the research question predictor is absent."
+            }
+          ],
+          "objectSummaryText": "WMFM grade summary\n------------------\nMethod: deterministic \nRuns: 1 \nMark mean:10.00[10.00, 10.00]\nOverall score mean:100.00[100.00, 100.00]\n\nElapsed time: 0s \nMean time per run: 0s "
+        }
+      },
+      {
+        "run": 2,
+        "status": "scored",
+        "elapsedSeconds": 6,
+        "explanation": "We want to understand how a student's test mark is related to the probability that they will pass. The outcome is whether a student passes (coded as yes or no), and the predictor is the test mark (out of 100). For a student with average study time of around 11.6 hours, the estimated probability of passing is 84%. The 95% confidence interval runs from 73% to 91%. For each an increase of one unit in the test mark, the odds of passing are multiplied by about 2. The 95% confidence interval runs from 1.6 to 2.5, indicating that higher test marks are associated with substantially higher odds of passing. Overall, the data indicate that higher test marks are strongly associated with a greater probability of passing, with each additional mark point roughly doubling the odds of passing on average.",
+        "grade": {
+          "class": ["wmfmGrade", "list"],
+          "scoreScale": 10,
+          "scored": true,
+          "method": "deterministic",
+          "summary": [
+            {
+              "method": "deterministic",
+              "overallScore": 100,
+              "mark": 10,
+              "scoreScale": 10,
+              "scored": true
+            }
+          ],
+          "metrics": [
+            {
+              "label": "Overall score",
+              "studentValue": 100,
+              "maxValue": 100,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation met all applicable deterministic rubric criteria."
+            },
+            {
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation covered the main parts of the model story."
+            },
+            {
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation was generally clear and readable."
+            },
+            {
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The effect was described on an appropriate scale."
+            },
+            {
+              "label": "Reference group handled correctly",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference group handled correctly was not applicable to this model."
+            },
+            {
+              "label": "Interaction coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Interaction substance correct",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction substance correct was not applicable to this model."
+            },
+            {
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "Uncertainty was handled appropriately for this model."
+            },
+            {
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The wording matched the evidence level well."
+            },
+            {
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The main effect was described adequately."
+            },
+            {
+              "label": "Reference-group coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference-group coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation wording was acceptably clear."
+            },
+            {
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation handled numeric information adequately."
+            },
+            {
+              "label": "Comparison structure clear",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Comparison structure clear was not applicable to this model."
+            }
+          ],
+          "whereMarksLost": [],
+          "strengths": [
+            {
+              "metric": "calibrationScore",
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "metric": "clarityAdequate",
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation wording was acceptably clear."
+            },
+            {
+              "metric": "clarityScore",
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation was generally clear and readable."
+            },
+            {
+              "metric": "completenessScore",
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation covered the main parts of the model story."
+            },
+            {
+              "metric": "effectDirectionCorrect",
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "metric": "effectScaleAppropriate",
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The effect was described on an appropriate scale."
+            },
+            {
+              "metric": "factualScore",
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "metric": "inferenceScore",
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "metric": "inferentialRegisterAppropriate",
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The wording matched the evidence level well."
+            },
+            {
+              "metric": "mainEffectCoverageAdequate",
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The main effect was described adequately."
+            },
+            {
+              "metric": "numericExpressionAdequate",
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation handled numeric information adequately."
+            },
+            {
+              "metric": "uncertaintyHandlingAppropriate",
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "Uncertainty was handled appropriately for this model."
+            }
+          ],
+          "semanticEvidence": [
+            {
+              "field": "effectDirection",
+              "label": "Effect direction",
+              "value": "positive",
+              "evidencePresent": true,
+              "detail": "Direction inferred from directional wording or group estimates."
+            },
+            {
+              "field": "effectMagnitude",
+              "label": "Effect magnitude",
+              "value": "2",
+              "evidencePresent": true,
+              "detail": "First clearly stated fitted magnitude found near effect wording."
+            },
+            {
+              "field": "effectScale",
+              "label": "Effect scale",
+              "value": "multiplicative",
+              "evidencePresent": true,
+              "detail": "Scale inferred from additive or multiplicative model language."
+            },
+            {
+              "field": "uncertaintyMentioned",
+              "label": "Uncertainty mentioned",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Uncertainty language such as confidence intervals, overlap, or weak evidence."
+            },
+            {
+              "field": "interactionAcknowledged",
+              "label": "Interaction acknowledged",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Interaction or slope-difference structure mentioned."
+            },
+            {
+              "field": "comparisonMentioned",
+              "label": "Comparison mentioned",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Group comparison or contrast language mentioned."
+            },
+            {
+              "field": "noClearDifferenceMentioned",
+              "label": "No-clear-difference language",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Language indicating no clear or well-supported difference."
+            },
+            {
+              "field": "modelCannotAnswerQuestion",
+              "label": "Model cannot answer question",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation says the fitted model cannot directly answer the research question."
+            },
+            {
+              "field": "researchQuestionAnsweredDirectly",
+              "label": "Research question answered directly",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Whether the fitted model is treated as directly answering the research question."
+            },
+            {
+              "field": "alternativeModelInterpretationProvided",
+              "label": "Alternative model interpretation provided",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation gives the fitted predictor interpretation when the research question predictor is absent."
+            }
+          ],
+          "objectSummaryText": "WMFM grade summary\n------------------\nMethod: deterministic \nRuns: 1 \nMark mean:10.00[10.00, 10.00]\nOverall score mean:100.00[100.00, 100.00]\n\nElapsed time: 0s \nMean time per run: 0s "
+        }
+      },
+      {
+        "run": 3,
+        "status": "scored",
+        "elapsedSeconds": 10,
+        "explanation": "We want to understand how a student's test mark is related to the probability that they will pass. The outcome is whether a student passes (coded as yes or no), and the predictor is the test mark (out of 100). For a student with average study time of around 11.6 hours, the estimated probability of passing is 84%. The 95% confidence interval runs from 73% to 91%. For each an increase of one unit in the test mark, the odds of passing are multiplied by about 2. The 95% confidence interval runs from 1.6 to 2.5, indicating that higher test marks are associated with substantially higher odds of passing. Overall, the data indicate that higher test marks are strongly associated with a greater probability of passing, with each additional mark point roughly doubling the odds of passing on average.",
+        "grade": {
+          "class": ["wmfmGrade", "list"],
+          "scoreScale": 10,
+          "scored": true,
+          "method": "deterministic",
+          "summary": [
+            {
+              "method": "deterministic",
+              "overallScore": 100,
+              "mark": 10,
+              "scoreScale": 10,
+              "scored": true
+            }
+          ],
+          "metrics": [
+            {
+              "label": "Overall score",
+              "studentValue": 100,
+              "maxValue": 100,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation met all applicable deterministic rubric criteria."
+            },
+            {
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation covered the main parts of the model story."
+            },
+            {
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation was generally clear and readable."
+            },
+            {
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The effect was described on an appropriate scale."
+            },
+            {
+              "label": "Reference group handled correctly",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference group handled correctly was not applicable to this model."
+            },
+            {
+              "label": "Interaction coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Interaction substance correct",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Interaction substance correct was not applicable to this model."
+            },
+            {
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "Uncertainty was handled appropriately for this model."
+            },
+            {
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The wording matched the evidence level well."
+            },
+            {
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The main effect was described adequately."
+            },
+            {
+              "label": "Reference-group coverage adequate",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Reference-group coverage adequate was not applicable to this model."
+            },
+            {
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation wording was acceptably clear."
+            },
+            {
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "marksLost": 0,
+              "status": "scored",
+              "confidence": "high",
+              "evidenceStrength": 1,
+              "reason": "The explanation handled numeric information adequately."
+            },
+            {
+              "label": "Comparison structure clear",
+              "studentValue": null,
+              "maxValue": 0,
+              "marksLost": 0,
+              "status": "not_applicable",
+              "confidence": "not_applicable",
+              "evidenceStrength": null,
+              "reason": "Comparison structure clear was not applicable to this model."
+            }
+          ],
+          "whereMarksLost": [],
+          "strengths": [
+            {
+              "metric": "calibrationScore",
+              "label": "Calibration score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation kept its claims reasonably well calibrated."
+            },
+            {
+              "metric": "clarityAdequate",
+              "label": "Clarity adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation wording was acceptably clear."
+            },
+            {
+              "metric": "clarityScore",
+              "label": "Clarity score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation was generally clear and readable."
+            },
+            {
+              "metric": "completenessScore",
+              "label": "Completeness score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation covered the main parts of the model story."
+            },
+            {
+              "metric": "effectDirectionCorrect",
+              "label": "Effect direction correct",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The direction of the fitted effect was described correctly."
+            },
+            {
+              "metric": "effectScaleAppropriate",
+              "label": "Effect scale appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The effect was described on an appropriate scale."
+            },
+            {
+              "metric": "factualScore",
+              "label": "Factual score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation stayed close to the fitted model facts."
+            },
+            {
+              "metric": "inferenceScore",
+              "label": "Inference score",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation used an appropriate inferential tone."
+            },
+            {
+              "metric": "inferentialRegisterAppropriate",
+              "label": "Inferential register appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The wording matched the evidence level well."
+            },
+            {
+              "metric": "mainEffectCoverageAdequate",
+              "label": "Main-effect coverage adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The main effect was described adequately."
+            },
+            {
+              "metric": "numericExpressionAdequate",
+              "label": "Numeric expression adequate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "The explanation handled numeric information adequately."
+            },
+            {
+              "metric": "uncertaintyHandlingAppropriate",
+              "label": "Uncertainty handling appropriate",
+              "studentValue": 2,
+              "maxValue": 2,
+              "comment": "Uncertainty was handled appropriately for this model."
+            }
+          ],
+          "semanticEvidence": [
+            {
+              "field": "effectDirection",
+              "label": "Effect direction",
+              "value": "positive",
+              "evidencePresent": true,
+              "detail": "Direction inferred from directional wording or group estimates."
+            },
+            {
+              "field": "effectMagnitude",
+              "label": "Effect magnitude",
+              "value": "2",
+              "evidencePresent": true,
+              "detail": "First clearly stated fitted magnitude found near effect wording."
+            },
+            {
+              "field": "effectScale",
+              "label": "Effect scale",
+              "value": "multiplicative",
+              "evidencePresent": true,
+              "detail": "Scale inferred from additive or multiplicative model language."
+            },
+            {
+              "field": "uncertaintyMentioned",
+              "label": "Uncertainty mentioned",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Uncertainty language such as confidence intervals, overlap, or weak evidence."
+            },
+            {
+              "field": "interactionAcknowledged",
+              "label": "Interaction acknowledged",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Interaction or slope-difference structure mentioned."
+            },
+            {
+              "field": "comparisonMentioned",
+              "label": "Comparison mentioned",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Group comparison or contrast language mentioned."
+            },
+            {
+              "field": "noClearDifferenceMentioned",
+              "label": "No-clear-difference language",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Language indicating no clear or well-supported difference."
+            },
+            {
+              "field": "modelCannotAnswerQuestion",
+              "label": "Model cannot answer question",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation says the fitted model cannot directly answer the research question."
+            },
+            {
+              "field": "researchQuestionAnsweredDirectly",
+              "label": "Research question answered directly",
+              "value": "present",
+              "evidencePresent": true,
+              "detail": "Whether the fitted model is treated as directly answering the research question."
+            },
+            {
+              "field": "alternativeModelInterpretationProvided",
+              "label": "Alternative model interpretation provided",
+              "value": "absent",
+              "evidencePresent": false,
+              "detail": "Explanation gives the fitted predictor interpretation when the research question predictor is absent."
+            }
+          ],
+          "objectSummaryText": "WMFM grade summary\n------------------\nMethod: deterministic \nRuns: 1 \nMark mean:10.00[10.00, 10.00]\nOverall score mean:100.00[100.00, 100.00]\n\nElapsed time: 0s \nMean time per run: 0s "
+        }
+      }
+    ]
+  }
+}

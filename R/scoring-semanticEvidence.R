@@ -99,6 +99,70 @@ wmfmSemanticNoClearDifferencePatterns = function() {
   )
 }
 
+
+normaliseWmfmSemanticText = function(text) {
+  text = paste(as.character(text %||% ""), collapse = " ")
+  text = gsub("[\u00a0\u202f]", " ", text, perl = TRUE)
+  text = gsub("[\u2010\u2011\u2012\u2013\u2014\u2212]", "-", text, perl = TRUE)
+  text = gsub("[[:space:]]+", " ", text, perl = TRUE)
+  trimws(text)
+}
+
+extractWmfmSemanticNumber = function(text, pattern) {
+  match = regexec(pattern, text, perl = TRUE)
+  captures = regmatches(text, match)[[1]]
+
+  if (length(captures) < 2) {
+    return(NA_real_)
+  }
+
+  candidates = captures[-1]
+  candidates = candidates[!is.na(candidates) & nzchar(candidates)]
+
+  if (length(candidates) < 1) {
+    return(NA_real_)
+  }
+
+  numberMatch = regexpr("[-+]?[0-9]+([.][0-9]+)?", candidates[1], perl = TRUE)
+
+  if (numberMatch[1] < 0) {
+    return(NA_real_)
+  }
+
+  suppressWarnings(as.numeric(regmatches(candidates[1], numberMatch)))
+}
+
+extractWmfmSemanticGroupEstimate = function(text, groupPattern) {
+  numberPattern = "([-+]?[0-9]+(?:[.][0-9]+)?)"
+  connectorPattern = "(?:(?!confidence interval|95 ?%|95 percent|ci)[^0-9.;,]){0,100}"
+  patterns = c(
+    paste0(
+      numberPattern,
+      connectorPattern,
+      "\\b(?:",
+      groupPattern,
+      ")\\b"
+    ),
+    paste0(
+      "\\b(?:",
+      groupPattern,
+      ")\\b",
+      connectorPattern,
+      numberPattern
+    )
+  )
+
+  for (pattern in patterns) {
+    estimate = extractWmfmSemanticNumber(text, pattern)
+
+    if (!is.na(estimate)) {
+      return(estimate)
+    }
+  }
+
+  NA_real_
+}
+
 #' Extract semantic evidence from a WMFM explanation
 #'
 #' Builds a small structured evidence object from an explanation before rubric
@@ -115,8 +179,7 @@ wmfmSemanticNoClearDifferencePatterns = function() {
 #' @keywords internal
 #' @noRd
 extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
-  text = paste(as.character(explanationText %||% ""), collapse = " ")
-  text = trimws(text)
+  text = normaliseWmfmSemanticText(explanationText)
   lowerText = tolower(text)
 
   getInfo = function(name, default = NULL) {
@@ -148,17 +211,6 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     }
 
     suppressWarnings(as.numeric(regmatches(matchedText, numberMatch)))
-  }
-
-  extractCapturedNumber = function(pattern) {
-    match = regexec(pattern, lowerText, perl = TRUE)
-    captures = regmatches(lowerText, match)[[1]]
-
-    if (length(captures) < 2) {
-      return(NA_real_)
-    }
-
-    suppressWarnings(as.numeric(captures[2]))
   }
 
   formulaText = tolower(as.character(getInfo("formula", ""))[1])
@@ -199,35 +251,8 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
     )
   )
 
-  extractGroupEstimate = function(groupPattern) {
-    numberPattern = "([-+]?[0-9]+([.][0-9]+)?)"
-    numberBeforeGroupPattern = paste0(
-      numberPattern,
-      "[^0-9.;,]{0,80}\\b(?:",
-      groupPattern,
-      ")\\b"
-    )
-    groupBeforeNumberPattern = paste0(
-      "\\b(?:",
-      groupPattern,
-      ")\\b",
-      "(?:(?!confidence interval|95 ?%|95 percent|ci)[^0-9.;,]){0,80}",
-      numberPattern
-    )
-
-    for (pattern in c(numberBeforeGroupPattern, groupBeforeNumberPattern)) {
-      estimate = extractCapturedNumber(pattern)
-
-      if (!is.na(estimate)) {
-        return(estimate)
-      }
-    }
-
-    NA_real_
-  }
-
-  femaleEstimate = extractGroupEstimate("female|girls?")
-  maleEstimate = extractGroupEstimate("male|boys?")
+  femaleEstimate = extractWmfmSemanticGroupEstimate(lowerText, "female|girls?")
+  maleEstimate = extractWmfmSemanticGroupEstimate(lowerText, "male|boys?")
   numericPositiveComparison = !is.na(femaleEstimate) &&
     !is.na(maleEstimate) &&
     femaleEstimate > maleEstimate
@@ -237,7 +262,7 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
 
   positiveEvidence = detectPattern(
     paste(
-      "higher|raises?|increase[sd]?|additional|extra|positive|larger|more",
+      "higher|raises?|increase[sd]?|additional|extra|positive|larger|more|doubles?|multiplied by",
       "double[sd]?|multiplied|odds[^.;]{0,40}2|associated with[^.;]{0,80}higher",
       sep = "|"
     )
@@ -255,8 +280,10 @@ extractWmfmSemanticEvidence = function(explanationText, modelInfo = list()) {
   }
 
   multiplicativeEvidence = detectPattern("odds|multiplier|double[sd]?|multiplied|times")
-  additiveEvidence = detectPattern("point|mark|score|unit|slope|mean|average|difference") &&
-    !multiplicativeEvidence
+  additiveEvidence = (
+    detectPattern("point|mark|score|unit|slope|mean|average|difference|expected final") ||
+      (!is.na(femaleEstimate) && !is.na(maleEstimate))
+  ) && !multiplicativeEvidence
   effectScale = "not_stated"
   if (additiveEvidence) {
     effectScale = "additive"

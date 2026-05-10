@@ -168,3 +168,32 @@ test_that("buildAppModelOutputs falls back to deterministic equations if llm equ
   expect_identical(out$explanation, "explanation text")
   expect_identical(out$equationMethodUsed, "deterministic")
 })
+
+
+test_that("buildAppExplanation returns NULL for dummy chat providers", {
+
+  df = data.frame(
+    y = c(1, 2, 3, 4, 5),
+    x = c(0, 1, 2, 3, 4)
+  )
+
+  model = lm(y ~ x, data = df)
+
+  dummyProvider = structure(
+    list(
+      chat = function(...) {
+        stop("ANTHROPIC_API_KEY is not set.", call. = FALSE)
+      },
+      errorMessage = "ANTHROPIC_API_KEY is not set.",
+      backend = "claude"
+    ),
+    class = "wmfm_dummy_chat_provider"
+  )
+
+  out = buildAppExplanation(
+    model = model,
+    chatProvider = dummyProvider
+  )
+
+  expect_null(out)
+})
