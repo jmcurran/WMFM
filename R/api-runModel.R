@@ -254,6 +254,8 @@ runModel = function(
     }
   )
 
+  attr(model, "wmfm_adjustment_variables") = character(0)
+
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
 
