@@ -168,6 +168,7 @@ appUI = function() {
 
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
+          uiOutput("adjustment_variables_ui"),
           div(
             actionButton(
               "addDerivedVarBtn",
