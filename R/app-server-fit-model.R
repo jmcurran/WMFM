@@ -56,6 +56,13 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     list(ok = TRUE, msg = "Formula OK.")
   }
 
+  buildAdjustmentVariableMetadata = function(rv) {
+    adjustmentVariables = rv$adjustmentVariables %||% character(0)
+    adjustmentVariables = unique(as.character(adjustmentVariables))
+    adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
+    adjustmentVariables
+  }
+
   # -------------------------------------------------------------------
   # Show formula validation status
   # -------------------------------------------------------------------
@@ -234,6 +241,9 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       return(NULL)
     }
 
+    adjustmentVariables = buildAdjustmentVariableMetadata(rv)
+    attr(m, "wmfm_adjustment_variables") = adjustmentVariables
+
     # If this data came from a package, attach package metadata to the model.
     if (identical(input$data_source, "package")) {
       pkg = input$data_package %||% ""
@@ -258,7 +268,8 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
         responseVar = respName,
         nounPhrase = nounPhrase,
         datasetName = dsName,
-        packageName = pkg
+        packageName = pkg,
+        adjustmentVariables = adjustmentVariables
       )
     }
 
@@ -287,7 +298,8 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
         rv$modelContext = list(
           responseVar = respName,
           nounPhrase  = nounPhrase,
-          datasetName = "Uploaded data"
+          datasetName = "Uploaded data",
+          adjustmentVariables = adjustmentVariables
         )
       }
     }
@@ -310,7 +322,8 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       rv$modelContext = list(
         responseVar = respName,
         nounPhrase = nounPhrase,
-        datasetName = paste0(exampleName, " example")
+        datasetName = paste0(exampleName, " example"),
+        adjustmentVariables = adjustmentVariables
       )
     }
 
