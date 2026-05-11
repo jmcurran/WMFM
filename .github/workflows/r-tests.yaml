@@ -23,10 +23,17 @@ jobs:
 
       - name: Check for stale generated documentation
         run: |
-          if ! git diff --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-            echo "Generated documentation is stale. Please run devtools::document() and commit all tracked/untracked doc changes."
-            git status --short
-            git diff
+          tracked_changes="$(git diff --name-only -- NAMESPACE man)"
+          untracked_changes="$(git ls-files --others --exclude-standard -- NAMESPACE man)"
+
+          if [ -n "$tracked_changes$untracked_changes" ]; then
+            echo "Generated documentation is stale. Please run devtools::document() and commit all doc changes."
+            echo "Tracked generated-file changes:"
+            printf '%s\n' "$tracked_changes"
+            echo "Untracked generated files:"
+            printf '%s\n' "$untracked_changes"
+            git status --short -- NAMESPACE man
+            git diff -- NAMESPACE man
             exit 1
           fi
 
