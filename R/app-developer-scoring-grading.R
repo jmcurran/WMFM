@@ -407,12 +407,6 @@ extractDeveloperScoringInteractionInfo = function(model) {
   )
 }
 
-#' Detect whether a model contains factor predictors
-#'
-#' @param model A fitted model object.
-#'
-#' @return Logical scalar.
-#' @keywords internal
 #' Detect whether a developer scoring model has interaction terms
 #'
 #' @param model A fitted model object.
@@ -428,6 +422,12 @@ detectDeveloperScoringInteractionTerms = function(model) {
   })
 }
 
+#' Detect whether a model contains factor predictors
+#'
+#' @param model A fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
 detectDeveloperScoringFactorPredictors = function(model) {
   if (is.null(model)) {
     return(FALSE)
