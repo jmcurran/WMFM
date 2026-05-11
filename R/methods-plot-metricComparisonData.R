@@ -9,9 +9,7 @@
 #'
 #' @return A `ggplot2` object.
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_tile geom_text scale_fill_gradient labs
-#'   theme_minimal theme element_text geom_segment geom_point scale_x_continuous
-#'   scale_y_continuous
+#' @importFrom ggplot2 ggplot aes geom_tile geom_text scale_fill_gradient labs theme_minimal theme element_text geom_segment geom_point scale_x_continuous scale_y_continuous
 #' @importFrom rlang .data
 plot.metricComparisonData = function(
   x,

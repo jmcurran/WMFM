@@ -123,9 +123,7 @@ makeWmfmDeterministicCategoryColors = function(values,
 #' @return A ggplot object.
 #' @export
 #'
-#' @importFrom ggplot2 ggplot aes geom_tile facet_grid scale_fill_manual
-#'   scale_x_continuous labs theme_minimal theme element_text element_blank
-#'   element_rect margin guides guide_legend
+#' @importFrom ggplot2 ggplot aes geom_tile facet_grid scale_fill_manual scale_x_continuous labs theme_minimal theme element_text element_blank element_rect margin guides guide_legend
 plotWmfmScoreHeatmap = function(
     x,
     includeMetricTypes = c("ordinal", "binary"),
