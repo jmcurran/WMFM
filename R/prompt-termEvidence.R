@@ -99,8 +99,12 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
       "main effect"
     }
 
-    roleLabel = if (termRows[[i]] %in% adjustmentPredictors) {
-      "adjustment variable"
+    roleLabel = if (isTRUE(termInvolvesAdjustmentVariable(termRows[[i]], adjustmentPredictors))) {
+      if (grepl(":", termRows[[i]], fixed = TRUE)) {
+        "interaction involving adjustment variable"
+      } else {
+        "adjustment variable"
+      }
     } else {
       "primary predictor"
     }
