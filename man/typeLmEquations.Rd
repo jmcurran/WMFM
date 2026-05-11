@@ -5,16 +5,12 @@
 \alias{typeLmEquations}
 \title{Schema for LM equations returned by the LLM}
 \format{
-An object created by \code{ellmer::type_object()} describing a
-list of equations, each with a \code{condition} and \code{equation}
-field.
+An object created by \code{ellmer::type_object()} describing a list of equations, each with a \code{condition} and \code{equation} field.
 }
 \usage{
 typeLmEquations
 }
 \description{
-Defines a structured schema for equations describing a fitted regression
-model. This is only used when talking to providers that support
-structured outputs (e.g. OpenAI via ellmer).
+Defines a structured schema for equations describing a fitted regression model. This is only used when talking to providers that support structured outputs (e.g. OpenAI via ellmer).
 }
 \keyword{internal}
