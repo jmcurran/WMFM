@@ -22,7 +22,28 @@ termInvolvesAdjustmentVariable = function(termLabel, adjustmentVariables) {
     return(FALSE)
   }
 
-  termVariables = strsplit(termLabel, ":", fixed = TRUE)[[1]]
+  splitInteractionMembers = function(label) {
+    members = character(0)
+    current = ""
+    inBackticks = FALSE
+
+    chars = strsplit(label, "", fixed = TRUE)[[1]]
+    for (ch in chars) {
+      if (identical(ch, "`")) {
+        inBackticks = !inBackticks
+        current = paste0(current, ch)
+      } else if (identical(ch, ":") && !inBackticks) {
+        members = c(members, trimws(current))
+        current = ""
+      } else {
+        current = paste0(current, ch)
+      }
+    }
+
+    c(members, trimws(current))
+  }
+
+  termVariables = splitInteractionMembers(termLabel)
   any(termVariables %in% adjustmentVariables)
 }
 

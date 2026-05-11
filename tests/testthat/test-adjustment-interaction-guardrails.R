@@ -4,6 +4,19 @@ testthat::test_that("interaction labels flag adjustment-variable involvement", {
   testthat::expect_false(termInvolvesAdjustmentVariable("x:z", "age"))
 })
 
+
+
+testthat::test_that("interaction parsing respects backticked names containing colons", {
+  testthat::expect_true(
+    termInvolvesAdjustmentVariable("`a:b`:z", "`a:b`")
+  )
+  testthat::expect_true(
+    termInvolvesAdjustmentVariable("x:`a:b`", "`a:b`")
+  )
+  testthat::expect_false(
+    termInvolvesAdjustmentVariable("x:`a:b`", "a")
+  )
+})
 testthat::test_that("term-evidence prompt labels interactions with adjustment variables explicitly", {
   rawData = data.frame(
     y = c(1, 2, 3, 4, 5, 6, 7, 8),
