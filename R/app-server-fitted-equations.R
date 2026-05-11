@@ -109,6 +109,18 @@ registerFittedEquationObservers = function(output, rv, modelFit) {
     background-color: #f9f9f9;
   "
 
+    roleMetadata = buildEquationDisplayRoleMetadata(m)
+    roleSummary = buildEquationDisplayRoleSummary(roleMetadata)
+
+    roleSummaryUi = NULL
+    if (length(roleSummary) > 0) {
+      roleSummaryUi = div(
+        style = "margin-bottom: 10px;",
+        tags$p(tags$strong("Predictor roles in this fitted model")),
+        tags$ul(lapply(roleSummary, tags$li))
+      )
+    }
+
     if (is.data.frame(eq) && all(c("condition", "equation") %in% names(eq))) {
       items = lapply(seq_len(nrow(eq)), function(i) {
         div(
@@ -119,7 +131,7 @@ registerFittedEquationObservers = function(output, rv, modelFit) {
           )
         )
       })
-      content = tagList(items)
+      content = tagList(roleSummaryUi, items)
     } else if (is.character(eq)) {
       content = tags$pre(
         style = "white-space: pre; margin: 0;",
