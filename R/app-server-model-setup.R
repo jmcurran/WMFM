@@ -128,14 +128,22 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       FUN.VALUE = character(1)
     )
 
-    # Pretty labels with (F)/(C) and : signs
+    adjustmentVariables = rv$adjustmentVariables %||% character(0)
+
+    # Pretty labels with (F)/(C), : signs, and adjustment-role guardrails
     labels = vapply(
       combos,
       function(x) {
-        paste(
+        interactionLabel = paste(
           sprintf("%s %s", x, varType[x]),
           collapse = " : "
         )
+
+        if (any(x %in% adjustmentVariables)) {
+          interactionLabel = paste0(interactionLabel, " [includes adjustment variable]")
+        }
+
+        interactionLabel
       },
       FUN.VALUE = character(1)
     )
