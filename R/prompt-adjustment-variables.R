@@ -12,6 +12,7 @@
 #' @return A character scalar containing adjustment-variable guidance, or an
 #'   empty string when no adjustment variables are present.
 #' @keywords internal
+#' @importFrom stats formula model.frame
 buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
 
   roleMetadata = getAdjustmentRoleMetadataForExplanation(model = model, mf = mf)
@@ -56,7 +57,7 @@ getAdjustmentRoleMetadataForExplanation = function(model, mf = NULL) {
 
   if (is.null(mf)) {
     mf = tryCatch(
-      stats::model.frame(model),
+      model.frame(model),
       error = function(e) {
         NULL
       }
@@ -66,7 +67,7 @@ getAdjustmentRoleMetadataForExplanation = function(model, mf = NULL) {
   predictorNames = if (!is.null(mf) && is.data.frame(mf) && ncol(mf) > 1) {
     names(mf)[-1]
   } else {
-    all.vars(stats::formula(model))[-1]
+    all.vars(formula(model))[-1]
   }
 
   predictorNames = unique(as.character(predictorNames))
