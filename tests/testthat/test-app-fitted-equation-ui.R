@@ -14,7 +14,7 @@ testthat::test_that("buildFittedEquationContentUi includes role summary for data
   testthat::expect_match(outText, "Predictor roles in this fitted model", fixed = TRUE)
   testthat::expect_match(outText, "Primary predictors: x", fixed = TRUE)
   testthat::expect_match(outText, "Adjustment variables: z", fixed = TRUE)
-  testthat::expect_match(outText, "y = 1.00 + 2.00 \* x \+ 3.00 \* z")
+  testthat::expect_match(outText, "y = 1.00 + 2.00 * x + 3.00 * z", fixed = TRUE)
 })
 
 testthat::test_that("buildFittedEquationContentUi includes role summary for character equation output", {
@@ -28,5 +28,5 @@ testthat::test_that("buildFittedEquationContentUi includes role summary for char
   testthat::expect_match(outText, "Predictor roles in this fitted model", fixed = TRUE)
   testthat::expect_match(outText, "Primary predictors: x", fixed = TRUE)
   testthat::expect_match(outText, "Adjustment variables: z", fixed = TRUE)
-  testthat::expect_match(outText, "y = 1.00 + 2.00 \* x \+ 3.00 \* z")
+  testthat::expect_match(outText, "y = 1.00 + 2.00 * x + 3.00 * z", fixed = TRUE)
 })
