@@ -17,6 +17,13 @@ jobs:
         with:
           extra-packages: any::devtools
 
+      - name: Regenerate roxygen documentation
+        run: devtools::document()
+        shell: Rscript {0}
+
+      - name: Check for stale generated documentation
+        run: git diff --exit-code
+
       - name: Run testthat suite
         run: devtools::test()
         shell: Rscript {0}
