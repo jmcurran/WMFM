@@ -112,37 +112,8 @@ registerFittedEquationObservers = function(output, rv, modelFit) {
     roleMetadata = buildEquationDisplayRoleMetadata(m)
     roleSummary = buildEquationDisplayRoleSummary(roleMetadata)
 
-    roleSummaryUi = NULL
-    if (length(roleSummary) > 0) {
-      roleSummaryUi = div(
-        style = "margin-bottom: 10px;",
-        tags$p(tags$strong("Predictor roles in this fitted model")),
-        tags$ul(lapply(roleSummary, tags$li))
-      )
-    }
-
-    if (is.data.frame(eq) && all(c("condition", "equation") %in% names(eq))) {
-      items = lapply(seq_len(nrow(eq)), function(i) {
-        div(
-          tags$p(tags$strong(eq$condition[i])),
-          tags$pre(
-            style = "white-space: pre; margin-top: -6px; margin-bottom: 8px;",
-            eq$equation[i]
-          )
-        )
-      })
-      content = tagList(roleSummaryUi, items)
-    } else if (is.character(eq)) {
-      content = tags$pre(
-        style = "white-space: pre; margin: 0;",
-        eq
-      )
-    } else {
-      content = tags$pre(
-        style = "white-space: pre; margin: 0;",
-        paste(capture.output(str(eq)), collapse = "\n")
-      )
-    }
+    roleSummaryUi = buildFittedEquationRoleSummaryUi(roleSummary)
+    content = buildFittedEquationContentUi(eq, roleSummaryUi = roleSummaryUi)
 
     div(
       style = scrollStyle,
