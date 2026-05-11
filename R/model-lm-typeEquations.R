@@ -1,12 +1,10 @@
 #' Schema for LM equations returned by the LLM
 #'
-#' Defines a structured schema for equations describing a fitted regression
-#' model. This is only used when talking to providers that support
-#' structured outputs (e.g. OpenAI via ellmer).
+#' Defines the structured output schema for fitted regression model equations.
+#' This is only used with providers that support structured outputs.
 #'
-#' @format An object created by \code{ellmer::type_object()} describing a
-#'   list of equations, each with a \code{condition} and \code{equation}
-#'   field.
+#' @format An `ellmer::type_object()` schema with `condition` and `equation`
+#'   fields for each equation.
 #' @keywords internal
 typeLmEquations = ellmer::type_object(
   "Equations describing a fitted regression model.",
