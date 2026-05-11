@@ -70,6 +70,11 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
     return("")
   }
 
+
+  adjustmentPredictors = attr(model, "wmfm_adjustment_variables", exact = TRUE) %||% character(0)
+  adjustmentPredictors = unique(as.character(adjustmentPredictors))
+  adjustmentPredictors = adjustmentPredictors[nzchar(adjustmentPredictors)]
+
   termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
   interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
   hasInteraction = length(interactionTerms) > 0
@@ -94,13 +99,19 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
       "main effect"
     }
 
+    roleLabel = if (termRows[[i]] %in% adjustmentPredictors) {
+      "adjustment variable"
+    } else {
+      "primary predictor"
+    }
+
     lines = c(
       lines,
-      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ").")
+      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ", ", roleLabel, ").")
     )
   }
 
-  weakMainTerms = termRows[!grepl(":", termRows, fixed = TRUE) & !(pValues < alpha)]
+  weakMainTerms = termRows[!grepl(":", termRows, fixed = TRUE) & !(pValues < alpha) & !(termRows %in% adjustmentPredictors)]
   weakInteractionTerms = termRows[grepl(":", termRows, fixed = TRUE) & !(pValues < alpha)]
 
   if (length(weakMainTerms) > 0) {
@@ -110,6 +121,17 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
         "For weak additive terms (",
         paste(weakMainTerms, collapse = ", "),
         "), say that the model does not show a clear difference or effect rather than presenting the estimate as an important substantive pattern."
+      )
+    )
+  }
+
+  if (length(adjustmentPredictors) > 0) {
+    lines = c(
+      lines,
+      paste0(
+        "Adjustment-variable wording: mention ",
+        paste(adjustmentPredictors, collapse = ", "),
+        " only as adjusted-for variables (for example, after adjusting for ...); do not interpret their coefficients as substantive findings."
       )
     )
   }

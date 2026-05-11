@@ -70,6 +70,10 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  adjustmentVariableBlock = buildAdjustmentVariablePromptBlock(
+    model = model,
+    mf = modelFrame
+  )
   responseScaleControlBlock = buildResponseScaleControlPromptBlock(
     model = model,
     mf = modelFrame
@@ -186,6 +190,8 @@ Interpretation rules for numeric predictors:
 {explanationSkeletonBlock}
 
 {termEvidenceBlock}
+
+{adjustmentVariableBlock}
 
 {formattedQuantityBlock}
 
