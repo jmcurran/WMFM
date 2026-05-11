@@ -13,7 +13,7 @@
 #'   when term-level evidence is unavailable or not applicable.
 #' @keywords internal
 #'
-#' @importFrom stats anova
+#' @importFrom stats anova model.frame terms
 buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
 
   if (!inherits(model, "lm") || inherits(model, "glm")) {
@@ -26,7 +26,7 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
 
   if (is.null(mf)) {
     mf = tryCatch(
-      stats::model.frame(model),
+      model.frame(model),
       error = function(e) {
         NULL
       }
@@ -75,7 +75,7 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
   adjustmentPredictors = unique(as.character(adjustmentPredictors))
   adjustmentPredictors = adjustmentPredictors[nzchar(adjustmentPredictors)]
 
-  termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
+  termLabels = attr(terms(model), "term.labels") %||% character(0)
   interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
   hasInteraction = length(interactionTerms) > 0
 
