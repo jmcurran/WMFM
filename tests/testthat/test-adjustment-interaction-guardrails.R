@@ -37,7 +37,7 @@ testthat::test_that("term-evidence prompt labels interactions with adjustment va
 
 testthat::test_that("term-evidence prompt keeps non-adjustment interactions on primary role label", {
   rawData = data.frame(
-    y = c(2, 3, 3, 5, 6, 7, 9, 10),
+    y = c(2.1, 2.7, 3.6, 4.8, 6.4, 6.9, 8.5, 10.2),
     x = c(1, 1, 2, 2, 3, 3, 4, 4),
     z = c(1, 2, 1, 2, 1, 2, 1, 2)
   )
