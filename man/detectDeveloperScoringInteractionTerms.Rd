@@ -2,7 +2,7 @@
 % Please edit documentation in R/app-developer-scoring-grading.R
 \name{detectDeveloperScoringInteractionTerms}
 \alias{detectDeveloperScoringInteractionTerms}
-\title{Detect whether a model contains factor predictors}
+\title{Detect whether a developer scoring model has interaction terms}
 \usage{
 detectDeveloperScoringInteractionTerms(model)
 }
@@ -11,19 +11,8 @@ detectDeveloperScoringInteractionTerms(model)
 }
 \value{
 Logical scalar.
-
-Logical scalar.
 }
 \description{
-Detect whether a model contains factor predictors
+Detect whether a developer scoring model has interaction terms
 }
-\keyword{Detect}
-\keyword{a}
-\keyword{developer}
-\keyword{has}
-\keyword{interaction}
 \keyword{internal}
-\keyword{model}
-\keyword{scoring}
-\keyword{terms}
-\keyword{whether}
