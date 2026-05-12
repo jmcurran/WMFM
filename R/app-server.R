@@ -160,6 +160,7 @@ appServer = function(input, output, session) {
   )
 
   registerModelSummaryObservers(
+    input = input,
     output = output,
     modelFit = modelFit
   )

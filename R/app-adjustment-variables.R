@@ -116,7 +116,7 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
             "}), {priority: 'event'});"
           )
         ),
-        " adjust"
+        ""
       )
     )
   )

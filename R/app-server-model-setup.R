@@ -78,7 +78,7 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
         input_id = "factors"
       ),
       add_rank_list(
-        text     = "Continuous",
+        text     = "Numeric",
         labels   = continuousLabels,
         input_id = "continuous"
       )

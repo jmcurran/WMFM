@@ -1,5 +1,6 @@
 #' Register model output observers for the app server
 #'
+#' @param input Shiny input object.
 #' @param output Shiny output object.
 #' @param modelFit Reactive value containing the fitted model.
 #'
@@ -7,12 +8,38 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny renderPrint
-#' @importFrom utils capture.output
-registerModelSummaryObservers = function(output, modelFit) {
-  # -------------------------------------------------------------------
-  # Display model summary (regression table)
-  # -------------------------------------------------------------------
+#' @importFrom shiny checkboxInput helpText renderPrint renderUI tagList
+registerModelSummaryObservers = function(input, output, modelFit) {
+
+  output$modelSummaryControlsUi = renderUI({
+    checkboxInput(
+      inputId = "showAdjustmentCoefficients",
+      label = "Show adjustment coefficients",
+      value = FALSE
+    )
+  })
+
+  output$modelSummaryAdjustmentNoteUi = renderUI({
+    m = modelFit()
+
+    if (is.null(m) || isTRUE(input$showAdjustmentCoefficients %||% FALSE)) {
+      return(NULL)
+    }
+
+    adjustmentVariables = getModelAdjustmentVariables(m)
+    if (length(adjustmentVariables) == 0) {
+      return(NULL)
+    }
+
+    helpText(
+      paste0(
+        "Adjustment terms involving ",
+        paste(adjustmentVariables, collapse = ", "),
+        " are hidden from this summary view. They remain included in the fitted model."
+      )
+    )
+  })
+
   output$model_output = renderPrint({
     m = modelFit()
     if (is.null(m)) {
@@ -20,12 +47,17 @@ registerModelSummaryObservers = function(output, modelFit) {
       return()
     }
 
-    out = capture.output(summary(m))
+    modelSummary = summary(m)
+    adjustmentVariables = getModelAdjustmentVariables(m)
 
-    # Find first occurrence of "Coefficients:"
+    modelSummary$coefficients = filterSummaryCoefficientRows(
+      coefficientsMatrix = modelSummary$coefficients,
+      adjustmentVariables = adjustmentVariables,
+      showAdjustmentCoefficients = isTRUE(input$showAdjustmentCoefficients %||% FALSE)
+    )
+
+    out = capture.output(print(modelSummary))
     idx = grep("^Coefficients:", out)
-
-    # Keep that line and everything after it
     out = out[idx:length(out)]
 
     cat(out, sep = "\n")
