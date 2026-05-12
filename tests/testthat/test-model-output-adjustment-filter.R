@@ -48,3 +48,10 @@ test_that("filterAnovaTermRows keeps full table when showAdjustmentTerms is TRUE
 
   expect_equal(rownames(out), c("gender", "gender:picture"))
 })
+
+test_that("isAdjustmentRelatedOutputRow matches factor-style summary labels", {
+  expect_true(isAdjustmentRelatedOutputRow("picturelandscape", "picture"))
+  expect_true(isAdjustmentRelatedOutputRow("gendermale:picturelandscape", "picture"))
+  expect_true(isAdjustmentRelatedOutputRow("`picture`:gendermale", "`picture`"))
+  expect_false(isAdjustmentRelatedOutputRow("gendermale", "picture"))
+})

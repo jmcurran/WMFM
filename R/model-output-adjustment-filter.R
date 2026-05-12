@@ -23,10 +23,51 @@ getModelAdjustmentVariables = function(model) {
 #'
 #' @keywords internal
 isAdjustmentRelatedOutputRow = function(rowLabel, adjustmentVariables) {
-  termInvolvesAdjustmentVariable(
-    termLabel = rowLabel,
-    adjustmentVariables = adjustmentVariables
-  )
+  if (termInvolvesAdjustmentVariable(termLabel = rowLabel, adjustmentVariables = adjustmentVariables)) {
+    return(TRUE)
+  }
+
+  splitInteractionMembers = function(label) {
+    members = character(0)
+    current = ""
+    inBackticks = FALSE
+
+    chars = strsplit(label, "", fixed = TRUE)[[1]]
+    for (ch in chars) {
+      if (identical(ch, "`")) {
+        inBackticks = !inBackticks
+        current = paste0(current, ch)
+      } else if (identical(ch, ":") && !inBackticks) {
+        members = c(members, trimws(current))
+        current = ""
+      } else {
+        current = paste0(current, ch)
+      }
+    }
+
+    c(members, trimws(current))
+  }
+
+  stripOuterBackticks = function(x) {
+    sub("^`(.*)`$", "\\1", x)
+  }
+
+  adjustmentVariables = unique(as.character(adjustmentVariables %||% character(0)))
+  adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
+  if (length(adjustmentVariables) == 0) {
+    return(FALSE)
+  }
+
+  rowMembers = stripOuterBackticks(splitInteractionMembers(rowLabel))
+  adjustmentVariables = stripOuterBackticks(adjustmentVariables)
+
+  any(vapply(
+    rowMembers,
+    function(member) {
+      any(startsWith(member, adjustmentVariables))
+    },
+    logical(1)
+  ))
 }
 
 #' Filter coefficient matrix rows for summary display
