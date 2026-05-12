@@ -4,9 +4,11 @@
 \alias{registerModelSummaryObservers}
 \title{Register model output observers for the app server}
 \usage{
-registerModelSummaryObservers(output, modelFit)
+registerModelSummaryObservers(input, output, modelFit)
 }
 \arguments{
+\item{input}{Shiny input object.}
+
 \item{output}{Shiny output object.}
 
 \item{modelFit}{Reactive value containing the fitted model.}
