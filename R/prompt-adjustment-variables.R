@@ -40,7 +40,7 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
   hasAdjustmentInteractions = any(grepl(":", omittedTerms, fixed = TRUE))
 
   lines = c(
-    "Adjustment-variable interpretation policy (version: stage20.13-v1):",
+    "Adjustment-variable interpretation policy (version: stage20.13-v2):",
     paste0("Response variable: ", names(mf %||% stats::model.frame(model))[[1]]),
     paste0("Primary predictors: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
@@ -51,6 +51,9 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
     "Mention adjustment variables only in compact wording such as after adjusting for ... or after accounting for ....",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
     "Do not interpret interaction terms that include any adjustment variable as main findings.",
+    "Do not discuss results at individual levels of adjustment variables.",
+    "Do not report picture-specific means, contrasts, confidence intervals, or coefficient estimates.",
+    "Do not use adjustment-variable levels as narrative examples.",
     "Do not provide adjustment-level-specific or picture-specific effect estimates or subgroup narration.",
     "For interactions involving adjustment variables, use only a high-level model-structure note if needed; do not narrate individual levels or coefficients.",
     "Do not present adjustment variables as causal mechanisms and do not infer causality from adjustment."
