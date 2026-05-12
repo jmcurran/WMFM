@@ -301,6 +301,13 @@ appUI = function() {
         helpText(
           "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
         ),
+        selectInput(
+          inputId = "modelExplanationZoom",
+          label = "Explanation text size",
+          choices = c("Small" = "small", "Normal" = "normal", "Large" = "large", "Presentation" = "presentation"),
+          selected = "normal",
+          width = "260px"
+        ),
         uiOutput("model_explanation")
       ),
 

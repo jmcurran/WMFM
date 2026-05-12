@@ -29,12 +29,17 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
 
   adjustmentText = paste(roleMetadata$adjustmentPredictors, collapse = ", ")
 
+  adjustmentPhrase = paste0("after adjusting for ", adjustmentText)
+
   lines = c(
     "Adjustment-variable interpretation guidance:",
     paste0("Primary predictors: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
+    paste0("Frame the main answer around primary predictors ", adjustmentPhrase, "."),
     "Interpret primary predictors as the substantive findings of interest.",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
+    "Do not interpret interaction terms that include any adjustment variable as main findings.",
+    "For interactions involving adjustment variables, avoid picture-specific or adjustment-specific subgroup findings in the main explanation.",
     "Mention adjustment variables only in compact wording such as after adjusting for ... or holding adjustment variables constant.",
     "Do not present adjustment variables as causal mechanisms and do not infer causality from adjustment."
   )

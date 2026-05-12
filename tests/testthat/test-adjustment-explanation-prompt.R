@@ -9,6 +9,8 @@ testthat::test_that("prompt separates primary predictors and adjustment variable
   testthat::expect_match(prompt, "Primary predictors: x", fixed = TRUE)
   testthat::expect_match(prompt, "Adjustment variables: age", fixed = TRUE)
   testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients as substantive findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret interaction terms that include any adjustment variable as main findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "after adjusting for age", fixed = TRUE)
   testthat::expect_match(prompt, "do not infer causality from adjustment", ignore.case = TRUE)
 })
 
@@ -51,4 +53,22 @@ testthat::test_that("prompts are unchanged for no-adjustment models", {
 
   block = buildAdjustmentVariablePromptBlock(fit)
   testthat::expect_identical(block, "")
+})
+
+
+testthat::test_that("adjustment prompt includes interaction guardrails for picture adjustments", {
+  dat = data.frame(
+    arousal = c(0.2, 0.3, 0.4, 0.1, 0.5, 0.45),
+    gender = factor(c("f", "m", "f", "m", "f", "m")),
+    picture = factor(c("A", "A", "B", "B", "C", "C"))
+  )
+  fit = stats::lm(arousal ~ gender + picture + gender:picture, data = dat)
+  attr(fit, "wmfm_adjustment_variables") = "picture"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "Adjustment variables: picture", fixed = TRUE)
+  testthat::expect_match(prompt, "after adjusting for picture", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients as substantive findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret interaction terms that include any adjustment variable as main findings.", fixed = TRUE)
 })

@@ -36,14 +36,17 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   )
 
   researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% ""
+  adjustmentVariables = attr(model, "wmfm_adjustment_variables", exact = TRUE) %||% character(0)
+  adjustmentKey = paste(sort(unique(as.character(adjustmentVariables))), collapse = ",")
 
   key = paste(
     "expl",
-    "v4-stage12-logistic-scale-anchor",
+    "v5-stage20-adjustment-cache",
     formulaStr,
     coefStr,
     numericAnchorInfo$cacheKey,
-    trimws(researchQuestion)
+    trimws(researchQuestion),
+    adjustmentKey
   )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {
