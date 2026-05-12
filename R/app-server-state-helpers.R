@@ -10,6 +10,8 @@
 #'
 #' @return A named list of helper functions.
 #'
+#' @importFrom shiny updateCheckboxGroupInput
+#'
 #' @keywords internal
 #' @noRd
 createAppServerStateHelpers = function(input, session, rv, modelFit) {

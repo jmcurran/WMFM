@@ -13,3 +13,4 @@
 ^\.positai$
 ^\.claude$
 ^\.stage.*_changes($|/)
+^\.github($|/)
