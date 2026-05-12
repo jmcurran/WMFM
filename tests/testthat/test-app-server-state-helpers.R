@@ -14,3 +14,12 @@ test_that("app server state helpers are extracted from app server", {
   expect_match(stateHelperText, "resetModelPage = function", fixed = TRUE)
   expect_match(stateHelperText, "applyLoadedExampleToInputs = function", fixed = TRUE)
 })
+
+
+test_that("loaded examples apply adjustment variable selections from spec", {
+  stateHelperText = readPackageText("R", "app-server-state-helpers.R")
+
+  expect_match(stateHelperText, "spec$adjustmentVariables", fixed = TRUE)
+  expect_match(stateHelperText, "rv$adjustmentVariables =", fixed = TRUE)
+  expect_match(stateHelperText, "updateCheckboxGroupInput(", fixed = TRUE)
+})
