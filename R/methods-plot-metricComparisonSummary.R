@@ -20,9 +20,7 @@
 #'
 #' @return A `ggplot2` object.
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_point geom_segment labs theme_minimal
-#'   theme element_text coord_cartesian scale_x_continuous scale_colour_manual
-#'   geom_vline geom_hline
+#' @importFrom ggplot2 ggplot aes geom_point geom_segment labs theme_minimal theme element_text coord_cartesian scale_x_continuous scale_colour_manual geom_vline geom_hline
 plot.metricComparisonSummary = function(
   x,
   type = c("scatter", "lollipop", "diagnostic"),

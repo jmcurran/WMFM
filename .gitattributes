@@ -13,6 +13,7 @@
 *.sh text eol=lf
 DESCRIPTION text eol=lf
 NAMESPACE text eol=lf
+*.Rd text eol=lf
 .Rbuildignore text eol=lf
 .Renviron text eol=lf
 .gitignore text eol=lf
