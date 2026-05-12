@@ -30,21 +30,63 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
   adjustmentText = paste(roleMetadata$adjustmentPredictors, collapse = ", ")
 
   adjustmentPhrase = paste0("after adjusting for ", adjustmentText)
+  omittedTerms = getAdjustmentRelatedTermsForExplanation(model = model, mf = mf)
+  omittedTermsText = if (length(omittedTerms) > 0) {
+    paste(omittedTerms, collapse = ", ")
+  } else {
+    "(none)"
+  }
+
+  hasAdjustmentInteractions = any(grepl(":", omittedTerms, fixed = TRUE))
 
   lines = c(
-    "Adjustment-variable interpretation guidance:",
+    "Adjustment-variable interpretation policy (version: stage20.13-v1):",
+    paste0("Response variable: ", names(mf %||% stats::model.frame(model))[[1]]),
     paste0("Primary predictors: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
+    paste0("Omitted adjustment-related terms in explanation payload: ", omittedTermsText),
     paste0("Frame the main answer around primary predictors ", adjustmentPhrase, "."),
+    "Answer the research question using the variables of scientific interest (primary predictors).",
     "Interpret primary predictors as the substantive findings of interest.",
+    "Mention adjustment variables only in compact wording such as after adjusting for ... or after accounting for ....",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
     "Do not interpret interaction terms that include any adjustment variable as main findings.",
-    "For interactions involving adjustment variables, avoid picture-specific or adjustment-specific subgroup findings in the main explanation.",
-    "Mention adjustment variables only in compact wording such as after adjusting for ... or holding adjustment variables constant.",
+    "Do not provide adjustment-level-specific or picture-specific effect estimates or subgroup narration.",
+    "For interactions involving adjustment variables, use only a high-level model-structure note if needed; do not narrate individual levels or coefficients.",
     "Do not present adjustment variables as causal mechanisms and do not infer causality from adjustment."
   )
 
+  if (isTRUE(hasAdjustmentInteractions)) {
+    lines = c(
+      lines,
+      "Model-structure note: The fitted model includes interaction terms involving adjustment variables, so adjusted comparisons may vary across adjustment levels, but those terms are not interpreted as the main findings."
+    )
+  }
+
   paste(lines, collapse = "\n")
+}
+
+#' Get adjustment-related terms for explanation-policy omission metadata
+#'
+#' @param model A fitted model object.
+#' @param mf Optional model frame.
+#'
+#' @return Character vector of model terms involving adjustment variables.
+#' @keywords internal
+getAdjustmentRelatedTermsForExplanation = function(model, mf = NULL) {
+  roleMetadata = getAdjustmentRoleMetadataForExplanation(model = model, mf = mf)
+  if (!isTRUE(roleMetadata$hasAdjustments)) {
+    return(character(0))
+  }
+
+  termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
+  termLabels = unique(as.character(termLabels))
+  termLabels[nzchar(termLabels) & vapply(
+    termLabels,
+    termInvolvesAdjustmentVariable,
+    logical(1),
+    adjustmentVariables = roleMetadata$adjustmentPredictors
+  )]
 }
 
 #' Get explanation-role metadata for primary and adjustment predictors
