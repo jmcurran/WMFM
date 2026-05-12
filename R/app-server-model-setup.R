@@ -43,18 +43,24 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     )
     rv$adjustmentVariables = selectedAdjustmentVariables
 
-    factorLabels = lapply(
-      factors,
-      function(variableName) {
-        renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
-      }
+    factorLabels = setNames(
+      lapply(
+        factors,
+        function(variableName) {
+          renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
+        }
+      ),
+      factors
     )
 
-    continuousLabels = lapply(
-      cont,
-      function(variableName) {
-        renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
-      }
+    continuousLabels = setNames(
+      lapply(
+        cont,
+        function(variableName) {
+          renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
+        }
+      ),
+      cont
     )
 
     bucket_list(
