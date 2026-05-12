@@ -38,7 +38,7 @@ renderSafeExplanationHtml = function(text, zoomLevel = "normal") {
     return(NULL)
   }
 
-  paragraphs = strsplit(cleanText, "\n\s*\n", perl = TRUE)[[1]]
+  paragraphs = strsplit(cleanText, "\n\\s*\n", perl = TRUE)[[1]]
   paragraphs = trimws(paragraphs)
   paragraphs = paragraphs[nzchar(paragraphs)]
 

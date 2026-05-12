@@ -6,7 +6,7 @@ testthat::test_that("renderSafeExplanationHtml escapes unsafe HTML and preserves
 
   testthat::expect_match(rendered, "wmfm-explanation-body")
   testthat::expect_match(rendered, "font-size: 1.6rem", fixed = TRUE)
-  testthat::expect_match(rendered, "&lt;script&gt;alert&quot, fixed = FALSE)
+  testthat::expect_match(rendered, "&lt;script&gt;alert\\(&#39;x&#39;\\)&lt;/script&gt;", perl = TRUE)
   testthat::expect_match(rendered, "&lt;b&gt;bold&lt;/b&gt;", fixed = TRUE)
   testthat::expect_match(rendered, "<br/>", fixed = TRUE)
 })
