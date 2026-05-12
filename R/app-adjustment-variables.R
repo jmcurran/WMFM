@@ -81,6 +81,29 @@ renderAdjustmentVariablesUi = function(rv, responseVariable) {
   )
 }
 
+
+#' Build sanitized adjustment metadata for a fitted formula
+#'
+#' Restricts selected adjustment variables to non-empty predictors present in
+#' the fitted formula so downstream prompts and summaries do not receive stale
+#' adjustment state after UI invalidations or model-type switches.
+#'
+#' @param selectedVariables Character vector selected in the UI.
+#' @param formulaPredictors Character vector of predictor names from the fitted formula.
+#'
+#' @return Character vector of sanitized adjustment-variable metadata.
+#'
+#' @keywords internal
+buildAdjustmentMetadata = function(selectedVariables, formulaPredictors) {
+  predictors = unique(as.character(formulaPredictors %||% character(0)))
+  predictors = predictors[nzchar(predictors)]
+
+  sanitizeAdjustmentVariables(
+    selectedVariables = selectedVariables,
+    eligibleVariables = predictors
+  )
+}
+
 #' Sync selected adjustment variables from user input
 #'
 #' Sanitizes user checkbox selections against current eligible variables and

@@ -28,3 +28,13 @@ testthat::test_that("adjustment variable selection does not remove variables fro
   testthat::expect_true(grepl("age", formulaText, fixed = TRUE))
   testthat::expect_true(grepl("group", formulaText, fixed = TRUE))
 })
+
+
+testthat::test_that("buildAdjustmentMetadata drops stale variables not in fitted predictors", {
+  out = buildAdjustmentMetadata(
+    selectedVariables = c("age", "group", ""),
+    formulaPredictors = c("group", "score")
+  )
+
+  testthat::expect_identical(out, "group")
+})
