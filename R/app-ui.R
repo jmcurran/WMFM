@@ -249,10 +249,14 @@ appUI = function() {
           id = "model_output_tabs",
           tabPanel(
             "Summary",
+            uiOutput("modelSummaryControlsUi"),
+            uiOutput("modelSummaryAdjustmentNoteUi"),
             verbatimTextOutput("model_output")
           ),
           tabPanel(
             "ANOVA",
+            uiOutput("modelAnovaControlsUi"),
+            uiOutput("modelAnovaAdjustmentNoteUi"),
             verbatimTextOutput("model_anova")
           ),
           tabPanel(
