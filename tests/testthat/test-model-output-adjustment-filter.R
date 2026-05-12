@@ -55,3 +55,23 @@ test_that("isAdjustmentRelatedOutputRow matches factor-style summary labels", {
   expect_true(isAdjustmentRelatedOutputRow("`picture`:gendermale", "`picture`"))
   expect_false(isAdjustmentRelatedOutputRow("gendermale", "picture"))
 })
+
+
+test_that("filterConfidenceIntervalRows removes adjustment-related quantities", {
+  ciTable = data.frame(
+    quantity = c(
+      "Expected Exam when picture = portrait",
+      "Difference in Exam comparing gender = male with gender = female",
+      "Difference in Exam comparing picture = landscape with picture = portrait"
+    ),
+    estimate = c(10, 2, 1),
+    stringsAsFactors = FALSE
+  )
+
+  out = filterConfidenceIntervalRows(ciTable = ciTable, adjustmentVariables = "picture")
+
+  expect_equal(
+    out$quantity,
+    "Difference in Exam comparing gender = male with gender = female"
+  )
+})
