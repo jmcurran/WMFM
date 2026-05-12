@@ -273,7 +273,7 @@ filterExplanationCoefficientPayloadByAdjustmentPolicy = function(quantityTable, 
   quantityLabels = as.character(quantityTable$quantity %||% "")
   keepRows = !vapply(
     quantityLabels,
-    termInvolvesAdjustmentVariable,
+    isAdjustmentRelatedOutputRow,
     logical(1),
     adjustmentVariables = adjustmentVariables
   )
