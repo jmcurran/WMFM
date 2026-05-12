@@ -56,12 +56,6 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     list(ok = TRUE, msg = "Formula OK.")
   }
 
-  buildAdjustmentVariableMetadata = function(rv) {
-    adjustmentVariables = rv$adjustmentVariables %||% character(0)
-    adjustmentVariables = unique(as.character(adjustmentVariables))
-    adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
-    adjustmentVariables
-  }
 
   # -------------------------------------------------------------------
   # Show formula validation status
@@ -241,7 +235,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       return(NULL)
     }
 
-    adjustmentVariables = buildAdjustmentVariableMetadata(rv)
+    adjustmentVariables = buildAdjustmentMetadata(
+      selectedVariables = rv$adjustmentVariables,
+      formulaPredictors = predNames
+    )
     attr(m, "wmfm_adjustment_variables") = adjustmentVariables
 
     # If this data came from a package, attach package metadata to the model.

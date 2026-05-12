@@ -56,6 +56,7 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     rv$lastFactors = character(0)
     rv$pendingFactorVar = NULL
     rv$pendingExampleInteractions = character(0)
+    rv$adjustmentVariables = character(0)
 
     setBucketState(
       factors = character(0),
@@ -69,11 +70,13 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     freezeReactiveValue(input, "factors")
     freezeReactiveValue(input, "continuous")
     freezeReactiveValue(input, "interactions")
+    freezeReactiveValue(input, "adjustment_variables")
     freezeReactiveValue(input, "formula_text")
     freezeReactiveValue(input, "response_var")
 
     updateTextInput(session, "formula_text", value = "")
     updateSelectInput(session, "interactions", selected = character(0))
+    updateCheckboxGroupInput(session, "adjustment_variables", selected = character(0))
     updateTextInput(session, "researchQuestion", value = rv$researchQuestion %||% "")
 
     if (resetResponse && !is.null(rv$data) && length(rv$allVars) > 0) {
