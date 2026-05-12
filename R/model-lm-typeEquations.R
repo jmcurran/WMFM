@@ -3,8 +3,9 @@
 #' Defines the structured output schema for fitted regression model equations.
 #' This is only used with providers that support structured outputs.
 #'
-#' @format An `ellmer::type_object()` schema with `condition` and `equation`
+#' @format An ellmer type object schema with `condition` and `equation`
 #'   fields for each equation.
+#' @docType data
 #' @keywords internal
 typeLmEquations = ellmer::type_object(
   "Equations describing a fitted regression model.",

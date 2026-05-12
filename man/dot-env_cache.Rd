@@ -11,6 +11,6 @@ An object of class \code{environment} of length 0.
 .env_cache
 }
 \description{
-Internal environment used to cache equations and explanations for previously fitted models.
+Internal cache for equations and explanations from fitted models.
 }
 \keyword{internal}

@@ -5,7 +5,7 @@
 \alias{typeLmEquations}
 \title{Schema for LM equations returned by the LLM}
 \format{
-An \code{ellmer::type_object()} schema with \code{condition} and \code{equation}
+An ellmer type object schema with \code{condition} and \code{equation}
 fields for each equation.
 }
 \usage{
