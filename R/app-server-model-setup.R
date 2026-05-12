@@ -33,6 +33,30 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
 
     vars = setdiff(vars, c(currentResp, factors, cont))
 
+    selectedAdjustmentVariables = sanitizeAdjustmentVariables(
+      selectedVariables = rv$adjustmentVariables,
+      eligibleVariables = buildEligibleAdjustmentVariables(
+        responseVariable = currentResp,
+        factorVariables = factors,
+        continuousVariables = cont
+      )
+    )
+    rv$adjustmentVariables = selectedAdjustmentVariables
+
+    factorLabels = lapply(
+      factors,
+      function(variableName) {
+        renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
+      }
+    )
+
+    continuousLabels = lapply(
+      cont,
+      function(variableName) {
+        renderBucketVariableLabel(variableName, selectedAdjustmentVariables)
+      }
+    )
+
     bucket_list(
       header      = NULL,
       group_name  = paste0("vars_group_", rv$bucketGroupId),
@@ -44,12 +68,12 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       ),
       add_rank_list(
         text     = "Factors",
-        labels   = factors,
+        labels   = factorLabels,
         input_id = "factors"
       ),
       add_rank_list(
         text     = "Continuous",
-        labels   = cont,
+        labels   = continuousLabels,
         input_id = "continuous"
       )
     )
@@ -68,6 +92,14 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       rv = rv,
       responseVariable = input$response_var,
       selectedVariables = input$adjustment_variables
+    )
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$adjustment_variables_inline, {
+    syncAdjustmentVariablesSelection(
+      rv = rv,
+      responseVariable = input$response_var,
+      selectedVariables = input$adjustment_variables_inline
     )
   }, ignoreInit = TRUE)
 

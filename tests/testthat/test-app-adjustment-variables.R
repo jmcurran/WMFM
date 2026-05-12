@@ -38,3 +38,27 @@ testthat::test_that("buildAdjustmentMetadata drops stale variables not in fitted
 
   testthat::expect_identical(out, "group")
 })
+
+testthat::test_that("renderAdjustmentVariablesUi keeps compatibility checkbox input hidden", {
+  rv = shiny::reactiveValues(
+    data = data.frame(y = 1:3, age = 1:3),
+    bucketFactors = "y",
+    bucketContinuous = "age",
+    adjustmentVariables = "age"
+  )
+
+  ui = renderAdjustmentVariablesUi(rv = rv, responseVariable = "y")
+  uiText = as.character(ui)
+
+  testthat::expect_true(grepl("display: none", uiText, fixed = TRUE))
+  testthat::expect_true(grepl("adjustment_variables", uiText, fixed = TRUE))
+})
+
+testthat::test_that("renderBucketVariableLabel marks checked state from selections", {
+  checkedUi = renderBucketVariableLabel("age", "age")
+  uncheckedUi = renderBucketVariableLabel("age", "group")
+
+  testthat::expect_true(grepl("wmfm-adjustment-checkbox", as.character(checkedUi), fixed = TRUE))
+  testthat::expect_true(grepl("checked", as.character(checkedUi), fixed = TRUE))
+  testthat::expect_false(grepl("checked", as.character(uncheckedUi), fixed = TRUE))
+})

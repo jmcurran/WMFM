@@ -73,11 +73,52 @@ renderAdjustmentVariablesUi = function(rv, responseVariable) {
     return(NULL)
   }
 
-  checkboxGroupInput(
-    inputId = "adjustment_variables",
-    label = "Adjust for this variable",
-    choices = eligibleVariables,
-    selected = selectedVariables
+  shiny::div(
+    style = "display: none;",
+    checkboxGroupInput(
+      inputId = "adjustment_variables",
+      label = "Adjust for this variable",
+      choices = eligibleVariables,
+      selected = selectedVariables
+    )
+  )
+}
+
+#' Build a variable-card label with inline adjustment checkbox
+#'
+#' @param variableName Character scalar variable name to render.
+#' @param selectedAdjustmentVariables Character vector of currently selected
+#'   adjustment variables.
+#'
+#' @return A Shiny tag object suitable for bucket list labels.
+#'
+#' @keywords internal
+renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) {
+  isSelected = variableName %in% (selectedAdjustmentVariables %||% character(0))
+
+  shiny::tags$div(
+    class = "wmfm-bucket-variable",
+    shiny::tags$span(variableName),
+    shiny::tags$span(
+      style = "float: right;",
+      shiny::tags$label(
+        style = "font-weight: normal; margin: 0;",
+        shiny::tags$input(
+          type = "checkbox",
+          class = "wmfm-adjustment-checkbox",
+          `data-var` = variableName,
+          checked = if (isTRUE(isSelected)) "checked" else NULL,
+          onclick = "event.stopPropagation();",
+          onchange = paste(
+            "Shiny.setInputValue('adjustment_variables_inline',",
+            "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox:checked')).map(function(el){",
+            "return el.getAttribute('data-var');",
+            "}), {priority: 'event'});"
+          )
+        ),
+        " adjust"
+      )
+    )
   )
 }
 
