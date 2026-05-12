@@ -77,7 +77,7 @@ buildLmExplanationCacheKey = function(
     adjustmentVariables = character(0)) {
 
   adjustmentKey = paste(sort(unique(as.character(adjustmentVariables))), collapse = ",")
-  policyVersion = "stage20.13-v1"
+  policyVersion = "stage20.13-v2"
 
   paste(
     "expl",

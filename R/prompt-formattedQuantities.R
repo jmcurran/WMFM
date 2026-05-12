@@ -270,6 +270,12 @@ filterExplanationCoefficientPayloadByAdjustmentPolicy = function(quantityTable, 
     return(quantityTable)
   }
 
+  quantityTable = filterExplanationPayloadForAdjustmentVariables(
+    payloadTable = quantityTable,
+    model = model,
+    labelColumns = c("quantity")
+  )
+
   quantityLabels = as.character(quantityTable$quantity %||% "")
   keepRows = !vapply(
     quantityLabels,
