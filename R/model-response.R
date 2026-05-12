@@ -124,6 +124,10 @@ resolveResponseNounPhrase = function(model, responseVar) {
     return(noun)
   }
 
+  if (identical(responseVar, "arousal")) {
+    return("change in pupil diameter")
+  }
+
   # Fallback: the raw response variable name is better than guessing.
   responseVar
 }

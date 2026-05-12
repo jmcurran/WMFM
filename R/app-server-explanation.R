@@ -135,9 +135,9 @@ registerModelExplanationObservers = function(
                 researchQuestionText
               )
             },
-            tags$pre(
-              style = "white-space: pre-wrap; word-wrap: break-word; margin-bottom: 0;",
-              displayExplanation
+            renderSafeExplanationHtml(
+              text = displayExplanation,
+              zoomLevel = input$modelExplanationZoom %||% "normal"
             )
           )
         )
