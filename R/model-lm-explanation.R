@@ -36,17 +36,12 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   )
 
   researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% ""
-  adjustmentVariables = attr(model, "wmfm_adjustment_variables", exact = TRUE) %||% character(0)
-  adjustmentKey = paste(sort(unique(as.character(adjustmentVariables))), collapse = ",")
-
-  key = paste(
-    "expl",
-    "v5-stage20-adjustment-cache",
-    formulaStr,
-    coefStr,
-    numericAnchorInfo$cacheKey,
-    trimws(researchQuestion),
-    adjustmentKey
+  key = buildLmExplanationCacheKey(
+    formulaStr = formulaStr,
+    coefStr = coefStr,
+    numericAnchorCacheKey = numericAnchorInfo$cacheKey,
+    researchQuestion = researchQuestion,
+    adjustmentVariables = getModelAdjustmentVariables(model = model)
   )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {
@@ -62,4 +57,36 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   }
 
   output
+}
+
+#' Build cache key for plain-language explanation generation
+#'
+#' @param formulaStr Character scalar model formula text.
+#' @param coefStr Character scalar coefficient payload text.
+#' @param numericAnchorCacheKey Character scalar numeric-anchor cache token.
+#' @param researchQuestion Character scalar research question.
+#' @param adjustmentVariables Character vector adjustment variables.
+#'
+#' @return Character scalar cache key.
+#' @keywords internal
+buildLmExplanationCacheKey = function(
+    formulaStr,
+    coefStr,
+    numericAnchorCacheKey,
+    researchQuestion,
+    adjustmentVariables = character(0)) {
+
+  adjustmentKey = paste(sort(unique(as.character(adjustmentVariables))), collapse = ",")
+  policyVersion = "stage20.13-v1"
+
+  paste(
+    "expl",
+    "v6-adjustment-policy-cache",
+    policyVersion,
+    formulaStr,
+    coefStr,
+    numericAnchorCacheKey,
+    trimws(researchQuestion %||% ""),
+    adjustmentKey
+  )
 }

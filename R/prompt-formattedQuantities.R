@@ -67,6 +67,10 @@ buildFormattedPromptQuantityBlock = function(
     quantityTable = quantityTable,
     model = model
   )
+  quantityTable = filterExplanationCoefficientPayloadByAdjustmentPolicy(
+    quantityTable = quantityTable,
+    model = model
+  )
 
   if (nrow(quantityTable) == 0) {
     return("")
@@ -247,6 +251,34 @@ getFormattedPromptQuantityType = function(row) {
   }
 
   "number"
+}
+
+#' Filter explanation quantity payload by adjustment-variable policy
+#'
+#' @param quantityTable Quantity table prepared for explanation prompting.
+#' @param model A fitted model object.
+#'
+#' @return Filtered quantity table.
+#' @keywords internal
+filterExplanationCoefficientPayloadByAdjustmentPolicy = function(quantityTable, model) {
+  if (!is.data.frame(quantityTable) || nrow(quantityTable) == 0) {
+    return(quantityTable)
+  }
+
+  adjustmentVariables = getModelAdjustmentVariables(model = model)
+  if (length(adjustmentVariables) == 0) {
+    return(quantityTable)
+  }
+
+  quantityLabels = as.character(quantityTable$quantity %||% "")
+  keepRows = !vapply(
+    quantityLabels,
+    isAdjustmentRelatedOutputRow,
+    logical(1),
+    adjustmentVariables = adjustmentVariables
+  )
+
+  quantityTable[keepRows, , drop = FALSE]
 }
 
 filterFormattedPromptQuantityTable = function(quantityTable, model) {

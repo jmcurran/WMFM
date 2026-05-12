@@ -107,3 +107,23 @@ test_that("lmEquations cache key depends on numeric anchor metadata", {
   expect_identical(callCount, 2L)
   expect_false(identical(third, first))
 })
+
+test_that("lmExplanation cache key changes when adjustment policy inputs change", {
+  keyA = buildLmExplanationCacheKey(
+    formulaStr = "y ~ gender + picture + gender:picture",
+    coefStr = "1;2;3",
+    numericAnchorCacheKey = "anchor",
+    researchQuestion = "Does gender differ?",
+    adjustmentVariables = "picture"
+  )
+  keyB = buildLmExplanationCacheKey(
+    formulaStr = "y ~ gender + picture + gender:picture",
+    coefStr = "1;2;3",
+    numericAnchorCacheKey = "anchor",
+    researchQuestion = "Does gender differ?",
+    adjustmentVariables = character(0)
+  )
+
+  expect_false(identical(keyA, keyB))
+  expect_match(keyA, "stage20.13-v1", fixed = TRUE)
+})
