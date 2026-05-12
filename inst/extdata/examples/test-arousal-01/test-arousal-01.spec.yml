@@ -1,0 +1,8 @@
+modelType: lm
+formula: arousal ~ gender + picture + gender:picture
+dataSource: package
+dataPackage: s20x
+dataObject: arousal.df
+researchQuestion: Is there a difference in arousal levels for females and males?
+adjustmentVariables:
+  - picture

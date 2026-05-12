@@ -115,6 +115,10 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     rv$lastResponse = responseVar
     rv$pendingExampleInteractions = interactionTerms
 
+    selectedAdjustmentVariables = spec$adjustmentVariables %||% character(0)
+    selectedAdjustmentVariables = intersect(selectedAdjustmentVariables, mainEffectTerms)
+    rv$adjustmentVariables = intersect(selectedAdjustmentVariables, rv$allVars)
+
     updateSelectInput(
       session,
       "response_var",
@@ -132,6 +136,12 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
       session,
       "interactions",
       selected = interactionTerms
+    )
+
+    updateCheckboxGroupInput(
+      session,
+      "adjustment_variables",
+      selected = rv$adjustmentVariables
     )
 
     rv$autoFormula = spec$formula %||% ""
