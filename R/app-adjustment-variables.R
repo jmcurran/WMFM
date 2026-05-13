@@ -101,8 +101,12 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
     shiny::tags$span(variableName),
     shiny::tags$span(
       style = "float: right;",
-      shiny::tags$label(
-        style = "font-weight: normal; margin: 0;",
+        shiny::tags$label(
+          style = "font-weight: normal; margin: 0;",
+          title = paste(
+            "Adjustment variables are included in the model to account for background variation,",
+            "but are not treated as the primary findings."
+          ),
         shiny::tags$input(
           type = "checkbox",
           class = "wmfm-adjustment-checkbox",
