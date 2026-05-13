@@ -209,6 +209,11 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
     out = tbl[keep, , drop = FALSE]
 
+    out = filterConfidenceIntervalRows(
+      ciTable = out,
+      adjustmentVariables = getModelAdjustmentVariables(modelFit())
+    )
+
     if ("isComplement" %in% names(out) && !isTRUE(showComplement)) {
       keepComplement = is.na(out$isComplement) | !as.logical(out$isComplement)
       out = out[keepComplement, , drop = FALSE]

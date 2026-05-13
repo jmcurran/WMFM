@@ -127,3 +127,31 @@ filterAnovaTermRows = function(anovaTable, adjustmentVariables, showAdjustmentTe
 
   anovaTable[keepRows, , drop = FALSE]
 }
+
+
+#' Filter confidence-interval rows for adjustment-safe display
+#'
+#' @param ciTable Confidence-interval table with a `quantity` column.
+#' @param adjustmentVariables Character vector of adjustment-variable names.
+#'
+#' @return Confidence-interval table with adjustment-related rows removed.
+#'
+#' @keywords internal
+filterConfidenceIntervalRows = function(ciTable, adjustmentVariables) {
+  if (is.null(ciTable) || !is.data.frame(ciTable) || nrow(ciTable) == 0) {
+    return(ciTable)
+  }
+
+  if (!("quantity" %in% names(ciTable))) {
+    return(ciTable)
+  }
+
+  keepRows = !vapply(
+    as.character(ciTable$quantity %||% ""),
+    isAdjustmentRelatedOutputRow,
+    logical(1),
+    adjustmentVariables = adjustmentVariables
+  )
+
+  ciTable[keepRows, , drop = FALSE]
+}
