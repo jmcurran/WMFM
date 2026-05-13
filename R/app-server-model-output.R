@@ -33,6 +33,7 @@ registerModelSummaryObservers = function(input, output, modelFit) {
 
     helpText(
       paste0(
+        "Terms involving adjustment variables are hidden from the default interpretation view. ",
         "Adjustment terms involving ",
         paste(adjustmentVariables, collapse = ", "),
         " are hidden from this summary view. They remain included in the fitted model."

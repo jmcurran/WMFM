@@ -113,6 +113,8 @@ registerModelExplanationObservers = function(
 
     teachingSummary = modelExplanationTeachingSummary()
     m = modelFit()
+    adjustmentVariables = getModelAdjustmentVariables(m)
+    interpretationModeLabel = buildInterpretationModeLabel(adjustmentVariables = adjustmentVariables)
     researchQuestionText = trimws(as.character(rv$researchQuestion %||% attr(m, "wmfm_research_question", exact = TRUE) %||% ""))
     displayExplanation = if (!is.null(expl)) {
       cleanExplanationText(expl)
@@ -123,9 +125,19 @@ registerModelExplanationObservers = function(
     tagList(
       if (!is.null(displayExplanation)) {
         tagList(
+          if (!is.null(interpretationModeLabel)) {
+            tags$div(
+              class = "wmfm-explanation-helper-note",
+              tags$em(interpretationModeLabel)
+            )
+          },
           tags$div(
             class = "wmfm-explanation-helper-note",
-            "The sections below unpack the choices the app made so you can see why it described the model this way."
+            if (!is.null(interpretationModeLabel)) {
+              "This explanation focuses on the primary research question after accounting for selected adjustment variables."
+            } else {
+              "The sections below unpack the choices the app made so you can see why it described the model this way."
+            }
           ),
           tags$div(
             class = "wmfm-explanation-box",

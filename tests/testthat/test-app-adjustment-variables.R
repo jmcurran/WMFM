@@ -59,6 +59,7 @@ testthat::test_that("renderBucketVariableLabel marks checked state from selectio
   uncheckedUi = renderBucketVariableLabel("age", "group")
 
   testthat::expect_true(grepl("wmfm-adjustment-checkbox", as.character(checkedUi), fixed = TRUE))
+  testthat::expect_true(grepl("Adjustment variables are included in the model", as.character(checkedUi), fixed = TRUE))
   testthat::expect_true(grepl("checked", as.character(checkedUi), fixed = TRUE))
   testthat::expect_false(grepl("checked", as.character(uncheckedUi), fixed = TRUE))
 })
