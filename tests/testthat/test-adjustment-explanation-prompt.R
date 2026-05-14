@@ -5,11 +5,11 @@ testthat::test_that("prompt separates primary predictors and adjustment variable
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
-  testthat::expect_match(prompt, "Adjustment-variable interpretation policy (version: stage20.13-v2):", fixed = TRUE)
+  testthat::expect_match(prompt, "Interpretation policy:", fixed = TRUE)
   testthat::expect_match(prompt, "Primary predictors: x", fixed = TRUE)
-  testthat::expect_match(prompt, "Adjustment variables: age", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients as substantive findings.", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not interpret interaction terms that include any adjustment variable as main findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "The following variables are adjustment variables: age", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not use adjustment variables as narrative axes.", fixed = TRUE)
   testthat::expect_match(prompt, "after adjusting for age", fixed = TRUE)
   testthat::expect_match(prompt, "do not infer causality from adjustment", ignore.case = TRUE)
 })
@@ -26,8 +26,7 @@ testthat::test_that("term-evidence guidance marks adjustment variables as adjust
 
   block = buildLmTermEvidencePromptBlock(fit)
 
-  testthat::expect_match(block, "age: .*adjustment variable", perl = TRUE)
-  testthat::expect_match(block, "mention age only as adjusted-for variables", fixed = TRUE)
+  testthat::expect_no_match(block, "age: .*term-level evidence", perl = TRUE)
   testthat::expect_no_match(block, "For weak additive terms \\(age\\)", perl = TRUE)
 })
 
@@ -49,7 +48,7 @@ testthat::test_that("prompts are unchanged for no-adjustment models", {
   attr(fit, "wmfm_adjustment_variables") = character(0)
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
-  testthat::expect_no_match(prompt, "Adjustment-variable interpretation policy (version: stage20.13-v2):", fixed = TRUE)
+  testthat::expect_no_match(prompt, "Interpretation policy:", fixed = TRUE)
 
   block = buildAdjustmentVariablePromptBlock(fit)
   testthat::expect_identical(block, "")
@@ -67,18 +66,15 @@ testthat::test_that("adjustment prompt includes interaction guardrails for pictu
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
-  testthat::expect_match(prompt, "Adjustment variables: picture", fixed = TRUE)
+  testthat::expect_match(prompt, "The following variables are adjustment variables: picture", fixed = TRUE)
   testthat::expect_match(prompt, "Primary predictors: gender", fixed = TRUE)
   testthat::expect_match(prompt, "Omitted adjustment-related terms in explanation payload: picture, gender:picture", fixed = TRUE)
   testthat::expect_match(prompt, "Answer the research question using the variables of scientific interest", fixed = TRUE)
   testthat::expect_match(prompt, "after adjusting for picture", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients as substantive findings.", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not interpret interaction terms that include any adjustment variable as main findings.", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not provide adjustment-level-specific or picture-specific effect estimates", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not discuss results at individual levels of adjustment variables.", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not report picture-specific means, contrasts, confidence intervals, or coefficient estimates.", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not use adjustment-variable levels as narrative examples.", fixed = TRUE)
-  testthat::expect_match(prompt, "high-level model-structure note", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not discuss results separately by levels or values of adjustment variables.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not use adjustment variables as narrative axes.", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not interpret interactions involving adjustment variables level by level.", fixed = TRUE)
   testthat::expect_match(prompt, "Model-structure note:", fixed = TRUE)
 })
 
@@ -136,4 +132,25 @@ testthat::test_that("narrative payload filter removes adjustment-level labels fr
   )
 
   testthat::expect_identical(filtered$quantity, "genderm")
+})
+
+testthat::test_that("narrative payload filter removes adjustment-grouped summaries across payload columns", {
+  dat = data.frame(y = rnorm(10), primaryVar = rnorm(10), controlVar = rep(c("A", "B"), 5))
+  fit = stats::lm(y ~ primaryVar + controlVar + primaryVar:controlVar, data = dat)
+  attr(fit, "wmfm_adjustment_variables") = "controlVar"
+
+  payload = data.frame(
+    term = c("primaryVar", "controlVarB", "primaryVar:controlVarB"),
+    quantity = c("slope for primaryVar", "Predicted mean at controlVar=B", "difference by controlVar"),
+    comparison = c("primaryVar increase", "A vs B for controlVar", "primaryVar by controlVar"),
+    stringsAsFactors = FALSE
+  )
+
+  filtered = filterExplanationPayloadForAdjustmentVariables(
+    payloadTable = payload,
+    model = fit,
+    labelColumns = c("term", "quantity", "comparison")
+  )
+
+  testthat::expect_identical(filtered$term, "primaryVar")
 })

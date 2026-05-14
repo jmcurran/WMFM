@@ -75,6 +75,21 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
   adjustmentPredictors = unique(as.character(adjustmentPredictors))
   adjustmentPredictors = adjustmentPredictors[nzchar(adjustmentPredictors)]
 
+  if (length(adjustmentPredictors) > 0) {
+    keepPrimaryRows = !vapply(
+      termRows,
+      termInvolvesAdjustmentVariable,
+      logical(1),
+      adjustmentVariables = adjustmentPredictors
+    )
+    termRows = termRows[keepPrimaryRows]
+    pValues = pValues[keepPrimaryRows]
+  }
+
+  if (length(termRows) == 0) {
+    return("")
+  }
+
   termLabels = attr(terms(model), "term.labels") %||% character(0)
   interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
   hasInteraction = length(interactionTerms) > 0
@@ -99,19 +114,9 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
       "main effect"
     }
 
-    roleLabel = if (isTRUE(termInvolvesAdjustmentVariable(termRows[[i]], adjustmentPredictors))) {
-      if (grepl(":", termRows[[i]], fixed = TRUE)) {
-        "interaction involving adjustment variable"
-      } else {
-        "adjustment variable"
-      }
-    } else {
-      "primary predictor"
-    }
-
     lines = c(
       lines,
-      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ", ", roleLabel, ").")
+      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ", primary predictor).")
     )
   }
 
@@ -125,17 +130,6 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
         "For weak additive terms (",
         paste(weakMainTerms, collapse = ", "),
         "), say that the model does not show a clear difference or effect rather than presenting the estimate as an important substantive pattern."
-      )
-    )
-  }
-
-  if (length(adjustmentPredictors) > 0) {
-    lines = c(
-      lines,
-      paste0(
-        "Adjustment-variable wording: mention ",
-        paste(adjustmentPredictors, collapse = ", "),
-        " only as adjusted-for variables (for example, after adjusting for ...); do not interpret their coefficients as substantive findings."
       )
     )
   }
