@@ -74,6 +74,10 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  adjustmentExplanationScaffold = buildAdjustmentExplanationScaffold(
+    model = model,
+    mf = modelFrame
+  )
   responseScaleControlBlock = buildResponseScaleControlPromptBlock(
     model = model,
     mf = modelFrame
@@ -134,6 +138,25 @@ Research question supplied by the user:
 {researchQuestionGuidanceText}
 ")
     }
+  }
+
+  if (nzchar(adjustmentExplanationScaffold)) {
+    contextPayload = glue::glue("
+You are a friendly statistics tutor.
+You must rewrite the scaffold below into a clear student-facing explanation.
+Do not add new statistical findings.
+Do not introduce adjustment-variable levels, contrasts, means, predicted values, coefficients, ANOVA rows, or confidence intervals.
+Keep the explanation focused on the variables of scientific interest and mention adjustment variables only as adjusted-for context.
+
+{adjustmentExplanationScaffold}
+")
+
+    prompt = composeWmfmPrompt(
+      context = "summary",
+      contextPayload = contextPayload
+    )
+
+    return(prompt)
   }
 
   contextPayload = glue::glue("
