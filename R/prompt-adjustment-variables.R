@@ -151,16 +151,18 @@ getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
   }
 
   termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
-  hasPrimaryInteractions = any(vapply(
+  hasPrimaryAdjustmentInteraction = any(vapply(
     as.character(termLabels),
     function(termLabel) {
       termParts = trimws(strsplit(as.character(termLabel), ":", fixed = TRUE)[[1]])
-      any(termParts %in% roleMetadata$primaryPredictors) && length(termParts) > 1
+      length(termParts) > 1 &&
+        any(termParts %in% roleMetadata$primaryPredictors) &&
+        any(termParts %in% roleMetadata$adjustmentPredictors)
     },
     logical(1)
   ))
 
-  if (isTRUE(hasPrimaryInteractions) || length(roleMetadata$primaryPredictors) != 1) {
+  if (isTRUE(hasPrimaryAdjustmentInteraction) || length(roleMetadata$primaryPredictors) != 1) {
     return("")
   }
 
@@ -275,7 +277,11 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
   if (isTRUE(hasAdjustmentInteractions)) {
     lines = c(
       lines,
-      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+      paste(
+        "The fitted model includes an interaction between the primary variable of interest and an adjustment variable.",
+        "This means the primary comparison is allowed to differ across combinations of the adjustment variable.",
+        "A single averaged estimate would hide that variation and could be misleading, so no single adjusted effect estimate is reported here."
+      )
     )
   }
 
