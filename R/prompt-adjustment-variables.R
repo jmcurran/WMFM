@@ -279,7 +279,7 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     "Do not infer causality from adjustment."
   )
 
-  omittedTerms = getAdjustmentRelatedTermsForPrompt(model = model, roleMetadata = roleMetadata)
+  omittedTerms = getAdjustmentRelatedTermsForExplanation(model = model, mf = mf)
   if (length(omittedTerms) == 0) {
     omittedTermsText = "(none)"
   } else {
