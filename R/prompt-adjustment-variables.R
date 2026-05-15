@@ -266,7 +266,14 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     paste0("Variables of scientific interest: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
     paste0("Adjusted-comparison statement: The analysis addresses the research question for the variables of scientific interest after adjusting for ", adjustmentText, "."),
-    "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries."
+    "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries.",
+    "Interpretation policy:",
+    "The research question is about the non-adjustment variables of interest.",
+    "Do not use adjustment variables as narrative axes.",
+    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.",
+    "Do not discuss results separately by levels or values of adjustment variables.",
+    "Do not interpret interactions involving adjustment variables level by level.",
+    "Do not infer causality from adjustment."
   )
 
   adjustedSummary = getAdjustedPrimaryEffectSummary(model = model, mf = mf)
