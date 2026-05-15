@@ -139,6 +139,73 @@ getAdjustmentRoleMetadataForExplanation = function(model, mf = NULL) {
 #' @param model A fitted model object.
 #' @param mf Optional model frame.
 #'
+#' @return A character scalar containing a deterministic adjusted-effect
+#'   summary for primary variables, or an empty string when a safe summary
+#'   cannot be constructed.
+#' @keywords internal
+#' @importFrom stats coef vcov qt
+getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
+  roleMetadata = getAdjustmentRoleMetadataForExplanation(model = model, mf = mf)
+  if (!isTRUE(roleMetadata$hasAdjustments)) {
+    return("")
+  }
+
+  termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
+  hasPrimaryInteractions = any(vapply(
+    as.character(termLabels),
+    function(termLabel) {
+      termParts = trimws(strsplit(as.character(termLabel), ":", fixed = TRUE)[[1]])
+      any(termParts %in% roleMetadata$primaryPredictors) && length(termParts) > 1
+    },
+    logical(1)
+  ))
+
+  if (isTRUE(hasPrimaryInteractions) || length(roleMetadata$primaryPredictors) != 1) {
+    return("")
+  }
+
+  primaryVariable = roleMetadata$primaryPredictors[[1]]
+  estimateNames = names(stats::coef(model)) %||% character(0)
+  candidateTerms = estimateNames[startsWith(estimateNames, paste0(primaryVariable))]
+
+  if (length(candidateTerms) != 1) {
+    return("")
+  }
+
+  termName = candidateTerms[[1]]
+  estimate = unname(stats::coef(model)[[termName]])
+  vcovMat = stats::vcov(model)
+  if (is.null(vcovMat) || !(termName %in% rownames(vcovMat))) {
+    return("")
+  }
+
+  se = sqrt(vcovMat[termName, termName])
+  if (!is.finite(se) || se <= 0) {
+    return("")
+  }
+
+  criticalValue = stats::qt(0.975, df = stats::df.residual(model))
+  lower = estimate - criticalValue * se
+  upper = estimate + criticalValue * se
+
+  paste0(
+    "Adjusted primary-effect summary: For ",
+    primaryVariable,
+    ", the adjusted model estimate is ",
+    sprintf("%.2f", estimate),
+    " (95% CI ",
+    sprintf("%.2f", lower),
+    " to ",
+    sprintf("%.2f", upper),
+    ")."
+  )
+}
+
+#' Build deterministic explanation scaffold for adjustment workflows
+#'
+#' @param model A fitted model object.
+#' @param mf Optional model frame.
+#'
 #' @return A character scalar containing a deterministic scaffold, or an empty
 #'   string when no adjustment variables are selected.
 #' @keywords internal
@@ -194,6 +261,11 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     paste0("Adjusted-comparison statement: The analysis addresses the research question for the variables of scientific interest after adjusting for ", adjustmentText, "."),
     "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries."
   )
+
+  adjustedSummary = getAdjustedPrimaryEffectSummary(model = model, mf = mf)
+  if (nzchar(adjustedSummary)) {
+    lines = c(lines, adjustedSummary)
+  }
 
   if (isTRUE(hasAdjustmentInteractions)) {
     lines = c(

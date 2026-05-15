@@ -42,6 +42,45 @@ testthat::test_that("adjustment workflows use deterministic scaffold in final pr
   )
 })
 
+testthat::test_that("simple adjustment workflow includes deterministic adjusted-effect summary", {
+  fit = stats::lm(arousal ~ gender + picture, data = s20x::arousal.df)
+  attr(fit, "wmfm_adjustment_variables") = "picture"
+  attr(fit, "wmfm_research_question") = "Is there a difference in arousal levels for females and males?"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "Deterministic adjustment-aware explanation scaffold:", fixed = TRUE)
+  testthat::expect_match(prompt, "after adjusting for picture", fixed = TRUE)
+  testthat::expect_match(prompt, "Adjusted primary-effect summary:", fixed = TRUE)
+  testthat::expect_match(prompt, "95% CI", fixed = TRUE)
+
+  for (levelLabel in levels(s20x::arousal.df$picture)) {
+    testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
+  }
+
+  testthat::expect_no_match(prompt, "fitted mean", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "for .* picture", perl = TRUE, ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "picture-specific", ignore.case = TRUE)
+})
+
+testthat::test_that("interaction adjustment workflow remains high-level only", {
+  fit = stats::lm(arousal ~ gender + picture + gender:picture, data = s20x::arousal.df)
+  attr(fit, "wmfm_adjustment_variables") = "picture"
+  attr(fit, "wmfm_research_question") = "Is there a difference in arousal levels for females and males?"
+
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  testthat::expect_match(prompt, "Model-structure caveat", fixed = TRUE)
+
+  for (levelLabel in levels(s20x::arousal.df$picture)) {
+    testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
+  }
+
+  testthat::expect_no_match(prompt, "for .* picture", perl = TRUE, ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "at .* level", perl = TRUE, ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "interaction .* level", perl = TRUE, ignore.case = TRUE)
+})
+
 testthat::test_that("no-adjustment prompt path remains unchanged", {
   rawData = data.frame(
     responseValue = c(5, 6, 7, 8, 9, 10),
