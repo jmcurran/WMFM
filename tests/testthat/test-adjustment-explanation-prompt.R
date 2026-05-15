@@ -154,3 +154,99 @@ testthat::test_that("narrative payload filter removes adjustment-grouped summari
 
   testthat::expect_identical(filtered$term, "primaryVar")
 })
+
+testthat::test_that("final provider prompt excludes adjustment-level labels and conditional narratives", {
+  dat = data.frame(
+    y = c(10, 12, 11, 14, 13, 16, 15, 18),
+    treatment = factor(c("control", "control", "treated", "treated", "control", "control", "treated", "treated")),
+    site = factor(c("east", "west", "east", "west", "east", "west", "east", "west")),
+    age = c(20, 22, 24, 26, 28, 30, 32, 34)
+  )
+
+  fit = stats::lm(y ~ treatment + site + age, data = dat)
+  attr(fit, "wmfm_adjustment_variables") = c("site", "age")
+
+  capturedPrompt = NULL
+  fakeChat = list(
+    chat = function(prompt) {
+      capturedPrompt <<- prompt
+      "stub explanation"
+    }
+  )
+
+  suppressWarnings(lmExplanation(fit, chat = fakeChat, useCache = FALSE))
+
+  testthat::expect_true(is.character(capturedPrompt) && length(capturedPrompt) == 1)
+
+  modelFrame = stats::model.frame(fit)
+  adjustmentVars = c("site", "age")
+
+  factorAdjustmentLevels = unlist(
+    lapply(adjustmentVars, function(varName) {
+      column = modelFrame[[varName]]
+      if (is.factor(column)) {
+        levels(column)
+      } else {
+        character(0)
+      }
+    }),
+    use.names = FALSE
+  )
+  factorAdjustmentLevels = unique(as.character(factorAdjustmentLevels))
+  factorAdjustmentLevels = factorAdjustmentLevels[nzchar(factorAdjustmentLevels)]
+
+  if (length(factorAdjustmentLevels) > 0) {
+    for (levelLabel in factorAdjustmentLevels) {
+      testthat::expect_no_match(capturedPrompt, levelLabel, fixed = TRUE)
+    }
+  }
+
+  numericAdjustmentValues = unlist(
+    lapply(adjustmentVars, function(varName) {
+      column = modelFrame[[varName]]
+      if (is.numeric(column)) {
+        unique(column)
+      } else {
+        numeric(0)
+      }
+    }),
+    use.names = FALSE
+  )
+
+  if (length(numericAdjustmentValues) > 0) {
+    valueTokens = unique(as.character(signif(numericAdjustmentValues, digits = 10)))
+    for (valueToken in valueTokens) {
+      escapedToken = gsub("([.|(){}+*?^$\\\\])", "\\\\\\1", valueToken)
+      testthat::expect_no_match(
+        capturedPrompt,
+        paste0("\\bage\\s*(?:=|:)?\\s*", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+      testthat::expect_no_match(
+        capturedPrompt,
+        paste0("\\bfor\\s+", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+      testthat::expect_no_match(
+        capturedPrompt,
+        paste0("\\bconditional on\\s+age\\s*(?:=|:)?\\s*", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+    }
+  }
+
+  testthat::expect_match(capturedPrompt, "site", fixed = TRUE)
+  testthat::expect_match(capturedPrompt, "age", fixed = TRUE)
+
+  testthat::expect_no_match(capturedPrompt, "for east", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "for west", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "by site", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "by age", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "fitted mean", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "predicted mean", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "conditional on site", ignore.case = TRUE)
+  testthat::expect_no_match(capturedPrompt, "conditional on age", ignore.case = TRUE)
+})
