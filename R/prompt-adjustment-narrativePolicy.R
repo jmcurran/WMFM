@@ -98,24 +98,41 @@ filterExplanationPayloadForAdjustmentVariables = function(
     return(payloadTable)
   }
 
-  forbiddenAxes = tolower(unique(as.character(policy$forbiddenNarrativeAxes %||% character(0))))
-  forbiddenAxes = forbiddenAxes[nzchar(forbiddenAxes)]
-
-  if (length(forbiddenAxes) == 0) {
+  adjustmentVariables = unique(as.character(policy$adjustmentVariables %||% character(0)))
+  adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
+  if (length(adjustmentVariables) == 0) {
     return(payloadTable)
+  }
+
+  forbiddenLevels = setdiff(
+    unique(as.character(policy$forbiddenNarrativeAxes %||% character(0))),
+    adjustmentVariables
+  )
+  forbiddenLevels = trimws(forbiddenLevels)
+  forbiddenLevels = forbiddenLevels[nzchar(forbiddenLevels)]
+
+  levelPattern = function(levelLabel) {
+    esc = gsub("([.|(){}+*?^$\\\\])", "\\\\\\1", levelLabel)
+    paste0("(?:^|[^[:alnum:]_])", esc, "(?:$|[^[:alnum:]_])")
   }
 
   keepRows = rep(TRUE, nrow(payloadTable))
   for (i in seq_len(nrow(payloadTable))) {
-    rowValues = tolower(unlist(lapply(labelColumns, function(columnName) {
+    rowValues = unlist(lapply(labelColumns, function(columnName) {
       as.character(payloadTable[[columnName]][[i]] %||% "")
-    }), use.names = FALSE))
+    }), use.names = FALSE)
 
-    if (any(vapply(rowValues, function(value) {
-      any(vapply(forbiddenAxes, function(axis) {
-        grepl(axis, value, fixed = TRUE)
+    rowMentionsAdjustmentVar = any(vapply(rowValues, function(value) {
+      isAdjustmentRelatedOutputRow(value, adjustmentVariables = adjustmentVariables)
+    }, logical(1)))
+
+    rowMentionsAdjustmentLevel = any(vapply(rowValues, function(value) {
+      any(vapply(forbiddenLevels, function(levelLabel) {
+        grepl(levelPattern(levelLabel), value, perl = TRUE, ignore.case = TRUE)
       }, logical(1)))
-    }, logical(1)))) {
+    }, logical(1)))
+
+    if (isTRUE(rowMentionsAdjustmentVar) || isTRUE(rowMentionsAdjustmentLevel)) {
       keepRows[[i]] = FALSE
     }
   }
