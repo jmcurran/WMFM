@@ -133,3 +133,81 @@ getAdjustmentRoleMetadataForExplanation = function(model, mf = NULL) {
     hasAdjustments = length(adjustmentPredictors) > 0
   )
 }
+
+#' Build deterministic explanation scaffold for adjustment workflows
+#'
+#' @param model A fitted model object.
+#' @param mf Optional model frame.
+#'
+#' @return A character scalar containing a deterministic scaffold, or an empty
+#'   string when no adjustment variables are selected.
+#' @keywords internal
+#' @importFrom stats terms
+buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
+  roleMetadata = getAdjustmentRoleMetadataForExplanation(model = model, mf = mf)
+  if (!isTRUE(roleMetadata$hasAdjustments)) {
+    return("")
+  }
+
+  if (is.null(mf)) {
+    mf = tryCatch(
+      stats::model.frame(model),
+      error = function(e) {
+        NULL
+      }
+    )
+  }
+
+  responseVariable = if (is.data.frame(mf) && ncol(mf) > 0) {
+    names(mf)[[1]]
+  } else {
+    all.vars(stats::formula(model))[[1]]
+  }
+
+  researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% ""
+  researchQuestion = trimws(as.character(researchQuestion)[[1]])
+  if (!nzchar(researchQuestion)) {
+    researchQuestion = "(not supplied)"
+  }
+
+  adjustmentText = paste(roleMetadata$adjustmentPredictors, collapse = ", ")
+  primaryText = if (length(roleMetadata$primaryPredictors) > 0) {
+    paste(roleMetadata$primaryPredictors, collapse = ", ")
+  } else {
+    "(none listed)"
+  }
+
+  termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
+  hasAdjustmentInteractions = any(vapply(
+    as.character(termLabels),
+    termInvolvesAdjustmentVariable,
+    logical(1),
+    adjustmentVariables = roleMetadata$adjustmentPredictors
+  ) & grepl(":", as.character(termLabels), fixed = TRUE))
+
+  lines = c(
+    "Deterministic adjustment-aware explanation scaffold:",
+    paste0("Research question: ", researchQuestion),
+    paste0("Response variable: ", responseVariable),
+    paste0("Variables of scientific interest: ", primaryText),
+    paste0("Adjustment variables: ", adjustmentText),
+    paste0("Adjusted-comparison statement: The analysis addresses the research question for the variables of scientific interest after adjusting for ", adjustmentText, "."),
+    "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries."
+  )
+
+  if (isTRUE(hasAdjustmentInteractions)) {
+    lines = c(
+      lines,
+      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+    )
+  }
+
+  lines = c(
+    lines,
+    "Forbidden content policy: Do not add new statistical findings.",
+    "Forbidden content policy: Do not introduce adjustment-variable levels, fitted means, predicted values, contrasts, coefficients, ANOVA rows, or confidence intervals for adjustment variables.",
+    "Forbidden content policy: Do not provide level-by-level interaction interpretation involving adjustment variables."
+  )
+
+  paste(lines, collapse = "\n")
+}
