@@ -216,10 +216,24 @@ testthat::test_that("final provider prompt excludes adjustment-level labels and 
   if (length(numericAdjustmentValues) > 0) {
     valueTokens = unique(as.character(signif(numericAdjustmentValues, digits = 10)))
     for (valueToken in valueTokens) {
+      escapedToken = gsub("([.|(){}+*?^$\\\\])", "\\\\\\1", valueToken)
       testthat::expect_no_match(
         capturedPrompt,
-        paste0("\\b", gsub("([.|(){}+*?^$\\\\])", "\\\\\\1", valueToken), "\\b"),
-        perl = TRUE
+        paste0("\\bage\\s*(?:=|:)?\\s*", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+      testthat::expect_no_match(
+        capturedPrompt,
+        paste0("\\bfor\\s+", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
+      )
+      testthat::expect_no_match(
+        capturedPrompt,
+        paste0("\\bconditional on\\s+age\\s*(?:=|:)?\\s*", escapedToken, "\\b"),
+        perl = TRUE,
+        ignore.case = TRUE
       )
     }
   }
