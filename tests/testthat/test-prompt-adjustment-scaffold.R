@@ -70,7 +70,22 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
-  testthat::expect_match(prompt, "Model-structure caveat", fixed = TRUE)
+  testthat::expect_no_match(prompt, "Adjusted primary-effect summary:", fixed = TRUE)
+  testthat::expect_match(
+    prompt,
+    "The fitted model includes an interaction between the primary variable of interest and an adjustment variable.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "This means the primary comparison is allowed to differ across combinations of the adjustment variable.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "A single averaged estimate would hide that variation and could be misleading, so no single adjusted effect estimate is reported here.",
+    fixed = TRUE
+  )
 
   for (levelLabel in levels(s20x::arousal.df$picture)) {
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
