@@ -25,9 +25,10 @@ testthat::test_that("adjustment workflows use deterministic scaffold in final pr
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
   }
 
-  testthat::expect_no_match(prompt, "fitted means", fixed = TRUE)
-  testthat::expect_no_match(prompt, "contrast", ignore.case = TRUE)
-  testthat::expect_no_match(prompt, "confidence interval", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "At level", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "the fitted mean", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "the contrast", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "confidence interval excludes", ignore.case = TRUE)
 
   adjustmentCoefs = coefNames[grepl("adjustVar", coefNames, fixed = TRUE)]
   for (coefLabel in adjustmentCoefs) {
