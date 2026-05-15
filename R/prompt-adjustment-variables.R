@@ -143,7 +143,7 @@ getAdjustmentRoleMetadataForExplanation = function(model, mf = NULL) {
 #'   summary for primary variables, or an empty string when a safe summary
 #'   cannot be constructed.
 #' @keywords internal
-#' @importFrom stats coef vcov qt
+#' @importFrom stats coef vcov qt df.residual
 getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
   roleMetadata = getAdjustmentRoleMetadataForExplanation(model = model, mf = mf)
   if (!isTRUE(roleMetadata$hasAdjustments)) {
@@ -184,7 +184,12 @@ getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
     return("")
   }
 
-  criticalValue = stats::qt(0.975, df = stats::df.residual(model))
+  residualDf = stats::df.residual(model)
+  if (!is.finite(residualDf) || residualDf <= 0) {
+    return("")
+  }
+
+  criticalValue = stats::qt(0.975, df = residualDf)
   lower = estimate - criticalValue * se
   upper = estimate + criticalValue * se
 

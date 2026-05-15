@@ -81,6 +81,23 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
   testthat::expect_no_match(prompt, "interaction .* level", perl = TRUE, ignore.case = TRUE)
 })
 
+testthat::test_that("adjusted-effect summary is skipped when residual df is nonpositive", {
+  rawData = data.frame(
+    responseValue = c(10, 12, 14),
+    primaryA = c(1, 2, 3),
+    adjustVar = c(4, 5, 6)
+  )
+
+  fit = stats::lm(responseValue ~ primaryA + adjustVar, data = rawData)
+  attr(fit, "wmfm_adjustment_variables") = "adjustVar"
+
+  summaryText = getAdjustedPrimaryEffectSummary(fit)
+
+  testthat::expect_identical(stats::df.residual(fit), 0)
+  testthat::expect_identical(summaryText, "")
+})
+
+
 testthat::test_that("no-adjustment prompt path remains unchanged", {
   rawData = data.frame(
     responseValue = c(5, 6, 7, 8, 9, 10),
