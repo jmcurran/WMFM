@@ -52,7 +52,16 @@ sanitizeAdjustmentVariables = function(selectedVariables, eligibleVariables) {
 #'
 #' @importFrom shiny checkboxGroupInput
 renderAdjustmentVariablesUi = function(rv, responseVariable) {
-  if (is.null(rv$data)) {
+  hasData = TRUE
+  if (is.environment(rv) || is.list(rv)) {
+    hasData = tryCatch({
+      !is.null(rv$data)
+    }, error = function(e) {
+      TRUE
+    })
+  }
+
+  if (!isTRUE(hasData)) {
     return(NULL)
   }
 
@@ -112,10 +121,12 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
           class = "wmfm-adjustment-checkbox",
           `data-var` = variableName,
           checked = if (isTRUE(isSelected)) "checked" else NULL,
+          `data-selected` = if (isTRUE(isSelected)) "1" else "0",
           onclick = "event.stopPropagation();",
           onchange = paste(
+            "this.setAttribute('data-selected', this.checked ? '1' : '0');",
             "Shiny.setInputValue('adjustment_variables_inline',",
-            "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox:checked')).map(function(el){",
+            "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox')).filter(function(el){ return el.getAttribute('data-selected') === '1'; }).map(function(el){",
             "return el.getAttribute('data-var');",
             "}), {priority: 'event'});"
           )

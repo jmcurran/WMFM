@@ -75,18 +75,21 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
   adjustmentPredictors = unique(as.character(adjustmentPredictors))
   adjustmentPredictors = adjustmentPredictors[nzchar(adjustmentPredictors)]
 
+  adjustmentTermRows = character(0)
   if (length(adjustmentPredictors) > 0) {
-    keepPrimaryRows = !vapply(
+    isAdjustmentTerm = vapply(
       termRows,
       termInvolvesAdjustmentVariable,
       logical(1),
       adjustmentVariables = adjustmentPredictors
     )
+    adjustmentTermRows = termRows[isAdjustmentTerm]
+    keepPrimaryRows = !isAdjustmentTerm
     termRows = termRows[keepPrimaryRows]
     pValues = pValues[keepPrimaryRows]
   }
 
-  if (length(termRows) == 0) {
+  if (length(termRows) == 0 && length(adjustmentTermRows) == 0) {
     return("")
   }
 
@@ -115,6 +118,30 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
     lines = c(
       lines,
       paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ", primary predictor).")
+    )
+  }
+
+
+  if (length(adjustmentTermRows) > 0) {
+    lines = c(lines, "Adjustment-related guardrails (do not interpret as substantive findings):")
+    for (termLabel in adjustmentTermRows) {
+      termType = if (grepl(":", termLabel, fixed = TRUE)) {
+        "interaction, interaction involving adjustment variable"
+      } else {
+        "main effect, adjustment variable"
+      }
+      lines = c(
+        lines,
+        paste0("- ", termLabel, ": adjustment-only term (", termType, ").")
+      )
+    }
+    lines = c(
+      lines,
+      paste0(
+        "When writing the explanation, mention ",
+        paste(adjustmentPredictors, collapse = ", "),
+        " only as adjusted-for variables and do not treat these terms as findings."
+      )
     )
   }
 
