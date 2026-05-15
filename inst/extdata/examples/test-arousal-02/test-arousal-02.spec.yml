@@ -1,5 +1,5 @@
 modelType: lm
-formula: arousal ~ gender + picture
+formula: arousal ~ gender + picture + gender:picture
 dataSource: package
 dataPackage: s20x
 dataObject: arousal.df
