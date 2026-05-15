@@ -90,9 +90,7 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
     return("")
   }
 
-  termLabels = attr(terms(model), "term.labels") %||% character(0)
-  interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-  hasInteraction = length(interactionTerms) > 0
+  hasInteraction = any(grepl(":", termRows, fixed = TRUE))
 
   lines = c(
     "Term-level evidence guidance for the explanation:",
