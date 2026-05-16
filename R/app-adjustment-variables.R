@@ -52,18 +52,6 @@ sanitizeAdjustmentVariables = function(selectedVariables, eligibleVariables) {
 #'
 #' @importFrom shiny checkboxGroupInput
 renderAdjustmentVariablesUi = function(rv, responseVariable) {
-  hasData = TRUE
-  if (is.environment(rv) || is.list(rv)) {
-    hasData = tryCatch({
-      !is.null(rv$data)
-    }, error = function(e) {
-      TRUE
-    })
-  }
-
-  if (!isTRUE(hasData)) {
-    return(NULL)
-  }
 
   eligibleVariables = buildEligibleAdjustmentVariables(
     responseVariable = responseVariable,
@@ -123,17 +111,28 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
           checked = if (isTRUE(isSelected)) "checked" else NULL,
           `data-selected` = if (isTRUE(isSelected)) "1" else "0",
           onclick = "event.stopPropagation();",
-          onchange = paste(
-            "this.setAttribute('data-selected', this.checked ? '1' : '0');",
-            "Shiny.setInputValue('adjustment_variables_inline',",
-            "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox')).filter(function(el){ return el.getAttribute('data-selected') === '1'; }).map(function(el){",
-            "return el.getAttribute('data-var');",
-            "}), {priority: 'event'});"
-          )
+          onchange = getAdjustmentCheckboxOnChangeScript()
         ),
         ""
       )
     )
+  )
+}
+
+
+
+#' Build onchange JavaScript for inline adjustment checkboxes
+#'
+#' @return Character scalar JavaScript snippet.
+#' @keywords internal
+getAdjustmentCheckboxOnChangeScript = function() {
+  paste(
+    "var current = this.getAttribute('data-selected');",
+    "this.setAttribute('data-selected', current === '1' ? '0' : '1');",
+    "Shiny.setInputValue('adjustment_variables_inline',",
+    "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox')).filter(function(el){ return el.getAttribute('data-selected') === '1'; }).map(function(el){",
+    "return el.getAttribute('data-var');",
+    "}), {priority: 'event'});"
   )
 }
 
