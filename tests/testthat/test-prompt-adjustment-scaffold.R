@@ -42,8 +42,14 @@ testthat::test_that("adjustment workflows use deterministic scaffold in final pr
   )
 })
 
+
+localArousalDf = local({
+  data("arousal.df", package = "s20x")
+  get("arousal.df", inherits = TRUE)
+})
+
 testthat::test_that("simple adjustment workflow includes deterministic adjusted-effect summary", {
-  fit = stats::lm(arousal ~ gender + picture, data = s20x::arousal.df)
+  fit = stats::lm(arousal ~ gender + picture, data = localArousalDf)
   attr(fit, "wmfm_adjustment_variables") = "picture"
   attr(fit, "wmfm_research_question") = "Is there a difference in arousal levels for females and males?"
 
@@ -54,7 +60,7 @@ testthat::test_that("simple adjustment workflow includes deterministic adjusted-
   testthat::expect_match(prompt, "Adjusted primary-effect summary:", fixed = TRUE)
   testthat::expect_match(prompt, "95% CI", fixed = TRUE)
 
-  for (levelLabel in levels(s20x::arousal.df$picture)) {
+  for (levelLabel in levels(localArousalDf$picture)) {
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
   }
 
@@ -64,7 +70,7 @@ testthat::test_that("simple adjustment workflow includes deterministic adjusted-
 })
 
 testthat::test_that("interaction adjustment workflow remains high-level only", {
-  fit = stats::lm(arousal ~ gender + picture + gender:picture, data = s20x::arousal.df)
+  fit = stats::lm(arousal ~ gender + picture + gender:picture, data = localArousalDf)
   attr(fit, "wmfm_adjustment_variables") = "picture"
   attr(fit, "wmfm_research_question") = "Is there a difference in arousal levels for females and males?"
 
@@ -87,7 +93,7 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
     fixed = TRUE
   )
 
-  for (levelLabel in levels(s20x::arousal.df$picture)) {
+  for (levelLabel in levels(localArousalDf$picture)) {
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
   }
 
@@ -98,9 +104,9 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
 
 testthat::test_that("adjusted-effect summary is skipped when residual df is nonpositive", {
   rawData = data.frame(
-    responseValue = c(10, 12, 14),
-    primaryA = c(1, 2, 3),
-    adjustVar = c(4, 5, 6)
+    responseValue = c(10, 12),
+    primaryA = c(1, 2),
+    adjustVar = c(4, 5)
   )
 
   fit = stats::lm(responseValue ~ primaryA + adjustVar, data = rawData)
