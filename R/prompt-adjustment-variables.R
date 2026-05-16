@@ -40,6 +40,7 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
   hasAdjustmentInteractions = any(grepl(":", omittedTerms, fixed = TRUE))
 
   lines = c(
+    "Adjustment-variable interpretation guidance:",
     "Interpretation policy:",
     paste0("Response variable: ", names(mf %||% stats::model.frame(model))[[1]]),
     paste0("Primary predictors: ", primaryText),
@@ -269,6 +270,7 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     paste0("The following variables are adjustment variables: ", adjustmentText),
     paste0("Adjusted-comparison statement: The analysis addresses the research question for the variables of scientific interest after adjusting for ", adjustmentText, "."),
     "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries.",
+    "Adjustment-variable interpretation guidance:",
     "Interpretation policy:",
     "The research question is about the non-adjustment variables of interest.",
     "Do not use adjustment variables as narrative axes.",

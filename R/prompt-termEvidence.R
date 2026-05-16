@@ -132,7 +132,13 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
       }
       lines = c(
         lines,
-        paste0("- ", termLabel, ": adjustment-only term (", termType, ").")
+        paste0("- ", termLabel, ": adjustment variable term (", termType, ").")
+      )
+    }
+    for (adjustmentVariable in adjustmentPredictors) {
+      lines = c(
+        lines,
+        paste0("- ", adjustmentVariable, ": adjustment variable; mention ", adjustmentVariable, " only as adjusted-for variables.")
       )
     }
     lines = c(
