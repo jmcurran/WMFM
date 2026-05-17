@@ -16,7 +16,11 @@ mapExplanationZoomToFontSize = function(zoomLevel) {
     presentation = "1.6rem"
   )
 
-  unname(zoomMap[zoomLevel] %||% "1rem")
+  if (!(zoomLevel %in% names(zoomMap))) {
+    return("1rem")
+  }
+
+  unname(zoomMap[[zoomLevel]])
 }
 
 #' Render explanation text as safe paragraph HTML
@@ -48,6 +52,7 @@ renderSafeExplanationHtml = function(text, zoomLevel = "normal") {
 
   paragraphTags = lapply(paragraphs, function(paragraphText) {
     safeText = htmlEscape(paragraphText, attribute = TRUE)
+    safeText = gsub("'", "&#39;", safeText, fixed = TRUE)
     safeText = gsub("\n", "<br/>", safeText, fixed = TRUE)
     tags$p(HTML(safeText))
   })

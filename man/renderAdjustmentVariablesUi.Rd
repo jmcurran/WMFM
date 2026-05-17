@@ -4,7 +4,13 @@
 \alias{renderAdjustmentVariablesUi}
 \title{Render adjustment-variable selection UI}
 \usage{
-renderAdjustmentVariablesUi(rv, responseVariable)
+renderAdjustmentVariablesUi(
+  rv,
+  responseVariable,
+  factorVariables = NULL,
+  continuousVariables = NULL,
+  selectedAdjustmentVariables = NULL
+)
 }
 \arguments{
 \item{rv}{App reactive values object.}
