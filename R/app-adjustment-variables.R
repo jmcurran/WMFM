@@ -103,12 +103,28 @@ renderAdjustmentVariablesUiFromInputs = function(
 #' @keywords internal
 #'
 #' @importFrom shiny checkboxGroupInput
-renderAdjustmentVariablesUi = function(rv, responseVariable) {
+renderAdjustmentVariablesUi = function(rv, responseVariable, factorVariables = NULL, continuousVariables = NULL, selectedAdjustmentVariables = NULL) {
+  safeReactiveRead = function(expr, defaultValue = NULL) {
+    tryCatch(expr, error = function(e) {
+      defaultValue
+    })
+  }
+
+  if (missing(factorVariables)) {
+    factorVariables = safeReactiveRead(rv$bucketFactors, character(0))
+  }
+  if (missing(continuousVariables)) {
+    continuousVariables = safeReactiveRead(rv$bucketContinuous, character(0))
+  }
+  if (missing(selectedAdjustmentVariables)) {
+    selectedAdjustmentVariables = safeReactiveRead(rv$adjustmentVariables, character(0))
+  }
+
   renderedUi = renderAdjustmentVariablesUiFromInputs(
     responseVariable = responseVariable,
-    factorVariables = rv$bucketFactors,
-    continuousVariables = rv$bucketContinuous,
-    selectedAdjustmentVariables = rv$adjustmentVariables
+    factorVariables = factorVariables,
+    continuousVariables = continuousVariables,
+    selectedAdjustmentVariables = selectedAdjustmentVariables
   )
 
   rv$adjustmentVariables = renderedUi$selectedVariables
@@ -144,7 +160,7 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
           class = "wmfm-adjustment-checkbox",
           `data-var` = variableName,
           checked = if (isTRUE(isSelected)) "checked" else NULL,
-          `data-selected` = if (isTRUE(isSelected)) "1" else "0",
+          `data-adjustment-active` = if (isTRUE(isSelected)) "1" else "0",
           onclick = "event.stopPropagation();",
           onchange = getAdjustmentCheckboxOnChangeScript()
         ),
@@ -162,10 +178,10 @@ renderBucketVariableLabel = function(variableName, selectedAdjustmentVariables) 
 #' @keywords internal
 getAdjustmentCheckboxOnChangeScript = function() {
   paste(
-    "var current = this.getAttribute('data-selected');",
-    "this.setAttribute('data-selected', current === '1' ? '0' : '1');",
+    "var current = this.getAttribute('data-adjustment-active');",
+    "this.setAttribute('data-adjustment-active', current === '1' ? '0' : '1');",
     "Shiny.setInputValue('adjustment_variables_inline',",
-    "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox')).filter(function(el){ return el.getAttribute('data-selected') === '1'; }).map(function(el){",
+    "Array.from(document.querySelectorAll('.wmfm-adjustment-checkbox')).filter(function(el){ return el.getAttribute('data-adjustment-active') === '1'; }).map(function(el){",
     "return el.getAttribute('data-var');",
     "}), {priority: 'event'});"
   )

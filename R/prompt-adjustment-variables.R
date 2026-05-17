@@ -51,7 +51,7 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
     "Interpret primary predictors as the substantive findings of interest.",
     "Mention adjustment variables only in adjusted-for language such as after adjusting for ... or after accounting for ....",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
-    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.",
+    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, model-based averages, predicted values, or model terms as findings.",
     "Do not discuss results separately by levels or values of adjustment variables.",
     "Do not use adjustment variables as narrative axes.",
     "Do not interpret interactions involving adjustment variables level by level.",
@@ -273,14 +273,14 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     paste0("Variables of scientific interest: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
     paste0("The following variables are adjustment variables: ", adjustmentText),
-    paste0("Adjusted-comparison statement: The analysis addresses the research question for the variables of scientific interest after adjusting for ", adjustmentText, "."),
+    paste0("Adjusted-comparison statement: The analysis addresses the research question about the variables of scientific interest, with ", adjustmentText, " handled as adjustment variables."),
     "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries.",
     "Adjustment-variable interpretation guidance:",
     "Interpretation policy:",
     "The research question is about the non-adjustment variables of interest.",
     "Do not use adjustment variables as narrative axes.",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
-    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.",
+    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, model-based averages, predicted values, or model terms as findings.",
     "Do not discuss results separately by levels or values of adjustment variables.",
     "Do not interpret interactions involving adjustment variables level by level.",
     "Do not infer causality from adjustment."
@@ -294,6 +294,13 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
   }
 
   lines = c(lines, paste0("Omitted adjustment-related terms in explanation payload: ", omittedTermsText))
+
+  if (length(omittedTerms) > 0) {
+    lines = c(
+      lines,
+      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+    )
+  }
 
   adjustedSummary = getAdjustedPrimaryEffectSummary(model = model, mf = mf)
   if (nzchar(adjustedSummary)) {
@@ -315,7 +322,7 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
   lines = c(
     lines,
     "Forbidden content policy: Do not add new statistical findings.",
-    "Forbidden content policy: Do not introduce adjustment-variable levels, fitted means, predicted values, contrasts, coefficients, ANOVA rows, or confidence intervals for adjustment variables.",
+    "Forbidden content policy: Do not introduce adjustment-variable levels, model-based averages, predicted values, contrasts, coefficients, ANOVA rows, or confidence intervals for adjustment variables.",
     "Forbidden content policy: Do not provide level-by-level interaction interpretation involving adjustment variables."
   )
 

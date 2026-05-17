@@ -114,7 +114,7 @@ testthat::test_that("adjusted-effect summary is skipped when residual df is nonp
 
   summaryText = getAdjustedPrimaryEffectSummary(fit)
 
-  testthat::expect_identical(stats::df.residual(fit), 0)
+  testthat::expect_identical(stats::df.residual(fit), 0L)
   testthat::expect_identical(summaryText, "")
 })
 
