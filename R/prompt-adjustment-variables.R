@@ -61,7 +61,7 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
   if (isTRUE(hasAdjustmentInteractions)) {
     lines = c(
       lines,
-      "Model-structure note: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
     )
   }
 
@@ -190,6 +190,11 @@ getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
 
   residualDf = stats::df.residual(model)
   if (!is.finite(residualDf) || residualDf <= 0) {
+    return("")
+  }
+
+  sigmaValue = tryCatch(stats::sigma(model), error = function(e) { NA_real_ })
+  if (!is.finite(sigmaValue) || sigmaValue <= sqrt(.Machine$double.eps)) {
     return("")
   }
 

@@ -38,6 +38,58 @@ sanitizeAdjustmentVariables = function(selectedVariables, eligibleVariables) {
 }
 
 
+
+#' Render adjustment-variable selection UI from explicit inputs
+#'
+#' Pure helper that builds the hidden compatibility checkbox input without
+#' reading from reactive values directly.
+#'
+#' @param responseVariable Name of the current response variable.
+#' @param factorVariables Character vector of variables in the factor bucket.
+#' @param continuousVariables Character vector of variables in the continuous bucket.
+#' @param selectedAdjustmentVariables Character vector currently selected as
+#'   adjustment variables.
+#'
+#' @return A list with `ui`, `eligibleVariables`, and `selectedVariables`.
+#' @keywords internal
+#' @importFrom shiny checkboxGroupInput
+renderAdjustmentVariablesUiFromInputs = function(
+    responseVariable,
+    factorVariables,
+    continuousVariables,
+    selectedAdjustmentVariables) {
+
+  eligibleVariables = buildEligibleAdjustmentVariables(
+    responseVariable = responseVariable,
+    factorVariables = factorVariables,
+    continuousVariables = continuousVariables
+  )
+
+  selectedVariables = sanitizeAdjustmentVariables(
+    selectedVariables = selectedAdjustmentVariables,
+    eligibleVariables = eligibleVariables
+  )
+
+  ui = NULL
+  if (length(eligibleVariables) > 0) {
+    ui = shiny::div(
+      style = "display: none;",
+      checkboxGroupInput(
+        inputId = "adjustment_variables",
+        label = "Adjust for this variable",
+        choices = eligibleVariables,
+        selected = selectedVariables
+      )
+    )
+  }
+
+  list(
+    ui = ui,
+    eligibleVariables = eligibleVariables,
+    selectedVariables = selectedVariables
+  )
+}
+
 #' Render adjustment-variable selection UI
 #'
 #' Builds the Stage B adjustment-variable checkbox input from current bucket
@@ -52,33 +104,16 @@ sanitizeAdjustmentVariables = function(selectedVariables, eligibleVariables) {
 #'
 #' @importFrom shiny checkboxGroupInput
 renderAdjustmentVariablesUi = function(rv, responseVariable) {
-
-  eligibleVariables = buildEligibleAdjustmentVariables(
+  renderedUi = renderAdjustmentVariablesUiFromInputs(
     responseVariable = responseVariable,
     factorVariables = rv$bucketFactors,
-    continuousVariables = rv$bucketContinuous
+    continuousVariables = rv$bucketContinuous,
+    selectedAdjustmentVariables = rv$adjustmentVariables
   )
 
-  selectedVariables = sanitizeAdjustmentVariables(
-    selectedVariables = rv$adjustmentVariables,
-    eligibleVariables = eligibleVariables
-  )
+  rv$adjustmentVariables = renderedUi$selectedVariables
 
-  rv$adjustmentVariables = selectedVariables
-
-  if (length(eligibleVariables) == 0) {
-    return(NULL)
-  }
-
-  shiny::div(
-    style = "display: none;",
-    checkboxGroupInput(
-      inputId = "adjustment_variables",
-      label = "Adjust for this variable",
-      choices = eligibleVariables,
-      selected = selectedVariables
-    )
-  )
+  renderedUi$ui
 }
 
 #' Build a variable-card label with inline adjustment checkbox

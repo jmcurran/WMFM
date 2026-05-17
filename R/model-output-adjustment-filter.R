@@ -146,12 +146,30 @@ filterConfidenceIntervalRows = function(ciTable, adjustmentVariables) {
     return(ciTable)
   }
 
+  quantities = as.character(ciTable$quantity %||% "")
   keepRows = !vapply(
-    as.character(ciTable$quantity %||% ""),
+    quantities,
     isAdjustmentRelatedOutputRow,
     logical(1),
     adjustmentVariables = adjustmentVariables
   )
+
+  if (length(adjustmentVariables) > 0) {
+    escapedAdjustmentVariables = gsub(
+      "([][{}()+*^$|\\\\?.])",
+      "\\\\\\1",
+      adjustmentVariables,
+      perl = TRUE
+    )
+    adjustmentPattern = paste0("\\b(", paste(escapedAdjustmentVariables, collapse = "|"), ")\\b")
+    keepRows = keepRows & !grepl(adjustmentPattern, quantities, ignore.case = TRUE, perl = TRUE)
+
+    termLikeColumns = intersect(c("term", "contrast", "variable"), names(ciTable))
+    for (columnName in termLikeColumns) {
+      columnText = as.character(ciTable[[columnName]] %||% "")
+      keepRows = keepRows & !grepl(adjustmentPattern, columnText, ignore.case = TRUE, perl = TRUE)
+    }
+  }
 
   ciTable[keepRows, , drop = FALSE]
 }
