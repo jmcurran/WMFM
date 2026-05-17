@@ -273,7 +273,12 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     paste0("Variables of scientific interest: ", primaryText),
     paste0("Adjustment variables: ", adjustmentText),
     paste0("The following variables are adjustment variables: ", adjustmentText),
-    paste0("Adjusted-comparison statement: The analysis addresses the research question about the variables of scientific interest, with ", adjustmentText, " handled as adjustment variables."),
+    paste0(
+      "Adjusted-comparison statement: The analysis addresses the research question ",
+      "about the variables of scientific interest after adjusting for ",
+      adjustmentText,
+      "."
+    ),
     "Allowed conclusion scope: Summarise only high-level conclusions about the variables of scientific interest using provided safe summaries.",
     "Adjustment-variable interpretation guidance:",
     "Interpretation policy:",
