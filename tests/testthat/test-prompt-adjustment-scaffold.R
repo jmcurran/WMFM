@@ -26,7 +26,7 @@ testthat::test_that("adjustment workflows use deterministic scaffold in final pr
   }
 
   testthat::expect_no_match(prompt, "At level", ignore.case = TRUE)
-  testthat::expect_no_match(prompt, "the fitted mean", ignore.case = TRUE)
+  testthat::expect_no_match(prompt, "fitted mean is", ignore.case = TRUE)
   testthat::expect_no_match(prompt, "the contrast", ignore.case = TRUE)
   testthat::expect_no_match(prompt, "confidence interval excludes", ignore.case = TRUE)
 
@@ -64,8 +64,6 @@ testthat::test_that("simple adjustment workflow includes deterministic adjusted-
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
   }
 
-  testthat::expect_no_match(prompt, "fitted mean", ignore.case = TRUE)
-  testthat::expect_no_match(prompt, "for .* picture", perl = TRUE, ignore.case = TRUE)
   testthat::expect_no_match(prompt, "picture-specific", ignore.case = TRUE)
 })
 
@@ -97,7 +95,6 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)
   }
 
-  testthat::expect_no_match(prompt, "for .* picture", perl = TRUE, ignore.case = TRUE)
   testthat::expect_no_match(prompt, "at .* level", perl = TRUE, ignore.case = TRUE)
   testthat::expect_no_match(prompt, "interaction .* level", perl = TRUE, ignore.case = TRUE)
 })

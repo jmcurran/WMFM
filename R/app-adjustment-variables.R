@@ -70,18 +70,15 @@ renderAdjustmentVariablesUiFromInputs = function(
     eligibleVariables = eligibleVariables
   )
 
-  ui = NULL
-  if (length(eligibleVariables) > 0) {
-    ui = shiny::div(
-      style = "display: none;",
-      checkboxGroupInput(
-        inputId = "adjustment_variables",
-        label = "Adjust for this variable",
-        choices = eligibleVariables,
-        selected = selectedVariables
-      )
+  ui = shiny::div(
+    style = "display: none;",
+    checkboxGroupInput(
+      inputId = "adjustment_variables",
+      label = "Adjust for this variable",
+      choices = eligibleVariables,
+      selected = selectedVariables
     )
-  }
+  )
 
   list(
     ui = ui,

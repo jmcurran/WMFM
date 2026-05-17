@@ -46,12 +46,12 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
     paste0("Primary predictors: ", primaryText),
     paste0("The following variables are adjustment variables: ", adjustmentText),
     paste0("Omitted adjustment-related terms in explanation payload: ", omittedTermsText),
-    paste0("Frame the main answer around primary predictors ", adjustmentPhrase, "."),
+    paste0("The analysis answers the research question ", adjustmentPhrase, "."),
     "The research question is about the non-adjustment variables of interest.",
     "Interpret primary predictors as the substantive findings of interest.",
     "Mention adjustment variables only in adjusted-for language such as after adjusting for ... or after accounting for ....",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
-    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, model-based averages, predicted values, or model terms as findings.",
+    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.",
     "Do not discuss results separately by levels or values of adjustment variables.",
     "Do not use adjustment variables as narrative axes.",
     "Do not interpret interactions involving adjustment variables level by level.",
@@ -280,7 +280,7 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     "The research question is about the non-adjustment variables of interest.",
     "Do not use adjustment variables as narrative axes.",
     "Do not interpret adjustment-variable coefficients as substantive findings.",
-    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, model-based averages, predicted values, or model terms as findings.",
+    "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.",
     "Do not discuss results separately by levels or values of adjustment variables.",
     "Do not interpret interactions involving adjustment variables level by level.",
     "Do not infer causality from adjustment."
@@ -322,7 +322,7 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
   lines = c(
     lines,
     "Forbidden content policy: Do not add new statistical findings.",
-    "Forbidden content policy: Do not introduce adjustment-variable levels, model-based averages, predicted values, contrasts, coefficients, ANOVA rows, or confidence intervals for adjustment variables.",
+    "Forbidden content policy: Do not introduce adjustment-variable levels, fitted means, predicted values, contrasts, coefficients, ANOVA rows, or confidence intervals for adjustment variables.",
     "Forbidden content policy: Do not provide level-by-level interaction interpretation involving adjustment variables."
   )
 

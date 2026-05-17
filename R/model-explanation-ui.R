@@ -51,10 +51,12 @@ renderSafeExplanationHtml = function(text, zoomLevel = "normal") {
   }
 
   paragraphTags = lapply(paragraphs, function(paragraphText) {
-    safeText = htmlEscape(paragraphText, attribute = TRUE)
-    safeText = gsub("'", "&#39;", safeText, fixed = TRUE)
-    safeText = gsub("\n", "<br/>", safeText, fixed = TRUE)
-    tags$p(HTML(safeText))
+    paragraphLines = strsplit(paragraphText, "\n", fixed = TRUE)[[1]]
+    escapedLines = vapply(paragraphLines, function(lineText) {
+      safeLine = htmlEscape(lineText, attribute = TRUE)
+      gsub("'", "&#39;", safeLine, fixed = TRUE)
+    }, character(1))
+    tags$p(HTML(paste(escapedLines, collapse = "<br/>")))
   })
 
   tags$div(
