@@ -155,7 +155,13 @@ filterConfidenceIntervalRows = function(ciTable, adjustmentVariables) {
   )
 
   if (length(adjustmentVariables) > 0) {
-    adjustmentPattern = paste0("\\b(", paste(adjustmentVariables, collapse = "|"), ")\\b")
+    escapedAdjustmentVariables = gsub(
+      "([][{}()+*^$|\\\\?.])",
+      "\\\\\\1",
+      adjustmentVariables,
+      perl = TRUE
+    )
+    adjustmentPattern = paste0("\\b(", paste(escapedAdjustmentVariables, collapse = "|"), ")\\b")
     keepRows = keepRows & !grepl(adjustmentPattern, quantities, ignore.case = TRUE, perl = TRUE)
 
     termLikeColumns = intersect(c("term", "contrast", "variable"), names(ciTable))
