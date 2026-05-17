@@ -30,3 +30,24 @@ testthat::test_that("buildWmfmLlmScoringUserPrompt reports interaction context w
   testthat::expect_match(prompt, "Attend:Group")
   testthat::expect_match(prompt, "0.012")
 })
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt includes adjustment-aware scoring policy when supplied", {
+  x = makeRawRunRecordForScoring()
+  x$adjustmentVariables = "picture"
+  x$primaryVariables = "gender"
+
+  prompt = buildWmfmLlmScoringUserPrompt(x)
+
+  testthat::expect_match(prompt, "ADJUSTMENT CONTEXT", fixed = TRUE)
+  testthat::expect_match(prompt, "Adjustment variables: picture", fixed = TRUE)
+  testthat::expect_match(prompt, "Variables of scientific interest: gender", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not penalise explanations for omitting adjustment-level details", fixed = TRUE)
+  testthat::expect_match(prompt, "do not penalise the absence of interaction cell-by-cell descriptions", ignore.case = TRUE)
+})
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt keeps default guidance when no adjustment variables are supplied", {
+  prompt = buildWmfmLlmScoringUserPrompt(makeRawRunRecordForScoring())
+
+  testthat::expect_match(prompt, "ADJUSTMENT CONTEXT", fixed = TRUE)
+  testthat::expect_match(prompt, "No adjustment-variable context was supplied", fixed = TRUE)
+})

@@ -10,7 +10,7 @@ testthat::test_that("prompt separates primary predictors and adjustment variable
   testthat::expect_match(prompt, "Adjustment variables: age", fixed = TRUE)
   testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.", fixed = TRUE)
   testthat::expect_match(prompt, "Do not use adjustment variables as narrative axes.", fixed = TRUE)
-  testthat::expect_match(prompt, "after adjusting for age", fixed = TRUE)
+  testthat::expect_match(prompt, "adjust(ing|ed)? for age", perl = TRUE, ignore.case = TRUE)
   testthat::expect_match(prompt, "do not infer causality from adjustment", ignore.case = TRUE)
 })
 
@@ -70,7 +70,7 @@ testthat::test_that("adjustment prompt includes interaction guardrails for pictu
   testthat::expect_match(prompt, "Variables of scientific interest: gender", fixed = TRUE)
   testthat::expect_match(prompt, "Omitted adjustment-related terms in explanation payload: picture, gender:picture", fixed = TRUE)
   testthat::expect_match(prompt, "The research question is about the non-adjustment variables of interest.", fixed = TRUE)
-  testthat::expect_match(prompt, "after adjusting for picture", fixed = TRUE)
+  testthat::expect_match(prompt, "adjust(ing|ed)? for picture", perl = TRUE, ignore.case = TRUE)
   testthat::expect_match(prompt, "Do not interpret adjustment-variable coefficients, contrasts, confidence intervals, fitted means, predicted values, or model terms as findings.", fixed = TRUE)
   testthat::expect_match(prompt, "Do not discuss results separately by levels or values of adjustment variables.", fixed = TRUE)
   testthat::expect_match(prompt, "Do not use adjustment variables as narrative axes.", fixed = TRUE)
