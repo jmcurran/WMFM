@@ -56,3 +56,15 @@ test_that("example loading updates the compact model type selector", {
     perl = TRUE
   ))
 })
+
+test_that("model formula section keeps validation message and expert checkbox visible", {
+  uiText = readPackageText("R", "app-ui.R")
+  fitModelObserverText = readPackageText("R", "app-server-fit-model.R")
+
+  expect_match(uiText, "h5\\(\"Model formula\"\\)", perl = TRUE)
+  expect_match(uiText, "verbatimTextOutput\\(\"formula_status\"\\)", perl = TRUE)
+  expect_match(uiText, "checkboxInput\\(\\s*\"expert_mode\"", perl = TRUE)
+  expect_match(fitModelObserverText, "output\\$formula_status\\s*=\\s*renderText", perl = TRUE)
+  expect_match(fitModelObserverText, "Formula OK\\.", perl = TRUE)
+  expect_match(uiText, "\\.tab-content \\{\\\\n        overflow: visible;", perl = TRUE)
+})
