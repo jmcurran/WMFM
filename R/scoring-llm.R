@@ -276,18 +276,13 @@ scoreWmfmRunWithLlm = function(
     ))
   }
 
-  formulaStr = safeWmfmScalar(runRecord$formula)
-  explanationStr = safeWmfmScalar(runRecord$explanationText)
-  equationsStr = safeWmfmScalar(runRecord$equationsText)
-  interactionStr = safeWmfmScalar(runRecord$interactionTerms)
+  systemPrompt = buildWmfmLlmScoringSystemPrompt()
+  userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
+  prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
 
   key = paste(
     "score",
-    formulaStr,
-    explanationStr,
-    equationsStr,
-    interactionStr,
-    safeWmfmScalar(runRecord$interactionMinPValue),
+    prompt,
     sep = "|"
   )
 
@@ -298,11 +293,6 @@ scoreWmfmRunWithLlm = function(
     rawResponse = cacheEnv[[key]]
     usedCache = TRUE
   } else {
-    systemPrompt = buildWmfmLlmScoringSystemPrompt()
-    userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
-
-    prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
-
     rawResponse = chatMethod(prompt)
 
     if (isTRUE(useCache) && is.environment(cacheEnv)) {
