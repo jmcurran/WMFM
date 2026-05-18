@@ -15,3 +15,14 @@ testthat::test_that("model help observer registration is extracted from app serv
   testthat::expect_false(grepl("output$modelHelpModalBody = renderUI", appServerText, fixed = TRUE))
   testthat::expect_false(grepl("observeEvent(input$modelHelpBtn", appServerText, fixed = TRUE))
 })
+
+
+testthat::test_that("model help UI includes data context status-aware button markup", {
+  modelHelpText = readPackageText("R", "app-server-model-help.R")
+
+  testthat::expect_true(grepl("btn btn-danger action-button", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("btn btn-success action-button", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("Edit data context", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("Data context provided.", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("No data context provided yet.", modelHelpText, fixed = TRUE))
+})

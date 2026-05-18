@@ -23,40 +23,48 @@ registerModelHelpObservers = function(input, output, session, rv) {
     isReady = datasetLoaded()
     source = input$data_source %||% "upload"
 
-    btnLabel = if (identical(source, "package")) {
-      "Data description"
+    hasUserContext = nzchar(trimws(rv$userDatasetContext %||% ""))
+
+    if (identical(source, "package")) {
+      btnLabel = "Data description"
+      btnClass = "btn btn-outline-secondary action-button"
+      statusUi = NULL
     } else {
-      "Provide data context"
+      btnLabel = if (hasUserContext) "Edit data context" else "Provide data context"
+      btnClass = if (hasUserContext) {
+        "btn btn-success action-button"
+      } else {
+        "btn btn-danger action-button"
+      }
+      statusUi = tags$div(
+        class = if (hasUserContext) {
+          "text-success"
+        } else {
+          "text-danger"
+        },
+        style = "margin-top: 6px; font-size: 0.9em;",
+        if (hasUserContext) {
+          "Data context provided."
+        } else {
+          "No data context provided yet."
+        }
+      )
     }
 
-    tags$button(
-      id    = "modelHelpBtn",
-      type  = "button",
-      class = "btn btn-outline-secondary action-button",
-      disabled = if (!isReady) "disabled" else NULL,
-      btnLabel
+    tags$div(
+      tags$button(
+        id    = "modelHelpBtn",
+        type  = "button",
+        class = btnClass,
+        disabled = if (!isReady) "disabled" else NULL,
+        btnLabel
+      ),
+      statusUi
     )
   })
 
   output$userDatasetContextUi = renderUI({
-
-    if (!identical(input$data_source %||% "", "upload") || !datasetLoaded()) {
-      return(NULL)
-    }
-
-    ctx = trimws(rv$userDatasetContext %||% "")
-
-    if (nzchar(ctx)) {
-      tags$div(
-        style = "margin-top: 6px; color: #2b6a2b;",
-        "Data context has been provided."
-      )
-    } else {
-      tags$div(
-        style = "margin-top: 6px; color: #666;",
-        "No data context has been provided yet."
-      )
-    }
+    NULL
   })
 
 

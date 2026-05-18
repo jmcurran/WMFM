@@ -147,7 +147,6 @@ appUI = function() {
             "After loading data, go to the Model tab to assign variables and specify the regression model."
           ),
           uiOutput("response_explain"),
-          uiOutput("userDatasetContextUi"),
 
           tags$hr(class = "hr-tight"),
 
