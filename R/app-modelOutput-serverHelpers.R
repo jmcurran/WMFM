@@ -370,6 +370,11 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
 
   output$modelAnovaControlsUi = renderUI({
+    m = modelFit()
+    if (!shouldShowAdjustmentOutputControls(m)) {
+      return(NULL)
+    }
+
     checkboxInput(
       inputId = "showAdjustmentTerms",
       label = "Show adjustment terms",
