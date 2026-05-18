@@ -14,9 +14,10 @@ NULL
 
 #' Environment for caching LLM results
 #'
-#' Internal environment used to cache equations and explanations for
-#' previously fitted models.
+#' Internal cache for equations and explanations from fitted models.
 #'
+#' @format An object of class `environment` of length 0.
+#' @docType data
 #' @keywords internal
 .env_cache = new.env(parent = emptyenv())
 

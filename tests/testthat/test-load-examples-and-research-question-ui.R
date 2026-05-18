@@ -250,7 +250,8 @@ test_that("developer test example ladder contains the expected model families", 
     "test-16-P01F",
     "test-17-P10F",
     "test-18-P11F",
-    "test-19-P11T"
+    "test-19-P11T",
+    "test-arousal-01"
   )
 
   expect_true(all(expectedExamples %in% developerExamples))

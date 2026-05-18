@@ -25,6 +25,7 @@ createAppServerReactiveState = function() {
     modelContext = NULL,
     bucketFactors = character(0),
     bucketContinuous = character(0),
+    adjustmentVariables = character(0),
     isResetting = FALSE,
     activeChatBackend = "ollama",
     activeOllamaModel = "gpt-oss",

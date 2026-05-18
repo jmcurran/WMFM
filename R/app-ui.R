@@ -168,6 +168,7 @@ appUI = function() {
 
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
+          uiOutput("adjustment_variables_ui"),
           div(
             actionButton(
               "addDerivedVarBtn",
@@ -248,10 +249,14 @@ appUI = function() {
           id = "model_output_tabs",
           tabPanel(
             "Summary",
+            uiOutput("modelSummaryControlsUi"),
+            uiOutput("modelSummaryAdjustmentNoteUi"),
             verbatimTextOutput("model_output")
           ),
           tabPanel(
             "ANOVA",
+            uiOutput("modelAnovaControlsUi"),
+            uiOutput("modelAnovaAdjustmentNoteUi"),
             verbatimTextOutput("model_anova")
           ),
           tabPanel(
@@ -295,6 +300,13 @@ appUI = function() {
         "Model Explanation",
         helpText(
           "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
+        ),
+        selectInput(
+          inputId = "modelExplanationZoom",
+          label = "Explanation text size",
+          choices = c("Small" = "small", "Normal" = "normal", "Large" = "large", "Presentation" = "presentation"),
+          selected = "normal",
+          width = "260px"
         ),
         uiOutput("model_explanation")
       ),

@@ -276,18 +276,13 @@ scoreWmfmRunWithLlm = function(
     ))
   }
 
-  formulaStr = safeWmfmScalar(runRecord$formula)
-  explanationStr = safeWmfmScalar(runRecord$explanationText)
-  equationsStr = safeWmfmScalar(runRecord$equationsText)
-  interactionStr = safeWmfmScalar(runRecord$interactionTerms)
+  systemPrompt = buildWmfmLlmScoringSystemPrompt()
+  userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
+  prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
 
   key = paste(
     "score",
-    formulaStr,
-    explanationStr,
-    equationsStr,
-    interactionStr,
-    safeWmfmScalar(runRecord$interactionMinPValue),
+    prompt,
     sep = "|"
   )
 
@@ -298,11 +293,6 @@ scoreWmfmRunWithLlm = function(
     rawResponse = cacheEnv[[key]]
     usedCache = TRUE
   } else {
-    systemPrompt = buildWmfmLlmScoringSystemPrompt()
-    userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
-
-    prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
-
     rawResponse = chatMethod(prompt)
 
     if (isTRUE(useCache) && is.environment(cacheEnv)) {
@@ -542,6 +532,37 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
       "No interaction terms are present in the fitted model."
     }
 
+  adjustmentVariables = as.character(runRecord$adjustmentVariables %||% character(0))
+  adjustmentVariables = unique(trimws(adjustmentVariables))
+  adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
+  hasAdjustmentVariables = length(adjustmentVariables) > 0
+
+  primaryVariables = as.character(runRecord$primaryVariables %||% character(0))
+  primaryVariables = unique(trimws(primaryVariables))
+  primaryVariables = primaryVariables[nzchar(primaryVariables)]
+
+  adjustmentContextBlock =
+    if (hasAdjustmentVariables) {
+      paste(
+        "Adjustment-variable context is present.",
+        paste0("Adjustment variables: ", paste(adjustmentVariables, collapse = ", ")),
+        if (length(primaryVariables) > 0) {
+          paste0("Variables of scientific interest: ", paste(primaryVariables, collapse = ", "))
+        } else {
+          "Variables of scientific interest: (not supplied)"
+        },
+        "Scoring policy for adjustment-aware explanations:",
+        "- Reward correct adjusted-for framing when adjustment variables are mentioned as controls.",
+        "- Do not penalise explanations for omitting adjustment-level details such as level-specific fitted means, contrasts, confidence intervals, coefficients, or predicted values.",
+        "- Do not require picture-specific or other adjustment-level narratives.",
+        "- If an interaction involves an adjustment variable, do not penalise the absence of interaction cell-by-cell descriptions.",
+        "- Reward avoiding forbidden adjustment-level narratives while still answering the research question.",
+        sep = "\n"
+      )
+    } else {
+      "No adjustment-variable context was supplied. Use the standard completeness and interaction expectations."
+    }
+
   fieldSpecificRubric = paste(
     "FIELD-SPECIFIC RUBRIC GUIDANCE",
     "- effectDirectionCorrect:",
@@ -633,6 +654,9 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "",
     "INTERACTION CONTEXT",
     interactionBlock,
+    "",
+    "ADJUSTMENT CONTEXT",
+    adjustmentContextBlock,
     "",
     "EXPLANATION TO SCORE",
     safeWmfmScalar(runRecord$explanationText),

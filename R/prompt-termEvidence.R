@@ -13,7 +13,7 @@
 #'   when term-level evidence is unavailable or not applicable.
 #' @keywords internal
 #'
-#' @importFrom stats anova
+#' @importFrom stats anova model.frame terms
 buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
 
   if (!inherits(model, "lm") || inherits(model, "glm")) {
@@ -26,7 +26,7 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
 
   if (is.null(mf)) {
     mf = tryCatch(
-      stats::model.frame(model),
+      model.frame(model),
       error = function(e) {
         NULL
       }
@@ -70,9 +70,30 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
     return("")
   }
 
-  termLabels = attr(stats::terms(model), "term.labels") %||% character(0)
-  interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-  hasInteraction = length(interactionTerms) > 0
+
+  adjustmentPredictors = attr(model, "wmfm_adjustment_variables", exact = TRUE) %||% character(0)
+  adjustmentPredictors = unique(as.character(adjustmentPredictors))
+  adjustmentPredictors = adjustmentPredictors[nzchar(adjustmentPredictors)]
+
+  adjustmentTermRows = character(0)
+  if (length(adjustmentPredictors) > 0) {
+    isAdjustmentTerm = vapply(
+      termRows,
+      termInvolvesAdjustmentVariable,
+      logical(1),
+      adjustmentVariables = adjustmentPredictors
+    )
+    adjustmentTermRows = termRows[isAdjustmentTerm]
+    keepPrimaryRows = !isAdjustmentTerm
+    termRows = termRows[keepPrimaryRows]
+    pValues = pValues[keepPrimaryRows]
+  }
+
+  if (length(termRows) == 0 && length(adjustmentTermRows) == 0) {
+    return("")
+  }
+
+  hasInteraction = any(grepl(":", termRows, fixed = TRUE))
 
   lines = c(
     "Term-level evidence guidance for the explanation:",
@@ -96,11 +117,41 @@ buildLmTermEvidencePromptBlock = function(model, mf = NULL, alpha = 0.05) {
 
     lines = c(
       lines,
-      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ").")
+      paste0("- ", termRows[[i]], ": ", evidenceLabel, " term-level evidence (", termType, ", primary predictor).")
     )
   }
 
-  weakMainTerms = termRows[!grepl(":", termRows, fixed = TRUE) & !(pValues < alpha)]
+
+  if (length(adjustmentTermRows) > 0) {
+    lines = c(lines, "Adjustment-related guardrails (do not interpret as substantive findings):")
+    for (termLabel in adjustmentTermRows) {
+      termType = if (grepl(":", termLabel, fixed = TRUE)) {
+        "interaction, interaction involving adjustment variable"
+      } else {
+        "main effect, adjustment variable"
+      }
+      lines = c(
+        lines,
+        paste0("- ", termLabel, ": adjustment variable term (", termType, ").")
+      )
+    }
+    for (adjustmentVariable in adjustmentPredictors) {
+      lines = c(
+        lines,
+        paste0("- ", adjustmentVariable, ": adjustment variable; mention ", adjustmentVariable, " only as adjusted-for variables.")
+      )
+    }
+    lines = c(
+      lines,
+      paste0(
+        "When writing the explanation, mention ",
+        paste(adjustmentPredictors, collapse = ", "),
+        " only as adjusted-for variables and do not treat these terms as findings."
+      )
+    )
+  }
+
+  weakMainTerms = termRows[!grepl(":", termRows, fixed = TRUE) & !(pValues < alpha) & !(termRows %in% adjustmentPredictors)]
   weakInteractionTerms = termRows[grepl(":", termRows, fixed = TRUE) & !(pValues < alpha)]
 
   if (length(weakMainTerms) > 0) {

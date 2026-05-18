@@ -12,7 +12,7 @@
 #' @return None (called for side effects).
 #' @keywords internal
 #'
-#' @importFrom shiny helpText renderPrint renderTable renderUI req selectInput tableOutput checkboxInput
+#' @importFrom shiny checkboxInput helpText renderPrint renderTable renderUI req selectInput tableOutput
 #' @importFrom shiny tagList tags
 #' @importFrom stats anova setNames
 registerModelOutputTabs = function(output, input, modelFit) {
@@ -209,6 +209,11 @@ registerModelOutputTabs = function(output, input, modelFit) {
 
     out = tbl[keep, , drop = FALSE]
 
+    out = filterConfidenceIntervalRows(
+      ciTable = out,
+      adjustmentVariables = getModelAdjustmentVariables(modelFit())
+    )
+
     if ("isComplement" %in% names(out) && !isTRUE(showComplement)) {
       keepComplement = is.na(out$isComplement) | !as.logical(out$isComplement)
       out = out[keepComplement, , drop = FALSE]
@@ -363,6 +368,32 @@ registerModelOutputTabs = function(output, input, modelFit) {
     )
   }
 
+
+  output$modelAnovaControlsUi = renderUI({
+    checkboxInput(
+      inputId = "showAdjustmentTerms",
+      label = "Show adjustment terms",
+      value = FALSE
+    )
+  })
+
+  output$modelAnovaAdjustmentNoteUi = renderUI({
+    m = modelFit()
+
+    if (is.null(m) || isTRUE(input$showAdjustmentTerms %||% FALSE)) {
+      return(NULL)
+    }
+
+    adjustmentVariables = getModelAdjustmentVariables(m)
+    if (length(adjustmentVariables) == 0) {
+      return(NULL)
+    }
+
+    helpText(
+      "Adjustment terms are hidden from this ANOVA view. They remain included in the fitted model."
+    )
+  })
+
   output$model_anova = renderPrint({
     m = modelFit()
 
@@ -371,18 +402,28 @@ registerModelOutputTabs = function(output, input, modelFit) {
       return()
     }
 
+    anovaTable = NULL
+
     if (inherits(m, "glm")) {
       fam = m$family$family
 
       if (fam %in% c("poisson", "binomial")) {
-        print(anova(m, test = "Chisq"))
+        anovaTable = anova(m, test = "Chisq")
       } else {
-        print(anova(m))
+        anovaTable = anova(m)
       }
 
     } else {
-      print(anova(m))
+      anovaTable = anova(m)
     }
+
+    anovaTable = filterAnovaTermRows(
+      anovaTable = anovaTable,
+      adjustmentVariables = getModelAdjustmentVariables(m),
+      showAdjustmentTerms = isTRUE(input$showAdjustmentTerms %||% FALSE)
+    )
+
+    print(anovaTable)
   })
 
   output$modelConfintControlsUi = renderUI({
