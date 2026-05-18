@@ -2,6 +2,7 @@
 __MACOSX/
 *.tar.gz
 *.zip
+*conflicted copy*
 .Rproj.user
 .Rhistory*
 .RData
