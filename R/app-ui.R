@@ -214,6 +214,7 @@ appUI = function() {
                   "Fit model",
                   class = "btn-primary btn-sm"
                 ),
+                div(style = "height: 8px;"),
                 actionButton(
                   "reset_btn",
                   "Reset model",
