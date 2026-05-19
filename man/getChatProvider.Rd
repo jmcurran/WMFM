@@ -4,11 +4,7 @@
 \alias{getChatProvider}
 \title{Create a safe chat provider for WMFM}
 \usage{
-getChatProvider(
-  backend = getOption("wmfm.chat_backend", default = "ollama"),
-  model = NULL,
-  ollamaThinkLow = getOption("wmfm.ollama_think_low", default = FALSE)
-)
+getChatProvider(backend = NULL, model = NULL, ollamaThinkLow = NULL)
 }
 \arguments{
 \item{backend}{Character scalar giving the backend to use. Supported values
