@@ -13,7 +13,12 @@ test_that("app server passes the low-thinking setting to the chat provider", {
   chatProviderText = readPackageText("R", "app-server-chat-provider.R")
   combinedServerText = paste(serverText, reactiveStateText, chatProviderText, sep = "\n")
 
-  expect_match(combinedServerText, "activeOllamaThinkLow = FALSE", fixed = TRUE)
+  expect_match(combinedServerText, "providerDefaults = wmfmProviderDefaults()", fixed = TRUE)
+  expect_match(
+    combinedServerText,
+    "activeOllamaThinkLow = providerDefaults$ollamaThinkLow",
+    fixed = TRUE
+  )
   expect_match(
     combinedServerText,
     "rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)",
