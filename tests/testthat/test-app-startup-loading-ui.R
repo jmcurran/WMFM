@@ -56,3 +56,29 @@ test_that("example loading updates the compact model type selector", {
     perl = TRUE
   ))
 })
+
+test_that("model formula section keeps validation message and expert checkbox visible", {
+  uiText = readPackageText("R", "app-ui.R")
+  fitModelObserverText = readPackageText("R", "app-server-fit-model.R")
+
+  expect_match(uiText, "h5\\(\"Model formula\"\\)", perl = TRUE)
+  expect_match(uiText, "uiOutput\\(\"formula_status\"\\)", perl = TRUE)
+  expect_match(uiText, "checkboxInput\\(\\s*\"expert_mode\"", perl = TRUE)
+  expect_match(uiText, "Use compact interaction formula", fixed = TRUE)
+  expect_match(fitModelObserverText, "output\\$formula_status\\s*=\\s*renderUI", perl = TRUE)
+  expect_match(fitModelObserverText, "wmfm-formula-status", fixed = TRUE)
+  expect_match(fitModelObserverText, "Formula OK\\.", perl = TRUE)
+  expect_match(uiText, "\\.tab-content \\{\\\\n        overflow: visible;", perl = TRUE)
+  expect_equal(sum(gregexpr("textInput\\(\"formula_text\"", uiText, perl = TRUE)[[1]] != -1), 1)
+})
+
+test_that("model tab scrolls normally and stacks fit controls", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "html, body \\{\\\\n        min-height: 100%;\\\\n        overflow-y: auto;", perl = TRUE)
+  expect_false(grepl("min-height: 100vh", uiText, fixed = TRUE))
+  expect_match(uiText, "\\.wmfm-model-fit-buttons \\{\\\\n        display: flex;", perl = TRUE)
+  expect_match(uiText, "flex-direction: column", fixed = TRUE)
+  expect_match(uiText, "gap: 8px", fixed = TRUE)
+  expect_false(grepl("height: 8px", uiText, fixed = TRUE))
+})
