@@ -60,9 +60,16 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
   # -------------------------------------------------------------------
   # Show formula validation status
   # -------------------------------------------------------------------
-  output$formula_status = renderText({
+  output$formula_status = renderUI({
     res = checkFormula()
-    res$msg
+
+    statusClass = if (isTRUE(res$ok)) {
+      "wmfm-formula-status wmfm-formula-status-ok"
+    } else {
+      "wmfm-formula-status wmfm-formula-status-error"
+    }
+
+    tags$span(class = statusClass, res$msg)
   })
 
   # -------------------------------------------------------------------
