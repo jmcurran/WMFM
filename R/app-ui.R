@@ -229,8 +229,7 @@ appUI = function() {
             column(
               width = 8,
               h5("Model formula"),
-              textInput("formula_text", label = NULL, value = "", width = "100%"),
-              uiOutput("formula_status")
+              textInput("formula_text", label = NULL, value = "", width = "100%")
             ),
             column(
               width = 4,
@@ -239,7 +238,8 @@ appUI = function() {
                 "expert_mode",
                 "Use compact interaction formula",
                 value = FALSE
-              )
+              ),
+              uiOutput("formula_status")
             )
           )
         )
