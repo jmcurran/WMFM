@@ -6,6 +6,8 @@
 #'
 #' @importFrom shiny reactiveValues reactiveVal
 createAppServerReactiveState = function() {
+  providerDefaults = wmfmProviderDefaults()
+
   rv = reactiveValues(
     data = NULL,
     allVars = character(0),
@@ -27,10 +29,10 @@ createAppServerReactiveState = function() {
     bucketContinuous = character(0),
     adjustmentVariables = character(0),
     isResetting = FALSE,
-    activeChatBackend = "ollama",
-    activeOllamaModel = "gpt-oss",
-    activeOllamaThinkLow = FALSE,
-    availableOllamaModels = "gpt-oss",
+    activeChatBackend = providerDefaults$backend,
+    activeOllamaModel = providerDefaults$ollamaModel,
+    activeOllamaThinkLow = providerDefaults$ollamaThinkLow,
+    availableOllamaModels = providerDefaults$ollamaModel,
     userDatasetContext = "",
     researchQuestion = "",
     loadedExample = NULL

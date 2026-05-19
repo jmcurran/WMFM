@@ -51,11 +51,17 @@ NULL
 #' }
 #'
 #' @keywords internal
-getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama"),
+getChatProvider = function(backend = NULL,
                            model = NULL,
-                           ollamaThinkLow = getOption("wmfm.ollama_think_low", default = FALSE)) {
+                           ollamaThinkLow = NULL) {
 
-  backend = tolower(trimws(backend %||% "ollama"))
+  providerConfig = resolveWmfmProviderConfig(
+    backend = backend,
+    ollamaModel = model,
+    ollamaThinkLow = ollamaThinkLow
+  )
+
+  backend = providerConfig$backend
 
   makeDummyProvider = function(msg, backendName = backend) {
     structure(
@@ -80,9 +86,7 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
   }
 
   if (identical(backend, "claude")) {
-    claudeKey = Sys.getenv("ANTHROPIC_API_KEY", unset = "")
-
-    if (!nzchar(claudeKey)) {
+    if (!hasClaudeApiKey()) {
       return(makeDummyProvider(
         paste(
           "WMFM cannot contact the Claude backend.",
@@ -136,16 +140,9 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     return(safeProvider)
   }
 
-  baseUrl = getOption(
-    "wmfm.ollama_base_url",
-    default = "http://corrin.stat.auckland.ac.nz:11434"
-  )
+  baseUrl = providerConfig$ollamaBaseUrl
 
-  modelName = model %||% getOption("wmfm.ollama_model", default = "gpt-oss")
-  modelName = trimws(modelName %||% "gpt-oss")
-  if (!nzchar(modelName)) {
-    modelName = "gpt-oss"
-  }
+  modelName = providerConfig$ollamaModel
 
   ollamaArgs = list(
     base_url = baseUrl,

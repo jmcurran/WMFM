@@ -16,10 +16,8 @@
 registerChatProviderObservers = function(input, output, session, rv) {
   refreshOllamaModelChoices = function(selected = NULL) {
 
-    baseUrl = getOption(
-      "wmfm.ollama_base_url",
-      default = "http://corrin.stat.auckland.ac.nz:11434"
-    )
+    providerConfig = resolveWmfmProviderConfig()
+    baseUrl = providerConfig$ollamaBaseUrl
 
     modelIds = tryCatch({
       res = ellmer::models_ollama(base_url = baseUrl)
@@ -35,7 +33,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
       ids = unique(ids)
 
       if (length(ids) == 0) {
-        ids = "gpt-oss"
+        ids = wmfmProviderDefaults()$ollamaModel
       }
 
       ids
@@ -46,19 +44,20 @@ registerChatProviderObservers = function(input, output, session, rv) {
         duration = 8
       )
 
-      fallback = rv$availableOllamaModels %||% "gpt-oss"
+      fallback = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
       fallback = fallback[!is.na(fallback) & nzchar(fallback)]
       if (length(fallback) == 0) {
-        fallback = "gpt-oss"
+        fallback = wmfmProviderDefaults()$ollamaModel
       }
       unique(as.character(fallback))
     })
 
     rv$availableOllamaModels = modelIds
 
-    target = selected %||% rv$activeOllamaModel %||% getOption("wmfm.ollama_model", default = "gpt-oss")
+    target = selected %||% rv$activeOllamaModel %||% resolveWmfmProviderConfig()$ollamaModel
     if (!(target %in% modelIds)) {
-      target = if ("gpt-oss" %in% modelIds) "gpt-oss" else modelIds[1]
+      defaultModel = wmfmProviderDefaults()$ollamaModel
+      target = if (defaultModel %in% modelIds) defaultModel else modelIds[1]
     }
 
     updateSelectInput(
@@ -72,23 +71,23 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }
 
   observe({
-    refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% "gpt-oss")
+    refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
   })
 
   observeEvent(input$refreshOllamaModelsBtn, {
-    refreshOllamaModelChoices(selected = input$ollama_model %||% rv$activeOllamaModel %||% "gpt-oss")
+    refreshOllamaModelChoices(selected = input$ollama_model %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
   }, ignoreInit = TRUE)
 
   output$chatProviderStatus = renderText({
     buildChatProviderStatus(
-      backend = rv$activeChatBackend %||% "ollama",
-      ollamaModel = rv$activeOllamaModel %||% "gpt-oss",
+      backend = rv$activeChatBackend %||% wmfmProviderDefaults()$backend,
+      ollamaModel = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel,
       ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)
     )
   })
 
   observeEvent(input$applyChatProviderBtn, {
-    requested = tolower(trimws(input$chat_provider %||% "ollama"))
+    requested = tolower(trimws(input$chat_provider %||% wmfmProviderDefaults()$backend))
 
     if (!requested %in% c("ollama", "claude")) {
       updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
@@ -113,13 +112,14 @@ registerChatProviderObservers = function(input, output, session, rv) {
       }
     }
 
-    selectedModel = input$ollama_model %||% rv$activeOllamaModel %||% "gpt-oss"
-    availableModels = rv$availableOllamaModels %||% "gpt-oss"
+    selectedModel = input$ollama_model %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
+    availableModels = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
     if (length(availableModels) == 0) {
-      availableModels = "gpt-oss"
+      availableModels = wmfmProviderDefaults()$ollamaModel
     }
     if (!(selectedModel %in% availableModels)) {
-      selectedModel = if ("gpt-oss" %in% availableModels) "gpt-oss" else availableModels[1]
+      defaultModel = wmfmProviderDefaults()$ollamaModel
+      selectedModel = if (defaultModel %in% availableModels) defaultModel else availableModels[1]
     }
 
     rv$activeChatBackend = requested
