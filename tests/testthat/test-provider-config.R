@@ -264,6 +264,14 @@ test_that("provider status helper remains consistent with provider registry meta
     status$providers$claude$requiresCredentials,
     registry$claude$requiresCredentials
   )
+  expect_identical(
+    status$providers$openai$requiresCredentials,
+    registry$openai$requiresCredentials
+  )
+  expect_identical(
+    status$providers$openaiCompatible$requiresCredentials,
+    registry$openaiCompatible$requiresCredentials
+  )
 })
 
 test_that("describeWmfmConfigLocation reports temporary config paths", {

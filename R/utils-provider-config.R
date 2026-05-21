@@ -292,14 +292,14 @@ resolveWmfmProviderCredentials = function() {
     ),
     openai = list(
       provider = "openai",
-      requiresCredentials = TRUE,
+      requiresCredentials = isTRUE(registry$openai$requiresCredentials),
       credentialsAvailable = FALSE,
       credentialSource = "not-configured",
       localOnly = FALSE
     ),
     openaiCompatible = list(
       provider = "openaiCompatible",
-      requiresCredentials = FALSE,
+      requiresCredentials = isTRUE(registry$openaiCompatible$requiresCredentials),
       credentialsAvailable = TRUE,
       credentialSource = "future-ready",
       localOnly = TRUE
