@@ -182,3 +182,92 @@ test_that("hasClaudeApiKey reflects ANTHROPIC_API_KEY availability", {
   withr::local_envvar(ANTHROPIC_API_KEY = "abc123")
   expect_true(hasClaudeApiKey())
 })
+
+test_that("resolveWmfmProviderCredentials reports Ollama as no-credential local provider", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "")
+
+  credentials = resolveWmfmProviderCredentials()
+  expect_false(credentials$ollama$requiresCredentials)
+  expect_true(credentials$ollama$credentialsAvailable)
+  expect_identical(credentials$ollama$credentialSource, "none-required")
+  expect_true(credentials$ollama$localOnly)
+})
+
+test_that("Claude credentials are reported as missing when ANTHROPIC_API_KEY is unset", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "")
+
+  credentials = resolveWmfmProviderCredentials()
+  expect_true(credentials$claude$requiresCredentials)
+  expect_false(credentials$claude$credentialsAvailable)
+  expect_identical(credentials$claude$credentialSource, "missing")
+  expect_false(hasWmfmProviderCredentials("claude"))
+})
+
+test_that("Claude credentials are reported as available when ANTHROPIC_API_KEY is set", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "super-secret-token")
+
+  credentials = resolveWmfmProviderCredentials()
+  expect_true(credentials$claude$credentialsAvailable)
+  expect_identical(credentials$claude$credentialSource, "env:ANTHROPIC_API_KEY")
+  expect_true(hasWmfmProviderCredentials("claude"))
+})
+
+test_that("provider status does not expose secret values", {
+  secretValue = "top-secret-provider-key"
+  withr::local_envvar(ANTHROPIC_API_KEY = secretValue)
+
+  status = describeWmfmProviderStatus()
+  statusText = paste(capture.output(str(status)), collapse = "\n")
+
+  expect_false(grepl(secretValue, statusText, fixed = TRUE))
+  expect_true(grepl("env:ANTHROPIC_API_KEY", statusText, fixed = TRUE))
+})
+
+test_that("describeWmfmConfigLocation reports temporary config paths", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  detailsMissing = describeWmfmConfigLocation()
+  expect_identical(detailsMissing$configPath, file.path(tmpDir, "config.json"))
+  expect_false(detailsMissing$exists)
+  expect_false(detailsMissing$readable)
+  expect_true(detailsMissing$customConfigDirActive)
+
+  writeWmfmConfig(list(backend = "ollama"))
+  detailsPresent = describeWmfmConfigLocation()
+  expect_true(detailsPresent$exists)
+  expect_true(detailsPresent$readable)
+})
+
+test_that("provider status and config persistence preserve stage 22 precedence behavior", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+  writeWmfmConfig(list(
+    backend = "claude",
+    ollamaBaseUrl = "http://persisted-host",
+    ollamaModel = "persisted-model",
+    ollamaThinkLow = TRUE
+  ))
+
+  withr::local_options(list(
+    wmfm.chat_backend = "ollama",
+    wmfm.ollama_base_url = "http://option-host",
+    wmfm.ollama_model = "option-model",
+    wmfm.ollama_think_low = FALSE
+  ))
+
+  resolved = resolveWmfmProviderConfig(
+    backend = " claude ",
+    ollamaBaseUrl = " http://explicit-host ",
+    ollamaModel = " explicit-model ",
+    ollamaThinkLow = TRUE
+  )
+
+  expect_identical(resolved$backend, "claude")
+  expect_identical(resolved$ollamaBaseUrl, "http://explicit-host")
+  expect_identical(resolved$ollamaModel, "explicit-model")
+  expect_identical(resolved$ollamaThinkLow, TRUE)
+
+  rawJson = paste(readLines(wmfmConfigPath(), warn = FALSE), collapse = "\n")
+  expect_false(grepl("ANTHROPIC_API_KEY", rawJson, fixed = TRUE))
+})

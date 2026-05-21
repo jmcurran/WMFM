@@ -166,3 +166,124 @@ resolveWmfmProviderConfig = function(backend = NULL,
 hasClaudeApiKey = function() {
   nzchar(Sys.getenv("ANTHROPIC_API_KEY", unset = ""))
 }
+
+#' Resolve WMFM provider credentials
+#'
+#' Resolves non-secret credential metadata for supported chat providers without
+#' exposing secret values.
+#'
+#' @return Named list keyed by provider id. Each provider entry contains
+#'   `provider`, `requiresCredentials`, `credentialsAvailable`,
+#'   `credentialSource`, and `localOnly` fields.
+#' @keywords internal
+resolveWmfmProviderCredentials = function() {
+  claudeKeyPresent = hasClaudeApiKey()
+
+  list(
+    ollama = list(
+      provider = "ollama",
+      requiresCredentials = FALSE,
+      credentialsAvailable = TRUE,
+      credentialSource = "none-required",
+      localOnly = TRUE
+    ),
+    claude = list(
+      provider = "claude",
+      requiresCredentials = TRUE,
+      credentialsAvailable = isTRUE(claudeKeyPresent),
+      credentialSource = if (isTRUE(claudeKeyPresent)) "env:ANTHROPIC_API_KEY" else "missing",
+      localOnly = FALSE
+    ),
+    openai = list(
+      provider = "openai",
+      requiresCredentials = TRUE,
+      credentialsAvailable = FALSE,
+      credentialSource = "not-configured",
+      localOnly = FALSE
+    ),
+    openaiCompatible = list(
+      provider = "openaiCompatible",
+      requiresCredentials = FALSE,
+      credentialsAvailable = TRUE,
+      credentialSource = "future-ready",
+      localOnly = TRUE
+    )
+  )
+}
+
+#' Test whether WMFM provider credentials are available
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Logical scalar indicating whether required credentials are available.
+#' @keywords internal
+hasWmfmProviderCredentials = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  credentials = resolveWmfmProviderCredentials()
+  if (!providerId %in% tolower(names(credentials))) {
+    return(FALSE)
+  }
+
+  matchedName = names(credentials)[tolower(names(credentials)) == providerId][1]
+  isTRUE(credentials[[matchedName]]$credentialsAvailable)
+}
+
+#' Describe WMFM provider status
+#'
+#' Returns deterministic, printable provider metadata and credential status
+#' without including secret values.
+#'
+#' @return Named list with `providers` and `configuredProviders` entries.
+#' @keywords internal
+describeWmfmProviderStatus = function() {
+  providerCredentials = resolveWmfmProviderCredentials()
+  providerOrder = c("ollama", "claude", "openai", "openaiCompatible")
+  providerNames = intersect(providerOrder, names(providerCredentials))
+
+  providers = lapply(providerNames, function(providerName) {
+    details = providerCredentials[[providerName]]
+    list(
+      provider = details$provider,
+      configured = isTRUE(details$credentialsAvailable),
+      requiresCredentials = isTRUE(details$requiresCredentials),
+      credentialsAvailable = isTRUE(details$credentialsAvailable),
+      credentialSource = details$credentialSource,
+      locallyAvailable = isTRUE(details$localOnly),
+      ready = isTRUE(details$credentialsAvailable) || !isTRUE(details$requiresCredentials)
+    )
+  })
+
+  names(providers) = providerNames
+
+  list(
+    providers = providers,
+    configuredProviders = names(providers)[vapply(providers, function(x) isTRUE(x$configured), logical(1))]
+  )
+}
+
+#' Describe WMFM config location status
+#'
+#' Returns path and accessibility metadata for the local WMFM non-secret
+#' configuration file.
+#'
+#' @return Named list containing config file location details.
+#' @keywords internal
+describeWmfmConfigLocation = function() {
+  configPath = wmfmConfigPath()
+  customConfigDir = getOption("wmfm.config_dir", default = NULL)
+  customConfigDirActive = !is.null(customConfigDir) && nzchar(trimws(as.character(customConfigDir)))
+  exists = file.exists(configPath)
+
+  readable = FALSE
+  if (isTRUE(exists)) {
+    readable = isTRUE(tryCatch(file.access(configPath, mode = 4) == 0, error = function(err) FALSE))
+  }
+
+  list(
+    configDir = wmfmConfigDir(),
+    configPath = configPath,
+    exists = isTRUE(exists),
+    readable = isTRUE(readable),
+    customConfigDirActive = isTRUE(customConfigDirActive)
+  )
+}
