@@ -6,7 +6,7 @@
 #'
 #' @importFrom shiny reactiveValues reactiveVal
 createAppServerReactiveState = function() {
-  providerDefaults = wmfmProviderDefaults()
+  providerDefaults = resolveWmfmProviderConfig()
 
   rv = reactiveValues(
     data = NULL,
@@ -35,7 +35,8 @@ createAppServerReactiveState = function() {
     availableOllamaModels = providerDefaults$ollamaModel,
     userDatasetContext = "",
     researchQuestion = "",
-    loadedExample = NULL
+    loadedExample = NULL,
+    providerConfigSaveStatus = NULL
   )
 
   list(
