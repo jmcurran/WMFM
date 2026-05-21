@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny observe observeEvent renderText showNotification updateSelectInput
+#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput
 registerChatProviderObservers = function(input, output, session, rv) {
   refreshOllamaModelChoices = function(selected = NULL) {
 
@@ -86,6 +86,44 @@ registerChatProviderObservers = function(input, output, session, rv) {
     )
   })
 
+
+  output$providerConfigLocationStatus = renderText({
+    settingsState = buildProviderSettingsState()
+    paste(buildProviderSettingsStatusLines(settingsState), collapse = "\n")
+  })
+
+  output$providerConfigSaveStatus = renderText({
+    rv$providerConfigSaveStatus %||% ""
+  })
+
+  observe({
+    resolvedConfig = resolveWmfmProviderConfig()
+
+    updateSelectInput(
+      session,
+      "providerConfig_backend",
+      selected = resolvedConfig$backend
+    )
+
+    updateTextInput(
+      session,
+      "providerConfig_ollamaBaseUrl",
+      value = resolvedConfig$ollamaBaseUrl
+    )
+
+    updateTextInput(
+      session,
+      "providerConfig_ollamaModel",
+      value = resolvedConfig$ollamaModel
+    )
+
+    updateCheckboxInput(
+      session,
+      "providerConfig_ollamaThinkLow",
+      value = isTRUE(resolvedConfig$ollamaThinkLow)
+    )
+  })
+
   observeEvent(input$applyChatProviderBtn, {
     requested = tolower(trimws(input$chat_provider %||% wmfmProviderDefaults()$backend))
 
@@ -142,6 +180,68 @@ registerChatProviderObservers = function(input, output, session, rv) {
       duration = 4
     )
   }, ignoreInit = TRUE)
+
+
+  observeEvent(input$saveProviderConfigBtn, {
+    configToSave = prepareNonSecretProviderConfig(
+      backend = input$providerConfig_backend,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = input$providerConfig_ollamaModel,
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    )
+
+    savePath = saveNonSecretProviderConfig(configToSave)
+
+    if (identical(configToSave$backend, "claude")) {
+      passwordOk = tryCatch(
+        verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error", duration = 8)
+          FALSE
+        }
+      )
+
+      if (!isTRUE(passwordOk)) {
+        session$sendInputMessage("providerSwitchPassword", list(value = ""))
+        rv$providerConfigSaveStatus = "Provider config was not saved because Claude password verification failed."
+        showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
+        return(NULL)
+      }
+    }
+
+    rv$activeChatBackend = configToSave$backend
+    rv$activeOllamaModel = configToSave$ollamaModel
+    rv$activeOllamaThinkLow = isTRUE(configToSave$ollamaThinkLow)
+    rv$providerConfigSaveStatus = paste0("Provider config saved to ", savePath, ".")
+
+    showNotification(
+      "Saved non-secret provider config. API keys were not stored.",
+      type = "message",
+      duration = 5
+    )
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$resetProviderConfigBtn, {
+    resetPath = resetNonSecretProviderConfig()
+    defaults = wmfmProviderDefaults()
+
+    rv$activeChatBackend = defaults$backend
+    rv$activeOllamaModel = defaults$ollamaModel
+    rv$activeOllamaThinkLow = isTRUE(defaults$ollamaThinkLow)
+    rv$providerConfigSaveStatus = paste0("Provider config reset to defaults in ", resetPath, ".")
+
+    updateSelectInput(session, "providerConfig_backend", selected = defaults$backend)
+    updateTextInput(session, "providerConfig_ollamaBaseUrl", value = defaults$ollamaBaseUrl)
+    updateTextInput(session, "providerConfig_ollamaModel", value = defaults$ollamaModel)
+    updateCheckboxInput(session, "providerConfig_ollamaThinkLow", value = isTRUE(defaults$ollamaThinkLow))
+
+    showNotification(
+      "Reset non-secret provider config to defaults. API keys were not stored.",
+      type = "message",
+      duration = 5
+    )
+  }, ignoreInit = TRUE)
+
 
   invisible(NULL)
 }

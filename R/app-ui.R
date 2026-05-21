@@ -420,6 +420,51 @@ appUI = function() {
         textOutput("chatProviderStatus"),
         helpText(
           "Ollama can be selected directly, with a specific Ollama model chosen from the server. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
+        ),
+        tags$hr(class = "hr-tight"),
+        h4("Provider config (local, non-secret)"),
+        helpText(
+          "These settings save only non-secret provider preferences to the local WMFM config file. API keys are never stored in this file."
+        ),
+        textOutput("providerConfigLocationStatus"),
+        selectInput(
+          inputId = "providerConfig_backend",
+          label = "Configured provider/backend",
+          choices = c(
+            "Ollama" = "ollama",
+            "Claude" = "claude"
+          ),
+          selected = "ollama"
+        ),
+        textInput(
+          inputId = "providerConfig_ollamaBaseUrl",
+          label = "Ollama base URL",
+          value = ""
+        ),
+        textInput(
+          inputId = "providerConfig_ollamaModel",
+          label = "Ollama model",
+          value = ""
+        ),
+        checkboxInput(
+          inputId = "providerConfig_ollamaThinkLow",
+          label = "Default to low thinking for Ollama",
+          value = FALSE
+        ),
+        actionButton(
+          inputId = "saveProviderConfigBtn",
+          label = "Save provider config",
+          class = "btn-primary btn-sm"
+        ),
+        actionButton(
+          inputId = "resetProviderConfigBtn",
+          label = "Reset provider config to defaults",
+          class = "btn-secondary btn-sm"
+        ),
+        tags$br(), tags$br(),
+        textOutput("providerConfigSaveStatus"),
+        helpText(
+          "Config path can be overridden with options(wmfm.config_dir = '/path'). This UI intentionally does not store API keys."
         )
       )
 
