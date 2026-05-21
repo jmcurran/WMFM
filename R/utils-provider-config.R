@@ -159,6 +159,101 @@ resolveWmfmProviderConfig = function(backend = NULL,
   )
 }
 
+#' WMFM provider adapter registry
+#'
+#' Returns deterministic metadata describing supported and future-ready
+#' providers, including the adapter construction kind used by WMFM.
+#'
+#' @return Named list keyed by provider id.
+#' @keywords internal
+wmfmProviderRegistry = function() {
+  list(
+    ollama = list(
+      provider = "ollama",
+      label = "Ollama",
+      requiresCredentials = FALSE,
+      credentialEnvVar = NULL,
+      supportsBaseUrl = TRUE,
+      supportsLocalDiscovery = TRUE,
+      adapterKind = "chat_ollama",
+      requiredConfigFields = c("ollamaBaseUrl", "ollamaModel")
+    ),
+    claude = list(
+      provider = "claude",
+      label = "Claude / Anthropic",
+      requiresCredentials = TRUE,
+      credentialEnvVar = "ANTHROPIC_API_KEY",
+      supportsBaseUrl = FALSE,
+      supportsLocalDiscovery = FALSE,
+      adapterKind = "chat_anthropic",
+      requiredConfigFields = character(0)
+    ),
+    openai = list(
+      provider = "openai",
+      label = "OpenAI",
+      requiresCredentials = TRUE,
+      credentialEnvVar = "OPENAI_API_KEY",
+      supportsBaseUrl = TRUE,
+      supportsLocalDiscovery = FALSE,
+      adapterKind = "future",
+      requiredConfigFields = character(0)
+    ),
+    openaiCompatible = list(
+      provider = "openaiCompatible",
+      label = "OpenAI-compatible",
+      requiresCredentials = TRUE,
+      credentialEnvVar = "OPENAI_API_KEY",
+      supportsBaseUrl = TRUE,
+      supportsLocalDiscovery = TRUE,
+      adapterKind = "future",
+      requiredConfigFields = c("baseUrl")
+    )
+  )
+}
+
+#' List WMFM provider adapters
+#'
+#' @return Character vector of registry provider ids.
+#' @keywords internal
+listWmfmProviderAdapters = function() {
+  names(wmfmProviderRegistry())
+}
+
+#' Test whether a provider is in the WMFM registry
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmProviderSupported = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  providerId %in% tolower(listWmfmProviderAdapters())
+}
+
+#' Get WMFM provider adapter metadata
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Named list with provider adapter metadata.
+#' @keywords internal
+getWmfmProviderAdapter = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  registry = wmfmProviderRegistry()
+  if (!providerId %in% tolower(names(registry))) {
+    supported = paste(sprintf("'%s'", listWmfmProviderAdapters()), collapse = ", ")
+    stop(
+      paste0(
+        "Unsupported chat backend: ", providerId,
+        ". Supported backends are ", supported, "."
+      ),
+      call. = FALSE
+    )
+  }
+
+  matchedName = names(registry)[tolower(names(registry)) == providerId][1]
+  registry[[matchedName]]
+}
+
 #' Test whether Claude credentials are configured
 #'
 #' @return Logical scalar; `TRUE` when `ANTHROPIC_API_KEY` is set.
@@ -178,18 +273,19 @@ hasClaudeApiKey = function() {
 #' @keywords internal
 resolveWmfmProviderCredentials = function() {
   claudeKeyPresent = hasClaudeApiKey()
+  registry = wmfmProviderRegistry()
 
   list(
     ollama = list(
       provider = "ollama",
-      requiresCredentials = FALSE,
+      requiresCredentials = isTRUE(registry$ollama$requiresCredentials),
       credentialsAvailable = TRUE,
       credentialSource = "none-required",
       localOnly = TRUE
     ),
     claude = list(
       provider = "claude",
-      requiresCredentials = TRUE,
+      requiresCredentials = isTRUE(registry$claude$requiresCredentials),
       credentialsAvailable = isTRUE(claudeKeyPresent),
       credentialSource = if (isTRUE(claudeKeyPresent)) "env:ANTHROPIC_API_KEY" else "missing",
       localOnly = FALSE

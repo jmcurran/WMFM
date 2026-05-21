@@ -76,29 +76,41 @@ getChatProvider = function(backend = NULL,
     )
   }
 
-  if (!backend %in% c("ollama", "claude")) {
+  adapter = tryCatch(
+    getWmfmProviderAdapter(backend),
+    error = function(err) NULL
+  )
+  if (is.null(adapter) || identical(adapter$adapterKind, "future")) {
+    supported = names(wmfmProviderRegistry())[vapply(
+      wmfmProviderRegistry(),
+      function(x) !identical(x$adapterKind, "future"),
+      logical(1)
+    )]
     return(makeDummyProvider(
       paste0(
         "Unsupported chat backend: ", backend,
-        ". Supported backends are 'ollama' and 'claude'."
+        ". Supported backends are ", paste(sprintf("'%s'", supported), collapse = ", "), "."
       )
     ))
   }
 
-  if (identical(backend, "claude")) {
-    if (!hasClaudeApiKey()) {
-      return(makeDummyProvider(
-        paste(
-          "WMFM cannot contact the Claude backend.",
-          "",
-          "Backend: claude",
-          "",
-          "ANTHROPIC_API_KEY is not set on this machine.",
-          "Set it in the runtime environment before selecting Claude.",
-          sep = "\n"
-        )
-      ))
-    }
+  constructWmfmChatProvider = function(adapter, providerConfig, makeDummyProvider) {
+    backend = adapter$provider
+
+    if (identical(backend, "claude")) {
+      if (!hasClaudeApiKey()) {
+        return(makeDummyProvider(
+          paste(
+            "WMFM cannot contact the Claude backend.",
+            "",
+            "Backend: claude",
+            "",
+            "ANTHROPIC_API_KEY is not set on this machine.",
+            "Set it in the runtime environment before selecting Claude.",
+            sep = "\n"
+          )
+        ))
+      }
 
     claudeModel = getOption("wmfm.claude_model", default = NULL)
 
@@ -137,8 +149,8 @@ getChatProvider = function(backend = NULL,
       return(makeDummyProvider(msg))
     }
 
-    return(safeProvider)
-  }
+      return(safeProvider)
+    }
 
   baseUrl = providerConfig$ollamaBaseUrl
 
@@ -177,7 +189,14 @@ getChatProvider = function(backend = NULL,
     return(makeDummyProvider(msg))
   }
 
-  safeProvider
+    safeProvider
+  }
+
+  constructWmfmChatProvider(
+    adapter = adapter,
+    providerConfig = providerConfig,
+    makeDummyProvider = makeDummyProvider
+  )
 }
 
 #' Test whether a chat provider is a WMFM dummy provider

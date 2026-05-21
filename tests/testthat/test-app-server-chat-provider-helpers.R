@@ -109,3 +109,31 @@ test_that("Claude provider without an API key gives a clear dummy-provider messa
     fixed = TRUE
   )
 })
+
+test_that("getChatProvider preserves Ollama selection behavior under constructor mock", {
+  withr::local_options(list(
+    wmfm.chat_backend = "ollama",
+    wmfm.ollama_base_url = "http://mock-ollama",
+    wmfm.ollama_model = "mock-model"
+  ))
+
+  testthat::local_mocked_bindings(
+    chat_ollama = function(base_url, model, ...) {
+      list(base_url = base_url, model = model, adapter = "ollama")
+    },
+    .package = "WMFM"
+  )
+
+  provider = getChatProvider()
+  expect_identical(provider$base_url, "http://mock-ollama")
+  expect_identical(provider$model, "mock-model")
+})
+
+test_that("getChatProvider preserves Claude selection behavior under deterministic fake env", {
+  withr::local_options(list(wmfm.chat_backend = "claude"))
+  withr::local_envvar(ANTHROPIC_API_KEY = "")
+
+  provider = getChatProvider()
+  expect_true(isWmfmDummyChatProvider(provider))
+  expect_identical(provider$backend, "claude")
+})

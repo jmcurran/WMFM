@@ -193,6 +193,33 @@ test_that("resolveWmfmProviderCredentials reports Ollama as no-credential local 
   expect_true(credentials$ollama$localOnly)
 })
 
+test_that("provider adapter registry includes supported runtime providers", {
+  registry = wmfmProviderRegistry()
+
+  expect_true("ollama" %in% names(registry))
+  expect_true("claude" %in% names(registry))
+  expect_identical(registry$ollama$adapterKind, "chat_ollama")
+  expect_identical(registry$claude$adapterKind, "chat_anthropic")
+})
+
+test_that("provider adapter metadata reports credential requirements correctly", {
+  ollamaAdapter = getWmfmProviderAdapter("ollama")
+  claudeAdapter = getWmfmProviderAdapter("claude")
+
+  expect_false(ollamaAdapter$requiresCredentials)
+  expect_true(claudeAdapter$requiresCredentials)
+  expect_identical(claudeAdapter$credentialEnvVar, "ANTHROPIC_API_KEY")
+})
+
+test_that("unsupported provider adapter lookup fails clearly", {
+  expect_error(
+    getWmfmProviderAdapter("not-a-provider"),
+    "Unsupported chat backend: not-a-provider",
+    fixed = TRUE
+  )
+  expect_false(isWmfmProviderSupported("not-a-provider"))
+})
+
 test_that("Claude credentials are reported as missing when ANTHROPIC_API_KEY is unset", {
   withr::local_envvar(ANTHROPIC_API_KEY = "")
 
@@ -221,6 +248,22 @@ test_that("provider status does not expose secret values", {
 
   expect_false(grepl(secretValue, statusText, fixed = TRUE))
   expect_true(grepl("env:ANTHROPIC_API_KEY", statusText, fixed = TRUE))
+})
+
+test_that("provider status helper remains consistent with provider registry metadata", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "")
+
+  status = describeWmfmProviderStatus()
+  registry = wmfmProviderRegistry()
+
+  expect_identical(
+    status$providers$ollama$requiresCredentials,
+    registry$ollama$requiresCredentials
+  )
+  expect_identical(
+    status$providers$claude$requiresCredentials,
+    registry$claude$requiresCredentials
+  )
 })
 
 test_that("describeWmfmConfigLocation reports temporary config paths", {
