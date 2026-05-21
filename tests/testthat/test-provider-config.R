@@ -8,6 +8,9 @@ test_that("wmfmProviderDefaults exposes current package defaults", {
 })
 
 test_that("resolveWmfmProviderConfig uses options and normalises blanks", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
   withr::local_options(list(
     wmfm.chat_backend = " CLAUDE ",
     wmfm.ollama_base_url = " http://localhost:11434 ",
@@ -39,6 +42,9 @@ test_that("resolveWmfmProviderConfig uses options and normalises blanks", {
 })
 
 test_that("resolveWmfmProviderConfig explicit overrides options", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
   withr::local_options(list(
     wmfm.chat_backend = "ollama",
     wmfm.ollama_base_url = "http://a",
@@ -57,6 +63,115 @@ test_that("resolveWmfmProviderConfig explicit overrides options", {
   expect_identical(cfg$ollamaBaseUrl, "http://b")
   expect_identical(cfg$ollamaModel, "m2")
   expect_identical(cfg$ollamaThinkLow, TRUE)
+})
+
+test_that("wmfmConfigPath resolves via temporary config directory", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  expect_identical(wmfmConfigDir(), tmpDir)
+  expect_identical(wmfmConfigPath(), file.path(tmpDir, "config.json"))
+})
+
+test_that("readWmfmConfig returns empty list when config file is missing", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  expect_false(file.exists(wmfmConfigPath()))
+  expect_identical(readWmfmConfig(), list())
+})
+
+test_that("writeWmfmConfig and readWmfmConfig round-trip non-secret fields", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  cfgIn = list(
+    backend = "claude",
+    ollamaBaseUrl = "http://localhost:11434",
+    ollamaModel = "llama3.2",
+    ollamaThinkLow = TRUE
+  )
+  writeWmfmConfig(cfgIn)
+
+  expect_true(file.exists(wmfmConfigPath()))
+  expect_identical(readWmfmConfig(), cfgIn)
+})
+
+test_that("readWmfmConfig ignores unknown fields consistently", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  jsonlite::write_json(
+    list(
+      backend = "ollama",
+      unknownField = "surprise"
+    ),
+    path = wmfmConfigPath(),
+    auto_unbox = TRUE,
+    pretty = TRUE
+  )
+
+  expect_identical(readWmfmConfig(), list(backend = "ollama"))
+})
+
+test_that("writeWmfmConfig does not persist API keys", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  writeWmfmConfig(list(
+    backend = "claude",
+    ANTHROPIC_API_KEY = "secret",
+    apiKey = "secret2",
+    anthropicApiKey = "secret3"
+  ))
+
+  rawJson = paste(readLines(wmfmConfigPath(), warn = FALSE), collapse = "\n")
+  expect_false(grepl("ANTHROPIC_API_KEY", rawJson, fixed = TRUE))
+  expect_false(grepl("apiKey", rawJson, fixed = TRUE))
+  expect_false(grepl("anthropicApiKey", rawJson, fixed = TRUE))
+  expect_identical(readWmfmConfig(), list(backend = "claude"))
+})
+
+test_that("resolver precedence is explicit overrides then options then local config then defaults", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  writeWmfmConfig(list(
+    backend = "claude",
+    ollamaBaseUrl = "http://persisted",
+    ollamaModel = "persisted-model",
+    ollamaThinkLow = TRUE
+  ))
+
+  cfgFromLocal = resolveWmfmProviderConfig()
+  expect_identical(cfgFromLocal$backend, "claude")
+  expect_identical(cfgFromLocal$ollamaBaseUrl, "http://persisted")
+  expect_identical(cfgFromLocal$ollamaModel, "persisted-model")
+  expect_identical(cfgFromLocal$ollamaThinkLow, TRUE)
+
+  withr::local_options(list(
+    wmfm.chat_backend = "ollama",
+    wmfm.ollama_base_url = "http://option",
+    wmfm.ollama_model = "option-model",
+    wmfm.ollama_think_low = FALSE
+  ))
+
+  cfgFromOptions = resolveWmfmProviderConfig()
+  expect_identical(cfgFromOptions$backend, "ollama")
+  expect_identical(cfgFromOptions$ollamaBaseUrl, "http://option")
+  expect_identical(cfgFromOptions$ollamaModel, "option-model")
+  expect_identical(cfgFromOptions$ollamaThinkLow, FALSE)
+
+  cfgExplicit = resolveWmfmProviderConfig(
+    backend = " claude ",
+    ollamaBaseUrl = " http://explicit ",
+    ollamaModel = " explicit-model ",
+    ollamaThinkLow = TRUE
+  )
+  expect_identical(cfgExplicit$backend, "claude")
+  expect_identical(cfgExplicit$ollamaBaseUrl, "http://explicit")
+  expect_identical(cfgExplicit$ollamaModel, "explicit-model")
+  expect_identical(cfgExplicit$ollamaThinkLow, TRUE)
 })
 
 
