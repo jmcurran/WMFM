@@ -7,6 +7,9 @@
 #' @importFrom shiny reactiveValues reactiveVal
 createAppServerReactiveState = function() {
   providerDefaults = resolveWmfmProviderConfig()
+  if (identical(providerDefaults$backend, "claude")) {
+    providerDefaults$backend = wmfmProviderDefaults()$backend
+  }
 
   rv = reactiveValues(
     data = NULL,

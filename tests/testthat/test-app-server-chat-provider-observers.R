@@ -8,5 +8,7 @@ test_that("chat provider observer registration is extracted from app server", {
   expect_match(chatProviderText, "registerChatProviderObservers = function", fixed = TRUE)
   expect_match(chatProviderText, "refreshOllamaModelChoices = function", fixed = TRUE)
   expect_match(chatProviderText, "verifyProviderSwitchPassword", fixed = TRUE)
+  expect_match(chatProviderText, "saveProviderConfigBtn", fixed = TRUE)
+  expect_match(chatProviderText, "buildClaudeProviderIncorrectPasswordMessage", fixed = TRUE)
   expect_match(chatProviderText, "buildChatProviderSetMessage", fixed = TRUE)
 })

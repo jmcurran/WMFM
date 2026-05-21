@@ -192,6 +192,23 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
     savePath = saveNonSecretProviderConfig(configToSave)
 
+    if (identical(configToSave$backend, "claude")) {
+      passwordOk = tryCatch(
+        verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error", duration = 8)
+          FALSE
+        }
+      )
+
+      if (!isTRUE(passwordOk)) {
+        session$sendInputMessage("providerSwitchPassword", list(value = ""))
+        rv$providerConfigSaveStatus = "Provider config was not saved because Claude password verification failed."
+        showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
+        return(NULL)
+      }
+    }
+
     rv$activeChatBackend = configToSave$backend
     rv$activeOllamaModel = configToSave$ollamaModel
     rv$activeOllamaThinkLow = isTRUE(configToSave$ollamaThinkLow)
