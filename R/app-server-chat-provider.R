@@ -14,7 +14,32 @@
 #'
 #' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput
 registerChatProviderObservers = function(input, output, session, rv) {
+  resolveSelectedProvider = function() {
+    requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
+    if (!isWmfmProviderSupported(requested)) {
+      return(wmfmProviderDefaults()$backend)
+    }
+    requested
+  }
+
+  syncProviderSpecificControlState = function(provider) {
+    isOllama = identical(provider, "ollama")
+    updateTextInput(
+      session,
+      "providerConfig_ollamaBaseUrl",
+      value = input$providerConfig_ollamaBaseUrl %||% resolveWmfmProviderConfig()$ollamaBaseUrl
+    )
+    session$sendInputMessage("providerConfig_ollamaBaseUrl", list(disabled = !isOllama))
+    session$sendInputMessage("providerConfig_ollamaModel", list(disabled = !isOllama))
+    session$sendInputMessage("providerConfig_ollamaThinkLow", list(disabled = !isOllama))
+    session$sendInputMessage("refreshOllamaModelsBtn", list(disabled = !isOllama))
+  }
+
   refreshOllamaModelChoices = function(selected = NULL) {
+    activeProvider = resolveSelectedProvider()
+    if (!identical(activeProvider, "ollama")) {
+      return(invisible(rv$activeOllamaModel %||% resolveWmfmProviderConfig()$ollamaModel))
+    }
 
     providerConfig = resolveWmfmProviderConfig()
     baseUrl = providerConfig$ollamaBaseUrl
@@ -71,10 +96,19 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }
 
   observe({
+    syncProviderSpecificControlState(resolveSelectedProvider())
     refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
   })
 
   observeEvent(input$refreshOllamaModelsBtn, {
+    if (!identical(resolveSelectedProvider(), "ollama")) {
+      showNotification(
+        "Model discovery is only available for Ollama.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
     refreshOllamaModelChoices(selected = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
   }, ignoreInit = TRUE)
 

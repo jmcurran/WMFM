@@ -59,3 +59,13 @@ test_that("resetNonSecretProviderConfig restores defaults", {
   resetNonSecretProviderConfig()
   expect_identical(readWmfmConfig(), wmfmProviderDefaults())
 })
+
+test_that("provider settings labels keep Ollama-specific controls explicit", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "Ollama-specific and apply only when Ollama is selected", fixed = TRUE)
+  expect_match(uiText, "Ollama base URL (Ollama only)", fixed = TRUE)
+  expect_match(uiText, "Ollama model (Ollama only)", fixed = TRUE)
+  expect_match(uiText, "Refresh available Ollama models", fixed = TRUE)
+  expect_match(uiText, "Default to low thinking for Ollama (Ollama only)", fixed = TRUE)
+})
