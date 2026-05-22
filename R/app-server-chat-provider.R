@@ -190,8 +190,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
       ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     )
 
-    savePath = saveNonSecretProviderConfig(configToSave)
-
     if (identical(configToSave$backend, "claude")) {
       passwordOk = tryCatch(
         verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
@@ -208,6 +206,8 @@ registerChatProviderObservers = function(input, output, session, rv) {
         return(NULL)
       }
     }
+
+    savePath = saveNonSecretProviderConfig(configToSave)
 
     rv$activeChatBackend = configToSave$backend
     rv$activeOllamaModel = configToSave$ollamaModel

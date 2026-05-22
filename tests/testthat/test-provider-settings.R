@@ -11,7 +11,7 @@ test_that("provider settings status lines are safe and include config metadata",
   expect_match(statusText, "Config file readable:", fixed = TRUE)
   expect_match(statusText, "Custom config directory option active:", fixed = TRUE)
   expect_match(statusText, "Configured provider/backend:", fixed = TRUE)
-  expect_match(statusText, "source: envvar", fixed = TRUE)
+  expect_match(statusText, "source: env:ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
 
