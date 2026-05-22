@@ -162,6 +162,17 @@ registerChatProviderObservers = function(input, output, session, rv) {
       return(NULL)
     }
 
+    if (!isTRUE(hasWmfmProviderCredentials(requested))) {
+      missingLines = buildProviderCredentialStatusLines(requested)
+      guidanceLines = buildProviderCredentialGuidance(requested)
+      showNotification(
+        paste(c("Cannot apply provider: required credentials are missing.", missingLines, guidanceLines), collapse = "\n"),
+        type = "warning",
+        duration = 8
+      )
+      return(NULL)
+    }
+
     if (identical(requested, "claude")) {
       passwordOk = tryCatch(
         verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
@@ -218,6 +229,20 @@ registerChatProviderObservers = function(input, output, session, rv) {
       ollamaModel = input$providerConfig_ollamaModel,
       ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     )
+
+    if (!isTRUE(hasWmfmProviderCredentials(configToSave$backend))) {
+      statusLines = buildProviderCredentialStatusLines(configToSave$backend)
+      rv$providerConfigSaveStatus = paste(
+        c("Provider config was not saved because required credentials are missing.", statusLines),
+        collapse = " "
+      )
+      showNotification(
+        paste(c(rv$providerConfigSaveStatus, buildProviderCredentialGuidance(configToSave$backend)), collapse = "\n"),
+        type = "warning",
+        duration = 8
+      )
+      return(NULL)
+    }
 
     if (identical(configToSave$backend, "claude")) {
       passwordOk = tryCatch(
