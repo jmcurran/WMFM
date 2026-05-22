@@ -24,11 +24,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
   syncProviderSpecificControlState = function(provider) {
     isOllama = identical(provider, "ollama")
-    updateTextInput(
-      session,
-      "providerConfig_ollamaBaseUrl",
-      value = input$providerConfig_ollamaBaseUrl %||% resolveWmfmProviderConfig()$ollamaBaseUrl
-    )
     session$sendInputMessage("providerConfig_ollamaBaseUrl", list(disabled = !isOllama))
     session$sendInputMessage("providerConfig_ollamaModel", list(disabled = !isOllama))
     session$sendInputMessage("providerConfig_ollamaThinkLow", list(disabled = !isOllama))
