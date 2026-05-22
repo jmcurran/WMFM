@@ -6,7 +6,7 @@ test_that("provider settings status lines are readable and do not reveal secrets
   statusText = paste(buildProviderSettingsStatusLines(buildProviderSettingsState()), collapse = "\n")
 
   expect_match(statusText, "Provider credential/status summary:", fixed = TRUE)
-  expect_match(statusText, "- Claude: available", fixed = TRUE)
+  expect_match(statusText, "- claude: available", fixed = TRUE)
   expect_match(statusText, "source: env:ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
