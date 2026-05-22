@@ -388,27 +388,28 @@ appUI = function() {
           ),
           selected = "ollama"
         ),
+        helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
         textInput(
           inputId = "providerConfig_ollamaBaseUrl",
-          label = "Ollama base URL",
+          label = "Ollama base URL (Ollama only)",
           value = ""
         ),
         selectInput(
           inputId = "providerConfig_ollamaModel",
-          label = "Ollama model",
+          label = "Ollama model (Ollama only)",
           choices = c("gpt-oss"),
           selected = "gpt-oss"
         ),
         checkboxInput(
           inputId = "providerConfig_ollamaThinkLow",
-          label = "Default to low thinking for Ollama",
+          label = "Default to low thinking for Ollama (Ollama only)",
           value = FALSE
         ),
         tags$div(
           style = "margin-bottom: 6px;",
           actionButton(
             inputId = "refreshOllamaModelsBtn",
-            label = "Refresh available models",
+            label = "Refresh available Ollama models",
             class = "btn btn-secondary btn-sm"
           )
         ),
