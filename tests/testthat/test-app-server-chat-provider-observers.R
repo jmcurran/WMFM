@@ -18,7 +18,7 @@ test_that("Claude save verifies password before writing provider config", {
   chatProviderText = readPackageText("R", "app-server-chat-provider.R")
 
   saveBlockMatch = regexpr(
-    'observeEvent\(input\$saveProviderConfigBtn, \{[\s\S]*?\n  \}, ignoreInit = TRUE\)',
+    'observeEvent\\(input\\$saveProviderConfigBtn, \\{[\\s\\S]*?\\n  \\}, ignoreInit = TRUE\\)',
     chatProviderText,
     perl = TRUE
   )
@@ -26,7 +26,7 @@ test_that("Claude save verifies password before writing provider config", {
 
   saveBlock = regmatches(chatProviderText, saveBlockMatch)
   verifyPos = regexpr('verifyProviderSwitchPassword', saveBlock, fixed = TRUE)[1]
-  writePos = regexpr('saveNonSecretProviderConfig\(configToSave\)', saveBlock, perl = TRUE)[1]
+  writePos = regexpr('saveNonSecretProviderConfig\\(configToSave\\)', saveBlock, perl = TRUE)[1]
   failStatusPos = regexpr('Provider config was not saved because Claude password verification failed\.', saveBlock, fixed = TRUE)[1]
 
   expect_gt(verifyPos, 0)

@@ -435,10 +435,31 @@ buildWmfmRunRecord = function(
       "\\bguarantee(s|d)?\\b",
       "\\bcauses?\\b",
       "\\bleads to\\b",
-      "(?<!\\b(final\\s)?exam(ination)?\\s)(?<!\\btest\\s)(?<!\\bscore\\s)\\bresults in\\b",
+      "\\bresults in\\b",
       sep = "|"
     )
   )
+
+  exemptResultsInContext = detectPatternLocal(
+    explanationText,
+    "\\b(final\\s)?exam(ination)?\\s+results in\\b|\\btest\\s+results in\\b|\\bscore\\s+results in\\b"
+  )
+
+  if (overclaimDetected && exemptResultsInContext) {
+    nonResultsInOverclaimDetected = detectPatternLocal(
+      explanationText,
+      paste(
+        "\\bprove(s|d)?\\b",
+        "\\bdefinitely\\b",
+        "\\bguarantee(s|d)?\\b",
+        "\\bcauses?\\b",
+        "\\bleads to\\b",
+        sep = "|"
+      )
+    )
+
+    overclaimDetected = nonResultsInOverclaimDetected
+  }
 
   weakMatches = gregexpr(
     paste(
