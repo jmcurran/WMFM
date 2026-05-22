@@ -35,7 +35,7 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      body { font-size: 90%; }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n    ")),
+    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      body { font-size: 90%; }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-explanation-provenance {\n        color: #777;\n        font-size: 0.9em;\n        margin-top: 8px;\n      }\n    ")),
 
     tabsetPanel(
       id = "main_tabs",
@@ -368,68 +368,20 @@ appUI = function() {
           "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
         ),
         tags$hr(class = "hr-tight"),
-        h4("Chat provider"),
+        h4("Provider settings"),
         helpText(
-          "Choose which language model backend WMFM should use for equations and explanations."
+          "Choose one active provider/backend. Local providers (for example Ollama) use URL/model settings and no API key. Commercial providers (for example Claude) use credentials from environment variables."
         ),
-        selectInput(
-          inputId = "chat_provider",
-          label = "Provider",
-          choices = c(
-            "Ollama" = "ollama",
-            "Claude" = "claude"
-          ),
-          selected = "ollama"
+        tags$p(
+          class = "wmfm-explanation-helper-note",
+          "API keys are not shown here and are never stored in the WMFM config file."
         ),
-        conditionalPanel(
-          condition = "input.chat_provider == 'ollama'",
-          selectInput(
-            inputId = "ollama_model",
-            label = "Ollama model",
-            choices = c("gpt-oss"),
-            selected = "gpt-oss"
-          ),
-          checkboxInput(
-            inputId = "ollama_think_low",
-            label = "Use low thinking effort for Ollama",
-            value = FALSE
-          ),
-          tags$div(
-            style = "margin-bottom: 6px;",
-            actionButton(
-              inputId = "refreshOllamaModelsBtn",
-              label = "Refresh available models",
-              class = "btn btn-secondary btn-sm"
-            )
-          ),
-          helpText(
-            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available. The low thinking option sends think = \"low\" to Ollama models that support it."
-          )
-        ),
-        passwordInput(
-          inputId = "providerSwitchPassword",
-          label = "Password required to switch to Claude",
-          placeholder = "Enter password only when switching to Claude"
-        ),
-        actionButton(
-          inputId = "applyChatProviderBtn",
-          label = "Apply provider",
-          class = "btn-primary btn-sm"
-        ),
-        tags$br(), tags$br(),
         textOutput("chatProviderStatus"),
-        helpText(
-          "Ollama can be selected directly, with a specific Ollama model chosen from the server. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
-        ),
-        tags$hr(class = "hr-tight"),
-        h4("Provider config (local, non-secret)"),
-        helpText(
-          "These settings save only non-secret provider preferences to the local WMFM config file. API keys are never stored in this file."
-        ),
+        tags$br(),
         textOutput("providerConfigLocationStatus"),
         selectInput(
           inputId = "providerConfig_backend",
-          label = "Configured provider/backend",
+          label = "Active provider/backend",
           choices = c(
             "Ollama" = "ollama",
             "Claude" = "claude"
@@ -441,15 +393,34 @@ appUI = function() {
           label = "Ollama base URL",
           value = ""
         ),
-        textInput(
+        selectInput(
           inputId = "providerConfig_ollamaModel",
           label = "Ollama model",
-          value = ""
+          choices = c("gpt-oss"),
+          selected = "gpt-oss"
         ),
         checkboxInput(
           inputId = "providerConfig_ollamaThinkLow",
           label = "Default to low thinking for Ollama",
           value = FALSE
+        ),
+        tags$div(
+          style = "margin-bottom: 6px;",
+          actionButton(
+            inputId = "refreshOllamaModelsBtn",
+            label = "Refresh available models",
+            class = "btn btn-secondary btn-sm"
+          )
+        ),
+        passwordInput(
+          inputId = "providerSwitchPassword",
+          label = "Password required to switch/save Claude",
+          placeholder = "Enter password only when selecting Claude"
+        ),
+        actionButton(
+          inputId = "applyChatProviderBtn",
+          label = "Apply provider",
+          class = "btn-primary btn-sm"
         ),
         actionButton(
           inputId = "saveProviderConfigBtn",
@@ -464,7 +435,7 @@ appUI = function() {
         tags$br(), tags$br(),
         textOutput("providerConfigSaveStatus"),
         helpText(
-          "Config path can be overridden with options(wmfm.config_dir = '/path'). This UI intentionally does not store API keys."
+          "Config path can be overridden with options(wmfm.config_dir = '/path')."
         )
       )
 
