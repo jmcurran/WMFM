@@ -69,3 +69,32 @@ test_that("provider settings labels keep Ollama-specific controls explicit", {
   expect_match(uiText, "Refresh available Ollama models", fixed = TRUE)
   expect_match(uiText, "Default to low thinking for Ollama (Ollama only)", fixed = TRUE)
 })
+
+
+test_that("Claude credential guidance references ANTHROPIC_API_KEY without revealing values", {
+  withr::local_envvar(list(ANTHROPIC_API_KEY = "very-secret-token"), .local_envir = parent.frame())
+
+  guidance = paste(buildProviderCredentialGuidance("claude"), collapse = "\n")
+  statusText = paste(buildProviderCredentialStatusLines("claude"), collapse = "\n")
+
+  expect_match(guidance, "ANTHROPIC_API_KEY", fixed = TRUE)
+  expect_match(statusText, "ANTHROPIC_API_KEY", fixed = TRUE)
+  expect_false(grepl("very-secret-token", guidance, fixed = TRUE))
+  expect_false(grepl("very-secret-token", statusText, fixed = TRUE))
+})
+
+test_that("missing Claude credentials produce clear missing status", {
+  withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
+
+  statusText = paste(buildProviderCredentialStatusLines("claude"), collapse = "\n")
+
+  expect_match(statusText, "Credential status: missing", fixed = TRUE)
+  expect_match(statusText, "environment variable ANTHROPIC_API_KEY", fixed = TRUE)
+})
+
+test_that("Ollama guidance clearly states no API key is required", {
+  guidance = paste(buildProviderCredentialGuidance("ollama"), collapse = "\n")
+
+  expect_match(guidance, "does not require an API key", fixed = TRUE)
+  expect_match(guidance, "reachable Ollama base URL", fixed = TRUE)
+})

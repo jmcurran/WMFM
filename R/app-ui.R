@@ -370,7 +370,7 @@ appUI = function() {
         tags$hr(class = "hr-tight"),
         h4("Provider settings"),
         helpText(
-          "Choose one active provider/backend. Local providers (for example Ollama) use URL/model settings and no API key. Commercial providers (for example Claude) use credentials from environment variables."
+          "Choose one active provider/backend. Ollama uses base URL + model and no API key. Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM."
         ),
         tags$p(
           class = "wmfm-explanation-helper-note",
