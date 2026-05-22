@@ -106,6 +106,7 @@ registerModelExplanationObservers = function(
     claimMap = modelExplanationClaimEvidenceMap()
     tutorText = rv$modelExplanationTutor
     explanationMessage = rv$modelExplanationMessage
+    provenance = rv$modelExplanationProvenance
 
     if (is.null(expl) && is.null(audit)) {
       return(helpText("Fit a model to see a textual explanation."))
@@ -150,7 +151,17 @@ registerModelExplanationObservers = function(
             renderSafeExplanationHtml(
               text = displayExplanation,
               zoomLevel = input$modelExplanationZoom %||% "normal"
-            )
+            ),
+            if (!is.null(provenance)) {
+              tags$div(
+                class = "wmfm-explanation-provenance",
+                buildExplanationProvenanceText(
+                  providerLabel = provenance$providerLabel %||% "Unknown provider",
+                  modelName = provenance$modelName %||% NULL,
+                  generatedAt = provenance$generatedAt %||% Sys.time()
+                )
+              )
+            }
           )
         )
       } else if (!is.null(explanationMessage) && nzchar(trimws(explanationMessage))) {

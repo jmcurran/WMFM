@@ -408,6 +408,15 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
+      rv$modelExplanationProvenance = if (!is.null(explanation)) {
+        list(
+          providerLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama",
+          modelName = if (identical(rv$activeChatBackend, "ollama")) rv$activeOllamaModel else NULL,
+          generatedAt = Sys.time()
+        )
+      } else {
+        NULL
+      }
       rv$modelExplanationAudit = explanationAudit
       rv$modelExplanationTutor = NULL
 

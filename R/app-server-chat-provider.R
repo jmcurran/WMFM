@@ -62,7 +62,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
     updateSelectInput(
       session,
-      "ollama_model",
+      "providerConfig_ollamaModel",
       choices = stats::setNames(modelIds, modelIds),
       selected = target
     )
@@ -75,7 +75,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
   })
 
   observeEvent(input$refreshOllamaModelsBtn, {
-    refreshOllamaModelChoices(selected = input$ollama_model %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
+    refreshOllamaModelChoices(selected = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
   }, ignoreInit = TRUE)
 
   output$chatProviderStatus = renderText({
@@ -111,10 +111,10 @@ registerChatProviderObservers = function(input, output, session, rv) {
       value = resolvedConfig$ollamaBaseUrl
     )
 
-    updateTextInput(
+    updateSelectInput(
       session,
       "providerConfig_ollamaModel",
-      value = resolvedConfig$ollamaModel
+      selected = resolvedConfig$ollamaModel
     )
 
     updateCheckboxInput(
@@ -125,10 +125,10 @@ registerChatProviderObservers = function(input, output, session, rv) {
   })
 
   observeEvent(input$applyChatProviderBtn, {
-    requested = tolower(trimws(input$chat_provider %||% wmfmProviderDefaults()$backend))
+    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
 
     if (!requested %in% c("ollama", "claude")) {
-      updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
+      updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
       showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
       return(NULL)
     }
@@ -143,14 +143,14 @@ registerChatProviderObservers = function(input, output, session, rv) {
       )
 
       if (!isTRUE(passwordOk)) {
-        updateSelectInput(session, "chat_provider", selected = rv$activeChatBackend)
+        updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
         session$sendInputMessage("providerSwitchPassword", list(value = ""))
         showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
         return(NULL)
       }
     }
 
-    selectedModel = input$ollama_model %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
+    selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
     availableModels = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
     if (length(availableModels) == 0) {
       availableModels = wmfmProviderDefaults()$ollamaModel
@@ -163,7 +163,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
     rv$activeChatBackend = requested
     if (identical(requested, "ollama")) {
       rv$activeOllamaModel = selectedModel
-      rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)
+      rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     }
 
     session$sendInputMessage("providerSwitchPassword", list(value = ""))
@@ -232,7 +232,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
     updateSelectInput(session, "providerConfig_backend", selected = defaults$backend)
     updateTextInput(session, "providerConfig_ollamaBaseUrl", value = defaults$ollamaBaseUrl)
-    updateTextInput(session, "providerConfig_ollamaModel", value = defaults$ollamaModel)
+    updateSelectInput(session, "providerConfig_ollamaModel", selected = defaults$ollamaModel)
     updateCheckboxInput(session, "providerConfig_ollamaThinkLow", value = isTRUE(defaults$ollamaThinkLow))
 
     showNotification(
