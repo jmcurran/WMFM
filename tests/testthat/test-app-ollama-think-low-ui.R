@@ -1,7 +1,7 @@
 test_that("settings page includes an Ollama low-thinking switch", {
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(uiText, "checkboxInput\\(\\s*inputId = \"ollama_think_low\"", perl = TRUE)
+  expect_match(uiText, "checkboxInput\\(\\s*inputId = \"providerConfig_ollamaThinkLow\"", perl = TRUE)
   expect_match(uiText, "Use low thinking effort for Ollama", fixed = TRUE)
   expect_match(uiText, "style = \"margin-bottom: 6px;\"", fixed = TRUE)
   expect_match(uiText, "think = \\\"low\\\"", fixed = TRUE)
@@ -21,7 +21,7 @@ test_that("app server passes the low-thinking setting to the chat provider", {
   )
   expect_match(
     combinedServerText,
-    "rv$activeOllamaThinkLow = isTRUE(input$ollama_think_low)",
+    "rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)",
     fixed = TRUE
   )
   expect_match(
