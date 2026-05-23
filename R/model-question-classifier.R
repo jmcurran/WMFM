@@ -54,7 +54,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
-  if (grepl("prediction interval|confidence interval", normalizedText, perl = TRUE)) {
+  if (grepl("prediction interval", normalizedText, perl = TRUE)) {
     result$category = "prediction_interval_request"
     result$supported = TRUE
     result$requiresDeterministicComputation = TRUE
@@ -70,31 +70,59 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
-  if (grepl("\\b(\\d+\\s*[- ]?unit|unit increase|per unit|increase of)\\b", normalizedText, perl = TRUE)) {
-    result$category = "alternative_unit_change"
+  if (grepl("\\b(confidence interval|uncertainty|precision|how sure|how certain)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_uncertainty"
     result$supported = TRUE
-    result$message = "Alternative unit-change framing request captured."
+    result$message = "Uncertainty-emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(effect size|magnitude|how big|size of the effect|size of effect)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_effect_size"
+    result$supported = TRUE
+    result$message = "Effect-size emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(practical|real[- ]world|in practice|practically)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_practical_interpretation"
+    result$supported = TRUE
+    result$message = "Practical-interpretation preference captured."
     return(result)
   }
 
   if (grepl("\\b(compare|comparison|difference between|focus on the comparison|versus|vs\\.?)\\b", normalizedText, perl = TRUE)) {
-    result$category = "subgroup_or_factor_comparison"
+    result$category = "emphasis_group_comparison"
     result$supported = TRUE
-    result$message = "Subgroup or factor-comparison request captured."
+    result$message = "Group-comparison emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(interaction|interact|effect modification|moderation|moderator)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_interaction"
+    result$supported = TRUE
+    result$message = "Interaction-emphasis preference captured."
     return(result)
   }
 
   if (grepl("\\b(beginner|novice|audience|for students|for a student|plain english|non-technical)\\b", normalizedText, perl = TRUE)) {
-    result$category = "style_or_audience"
+    result$category = "beginner_friendly"
     result$supported = TRUE
-    result$message = "Style or audience preference captured."
+    result$message = "Beginner-friendly preference captured."
     return(result)
   }
 
-  if (grepl("\\b(brief|briefly|concise|shorter|summari[sz]e)\\b", normalizedText, perl = TRUE)) {
-    result$category = "concise_summary"
+  if (grepl("\\b(brief|briefly|concise|shorter|summari[sz]e|keep the answer short|keep it short)\\b", normalizedText, perl = TRUE)) {
+    result$category = "concise_answer"
     result$supported = TRUE
-    result$message = "Concise-summary preference captured."
+    result$message = "Concise-answer preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(research question|main question|original question|focus on the question)\\b", normalizedText, perl = TRUE)) {
+    result$category = "focus_research_question"
+    result$supported = TRUE
+    result$message = "Research-question focus preference captured."
     return(result)
   }
 

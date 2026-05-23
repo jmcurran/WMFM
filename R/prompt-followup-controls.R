@@ -1,0 +1,77 @@
+#' Build deterministic follow-up explanation-control prompt block
+#'
+#' Converts supported follow-up classification categories into deterministic,
+#' non-user-authored guidance blocks. Raw follow-up question text is never
+#' inserted as an instruction.
+#'
+#' @param followupPayload Optional list produced by
+#'   \code{classifyModelFollowupQuestion()}.
+#'
+#' @return A character scalar deterministic guidance block, or an empty string.
+#' @keywords internal
+#' @noRd
+buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
+  payload = followupPayload
+  if (!is.list(payload)) {
+    return("")
+  }
+
+  if (!isTRUE(payload$supported)) {
+    return("")
+  }
+
+  category = as.character(payload$category %||% "")
+  if (!nzchar(category) || identical(category, "no_followup")) {
+    return("")
+  }
+
+  linesByCategory = list(
+    concise_answer = c(
+      "Deterministic follow-up explanation control:",
+      "- Keep the response concise: use short sentences and avoid extra detail that is not needed to answer the model question.",
+      "- Preserve all required WMFM uncertainty and final-answer safeguards while compressing wording."
+    ),
+    emphasis_uncertainty = c(
+      "Deterministic follow-up explanation control:",
+      "- Prioritise uncertainty interpretation: explicitly explain what the confidence interval implies for strength and precision of evidence.",
+      "- Do not convert confidence-interval language into probability claims."
+    ),
+    emphasis_effect_size = c(
+      "Deterministic follow-up explanation control:",
+      "- Prioritise the estimated effect size and its units before secondary narrative details.",
+      "- Keep effect-size interpretation aligned with WMFM supplied quantities only."
+    ),
+    emphasis_practical_interpretation = c(
+      "Deterministic follow-up explanation control:",
+      "- Emphasise practical interpretation in plain language while preserving exact WMFM quantities.",
+      "- Prefer concrete real-world meaning over technical phrasing."
+    ),
+    emphasis_group_comparison = c(
+      "Deterministic follow-up explanation control:",
+      "- Prioritise group-comparison interpretation using WMFM comparison quantities and uncertainty.",
+      "- Do not infer differences from interval overlap alone."
+    ),
+    emphasis_interaction = c(
+      "Deterministic follow-up explanation control:",
+      "- Prioritise interaction interpretation and describe how one predictor changes the association of another.",
+      "- Anchor interaction statements to WMFM-provided conditional quantities."
+    ),
+    beginner_friendly = c(
+      "Deterministic follow-up explanation control:",
+      "- Use beginner-friendly wording: avoid jargon where possible and explain technical terms briefly when needed.",
+      "- Keep the explanation faithful to WMFM evidence and safeguards."
+    ),
+    focus_research_question = c(
+      "Deterministic follow-up explanation control:",
+      "- Keep the explanation tightly focused on directly answering the stored research question.",
+      "- De-emphasise side details that do not materially help answer that question."
+    )
+  )
+
+  lines = linesByCategory[[category]]
+  if (is.null(lines)) {
+    return("")
+  }
+
+  paste0("\n", paste(lines, collapse = "\n"), "\n")
+}
