@@ -175,4 +175,6 @@ testthat::test_that("non-empty follow-up question is carried as bounded prompt c
   prompt = lmToExplanationPrompt(model)
   testthat::expect_match(prompt, "Follow-up model question from the student", fixed = TRUE)
   testthat::expect_match(prompt, "Do not generate additional computations", fixed = TRUE)
+  testthat::expect_match(prompt, "Follow-up model question classification:", fixed = TRUE)
+  testthat::expect_match(prompt, "Category: ", fixed = TRUE)
 })
