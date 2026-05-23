@@ -29,14 +29,6 @@ buildUnknownChatProviderMessage = function() {
   "Unknown provider selected."
 }
 
-#' Build the incorrect Claude provider password message
-#'
-#' @return A character string for an error notification.
-#' @keywords internal
-buildClaudeProviderIncorrectPasswordMessage = function() {
-  "Incorrect password. Claude was not enabled."
-}
-
 #' Build the chat provider set confirmation message
 #'
 #' @param backend Requested chat backend.

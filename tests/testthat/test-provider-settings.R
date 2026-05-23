@@ -97,3 +97,10 @@ test_that("Ollama guidance clearly states no API key is required", {
   expect_match(guidance, "does not require an API key", fixed = TRUE)
   expect_match(guidance, "reachable Ollama base URL", fixed = TRUE)
 })
+
+test_that("provider settings UI no longer includes provider switch password input", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_false(grepl("providerSwitchPassword", uiText, fixed = TRUE))
+  expect_false(grepl("Password required to switch/save Claude", uiText, fixed = TRUE))
+})
