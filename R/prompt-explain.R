@@ -124,11 +124,21 @@ and connect it to the model results.
   researchQuestionBlock = buildResearchQuestionPromptBlock(
     researchQuestion = researchQuestion
   )
+  followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
   followupQuestionBlock = buildModelFollowupPromptBlock(
-    followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE),
+    followupPayload = followupPayload,
     followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE)
   )
-
+  if (is.list(followupPayload)) {
+    followupControlPayload = followupPayload
+  } else {
+    followupControlPayload = classifyModelFollowupQuestion(
+      followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE)
+    )
+  }
+  followupControlBlock = buildFollowupExplanationControlPromptBlock(
+    followupPayload = followupControlPayload
+  )
 
   if (nzchar(adjustmentExplanationScaffold)) {
     contextPayload = glue::glue("
@@ -159,6 +169,7 @@ in clear, non-technical language.
 {datasetBlock}
 {researchQuestionBlock}
 {followupQuestionBlock}
+{followupControlBlock}
 
 Response variable: {response}
 Number of observations: {n}

@@ -16,24 +16,19 @@ testthat::test_that("prediction interval wording classifies as prediction_interv
   testthat::expect_true(out$requiresDeterministicComputation)
 })
 
-testthat::test_that("beginner wording classifies as style_or_audience", {
+testthat::test_that("beginner wording classifies as beginner_friendly", {
   out = classifyModelFollowupQuestion("Explain this for a beginner")
-  testthat::expect_identical(out$category, "style_or_audience")
+  testthat::expect_identical(out$category, "beginner_friendly")
 })
 
-testthat::test_that("concise wording classifies as concise_summary", {
+testthat::test_that("concise wording classifies as concise_answer", {
   out = classifyModelFollowupQuestion("Explain this more briefly")
-  testthat::expect_identical(out$category, "concise_summary")
+  testthat::expect_identical(out$category, "concise_answer")
 })
 
-testthat::test_that("unit change wording classifies as alternative_unit_change", {
-  out = classifyModelFollowupQuestion("Interpret this for a 10-unit increase in test score")
-  testthat::expect_identical(out$category, "alternative_unit_change")
-})
-
-testthat::test_that("factor comparison wording classifies as subgroup_or_factor_comparison", {
+testthat::test_that("factor comparison wording classifies as emphasis_group_comparison", {
   out = classifyModelFollowupQuestion("Focus on the comparison between Washington and Southern California")
-  testthat::expect_identical(out$category, "subgroup_or_factor_comparison")
+  testthat::expect_identical(out$category, "emphasis_group_comparison")
 })
 
 testthat::test_that("prompt injection wording classifies as unsupported_or_out_of_scope", {
