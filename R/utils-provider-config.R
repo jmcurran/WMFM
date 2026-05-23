@@ -63,6 +63,9 @@ migrateLegacyProviderConfigToProfiles = function(config = list()) {
 readWmfmProviderProfiles = function() {
   config = readWmfmConfig()
   raw = config$providerProfiles
+  if (is.data.frame(raw)) {
+    raw = split(raw, seq_len(nrow(raw)))
+  }
   if (!is.list(raw) || length(raw) == 0) {
     return(migrateLegacyProviderConfigToProfiles(config))
   }
@@ -81,7 +84,7 @@ writeWmfmProviderProfiles = function(profiles = list()) {
 resolveWmfmActiveProviderProfile = function(backend = NULL) {
   profiles = readWmfmProviderProfiles()
   backend = tolower(trimws(as.character(backend %||% resolveWmfmProviderConfig()$backend %||% "")))
-  idx = which(vapply(profiles, function(x) identical(x$providerType, backend), logical(1)))[1]
+  idx = which(vapply(profiles, function(x) identical(tolower(trimws(as.character(x$providerType %||% ""))), backend), logical(1)))[1]
   if (!is.na(idx)) {
     return(profiles[[idx]])
   }
