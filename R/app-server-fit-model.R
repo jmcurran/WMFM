@@ -350,6 +350,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     attr(m, "wmfm_research_question") = researchQuestion
     followupQuestion = trimws(input$modelFollowupQuestion %||% rv$modelFollowupQuestion %||% "")
     followupClassification = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
+    followupClassification = enrichFollowupPayloadWithLmPrediction(
+      model = m,
+      followupPayload = followupClassification
+    )
     attr(m, "wmfm_model_followup_question") = followupClassification$originalText
     attr(m, "wmfm_model_followup_payload") = followupClassification
 
