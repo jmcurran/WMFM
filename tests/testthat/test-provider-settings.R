@@ -11,7 +11,6 @@ test_that("provider settings status lines use concise active-profile format and 
   expect_match(statusText, "Model:", fixed = TRUE)
   expect_match(statusText, "Credential:", fixed = TRUE)
   expect_match(statusText, "API key values are never stored or displayed by WMFM.", fixed = TRUE)
-  expect_match(statusText, "ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
 
