@@ -127,3 +127,23 @@ test_that("lmExplanation cache key changes when adjustment policy inputs change"
   expect_false(identical(keyA, keyB))
   expect_match(keyA, "stage20.13-v1", fixed = TRUE)
 })
+
+
+test_that("lmExplanation cache key changes when research question changes", {
+  keyA = buildLmExplanationCacheKey(
+    formulaStr = "y ~ x",
+    coefStr = "1;2",
+    numericAnchorCacheKey = "anchor",
+    researchQuestion = "Does x increase y?",
+    adjustmentVariables = character(0)
+  )
+  keyB = buildLmExplanationCacheKey(
+    formulaStr = "y ~ x",
+    coefStr = "1;2",
+    numericAnchorCacheKey = "anchor",
+    researchQuestion = "How does x relate to y?",
+    adjustmentVariables = character(0)
+  )
+
+  expect_false(identical(keyA, keyB))
+})

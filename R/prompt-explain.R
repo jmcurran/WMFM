@@ -121,24 +121,10 @@ and connect it to the model results.
     datasetBlock = ""
   }
 
-  researchQuestionBlock = ""
+  researchQuestionBlock = buildResearchQuestionPromptBlock(
+    researchQuestion = researchQuestion
+  )
 
-  if (!is.null(researchQuestion)) {
-    researchQuestion = trimws(researchQuestion)
-
-    if (nzchar(researchQuestion)) {
-      researchQuestionGuidanceText = paste(
-        getResearchQuestionGuidanceLines(context = "explanationBlock"),
-        collapse = "\n"
-      )
-      researchQuestionBlock = glue::glue("
-Research question supplied by the user:
-{researchQuestion}
-
-{researchQuestionGuidanceText}
-")
-    }
-  }
 
   if (nzchar(adjustmentExplanationScaffold)) {
     contextPayload = glue::glue("
