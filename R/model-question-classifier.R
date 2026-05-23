@@ -126,5 +126,12 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  if (grepl("\\b((\\d+|a)\\s*[- ]?unit\\s+(increase|change)|per\\s+unit(\\s+increase|\\s+change)?|increase\\s+of\\s+\\d+|for\\s+a?\\s*\\d+\\s*[- ]?unit\\s+(increase|change)|interpret\\s+.*\\b\\d+\\s*[- ]?unit\\s+change|use\\s+a?\\s*\\d+\\s*[- ]?unit\\s+change\\s+instead)\\b", normalizedText, perl = TRUE)) {
+    result$category = "alternative_unit_change"
+    result$supported = TRUE
+    result$message = "Alternative unit-change interpretation request captured."
+    return(result)
+  }
+
   result
 }

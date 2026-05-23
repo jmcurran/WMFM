@@ -65,6 +65,11 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "Deterministic follow-up explanation control:",
       "- Keep the explanation tightly focused on directly answering the stored research question.",
       "- De-emphasise side details that do not materially help answer that question."
+    ),
+    alternative_unit_change = c(
+      "Deterministic follow-up explanation control:",
+      "- Treat the request as a bounded unit-change interpretation preference and explain the model effect using the requested unit framing.",
+      "- Do not invent new computations; keep interpretation anchored to WMFM-provided model quantities and safeguards."
     )
   )
 
