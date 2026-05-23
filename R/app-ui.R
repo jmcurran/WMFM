@@ -239,7 +239,7 @@ appUI = function() {
                 "Use compact interaction formula",
                 value = FALSE
               ),
-              textOutput("formula_status")
+              uiOutput("formula_status")
             )
           )
         )
