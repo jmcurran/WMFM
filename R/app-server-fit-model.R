@@ -14,6 +14,10 @@
 #'
 #' @keywords internal
 registerFitModelObservers = function(input, output, session, rv, modelFit, resetModelPage) {
+  observeEvent(input$modelFollowupQuestion, {
+    rv$modelFollowupQuestion = trimws(input$modelFollowupQuestion %||% "")
+  }, ignoreInit = FALSE)
+
   # -------------------------------------------------------------------
   # Helper: formula checker
   # -------------------------------------------------------------------
@@ -344,6 +348,12 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
     researchQuestion = gsub("\"", "\\\"", researchQuestionRaw, fixed = TRUE)
     attr(m, "wmfm_research_question") = researchQuestion
+    followupQuestion = trimws(input$modelFollowupQuestion %||% rv$modelFollowupQuestion %||% "")
+    attr(m, "wmfm_model_followup_question") = followupQuestion
+    attr(m, "wmfm_model_followup_payload") = list(
+      followupQuestion = followupQuestion,
+      hasFollowupQuestion = nzchar(followupQuestion)
+    )
 
     modelFit(m)
 

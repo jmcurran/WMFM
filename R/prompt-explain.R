@@ -124,6 +124,9 @@ and connect it to the model results.
   researchQuestionBlock = buildResearchQuestionPromptBlock(
     researchQuestion = researchQuestion
   )
+  followupQuestionBlock = buildModelFollowupPromptBlock(
+    followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE)
+  )
 
 
   if (nzchar(adjustmentExplanationScaffold)) {
@@ -154,6 +157,7 @@ in clear, non-technical language.
 {outcomeDesc}
 {datasetBlock}
 {researchQuestionBlock}
+{followupQuestionBlock}
 
 Response variable: {response}
 Number of observations: {n}
@@ -217,6 +221,29 @@ Interpretation rules for numeric predictors:
   )
 
   prompt
+}
+
+#' Build bounded follow-up model-question block for explanation prompts
+#'
+#' @param followupQuestion Optional character scalar entered in the app as a
+#'   bounded follow-up model question.
+#'
+#' @return Character scalar prompt block. Empty when no follow-up question is
+#'   provided.
+#' @keywords internal
+buildModelFollowupPromptBlock = function(followupQuestion = NULL) {
+  questionText = trimws(as.character(followupQuestion %||% ""))
+  if (!nzchar(questionText)) {
+    return("")
+  }
+
+  glue::glue("
+Follow-up model question from the student (bounded context for later stages):
+{questionText}
+
+For this stage, treat this as optional context only.
+Do not generate additional computations, classification decisions, or prediction intervals because of this field.
+")
 }
 
 #' Normalise intercept-only research-question wording for prompt use

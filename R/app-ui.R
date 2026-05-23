@@ -24,7 +24,7 @@
 #' @importFrom shiny fluidPage withMathJax titlePanel
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
-#' @importFrom shiny textInput verbatimTextOutput
+#' @importFrom shiny textInput textAreaInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
@@ -315,6 +315,25 @@ appUI = function() {
         "Model Explanation",
         helpText(
           "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
+        ),
+        accordion(
+          id = "model_question_accordion",
+          multiple = TRUE,
+          open = FALSE,
+          accordion_panel(
+            title = "Ask about this model",
+            textAreaInput(
+              inputId = "modelFollowupQuestion",
+              label = NULL,
+              value = "",
+              width = "100%",
+              rows = 3,
+              placeholder = "Ask one bounded follow-up question about this fitted model."
+            ),
+            helpText(
+              "Optional: add one bounded model question to prepare a follow-up explanation request in a later stage."
+            )
+          )
         ),
         selectInput(
           inputId = "modelExplanationZoom",

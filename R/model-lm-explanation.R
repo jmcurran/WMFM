@@ -36,11 +36,13 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   )
 
   researchQuestion = attr(model, "wmfm_research_question", exact = TRUE) %||% ""
+  followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE) %||% ""
   key = buildLmExplanationCacheKey(
     formulaStr = formulaStr,
     coefStr = coefStr,
     numericAnchorCacheKey = numericAnchorInfo$cacheKey,
     researchQuestion = researchQuestion,
+    followupQuestion = followupQuestion,
     adjustmentVariables = getModelAdjustmentVariables(model = model)
   )
 
@@ -65,6 +67,7 @@ lmExplanation = function(model, chat, useCache = TRUE) {
 #' @param coefStr Character scalar coefficient payload text.
 #' @param numericAnchorCacheKey Character scalar numeric-anchor cache token.
 #' @param researchQuestion Character scalar research question.
+#' @param followupQuestion Character scalar bounded follow-up model question.
 #' @param adjustmentVariables Character vector adjustment variables.
 #'
 #' @return Character scalar cache key.
@@ -74,6 +77,7 @@ buildLmExplanationCacheKey = function(
     coefStr,
     numericAnchorCacheKey,
     researchQuestion,
+    followupQuestion = "",
     adjustmentVariables = character(0)) {
 
   adjustmentKey = paste(sort(unique(as.character(adjustmentVariables))), collapse = ",")
@@ -87,6 +91,7 @@ buildLmExplanationCacheKey = function(
     coefStr,
     numericAnchorCacheKey,
     trimws(researchQuestion %||% ""),
+    trimws(followupQuestion %||% ""),
     adjustmentKey
   )
 }
