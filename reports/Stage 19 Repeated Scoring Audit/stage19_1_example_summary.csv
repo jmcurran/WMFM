@@ -1,6 +1,0 @@
-"exampleName","runCount","scoredRunCount","minMark","medianMark","maxMark","markSpread","minOverallScore","medianOverallScore","maxOverallScore","overallScoreSpread","lowMarkRunCount","unstableExample"
-"test-SG-1",3,3,9.19,9.19,10,0.81,91.9,91.9,100,8.09999999999999,0,FALSE
-"test-SG-2",3,3,10,10,10,0,100,100,100,0,0,FALSE
-"test-SG-3",3,3,4,4,10,6,40,40,100,60,2,TRUE
-"test-SG-4",3,3,4,4,9.62,5.62,40,40,96.2,56.2,2,TRUE
-"test-SG-5",3,3,9.62,10,10,0.380000000000001,96.2,100,100,3.8,0,FALSE

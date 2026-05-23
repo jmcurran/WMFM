@@ -1,8 +1,0 @@
-name: mtcars
-modelType: lm
-formula: mpg ~ wt + hp
-dataSource: package
-dataPackage: datasets
-dataObject: mtcars
-context: Mtcars.Rmd
-researchQuestion: Do heavier cars and cars with more horsepower tend to have lower fuel efficiency, on average?

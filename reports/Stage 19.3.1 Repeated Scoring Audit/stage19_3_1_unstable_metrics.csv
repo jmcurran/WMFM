@@ -1,3 +1,0 @@
-"exampleName","metricLabel","runCount","minValue","medianValue","maxValue","valueSpread","unstableMetric"
-"test-SG-5","Overall score",3,96.2,100,100,3.8,TRUE
-"test-SG-5","Effect direction correct",3,1,2,2,1,TRUE

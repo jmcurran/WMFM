@@ -1,8 +1,0 @@
-modelType: lm
-formula: Exam ~ Test
-dataSource: package
-dataPackage: s20x
-dataObject: course.df
-dataTransform: courseDfScoringGradingAliases
-context: context.md
-researchQuestion: How does the mid-term test mark relate to the final exam mark?
