@@ -410,11 +410,6 @@ appUI = function() {
             class = "btn btn-secondary btn-sm"
           )
         ),
-        passwordInput(
-          inputId = "providerSwitchPassword",
-          label = "Password required to switch/save Claude",
-          placeholder = "Enter password only when selecting Claude"
-        ),
         actionButton(
           inputId = "applyChatProviderBtn",
           label = "Apply provider",

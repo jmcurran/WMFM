@@ -7,15 +7,15 @@ test_that("chat provider observer registration is extracted from app server", {
 
   expect_match(chatProviderText, "registerChatProviderObservers = function", fixed = TRUE)
   expect_match(chatProviderText, "refreshOllamaModelChoices = function", fixed = TRUE)
-  expect_match(chatProviderText, "verifyProviderSwitchPassword", fixed = TRUE)
+  expect_false(grepl("verifyProviderSwitchPassword", chatProviderText, fixed = TRUE))
   expect_match(chatProviderText, "saveProviderConfigBtn", fixed = TRUE)
-  expect_match(chatProviderText, "buildClaudeProviderIncorrectPasswordMessage", fixed = TRUE)
+  expect_false(grepl("buildClaudeProviderIncorrectPasswordMessage", chatProviderText, fixed = TRUE))
   expect_match(chatProviderText, "buildChatProviderSetMessage", fixed = TRUE)
   expect_match(chatProviderText, "Cannot apply provider: required credentials are missing.", fixed = TRUE)
 })
 
 
-test_that("Claude save verifies password before writing provider config", {
+test_that("provider config save no longer depends on Claude password verification", {
   chatProviderText = readPackageText("R", "app-server-chat-provider.R")
 
   saveBlockMatch = regexpr(
@@ -26,18 +26,14 @@ test_that("Claude save verifies password before writing provider config", {
   expect_gt(as.integer(saveBlockMatch), 0)
 
   saveBlock = regmatches(chatProviderText, saveBlockMatch)
-  verifyPos = regexpr('verifyProviderSwitchPassword', saveBlock, fixed = TRUE)[1]
   writePos = regexpr('saveNonSecretProviderConfig\\(configToSave\\)', saveBlock, perl = TRUE)[1]
-  failStatusPos = regexpr('Provider config was not saved because Claude password verification failed.', saveBlock, fixed = TRUE)[1]
   missingStatusPos = regexpr('Provider config was not saved because required credentials are missing.', saveBlock, fixed = TRUE)[1]
 
-  expect_gt(verifyPos, 0)
   expect_gt(writePos, 0)
-  expect_gt(failStatusPos, 0)
   expect_gt(missingStatusPos, 0)
-  expect_lt(verifyPos, writePos)
-  expect_lt(failStatusPos, writePos)
   expect_lt(missingStatusPos, writePos)
+  expect_false(grepl("verifyProviderSwitchPassword", saveBlock, fixed = TRUE))
+  expect_false(grepl("providerSwitchPassword", saveBlock, fixed = TRUE))
 })
 
 test_that("Ollama model refresh is capability-aware and keeps failure fallback", {

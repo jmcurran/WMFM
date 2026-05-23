@@ -34,11 +34,6 @@ test_that("chat provider error helpers centralise notification text", {
     buildUnknownChatProviderMessage(),
     "Unknown provider selected."
   )
-
-  expect_equal(
-    buildClaudeProviderIncorrectPasswordMessage(),
-    "Incorrect password. Claude was not enabled."
-  )
 })
 
 test_that("chat provider confirmation helper reports selected backend", {

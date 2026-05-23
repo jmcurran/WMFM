@@ -173,23 +173,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
       return(NULL)
     }
 
-    if (identical(requested, "claude")) {
-      passwordOk = tryCatch(
-        verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
-        error = function(e) {
-          showNotification(conditionMessage(e), type = "error", duration = 8)
-          FALSE
-        }
-      )
-
-      if (!isTRUE(passwordOk)) {
-        updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
-        session$sendInputMessage("providerSwitchPassword", list(value = ""))
-        showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
-        return(NULL)
-      }
-    }
-
     selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
     availableModels = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
     if (length(availableModels) == 0) {
@@ -205,8 +188,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
       rv$activeOllamaModel = selectedModel
       rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     }
-
-    session$sendInputMessage("providerSwitchPassword", list(value = ""))
 
     msg = buildChatProviderSetMessage(
       backend = requested,
@@ -242,23 +223,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
         duration = 8
       )
       return(NULL)
-    }
-
-    if (identical(configToSave$backend, "claude")) {
-      passwordOk = tryCatch(
-        verifyProviderSwitchPassword(input$providerSwitchPassword %||% ""),
-        error = function(e) {
-          showNotification(conditionMessage(e), type = "error", duration = 8)
-          FALSE
-        }
-      )
-
-      if (!isTRUE(passwordOk)) {
-        session$sendInputMessage("providerSwitchPassword", list(value = ""))
-        rv$providerConfigSaveStatus = "Provider config was not saved because Claude password verification failed."
-        showNotification(buildClaudeProviderIncorrectPasswordMessage(), type = "error", duration = 6)
-        return(NULL)
-      }
     }
 
     savePath = saveNonSecretProviderConfig(configToSave)
