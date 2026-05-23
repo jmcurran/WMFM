@@ -1,13 +1,16 @@
-test_that("provider settings status lines are readable and do not reveal secrets", {
+test_that("provider settings status text follows active-profile format and redacts secrets", {
   tmpDir = tempfile("wmfm-provider-stage22-6-")
   withr::local_options(list(wmfm.config_dir = tmpDir))
   withr::local_envvar(list(ANTHROPIC_API_KEY = "super-secret-value"), .local_envir = parent.frame())
 
   statusText = paste(buildProviderSettingsStatusLines(buildProviderSettingsState()), collapse = "\n")
 
-  expect_match(statusText, "Provider credential/status summary:", fixed = TRUE)
-  expect_match(statusText, "- claude: available", fixed = TRUE)
-  expect_match(statusText, "source: env:ANTHROPIC_API_KEY", fixed = TRUE)
+  expect_match(statusText, "Active provider:", fixed = TRUE)
+  expect_match(statusText, "Provider type:", fixed = TRUE)
+  expect_match(statusText, "Model:", fixed = TRUE)
+  expect_match(statusText, "Credential:", fixed = TRUE)
+  expect_match(statusText, "API key values are never stored or displayed by WMFM.", fixed = TRUE)
+  expect_match(statusText, "ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
 
