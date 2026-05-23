@@ -51,6 +51,18 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
     suppliedPredictorValues = inputValidation$suppliedPredictorValues
   )
 
+  if (!isTRUE(newDataInfo$ok)) {
+    return(c(
+      list(
+        status = "needs_input",
+        reason = newDataInfo$reason,
+        modelType = "lm",
+        predictionType = "mean_response_prediction"
+      ),
+      newDataInfo[c("suppliedPredictorValues", "requiredPredictors", "warnings")]
+    ))
+  }
+
   predFit = as.numeric(stats::predict(model, newdata = newDataInfo$newData))[1]
   confidenceInterval = NULL
   if (isTRUE(inputValidation$requestsConfidenceInterval)) {
@@ -110,23 +122,44 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
     if (is.factor(column)) {
       lvl = levels(column)
       if (!(value %in% lvl)) {
-        stop(sprintf("Unsupported factor level '%s' for predictor '%s'.", value, name), call. = FALSE)
+        return(list(
+          ok = FALSE,
+          reason = "invalid_factor_level",
+          newData = newData,
+          suppliedPredictorValues = suppliedPredictorValues,
+          requiredPredictors = predictorNames,
+          warnings = sprintf("Unsupported factor level '%s' for predictor '%s'.", value, name)
+        ))
       }
       newData[[name]] = factor(value, levels = lvl)
       resolvedPredictorValues[[name]] = value
     } else if (is.numeric(column)) {
       numericValue = suppressWarnings(as.numeric(value))
       if (!is.finite(numericValue)) {
-        stop(sprintf("Predictor '%s' requires a numeric value.", name), call. = FALSE)
+        return(list(
+          ok = FALSE,
+          reason = "invalid_numeric_value",
+          newData = newData,
+          suppliedPredictorValues = suppliedPredictorValues,
+          requiredPredictors = predictorNames,
+          warnings = sprintf("Predictor '%s' requires a numeric value.", name)
+        ))
       }
       newData[[name]] = numericValue
       resolvedPredictorValues[[name]] = numericValue
     } else {
-      warnings = c(warnings, sprintf("Predictor '%s' has unsupported type for Stage 23.6.", name))
+      return(list(
+        ok = FALSE,
+        reason = "unsupported_predictor_type",
+        newData = newData,
+        suppliedPredictorValues = suppliedPredictorValues,
+        requiredPredictors = predictorNames,
+        warnings = sprintf("Predictor '%s' has unsupported type for Stage 23.6.", name)
+      ))
     }
   }
 
-  list(newData = newData, suppliedPredictorValues = suppliedPredictorValues, resolvedPredictorValues = resolvedPredictorValues, warnings = warnings)
+  list(ok = TRUE, newData = newData, suppliedPredictorValues = suppliedPredictorValues, requiredPredictors = predictorNames, resolvedPredictorValues = resolvedPredictorValues, warnings = warnings)
 }
 
 #' @keywords internal

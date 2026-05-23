@@ -25,10 +25,9 @@ testthat::test_that("factor predictor values are validated against known levels"
   df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Attend = factor(c("No", "Yes", "Yes", "Yes", "No", "Yes")))
   model = stats::lm(Exam ~ Attend, data = df)
 
-  testthat::expect_error(
-    computeLmModelQuestionPrediction(model, "Predict exam for Attend = Maybe"),
-    "Unsupported factor level"
-  )
+  out = computeLmModelQuestionPrediction(model, "Predict exam for Attend = Maybe")
+  testthat::expect_identical(out$status, "needs_input")
+  testthat::expect_identical(out$reason, "invalid_factor_level")
 })
 
 testthat::test_that("missing required predictor values fail safely", {
@@ -79,4 +78,23 @@ testthat::test_that("no prediction payload is added for empty follow-up text", {
 
   prompt = lmToExplanationPrompt(model)
   testthat::expect_no_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
+})
+
+
+testthat::test_that("non-numeric values for numeric predictors fail safely", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Exam ~ Test, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "Predict exam when Test = abc")
+  testthat::expect_identical(out$status, "needs_input")
+  testthat::expect_identical(out$reason, "invalid_numeric_value")
+})
+
+testthat::test_that("unsupported predictor types fail safely", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), IsRemote = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE))
+  model = stats::lm(Exam ~ IsRemote, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "Predict exam when IsRemote = TRUE")
+  testthat::expect_identical(out$status, "needs_input")
+  testthat::expect_identical(out$reason, "unsupported_predictor_type")
 })
