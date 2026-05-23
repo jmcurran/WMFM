@@ -322,3 +322,30 @@ test_that("provider status and config persistence preserve stage 22 precedence b
   rawJson = paste(readLines(wmfmConfigPath(), warn = FALSE), collapse = "\n")
   expect_false(grepl("ANTHROPIC_API_KEY", rawJson, fixed = TRUE))
 })
+
+test_that("provider profiles default and legacy migration are available", {
+  withr::local_options(list(wmfm.config_dir = tempfile("wmfm-profiles-")))
+  profiles = readWmfmProviderProfiles()
+  expect_true(length(profiles) >= 2)
+  expect_true(any(vapply(profiles, function(x) identical(x$providerType, "ollama"), logical(1))))
+  expect_true(any(vapply(profiles, function(x) identical(x$providerType, "claude"), logical(1))))
+
+  legacy = migrateLegacyProviderConfigToProfiles(list(backend = "claude", ollamaBaseUrl = "http://x", ollamaModel = "m"))
+  active = resolveWmfmActiveProviderProfile("claude")
+  expect_true(any(vapply(legacy, function(x) isTRUE(x$active), logical(1))))
+  expect_identical(active$providerType, "claude")
+})
+
+test_that("provider profiles round-trip metadata without secret values", {
+  withr::local_options(list(wmfm.config_dir = tempfile("wmfm-profiles-write-")))
+  profiles = list(
+    list(profileId = "openai-main", displayName = "OpenAI Main", providerType = "openai", credentialSource = "envvar", credentialEnvVar = "OPENAI_API_KEY", defaultModel = "gpt-4.1"),
+    list(profileId = "openai-compatible-local", displayName = "Local Compatible", providerType = "openaiCompatible", apiUrl = "http://localhost:11434/v1", credentialSource = "envvar", credentialEnvVar = "OPENAI_API_KEY", apiKey = "must-not-save")
+  )
+  writeWmfmProviderProfiles(profiles)
+  parsed = readWmfmProviderProfiles()
+  expect_identical(parsed[[1]]$providerType, "openai")
+  expect_identical(parsed[[2]]$providerType, "openaiCompatible")
+  raw = paste(readLines(wmfmConfigPath(), warn = FALSE), collapse = "\n")
+  expect_false(grepl("must-not-save", raw, fixed = TRUE))
+})

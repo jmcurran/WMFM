@@ -15,6 +15,84 @@ wmfmProviderDefaults = function() {
   )
 }
 
+#' Normalise a WMFM provider profile
+#'
+#' @param profile Named list describing a configured provider profile.
+#'
+#' @return Named list with normalised provider profile metadata.
+#' @keywords internal
+normaliseWmfmProviderProfile = function(profile = list()) {
+  profile = as.list(profile %||% list())
+  providerType = tolower(trimws(as.character(profile$providerType %||% profile$provider %||% "ollama")))
+  if (!isWmfmProviderSupported(providerType)) {
+    providerType = "ollama"
+  }
+  adapter = getWmfmProviderAdapter(providerType)
+  providerType = adapter$provider
+  profileId = trimws(as.character(profile$profileId %||% profile$providerId %||% providerType))
+  if (!nzchar(profileId)) {
+    profileId = providerType
+  }
+  displayName = trimws(as.character(profile$displayName %||% adapter$label %||% providerType))
+  if (!nzchar(displayName)) {
+    displayName = adapter$label %||% providerType
+  }
+  list(profileId = profileId, providerId = profileId, displayName = displayName, providerType = providerType,
+    apiUrl = trimws(as.character(profile$apiUrl %||% profile$baseUrl %||% "")),
+    credentialSource = trimws(as.character(profile$credentialSource %||% if (isTRUE(adapter$requiresCredentials)) "envvar" else "none")),
+    credentialEnvVar = trimws(as.character(profile$credentialEnvVar %||% adapter$credentialEnvVar %||% "")),
+    defaultModel = trimws(as.character(profile$defaultModel %||% "")),
+    supportsModelDiscovery = isTRUE(profile$supportsModelDiscovery %||% adapter$supportsLocalDiscovery),
+    supportsThinkingLevels = isTRUE(profile$supportsThinkingLevels %||% identical(providerType, "ollama")),
+    enabled = !identical(profile$enabled, FALSE), active = isTRUE(profile$active))
+}
+
+#' @keywords internal
+wmfmDefaultProviderProfiles = function() {
+  defaults = wmfmProviderDefaults()
+  list(normaliseWmfmProviderProfile(list(profileId = "ollama-local", displayName = "Ollama (local)", providerType = "ollama", apiUrl = defaults$ollamaBaseUrl, defaultModel = defaults$ollamaModel, supportsModelDiscovery = TRUE, supportsThinkingLevels = TRUE, enabled = TRUE, active = identical(defaults$backend, "ollama"))), normaliseWmfmProviderProfile(list(profileId = "claude-anthropic", displayName = "Claude / Anthropic", providerType = "claude", credentialSource = "envvar", credentialEnvVar = "ANTHROPIC_API_KEY", enabled = TRUE, active = identical(defaults$backend, "claude"))))
+}
+
+#' @keywords internal
+migrateLegacyProviderConfigToProfiles = function(config = list()) {
+  defaults = wmfmProviderDefaults()
+  list(normaliseWmfmProviderProfile(list(profileId = "ollama-local", displayName = "Ollama (local)", providerType = "ollama", apiUrl = config$ollamaBaseUrl %||% defaults$ollamaBaseUrl, defaultModel = config$ollamaModel %||% defaults$ollamaModel, supportsModelDiscovery = TRUE, supportsThinkingLevels = TRUE, enabled = TRUE, active = identical(tolower(config$backend %||% defaults$backend), "ollama"))), normaliseWmfmProviderProfile(list(profileId = "claude-anthropic", displayName = "Claude / Anthropic", providerType = "claude", credentialSource = "envvar", credentialEnvVar = "ANTHROPIC_API_KEY", enabled = TRUE, active = identical(tolower(config$backend %||% defaults$backend), "claude"))))
+}
+
+#' @keywords internal
+readWmfmProviderProfiles = function() {
+  config = readWmfmConfig()
+  raw = config$providerProfiles
+  if (!is.list(raw) || length(raw) == 0) {
+    return(migrateLegacyProviderConfigToProfiles(config))
+  }
+  lapply(raw, normaliseWmfmProviderProfile)
+}
+
+#' @keywords internal
+writeWmfmProviderProfiles = function(profiles = list()) {
+  normalised = lapply(profiles, normaliseWmfmProviderProfile)
+  cfg = readWmfmConfig()
+  cfg$providerProfiles = normalised
+  writeWmfmConfig(cfg)
+}
+
+#' @keywords internal
+resolveWmfmActiveProviderProfile = function(backend = NULL) {
+  profiles = readWmfmProviderProfiles()
+  backend = tolower(trimws(as.character(backend %||% resolveWmfmProviderConfig()$backend %||% "")))
+  idx = which(vapply(profiles, function(x) identical(x$providerType, backend), logical(1)))[1]
+  if (!is.na(idx)) {
+    return(profiles[[idx]])
+  }
+  profiles[[1]]
+}
+
+#' @keywords internal
+buildProviderProfileChoices = function(profiles = readWmfmProviderProfiles()) {
+  stats::setNames(vapply(profiles, function(x) x$profileId, character(1)), vapply(profiles, function(x) x$displayName, character(1)))
+}
+
 #' WMFM local configuration directory
 #'
 #' Returns the directory used for non-secret local WMFM configuration.
@@ -68,7 +146,8 @@ readWmfmConfig = function() {
     "backend",
     "ollamaBaseUrl",
     "ollamaModel",
-    "ollamaThinkLow"
+    "ollamaThinkLow",
+    "providerProfiles"
   )
 
   parsed[intersect(names(parsed), recognizedFields)]
@@ -89,7 +168,8 @@ writeWmfmConfig = function(config = list()) {
     "backend",
     "ollamaBaseUrl",
     "ollamaModel",
-    "ollamaThinkLow"
+    "ollamaThinkLow",
+    "providerProfiles"
   )
   secretFieldNames = c("anthropicApiKey", "apiKey", "ANTHROPIC_API_KEY")
 

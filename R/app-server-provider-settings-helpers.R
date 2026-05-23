@@ -7,7 +7,9 @@ buildProviderSettingsState = function() {
   list(
     configLocation = describeWmfmConfigLocation(),
     providerStatus = describeWmfmProviderStatus(),
-    providerConfig = resolveWmfmProviderConfig()
+    providerConfig = resolveWmfmProviderConfig(),
+    providerProfiles = readWmfmProviderProfiles(),
+    activeProfile = resolveWmfmActiveProviderProfile()
   )
 }
 
@@ -18,42 +20,19 @@ buildProviderSettingsState = function() {
 #' @return Character vector of status lines for display in the settings UI.
 #' @keywords internal
 buildProviderSettingsStatusLines = function(settingsState) {
-  configLocation = settingsState$configLocation
   providerConfig = settingsState$providerConfig
-
-  lines = c(
-    paste0("Config file path: ", configLocation$configPath),
-    paste0("Config file exists: ", if (isTRUE(configLocation$exists)) "yes" else "no"),
-    paste0("Config file readable: ", if (isTRUE(configLocation$readable)) "yes" else "no"),
-    paste0("Custom config directory option active: ", if (isTRUE(configLocation$customConfigDirActive)) "yes" else "no"),
-    paste0("Configured provider/backend: ", providerConfig$backend %||% "ollama")
-  )
-
-  providerDetails = settingsState$providerStatus$providers
-  providerNames = names(providerDetails %||% list())
-
-  if (length(providerNames) > 0) {
-    providerLines = vapply(providerNames, function(providerName) {
-      details = providerDetails[[providerName]]
-      availability = if (isTRUE(details$configured)) "available" else "missing credentials"
-      sourceLabel = details$credentialSource %||% "unknown"
-      paste0(details$provider, ": ", availability, " (source: ", sourceLabel, ")")
-    }, character(1))
-
-    lines = c(lines, "Provider credential/status summary:", paste0("- ", providerLines))
-  }
-
+  activeProfile = settingsState$activeProfile %||% list()
   selectedBackend = providerConfig$backend %||% "ollama"
-  lines = c(
-    lines,
-    "Selected provider credential details:",
-    paste0("- ", buildProviderCredentialStatusLines(selectedBackend)),
-    "Selected provider setup guidance:",
-    paste0("- ", buildProviderCredentialGuidance(selectedBackend))
-  )
 
-  lines
+  c(
+    paste0("Active provider: ", activeProfile$displayName %||% selectedBackend),
+    paste0("Provider type: ", activeProfile$providerType %||% selectedBackend),
+    paste0("Model: ", if (identical(selectedBackend, "ollama")) providerConfig$ollamaModel %||% "gpt-oss" else (activeProfile$defaultModel %||% "default")),
+    paste0("Credential: ", paste(buildProviderCredentialStatusLines(selectedBackend), collapse = " ")),
+    "API key values are never stored or displayed by WMFM."
+  )
 }
+
 
 
 #' Build provider credential guidance text for settings

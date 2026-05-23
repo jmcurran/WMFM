@@ -378,14 +378,11 @@ appUI = function() {
         ),
         textOutput("chatProviderStatus"),
         tags$br(),
-        textOutput("providerConfigLocationStatus"),
+        tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
           inputId = "providerConfig_backend",
-          label = "Active provider/backend",
-          choices = c(
-            "Ollama" = "ollama",
-            "Claude" = "claude"
-          ),
+          label = "Active provider profile",
+          choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
           selected = "ollama"
         ),
         helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
