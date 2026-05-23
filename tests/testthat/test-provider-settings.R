@@ -1,4 +1,4 @@
-test_that("provider settings status lines are safe and include config metadata", {
+test_that("provider settings status lines use concise active-profile format and hide secrets", {
   tmpDir = tempfile("wmfm-provider-settings-")
   withr::local_options(list(wmfm.config_dir = tmpDir))
   withr::local_envvar(list(ANTHROPIC_API_KEY = "super-secret-value"), .local_envir = parent.frame())
@@ -6,12 +6,11 @@ test_that("provider settings status lines are safe and include config metadata",
   statusLines = buildProviderSettingsStatusLines(buildProviderSettingsState())
   statusText = paste(statusLines, collapse = "\n")
 
-  expect_match(statusText, "Config file path:", fixed = TRUE)
-  expect_match(statusText, "Config file exists:", fixed = TRUE)
-  expect_match(statusText, "Config file readable:", fixed = TRUE)
-  expect_match(statusText, "Custom config directory option active:", fixed = TRUE)
-  expect_match(statusText, "Configured provider/backend:", fixed = TRUE)
-  expect_match(statusText, "source: env:ANTHROPIC_API_KEY", fixed = TRUE)
+  expect_match(statusText, "Active provider:", fixed = TRUE)
+  expect_match(statusText, "Provider type:", fixed = TRUE)
+  expect_match(statusText, "Model:", fixed = TRUE)
+  expect_match(statusText, "Credential:", fixed = TRUE)
+  expect_match(statusText, "API key values are never stored or displayed by WMFM.", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
 
