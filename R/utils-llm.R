@@ -51,11 +51,17 @@ NULL
 #' }
 #'
 #' @keywords internal
-getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "ollama"),
+getChatProvider = function(backend = NULL,
                            model = NULL,
-                           ollamaThinkLow = getOption("wmfm.ollama_think_low", default = FALSE)) {
+                           ollamaThinkLow = NULL) {
 
-  backend = tolower(trimws(backend %||% "ollama"))
+  providerConfig = resolveWmfmProviderConfig(
+    backend = backend,
+    ollamaModel = model,
+    ollamaThinkLow = ollamaThinkLow
+  )
+
+  backend = providerConfig$backend
 
   makeDummyProvider = function(msg, backendName = backend) {
     structure(
@@ -70,31 +76,41 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     )
   }
 
-  if (!backend %in% c("ollama", "claude")) {
+  adapter = tryCatch(
+    getWmfmProviderAdapter(backend),
+    error = function(err) NULL
+  )
+  if (is.null(adapter) || identical(adapter$adapterKind, "future")) {
+    supported = names(wmfmProviderRegistry())[vapply(
+      wmfmProviderRegistry(),
+      function(x) !identical(x$adapterKind, "future"),
+      logical(1)
+    )]
     return(makeDummyProvider(
       paste0(
         "Unsupported chat backend: ", backend,
-        ". Supported backends are 'ollama' and 'claude'."
+        ". Supported backends are ", paste(sprintf("'%s'", supported), collapse = ", "), "."
       )
     ))
   }
 
-  if (identical(backend, "claude")) {
-    claudeKey = Sys.getenv("ANTHROPIC_API_KEY", unset = "")
+  constructWmfmChatProvider = function(adapter, providerConfig, makeDummyProvider) {
+    backend = adapter$provider
 
-    if (!nzchar(claudeKey)) {
-      return(makeDummyProvider(
-        paste(
-          "WMFM cannot contact the Claude backend.",
-          "",
-          "Backend: claude",
-          "",
-          "ANTHROPIC_API_KEY is not set on this machine.",
-          "Set it in the runtime environment before selecting Claude.",
-          sep = "\n"
-        )
-      ))
-    }
+    if (identical(backend, "claude")) {
+      if (!hasClaudeApiKey()) {
+        return(makeDummyProvider(
+          paste(
+            "WMFM cannot contact the Claude backend.",
+            "",
+            "Backend: claude",
+            "",
+            "ANTHROPIC_API_KEY is not set on this machine.",
+            "Set it in the runtime environment before selecting Claude.",
+            sep = "\n"
+          )
+        ))
+      }
 
     claudeModel = getOption("wmfm.claude_model", default = NULL)
 
@@ -133,19 +149,12 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
       return(makeDummyProvider(msg))
     }
 
-    return(safeProvider)
-  }
+      return(safeProvider)
+    }
 
-  baseUrl = getOption(
-    "wmfm.ollama_base_url",
-    default = "http://corrin.stat.auckland.ac.nz:11434"
-  )
+  baseUrl = providerConfig$ollamaBaseUrl
 
-  modelName = model %||% getOption("wmfm.ollama_model", default = "gpt-oss")
-  modelName = trimws(modelName %||% "gpt-oss")
-  if (!nzchar(modelName)) {
-    modelName = "gpt-oss"
-  }
+  modelName = providerConfig$ollamaModel
 
   ollamaArgs = list(
     base_url = baseUrl,
@@ -180,7 +189,14 @@ getChatProvider = function(backend = getOption("wmfm.chat_backend", default = "o
     return(makeDummyProvider(msg))
   }
 
-  safeProvider
+    safeProvider
+  }
+
+  constructWmfmChatProvider(
+    adapter = adapter,
+    providerConfig = providerConfig,
+    makeDummyProvider = makeDummyProvider
+  )
 }
 
 #' Test whether a chat provider is a WMFM dummy provider

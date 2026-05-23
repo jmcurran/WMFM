@@ -239,7 +239,7 @@ appUI = function() {
                 "Use compact interaction formula",
                 value = FALSE
               ),
-              uiOutput("formula_status")
+              textOutput("formula_status")
             )
           )
         )
@@ -384,58 +384,67 @@ appUI = function() {
           "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
         ),
         tags$hr(class = "hr-tight"),
-        h4("Chat provider"),
+        h4("Provider settings"),
         helpText(
-          "Choose which language model backend WMFM should use for equations and explanations."
+          "Choose one active provider/backend. Ollama uses base URL + model and no API key. Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM."
         ),
+        tags$p(
+          class = "wmfm-explanation-helper-note",
+          "API keys are not shown here and are never stored in the WMFM config file."
+        ),
+        textOutput("chatProviderStatus"),
+        tags$br(),
+        tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
-          inputId = "chat_provider",
-          label = "Provider",
-          choices = c(
-            "Ollama" = "ollama",
-            "Claude" = "claude"
-          ),
+          inputId = "providerConfig_backend",
+          label = "Active provider profile",
+          choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
           selected = "ollama"
         ),
-        conditionalPanel(
-          condition = "input.chat_provider == 'ollama'",
-          selectInput(
-            inputId = "ollama_model",
-            label = "Ollama model",
-            choices = c("gpt-oss"),
-            selected = "gpt-oss"
-          ),
-          checkboxInput(
-            inputId = "ollama_think_low",
-            label = "Use low thinking effort for Ollama",
-            value = FALSE
-          ),
-          tags$div(
-            style = "margin-bottom: 6px;",
-            actionButton(
-              inputId = "refreshOllamaModelsBtn",
-              label = "Refresh available models",
-              class = "btn btn-secondary btn-sm"
-            )
-          ),
-          helpText(
-            "WMFM will query the configured Ollama server for available models. The default is gpt-oss when it is available. The low thinking option sends think = \"low\" to Ollama models that support it."
-          )
+        helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
+        textInput(
+          inputId = "providerConfig_ollamaBaseUrl",
+          label = "Ollama base URL (Ollama only)",
+          value = ""
         ),
-        passwordInput(
-          inputId = "providerSwitchPassword",
-          label = "Password required to switch to Claude",
-          placeholder = "Enter password only when switching to Claude"
+        selectInput(
+          inputId = "providerConfig_ollamaModel",
+          label = "Ollama model (Ollama only)",
+          choices = c("gpt-oss"),
+          selected = "gpt-oss"
+        ),
+        checkboxInput(
+          inputId = "providerConfig_ollamaThinkLow",
+          label = "Default to low thinking for Ollama (Ollama only)",
+          value = FALSE
+        ),
+        tags$div(
+          style = "margin-bottom: 6px;",
+          actionButton(
+            inputId = "refreshOllamaModelsBtn",
+            label = "Refresh available Ollama models",
+            class = "btn btn-secondary btn-sm"
+          )
         ),
         actionButton(
           inputId = "applyChatProviderBtn",
           label = "Apply provider",
           class = "btn-primary btn-sm"
         ),
+        actionButton(
+          inputId = "saveProviderConfigBtn",
+          label = "Save provider config",
+          class = "btn-primary btn-sm"
+        ),
+        actionButton(
+          inputId = "resetProviderConfigBtn",
+          label = "Reset provider config to defaults",
+          class = "btn-secondary btn-sm"
+        ),
         tags$br(), tags$br(),
-        textOutput("chatProviderStatus"),
+        textOutput("providerConfigSaveStatus"),
         helpText(
-          "Ollama can be selected directly, with a specific Ollama model chosen from the server. Switching to Claude requires the provider password and a configured ANTHROPIC_API_KEY on the machine running the app."
+          "Config path can be overridden with options(wmfm.config_dir = '/path')."
         )
       )
 
