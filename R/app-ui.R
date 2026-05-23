@@ -4,7 +4,7 @@
 #'
 #' The interface is organised into the main teaching and analysis tabs:
 #' \itemize{
-#'   \item \strong{Load Data}: upload a data set or choose an example from
+#'   \item \strong{Load}: upload a data set or choose an example from
 #'         the \pkg{s20x} package.
 #'   \item \strong{Model}: assign variables to roles, choose the model type,
 #'         specify the model formula, and fit/reset the model.
@@ -35,13 +35,13 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      body { font-size: 90%; }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-explanation-provenance {\n        color: #777;\n        font-size: 0.9em;\n        margin-top: 8px;\n      }\n    ")),
+    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: flex;\n        flex-direction: column;\n        align-items: flex-start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n      }\n\n      .tab-content {\n        overflow: visible;\n      }\n    ")),
 
     tabsetPanel(
       id = "main_tabs",
 
       tabPanel(
-        "Load Data",
+        "Load",
         h4("Load a data set"),
 
         radioButtons(
@@ -118,17 +118,26 @@ appUI = function() {
           textOutput("exampleLoadStatus")
         ),
 
+        div(
+          style = "margin-top: 10px;",
+          helpText(
+            "After loading data, or an example, go to the Model tab to assign variables and specify, or change, the regression model."
+          )
+        ),
+
         hr(),
 
         tags$div(
           style = "font-size: 0.8em; color: #666; margin-top: 20px;",
-          paste("WMFM version", as.character(packageVersion("WMFM")))
+          paste("WMFM version", utils::packageDescription("WMFM")$Version)
         )
       ),
 
       tabPanel(
         "Model",
-        tagList(
+        div(
+          class = "wmfm-model-tab",
+          tagList(
           h5("Select response variable"),
           fluidRow(
             column(
@@ -138,13 +147,10 @@ appUI = function() {
             column(
               width = 4,
               div(
-                style = "margin-top: 18px;",
+                style = "margin-top: 8px;",
                 uiOutput(outputId = "modelHelpBtnUi")
               )
             )
-          ),
-          helpText(
-            "After loading data, go to the Model tab to assign variables and specify the regression model."
           ),
           uiOutput("response_explain"),
 
@@ -201,13 +207,13 @@ appUI = function() {
               width = 4,
               h5(""),
               div(
-                style = "margin-top: 6px;",
+                class = "wmfm-model-fit-buttons",
+                style = "margin-top: 0;",
                 actionButton(
                   "fit_btn",
                   "Fit model",
                   class = "btn-primary btn-sm"
                 ),
-                tags$br(), tags$br(),
                 actionButton(
                   "reset_btn",
                   "Reset model",
@@ -219,14 +225,24 @@ appUI = function() {
 
           tags$hr(class = "hr-tight"),
 
-          h5("Model formula"),
-          textInput("formula_text", label = NULL, value = "", width = "100%"),
-          verbatimTextOutput("formula_status"),
-          checkboxInput(
-            "expert_mode",
-            "Use compact (expert) formula notation where possible",
-            value = FALSE
+          fluidRow(
+            column(
+              width = 8,
+              h5("Model formula"),
+              textInput("formula_text", label = NULL, value = "", width = "100%")
+            ),
+            column(
+              width = 4,
+              h5(""),
+              checkboxInput(
+                "expert_mode",
+                "Use compact interaction formula",
+                value = FALSE
+              ),
+              uiOutput("formula_status")
+            )
           )
+        )
         )
       ),
 
