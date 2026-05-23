@@ -38,6 +38,7 @@ createAppServerReactiveState = function() {
     availableOllamaModels = providerDefaults$ollamaModel,
     userDatasetContext = "",
     researchQuestion = "",
+    modelFollowupQuestion = "",
     loadedExample = NULL,
     providerConfigSaveStatus = NULL
   )
