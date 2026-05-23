@@ -12,6 +12,11 @@
 registerModelSummaryObservers = function(input, output, modelFit) {
 
   output$modelSummaryControlsUi = renderUI({
+    m = modelFit()
+    if (!shouldShowAdjustmentOutputControls(m)) {
+      return(NULL)
+    }
+
     checkboxInput(
       inputId = "showAdjustmentCoefficients",
       label = "Show adjustment coefficients",

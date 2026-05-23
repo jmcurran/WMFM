@@ -15,7 +15,7 @@ Constructs the Shiny user interface for the Model Builder app.
 \details{
 The interface is organised into the main teaching and analysis tabs:
 \itemize{
-\item \strong{Load Data}: upload a data set or choose an example from
+\item \strong{Load}: upload a data set or choose an example from
 the \pkg{s20x} package.
 \item \strong{Model}: assign variables to roles, choose the model type,
 specify the model formula, and fit/reset the model.
