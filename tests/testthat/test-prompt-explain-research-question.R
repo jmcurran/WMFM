@@ -245,3 +245,18 @@ testthat::test_that("non-empty follow-up question is preserved when follow-up pa
   testthat::expect_no_match(prompt, "Research question context", fixed = TRUE)
   testthat::expect_no_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
 })
+
+testthat::test_that("ambiguous multi-unit follow-up is sandboxed without deterministic payload", {
+  df = data.frame(
+    Exam = c(42, 58, 81, 86, 35, 72, 42, 25, 36, 48),
+    Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7, 7.3, 10.9, 10.9, 9.1)
+  )
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_model_followup_question") = "Compare a 5-unit and 10-unit increase"
+
+  prompt = lmToExplanationPrompt(model)
+
+  testthat::expect_match(prompt, "[unsupported follow-up text withheld]", fixed = TRUE)
+  testthat::expect_no_match(prompt, "Deterministic follow-up explanation control", fixed = TRUE)
+  testthat::expect_no_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
+})
