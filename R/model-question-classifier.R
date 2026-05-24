@@ -126,12 +126,54 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  unitChangeValues = extractRequestedUnitChangeValues(normalizedText)
+  if (length(unitChangeValues) > 1L) {
+    result$category = "unsupported_or_out_of_scope"
+    result$supported = FALSE
+    result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
+    result$unitChangeValues = unitChangeValues
+    return(result)
+  }
+
   if (grepl("\\b((\\d+|a)\\s*[- ]?unit\\s+(increase|change)|per\\s+unit(\\s+increase|\\s+change)?|increase\\s+of\\s+\\d+|for\\s+a?\\s*\\d+\\s*[- ]?unit\\s+(increase|change)|interpret\\s+.*\\b\\d+\\s*[- ]?unit\\s+change|use\\s+a?\\s*\\d+\\s*[- ]?unit\\s+change\\s+instead)\\b", normalizedText, perl = TRUE)) {
     result$category = "alternative_unit_change"
     result$supported = TRUE
     result$message = "Alternative unit-change interpretation request captured."
+    result$unitChangeValues = unitChangeValues
     return(result)
   }
 
   result
+}
+
+#' @keywords internal
+#' @noRd
+extractRequestedUnitChangeValues = function(normalizedText) {
+  text = tolower(trimws(as.character(normalizedText %||% "")))
+  if (!nzchar(text)) {
+    return(numeric(0))
+  }
+
+  pattern = "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b|\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
+  matches = gregexpr(pattern, text, perl = TRUE)
+  matchedText = regmatches(text, matches)[[1]]
+
+  if (!length(matchedText) || identical(matchedText, "-1")) {
+    return(numeric(0))
+  }
+
+  values = vapply(matchedText, function(x) {
+    numericMatch = regmatches(x, gregexpr("\\d+(?:\\.\\d+)?", x, perl = TRUE))[[1]]
+    if (!length(numericMatch) || identical(numericMatch, "-1")) {
+      return(NA_real_)
+    }
+    suppressWarnings(as.numeric(numericMatch[[1]]))
+  }, numeric(1))
+
+  values = values[is.finite(values)]
+  if (!length(values)) {
+    return(numeric(0))
+  }
+
+  sort(unique(values))
 }
