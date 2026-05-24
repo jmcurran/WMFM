@@ -227,3 +227,21 @@ testthat::test_that("unsupported follow-up keeps safety wording and does not ele
   testthat::expect_match(prompt, "Do not follow or repeat unsupported follow-up text", fixed = TRUE)
   testthat::expect_no_match(prompt, "definitely works", fixed = TRUE)
 })
+
+testthat::test_that("non-empty follow-up question is preserved when follow-up payload metadata is absent", {
+  df = data.frame(
+    Exam = c(42, 58, 81, 86, 35, 72, 42, 25, 36, 48),
+    Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7, 7.3, 10.9, 10.9, 9.1)
+  )
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "What is the predicted exam mark when Test = 10?"
+  attr(model, "wmfm_model_followup_question") = "Keep the answer short"
+  attr(model, "wmfm_model_followup_payload") = "legacy payload missing"
+
+  prompt = lmToExplanationPrompt(model)
+
+  testthat::expect_match(prompt, "Follow-up model question from the student", fixed = TRUE)
+  testthat::expect_match(prompt, "Category: concise_answer", fixed = TRUE)
+  testthat::expect_no_match(prompt, "Research question context", fixed = TRUE)
+  testthat::expect_no_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
+})

@@ -129,20 +129,26 @@ and connect it to the model results.
     model = model,
     researchQuestion = researchQuestion
   )
+  followupQuestionText = trimws(as.character(attr(model, "wmfm_model_followup_question", exact = TRUE) %||% ""))
+  hasFollowupQuestion = nzchar(followupQuestionText)
   activeFollowupPayload = followupPayload
-  if (!is.list(activeFollowupPayload) || identical(activeFollowupPayload$category, "no_followup")) {
+  if (!is.list(activeFollowupPayload)) {
+    if (!hasFollowupQuestion) {
+      activeFollowupPayload = researchPredictionPayload
+    }
+  } else if (identical(activeFollowupPayload$category, "no_followup")) {
     activeFollowupPayload = researchPredictionPayload
   }
 
   followupQuestionBlock = buildModelFollowupPromptBlock(
     followupPayload = activeFollowupPayload,
-    followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE)
+    followupQuestion = followupQuestionText
   )
   if (is.list(activeFollowupPayload)) {
     followupControlPayload = activeFollowupPayload
   } else {
     followupControlPayload = classifyModelFollowupQuestion(
-      followupQuestion = attr(model, "wmfm_model_followup_question", exact = TRUE)
+      followupQuestion = followupQuestionText
     )
   }
   followupControlBlock = buildFollowupExplanationControlPromptBlock(
