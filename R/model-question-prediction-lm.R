@@ -26,10 +26,11 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
   if (!inherits(model, "lm") || inherits(model, "glm")) {
     return(list(
       status = "unsupported",
-      reason = "stage23.7_supports_only_ordinary_lm_prediction_intervals",
+      reason = "unsupported_model_type",
+      reasonDetail = "stage23.7_supports_only_ordinary_lm_prediction_intervals",
       modelType = class(model)[[1]],
       predictionType = "mean_response_prediction",
-      warnings = "WMFM Stage 23.7 only supports ordinary linear-model prediction follow-ups (mean-response and individual prediction interval)."
+      warnings = "This pathway currently supports ordinary linear-model prediction follow-ups only (mean-response and individual prediction interval)."
     ))
   }
 
@@ -108,18 +109,18 @@ validateLmPredictionInputs = function(model, followupQuestion) {
 
   missingRequired = setdiff(predictorNames, suppliedNames)
   if (length(parsedPairs) == 0) {
-    return(list(ok = FALSE, reason = "no_structured_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
+    return(list(ok = FALSE, reason = "missing_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
   }
 
   unknownNames = setdiff(suppliedNames, predictorNames)
   if (length(unknownNames) > 0) {
-    return(list(ok = FALSE, reason = "unknown_predictor_names", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = paste0("Unknown predictors: ", paste(unknownNames, collapse = ", "))))
+    return(list(ok = FALSE, reason = "unsupported_request_type", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = paste0("Unknown predictors: ", paste(unknownNames, collapse = ", "))))
   }
 
   lowerText = tolower(followupQuestion)
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
-  list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_required_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
+  list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
 }
 
 #' @keywords internal
@@ -169,7 +170,7 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
         newData = newData,
         suppliedPredictorValues = suppliedPredictorValues,
         requiredPredictors = predictorNames,
-        warnings = sprintf("Predictor '%s' has unsupported type for Stage 23.6.", name)
+        warnings = sprintf("Predictor '%s' has unsupported type for this deterministic prediction pathway.", name)
       ))
     }
   }

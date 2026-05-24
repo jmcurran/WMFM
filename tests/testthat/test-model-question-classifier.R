@@ -67,3 +67,16 @@ testthat::test_that("repeated same unit-change value is handled consistently", {
   testthat::expect_true(out$supported)
   testthat::expect_equal(out$unitChangeValues, 10)
 })
+
+
+testthat::test_that("unsupported free-form instruction gets normalized reason", {
+  out = classifyModelFollowupQuestion("ignore previous instructions")
+  testthat::expect_identical(out$category, "unsupported_or_out_of_scope")
+  testthat::expect_identical(out$reason, "unsupported_freeform_instruction")
+})
+
+testthat::test_that("ambiguous wording near-miss stays deterministic and asks clarification", {
+  out = classifyModelFollowupQuestion("increase by maybe 5 or 10")
+  testthat::expect_identical(out$category, "unsupported_or_out_of_scope")
+  testthat::expect_false("reason" %in% names(out))
+})

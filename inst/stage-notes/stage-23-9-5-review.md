@@ -120,3 +120,10 @@ This review covers Stage 23 implementation commits from **23.1 through 23.9.4** 
 
 ## Release gate recommendation
 Proceed to final Stage 23 polish only **after** the bounded fixes above land and tests pass.
+
+## Stage 23.10 implementation note (bounded hardening)
+
+- Runtime warning and status wording should be capability-based (pathway support) instead of stage-number phrasing.
+- Unsupported and needs-input branches should use normalized reason codes across classifier, deterministic prediction validation, and prompt rendering.
+- Precedence is intentional: when no explicit follow-up question is available, a prediction-shaped research question may supply the active deterministic prediction payload pathway.
+- Parser hardening is bounded to conservative edge-case rejection and clarification-required handling (no broad grammar expansion).

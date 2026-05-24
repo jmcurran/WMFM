@@ -73,7 +73,7 @@ testthat::test_that("missing required predictor values fail safely", {
 
   out = computeLmModelQuestionPrediction(model, "Predict exam for Test = 10")
   testthat::expect_identical(out$status, "needs_input")
-  testthat::expect_identical(out$reason, "missing_required_predictor_values")
+  testthat::expect_identical(out$reason, "missing_predictor_values")
 })
 
 testthat::test_that("unsupported model types fail safely", {
@@ -145,4 +145,24 @@ testthat::test_that("unsupported GLM prediction interval requests fail safely", 
   out = computeLmModelQuestionPrediction(model, "Give a prediction interval when X = 3")
 
   testthat::expect_identical(out$status, "unsupported")
+})
+
+
+testthat::test_that("unsupported model reason code is normalized", {
+  df = data.frame(Y = c(0, 1, 0, 1, 1, 0), X = c(1, 2, 3, 4, 5, 6))
+  model = stats::glm(Y ~ X, data = df, family = stats::binomial())
+  out = computeLmModelQuestionPrediction(model, "Predict Y when X = 3")
+
+  testthat::expect_identical(out$reason, "unsupported_model_type")
+  testthat::expect_identical(out$reasonDetail, "stage23.7_supports_only_ordinary_lm_prediction_intervals")
+  testthat::expect_match(out$warnings, "currently supports ordinary linear-model prediction follow-ups only", fixed = TRUE)
+})
+
+testthat::test_that("unsupported separator x:5 fails safely as missing predictor values", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Exam ~ Test, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "predict something around x:5")
+  testthat::expect_identical(out$status, "needs_input")
+  testthat::expect_identical(out$reason, "missing_predictor_values")
 })
