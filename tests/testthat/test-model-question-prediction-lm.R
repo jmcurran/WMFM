@@ -36,6 +36,18 @@ testthat::test_that("lm prediction interval matches stats predict prediction int
   testthat::expect_equal(out$predictionInterval$upr, as.numeric(ref[1, "upr"]))
 })
 
+
+
+testthat::test_that("plural prediction intervals wording is recognized", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Exam ~ Test, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "Show prediction intervals when Test = 10")
+
+  testthat::expect_identical(out$predictionType, "individual_prediction_interval")
+  testthat::expect_true(!is.null(out$predictionInterval))
+})
+
 testthat::test_that("prediction interval is wider than confidence interval", {
   df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
   model = stats::lm(Exam ~ Test, data = df)

@@ -117,7 +117,7 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   }
 
   lowerText = tolower(followupQuestion)
-  requestsPredictionInterval = grepl("\\bprediction interval\\b", lowerText, perl = TRUE)
+  requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
   list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_required_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
 }
