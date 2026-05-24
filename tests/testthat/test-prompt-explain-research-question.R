@@ -274,3 +274,15 @@ testthat::test_that("research prediction precedence is used when follow-up is ab
   testthat::expect_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
   testthat::expect_no_match(prompt, "Stage 23.6", fixed = TRUE)
 })
+
+testthat::test_that("follow-up prompt control instructs separate paragraph after main answer", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Exam ~ Test, data = df)
+  attr(model, "wmfm_research_question") = "Does Exam tend to increase as Test increases?"
+  attr(model, "wmfm_model_followup_question") = "Keep the answer short"
+
+  prompt = lmToExplanationPrompt(model)
+  testthat::expect_match(prompt, "First answer the main research question", fixed = TRUE)
+  testthat::expect_match(prompt, "separate paragraph after the main research-question answer", fixed = TRUE)
+})
+

@@ -17,7 +17,7 @@ buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
     return(NULL)
   }
 
-  predictionResult = computeLmModelQuestionPrediction(
+  predictionResult = computeModelQuestionPrediction(
     model = model,
     followupQuestion = question
   )

@@ -13,11 +13,20 @@ enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
     return(payload)
   }
 
-  payload$predictionResult = computeLmModelQuestionPrediction(
+  payload$predictionResult = computeModelQuestionPrediction(
     model = model,
     followupQuestion = payload$originalText %||% ""
   )
   payload
+}
+
+#' @keywords internal
+#' @noRd
+computeModelQuestionPrediction = function(model, followupQuestion) {
+  if (inherits(model, "glm")) {
+    return(computeGlmModelQuestionPrediction(model = model, followupQuestion = followupQuestion))
+  }
+  computeLmModelQuestionPrediction(model = model, followupQuestion = followupQuestion)
 }
 
 #' @keywords internal
@@ -201,13 +210,15 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
 #' @keywords internal
 #' @noRd
-formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", suppliedPredictorValues, resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, warnings = character(0)) {
+formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", responseScale = "response", suppliedPredictorValues, resolvedPredictorValues, completedPredictorValues = resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, warnings = character(0)) {
   list(
     status = "ok",
     modelType = modelType,
     predictionType = predictionType,
+    responseScale = responseScale,
     suppliedPredictorValues = suppliedPredictorValues,
     resolvedPredictorValues = resolvedPredictorValues,
+    completedPredictorValues = completedPredictorValues,
     fittedPrediction = fittedPrediction,
     confidenceInterval = confidenceInterval,
     predictionInterval = predictionInterval,
