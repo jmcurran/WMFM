@@ -5,6 +5,7 @@ testthat::test_that("prediction-shaped research question is detected conservativ
 
 testthat::test_that("association-style research questions are not detected as prediction", {
   testthat::expect_false(isPredictionShapedResearchQuestion("Does Exam tend to increase as Test increases?"))
+  testthat::expect_false(isPredictionShapedResearchQuestion("What is the expected value of Exam as Test increases?"))
   testthat::expect_false(isPredictionShapedResearchQuestion("Explain the relationship between Test and Exam"))
 })
 
