@@ -154,7 +154,14 @@ extractRequestedUnitChangeValues = function(normalizedText) {
     return(numeric(0))
   }
 
-  pattern = "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b|\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
+  pattern = paste(
+    c(
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\b(?=\\s+(?:and|or)\\s+(?:a\\s+)?\\d+(?:\\.\\d+)?\\s*[- ]?unit\\s+(?:increase|change)\\b)",
+      "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
+    ),
+    collapse = "|"
+  )
   matches = gregexpr(pattern, text, perl = TRUE)
   matchedText = regmatches(text, matches)[[1]]
 
