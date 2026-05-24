@@ -78,5 +78,12 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
     return("")
   }
 
+  lines = c(
+    lines,
+    "- First answer the main research question.",
+    "- If you answer this follow-up, place it in a separate paragraph after the main research-question answer.",
+    "- Keep the follow-up paragraph clearly tied to the follow-up request without adding headings unless existing style already uses headings."
+  )
+
   paste0("\n", paste(lines, collapse = "\n"), "\n")
 }
