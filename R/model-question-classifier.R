@@ -21,7 +21,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     category = "unsupported_or_out_of_scope",
     supported = FALSE,
     requiresDeterministicComputation = FALSE,
-    message = "Request not supported in this stage."
+    message = "Request is unsupported for this pathway."
   )
 
   if (!nzchar(normalizedText)) {
@@ -50,6 +50,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   if (grepl(injectionPattern, normalizedText, perl = TRUE) ||
       grepl(unrelatedPattern, normalizedText, perl = TRUE)) {
     result$category = "unsupported_or_out_of_scope"
+    result$reason = "unsupported_freeform_instruction"
     result$message = "Unsupported or out-of-scope follow-up request."
     return(result)
   }
@@ -58,6 +59,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   if (length(unitChangeValues) > 1L) {
     result$category = "unsupported_or_out_of_scope"
     result$supported = FALSE
+    result$reason = "ambiguous_predictor_values"
     result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
     result$unitChangeValues = unitChangeValues
     return(result)

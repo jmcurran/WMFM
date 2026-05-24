@@ -30,7 +30,7 @@ testthat::test_that("missing predictor values in research question fail safely",
 
   payload = buildResearchQuestionPredictionPayload(model, "Predict exam for Test = 10")
   testthat::expect_identical(payload$predictionResult$status, "needs_input")
-  testthat::expect_identical(payload$predictionResult$reason, "missing_required_predictor_values")
+  testthat::expect_identical(payload$predictionResult$reason, "missing_predictor_values")
 })
 
 testthat::test_that("individual prediction wording in research question requests lm prediction interval", {

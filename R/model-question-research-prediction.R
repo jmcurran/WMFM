@@ -29,7 +29,7 @@ buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
       "prediction_request"
     },
     supported = TRUE,
-    message = "Prediction-shaped research question detected.",
+    message = "Prediction-shaped research question detected for deterministic prediction pathway.",
     originalText = question,
     source = "research_question",
     predictionResult = predictionResult
