@@ -54,6 +54,15 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  unitChangeValues = extractRequestedUnitChangeValues(normalizedText)
+  if (length(unitChangeValues) > 1L) {
+    result$category = "unsupported_or_out_of_scope"
+    result$supported = FALSE
+    result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
+    result$unitChangeValues = unitChangeValues
+    return(result)
+  }
+
   if (grepl("prediction interval", normalizedText, perl = TRUE)) {
     result$category = "prediction_interval_request"
     result$supported = TRUE
@@ -123,15 +132,6 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     result$category = "focus_research_question"
     result$supported = TRUE
     result$message = "Research-question focus preference captured."
-    return(result)
-  }
-
-  unitChangeValues = extractRequestedUnitChangeValues(normalizedText)
-  if (length(unitChangeValues) > 1L) {
-    result$category = "unsupported_or_out_of_scope"
-    result$supported = FALSE
-    result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
-    result$unitChangeValues = unitChangeValues
     return(result)
   }
 
