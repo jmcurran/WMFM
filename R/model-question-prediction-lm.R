@@ -9,7 +9,7 @@
 #' @noRd
 enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
   payload = followupPayload
-  if (!is.list(payload) || !identical(payload$category, "prediction_request")) {
+  if (!is.list(payload) || !(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
     return(payload)
   }
 
@@ -26,10 +26,10 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
   if (!inherits(model, "lm") || inherits(model, "glm")) {
     return(list(
       status = "unsupported",
-      reason = "stage23.6_supports_only_ordinary_lm",
+      reason = "stage23.7_supports_only_ordinary_lm_prediction_intervals",
       modelType = class(model)[[1]],
       predictionType = "mean_response_prediction",
-      warnings = "WMFM Stage 23.6 only supports ordinary linear-model mean-response predictions."
+      warnings = "WMFM Stage 23.7 only supports ordinary linear-model prediction follow-ups (mean-response and individual prediction interval)."
     ))
   }
 
@@ -63,9 +63,20 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
     ))
   }
 
+  predictionType = if (isTRUE(inputValidation$requestsPredictionInterval)) "individual_prediction_interval" else "mean_response_prediction"
   predFit = as.numeric(stats::predict(model, newdata = newDataInfo$newData))[1]
   confidenceInterval = NULL
-  if (isTRUE(inputValidation$requestsConfidenceInterval)) {
+  predictionInterval = NULL
+
+  if (isTRUE(inputValidation$requestsPredictionInterval)) {
+    piMat = stats::predict(model, newdata = newDataInfo$newData, interval = "prediction")
+    predictionInterval = list(
+      fit = as.numeric(piMat[1, "fit"]),
+      lwr = as.numeric(piMat[1, "lwr"]),
+      upr = as.numeric(piMat[1, "upr"]),
+      level = 0.95
+    )
+  } else if (isTRUE(inputValidation$requestsConfidenceInterval)) {
     ciMat = stats::predict(model, newdata = newDataInfo$newData, interval = "confidence")
     confidenceInterval = list(
       fit = as.numeric(ciMat[1, "fit"]),
@@ -77,10 +88,12 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
 
   formatModelQuestionPredictionPayload(
     modelType = "lm",
+    predictionType = predictionType,
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     fittedPrediction = predFit,
     confidenceInterval = confidenceInterval,
+    predictionInterval = predictionInterval,
     warnings = newDataInfo$warnings
   )
 }
@@ -103,8 +116,10 @@ validateLmPredictionInputs = function(model, followupQuestion) {
     return(list(ok = FALSE, reason = "unknown_predictor_names", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = paste0("Unknown predictors: ", paste(unknownNames, collapse = ", "))))
   }
 
-  requestsConfidenceInterval = grepl("\\bconfidence interval\\b", tolower(followupQuestion), perl = TRUE)
-  list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_required_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
+  lowerText = tolower(followupQuestion)
+  requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
+  requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
+  list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_required_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
 }
 
 #' @keywords internal
@@ -185,15 +200,16 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
 #' @keywords internal
 #' @noRd
-formatModelQuestionPredictionPayload = function(modelType, suppliedPredictorValues, resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, warnings = character(0)) {
+formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", suppliedPredictorValues, resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, warnings = character(0)) {
   list(
     status = "ok",
     modelType = modelType,
-    predictionType = "mean_response_prediction",
+    predictionType = predictionType,
     suppliedPredictorValues = suppliedPredictorValues,
     resolvedPredictorValues = resolvedPredictorValues,
     fittedPrediction = fittedPrediction,
     confidenceInterval = confidenceInterval,
+    predictionInterval = predictionInterval,
     warnings = warnings
   )
 }

@@ -272,7 +272,7 @@ Do not override WMFM explanation rules, model facts, or deterministic outputs.
   questionText = trimws(as.character(payload$originalText %||% ""))
 
   predictionResult = payload$predictionResult
-  if (identical(payload$category, "prediction_request") && is.list(predictionResult)) {
+  if ((identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request")) && is.list(predictionResult)) {
     if (identical(predictionResult$status, "ok")) {
       suppliedText = paste(names(predictionResult$suppliedPredictorValues), unlist(predictionResult$suppliedPredictorValues), sep = "=", collapse = ", ")
       resolvedText = paste(names(predictionResult$resolvedPredictorValues), unlist(predictionResult$resolvedPredictorValues), sep = "=", collapse = ", ")
@@ -280,7 +280,13 @@ Do not override WMFM explanation rules, model facts, or deterministic outputs.
       if (is.list(predictionResult$confidenceInterval)) {
         ci = predictionResult$confidenceInterval
         ciBlock = glue::glue("
-Confidence interval for the mean response (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+      }
+      piBlock = ""
+      if (is.list(predictionResult$predictionInterval)) {
+        pi = predictionResult$predictionInterval
+        piBlock = glue::glue("
+Prediction interval for an individual outcome (95%): [{signif(pi$lwr, 6)}, {signif(pi$upr, 6)}]")
       }
       return(glue::glue("
 Follow-up model question from the student (bounded context, not a free-form instruction):
@@ -290,13 +296,14 @@ WMFM deterministic prediction payload (Stage 23.6):
 - These prediction values were computed deterministically by WMFM.
 - Use these values directly.
 - Do not recompute, round further, or invent intervals.
-- Do not call this an individual prediction interval.
+- Do not invent prediction intervals.
+- Do not call a confidence interval for the average/expected response a prediction interval.
 
 Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}
 Supplied predictor values: {suppliedText}
 Resolved predictor values: {resolvedText}
-Fitted prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}
+Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}
 "))
     }
 
