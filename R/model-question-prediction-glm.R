@@ -30,22 +30,14 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion) {
     ))
   }
 
-  inputValidation = validateLmPredictionInputs(model = model, followupQuestion = followupQuestion)
-  if (!isTRUE(inputValidation$ok)) {
-    return(c(
-      list(
-        status = "needs_input",
-        reason = inputValidation$reason,
-        modelType = "glm",
-        predictionType = "mean_response_prediction",
-        responseScale = "response"
-      ),
-      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "warnings")]
-    ))
-  }
+  lowerText = tolower(as.character(followupQuestion %||% ""))
+  requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
+  requestsConfidenceInterval = grepl("\\bconfidence intervals?\\b", lowerText, perl = TRUE)
 
-  if (isTRUE(inputValidation$requestsPredictionInterval) || isTRUE(grepl("\bconfidence interval\b", tolower(followupQuestion), perl = TRUE))) {
-    requestedType = if (isTRUE(inputValidation$requestsPredictionInterval)) {
+  inputValidation = validateLmPredictionInputs(model = model, followupQuestion = followupQuestion)
+
+  if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
+    requestedType = if (isTRUE(requestsPredictionInterval)) {
       "individual_prediction_interval"
     } else {
       "confidence_interval_for_mean_response"
@@ -68,6 +60,20 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion) {
       )
     ))
   }
+
+  if (!isTRUE(inputValidation$ok)) {
+    return(c(
+      list(
+        status = "needs_input",
+        reason = inputValidation$reason,
+        modelType = "glm",
+        predictionType = "mean_response_prediction",
+        responseScale = "response"
+      ),
+      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "warnings")]
+    ))
+  }
+
 
   newDataInfo = buildLmPredictionNewData(model = model, suppliedPredictorValues = inputValidation$suppliedPredictorValues)
   if (!isTRUE(newDataInfo$ok)) {
