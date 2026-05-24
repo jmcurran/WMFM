@@ -292,6 +292,7 @@ Do not override WMFM explanation rules, model facts, or deterministic outputs.
   }
 
   predictionResult = payload$predictionResult
+  unitChangeResult = payload$unitChangeResult
   if ((identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request")) && is.list(predictionResult)) {
     if (identical(predictionResult$status, "ok")) {
       suppliedText = paste(names(predictionResult$suppliedPredictorValues), unlist(predictionResult$suppliedPredictorValues), sep = "=", collapse = ", ")
@@ -336,6 +337,40 @@ Do not invent the prediction.
 Explain what additional predictor information is needed, if appropriate.
 Status: {predictionResult$status %||% 'unsupported'}
 Reason: {predictionResult$reason %||% 'not_available'}
+"))
+  }
+
+  if (identical(payload$category, "alternative_unit_change") && is.list(unitChangeResult)) {
+    if (identical(unitChangeResult$status, "ok")) {
+      ciBlock = ""
+      if (is.list(unitChangeResult$confidenceInterval) && is.list(unitChangeResult$confidenceInterval$transformed)) {
+        ci = unitChangeResult$confidenceInterval$transformed
+        ciBlock = glue::glue(\"\\nTransformed confidence interval (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]\")
+      }
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic alternative-unit payload (Stage 23.9):
+- These transformed unit-change values were computed deterministically by WMFM.
+- Use these values directly.
+- Do not recompute, round further, or invent values.
+
+Model type: {unitChangeResult$modelType}
+Coefficient: {unitChangeResult$coefficientName}
+Requested unit change: {unitChangeResult$unitChange}
+One-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
+Transformed effect: {signif(unitChangeResult$transformedEffect, 6)}{ciBlock}
+"))
+    }
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the requested alternative-unit interpretation in this stage.
+Do not invent transformed effects or intervals.
+Status: {unitChangeResult$status %||% 'unsupported'}
+Reason: {unitChangeResult$reason %||% 'not_available'}
 "))
   }
 

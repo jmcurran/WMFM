@@ -49,7 +49,8 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
     emphasis_group_comparison = c(
       "Deterministic follow-up explanation control:",
       "- Prioritise group-comparison interpretation using WMFM comparison quantities and uncertainty.",
-      "- Do not infer differences from interval overlap alone."
+      "- Do not infer differences from interval overlap alone.",
+      "- Do not invent pairwise comparisons that are not already present in WMFM deterministic quantities."
     ),
     emphasis_interaction = c(
       "Deterministic follow-up explanation control:",
@@ -69,7 +70,7 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
     alternative_unit_change = c(
       "Deterministic follow-up explanation control:",
       "- Treat the request as a bounded unit-change interpretation preference and explain the model effect using the requested unit framing.",
-      "- Do not invent new computations; keep interpretation anchored to WMFM-provided model quantities and safeguards."
+      "- Use WMFM-computed transformed values directly when provided, and do not recompute or invent values."
     )
   )
 
