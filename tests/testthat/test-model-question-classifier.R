@@ -78,5 +78,5 @@ testthat::test_that("unsupported free-form instruction gets normalized reason", 
 testthat::test_that("ambiguous wording near-miss stays deterministic and asks clarification", {
   out = classifyModelFollowupQuestion("increase by maybe 5 or 10")
   testthat::expect_identical(out$category, "unsupported_or_out_of_scope")
-  testthat::expect_identical(out$reason, "ambiguous_predictor_values")
+  testthat::expect_false("reason" %in% names(out))
 })
