@@ -48,8 +48,30 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
     return(character(0))
   }
 
-  exampleNames = basename(specFiles)
-  exampleNames = sub("\\.spec\\.yml$", "", exampleNames)
+  exampleNames = vapply(
+    specFiles,
+    function(specFile) {
+      specPath = file.path(examplesPath, specFile)
+      spec = tryCatch(read_yaml(specPath), error = function(e) NULL)
+      displayName = NULL
+      if (is.list(spec)) {
+        displayName = spec$displayName %||% NULL
+      }
+
+      if (is.character(displayName) && length(displayName) == 1 && !is.na(displayName)) {
+        displayName = trimws(displayName)
+      } else {
+        displayName = ""
+      }
+
+      if (!nzchar(displayName)) {
+        basename(sub("\\.spec\\.yml$", "", specFile))
+      } else {
+        displayName
+      }
+    },
+    FUN.VALUE = character(1)
+  )
   exampleNames = sort(unique(exampleNames))
 
   if (!isTRUE(includeTestExamples)) {
@@ -82,12 +104,52 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
 #' @keywords internal
 #' @noRd
 loadExampleSpec = function(name, package = "WMFM") {
-  basePath = system.file(
-    "extdata",
-    "examples",
-    name,
-    package = package
+  examplesPath = system.file("extdata", "examples", package = package)
+  if (examplesPath == "" || !dir.exists(examplesPath)) {
+    stop("Example not found: ", name, call. = FALSE)
+  }
+
+  requestedName = trimws(as.character(name %||% ""))
+  if (!nzchar(requestedName)) {
+    stop("Example name must be a non-empty string.", call. = FALSE)
+  }
+
+  specFiles = list.files(
+    path = examplesPath,
+    pattern = "\\.spec\\.yml$",
+    recursive = TRUE,
+    full.names = TRUE
   )
+
+  exampleDir = NULL
+  specPath = NULL
+  for (candidateSpecPath in specFiles) {
+    candidateSpec = tryCatch(read_yaml(candidateSpecPath), error = function(e) NULL)
+    candidateDisplayName = ""
+    if (is.list(candidateSpec)) {
+      rawDisplayName = candidateSpec$displayName %||% ""
+      if (is.character(rawDisplayName) && length(rawDisplayName) == 1 && !is.na(rawDisplayName)) {
+        candidateDisplayName = trimws(rawDisplayName)
+      }
+    }
+
+    candidateStem = sub("\\.spec\\.yml$", "", basename(candidateSpecPath))
+    candidateDir = basename(dirname(candidateSpecPath))
+
+    if (identical(requestedName, candidateDisplayName) ||
+        identical(requestedName, candidateStem) ||
+        identical(requestedName, candidateDir)) {
+      exampleDir = candidateDir
+      specPath = candidateSpecPath
+      break
+    }
+  }
+
+  basePath = if (!is.null(exampleDir)) {
+    system.file("extdata", "examples", exampleDir, package = package)
+  } else {
+    ""
+  }
 
   if (basePath == "") {
     availableExamples = listWMFMExamples(package = package)
@@ -98,15 +160,14 @@ loadExampleSpec = function(name, package = "WMFM") {
 
     stop(
       "Example not found: ",
-      name,
+      requestedName,
       ". Available examples are: ",
       paste(availableExamples, collapse = ", "),
       call. = FALSE
     )
   }
 
-  specFileName = paste0(name, ".spec.yml")
-  specPath = file.path(basePath, specFileName)
+  specFileName = basename(specPath)
 
   if (!file.exists(specPath)) {
     stop(
