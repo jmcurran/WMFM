@@ -37,6 +37,27 @@ testthat::test_that("follow-up prediction request is classified and deterministi
   prompt = lmToExplanationPrompt(model)
 
   testthat::expect_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
+  testthat::expect_match(prompt, followup, fixed = TRUE)
   testthat::expect_match(prompt, "separate paragraph after the main research-question answer", fixed = TRUE)
   testthat::expect_match(prompt, "Fitted mean prediction:", fixed = TRUE)
+})
+
+testthat::test_that("Course Follow-Up never defaults regular attendance to not", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+  followup = "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+
+  payload = classifyModelFollowupQuestion(followupQuestion = followup)
+  payload = enrichFollowupPayloadWithLmPrediction(model = model, followupPayload = payload)
+
+  if (identical(payload$predictionResult$status, "ok")) {
+    testthat::expect_identical(payload$predictionResult$resolvedPredictorValues$Attend, "regular")
+  } else {
+    testthat::expect_true(payload$predictionResult$status %in% c("needs_input", "clarification_required", "unsupported"))
+  }
+  testthat::expect_false(identical(payload$predictionResult$resolvedPredictorValues$Attend %||% NULL, "not"))
 })

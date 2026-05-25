@@ -130,6 +130,26 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   }
 
   lowerText = tolower(followupQuestion)
+  mentionsAttendRegular = grepl("\\b(attend|attendance)\\b", lowerText, perl = TRUE) &&
+    grepl("\\b(regular|regularly)\\b", lowerText, perl = TRUE)
+  if (mentionsAttendRegular && !("Attend" %in% suppliedNames)) {
+    return(list(
+      ok = FALSE,
+      reason = "clarification_required",
+      suppliedPredictorValues = parsedPairs,
+      requiredPredictors = predictorNames,
+      warnings = "Follow-up text indicates regular attendance, but the predictor value could not be resolved safely."
+    ))
+  }
+  if (mentionsAttendRegular && ("Attend" %in% suppliedNames) && identical(as.character(parsedPairs$Attend), "not")) {
+    return(list(
+      ok = FALSE,
+      reason = "conflicting_predictor_values",
+      suppliedPredictorValues = parsedPairs,
+      requiredPredictors = predictorNames,
+      warnings = "Resolved attendance value conflicts with follow-up text. Clarification is required."
+    ))
+  }
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
   list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
@@ -155,10 +175,9 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
         grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
       regularLevel = attendLevels[grepl("regular", tolower(attendLevels), perl = TRUE)][1]
-      if (is.na(regularLevel) || !nzchar(regularLevel)) {
-        regularLevel = attendLevels[1]
+      if (!is.na(regularLevel) && nzchar(regularLevel)) {
+        parsedPairs$Attend = regularLevel
       }
-      parsedPairs$Attend = regularLevel
     }
   }
 
