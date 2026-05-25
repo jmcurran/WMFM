@@ -124,6 +124,11 @@ validateLmPredictionInputs = function(model, followupQuestion) {
     return(list(ok = FALSE, reason = "missing_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
   }
 
+  ambiguousFields = suppliedNames[grepl("^\.__ambiguous__", suppliedNames, perl = TRUE)]
+  if (length(ambiguousFields) > 0) {
+    return(list(ok = FALSE, reason = "clarification_required", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = "Ambiguous predictor wording; please provide explicit values."))
+  }
+
   unknownNames = setdiff(suppliedNames, predictorNames)
   if (length(unknownNames) > 0) {
     return(list(ok = FALSE, reason = "unsupported_request_type", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = paste0("Unknown predictors: ", paste(unknownNames, collapse = ", "))))
@@ -143,22 +148,45 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
 
-  if (!("Test" %in% names(parsedPairs)) &&
-      ("Test" %in% predictorNames) &&
-      grepl("\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b", text, perl = TRUE)) {
-    matched = sub(".*\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b.*", "\\1", text, perl = TRUE)
-    parsedPairs$Test = matched
+  if (!("Test" %in% names(parsedPairs)) && ("Test" %in% predictorNames)) {
+    if (grepl("\\bscore\\s+(\\d+(?:\\.\\d+)?)\\s+out\\s+of\\s+20\\b", text, perl = TRUE)) {
+      matched = sub(".*\\bscore\\s+(\\d+(?:\\.\\d+)?)\\s+out\\s+of\\s+20\\b.*", "\\1", text, perl = TRUE)
+      parsedPairs$Test = matched
+    }
+  }
+
+  if (!("x" %in% names(parsedPairs)) && ("x" %in% predictorNames)) {
+    if (grepl("\\bx\\s*=\\s*(-?\\d+(?:\\.\\d+)?)\\b", text, perl = TRUE)) {
+      matched = sub(".*\\bx\\s*=\\s*(-?\\d+(?:\\.\\d+)?)\\b.*", "\\1", text, perl = TRUE)
+      parsedPairs$x = matched
+    } else if (grepl("\\baround\\s+\\d", text, perl = TRUE)) {
+      parsedPairs$.__ambiguous__x = "vague_numeric_value"
+    }
   }
 
   if (!("Attend" %in% names(parsedPairs)) && ("Attend" %in% predictorNames)) {
     attendLevels = levels(mf$Attend)
     if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
-        grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
+        grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE) &&
+        !grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE)) {
       regularLevel = attendLevels[grepl("regular", tolower(attendLevels), perl = TRUE)][1]
       if (is.na(regularLevel) || !nzchar(regularLevel)) {
         regularLevel = attendLevels[1]
       }
       parsedPairs$Attend = regularLevel
+    } else if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
+      grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE) &&
+      !grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
+      notLevel = attendLevels[grepl("^not$|^no$|none|irregular", tolower(attendLevels), perl = TRUE)][1]
+      if (!is.na(notLevel) && nzchar(notLevel)) {
+        parsedPairs$Attend = notLevel
+      } else {
+        parsedPairs$.__ambiguous__Attend = "unresolved_factor_level"
+      }
+    } else if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
+      grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE) &&
+      grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE)) {
+      parsedPairs$.__ambiguous__Attend = "ambiguous_factor_level"
     }
   }
 

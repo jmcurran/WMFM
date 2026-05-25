@@ -322,10 +322,20 @@ registerModelExplanationObservers = function(
                         class = "wmfm-explanation-helper-note",
                         "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt."
                       ),
-                      tags$strong("Follow-up classification/payload summary"),
-                      tags$pre(paste(capture.output(str(diagnostics$followupPayload)), collapse = "\n")),
-                      tags$strong("Deterministic prediction payload summary"),
+                      tags$strong("Raw follow-up text"),
+                      tags$pre(diagnostics$followupText %||% ""),
+                      tags$strong("Follow-up classification"),
+                      tags$pre(as.character(diagnostics$followupPayload$category %||% "")),
+                      tags$strong("Deterministic resolution status"),
+                      tags$pre(as.character(diagnostics$followupPayload$predictionResult$status %||% "")),
+                      tags$strong("Resolved predictor values"),
+                      tags$pre(paste(capture.output(str(diagnostics$followupPayload$predictionResult$resolvedPredictorValues %||% list())), collapse = "\n")),
+                      tags$strong("Missing/ambiguous predictor values"),
+                      tags$pre(paste(capture.output(str(list(missing = diagnostics$followupPayload$predictionResult$requiredPredictors %||% character(0), warnings = diagnostics$followupPayload$predictionResult$warnings %||% ""))), collapse = "\n")),
+                      tags$strong("Deterministic prediction payload"),
                       tags$pre(paste(capture.output(str(diagnostics$followupPayload$predictionResult %||% list())), collapse = "\n")),
+                      tags$strong("Deterministic interval payload"),
+                      tags$pre(paste(capture.output(str(list(confidenceInterval = diagnostics$followupPayload$predictionResult$confidenceInterval %||% NULL, predictionInterval = diagnostics$followupPayload$predictionResult$predictionInterval %||% NULL))), collapse = "\n")),
                       tags$strong("Assembled prompt excerpt"),
                       tags$pre(substr(diagnostics$assembledPrompt %||% "", 1, 8000))
                     )

@@ -166,3 +166,28 @@ testthat::test_that("unsupported separator x:5 fails safely as missing predictor
   testthat::expect_identical(out$status, "needs_input")
   testthat::expect_identical(out$reason, "missing_predictor_values")
 })
+
+testthat::test_that("factor wording resolves regular and not levels conservatively", {
+  df = data.frame(y = c(1, 2, 3, 4, 5, 6), x = c(1, 2, 3, 4, 5, 6), attend = factor(c("not", "not", "regular", "regular", "regular", "not"), levels = c("not", "regular")))
+  model = stats::lm(y ~ x + attend, data = df)
+
+  outRegular = computeLmModelQuestionPrediction(model, "if I attend regularly and x = 3 what is predicted y")
+  testthat::expect_identical(outRegular$status, "ok")
+  testthat::expect_identical(outRegular$resolvedPredictorValues$attend, "regular")
+
+  outNot = computeLmModelQuestionPrediction(model, "if I do not attend and x = 3 what is predicted y")
+  testthat::expect_identical(outNot$status, "ok")
+  testthat::expect_identical(outNot$resolvedPredictorValues$attend, "not")
+})
+
+testthat::test_that("ambiguous and vague parsing fails safely", {
+  df = data.frame(y = c(1, 2, 3, 4, 5, 6), x = c(1, 2, 3, 4, 5, 6), attend = factor(c("not", "not", "regular", "regular", "regular", "not"), levels = c("not", "regular")))
+  model = stats::lm(y ~ x + attend, data = df)
+
+  outAmbiguous = computeLmModelQuestionPrediction(model, "if I attend regularly but not always and x = 3")
+  testthat::expect_identical(outAmbiguous$status, "needs_input")
+  testthat::expect_identical(outAmbiguous$reason, "clarification_required")
+
+  outVague = computeLmModelQuestionPrediction(model, "predict y for around 3 and attend = regular")
+  testthat::expect_identical(outVague$status, "needs_input")
+})
