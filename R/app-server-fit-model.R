@@ -356,6 +356,15 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     )
     attr(m, "wmfm_model_followup_question") = followupClassification$originalText
     attr(m, "wmfm_model_followup_payload") = followupClassification
+    promptPreview = lmToExplanationPrompt(m)
+    rv$explanationPromptDiagnostics = list(
+      followupText = followupClassification$originalText %||% "",
+      followupPayload = followupClassification,
+      assembledPrompt = promptPreview,
+      hasFollowupInPrompt = grepl("Follow-up model question", promptPreview, fixed = TRUE),
+      hasPredictionPayloadInPrompt = grepl("WMFM deterministic prediction payload", promptPreview, fixed = TRUE),
+      hasSeparateFollowupParagraphInstruction = grepl("separate paragraph after the main research-question answer", promptPreview, fixed = TRUE)
+    )
 
     modelFit(m)
 

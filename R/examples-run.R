@@ -76,6 +76,7 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
 #'   \item{data}{Loaded example data.}
 #'   \item{dataContext}{Optional example context text, or `NULL`.}
 #'   \item{researchQuestion}{Optional research question text, or `NULL`.}
+#'   \item{followupQuestion}{Optional follow-up question text, or `NULL`.}
 #' }
 #'
 #' @keywords internal
@@ -134,6 +135,7 @@ loadExampleSpec = function(name, package = "WMFM") {
   }
 
   researchQuestion = NULL
+  followupQuestion = NULL
 
   if (!is.null(spec$researchQuestion)) {
     if (!is.character(spec$researchQuestion) ||
@@ -152,6 +154,23 @@ loadExampleSpec = function(name, package = "WMFM") {
     }
   }
 
+  if (!is.null(spec$followupQuestion)) {
+    if (!is.character(spec$followupQuestion) ||
+        length(spec$followupQuestion) != 1 ||
+        is.na(spec$followupQuestion)) {
+      stop(
+        "If supplied, `followupQuestion` must be a single non-missing character string.",
+        call. = FALSE
+      )
+    }
+
+    followupQuestion = trimws(spec$followupQuestion)
+
+    if (!nzchar(followupQuestion)) {
+      followupQuestion = NULL
+    }
+  }
+
   data = loadWMFMExampleData(spec = spec, basePath = basePath)
 
   if (!is.data.frame(data)) {
@@ -165,7 +184,8 @@ loadExampleSpec = function(name, package = "WMFM") {
     spec = spec,
     data = data,
     dataContext = dataContext,
-    researchQuestion = researchQuestion
+    researchQuestion = researchQuestion,
+    followupQuestion = followupQuestion
   )
 }
 

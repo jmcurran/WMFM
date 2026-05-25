@@ -113,7 +113,10 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
 validateLmPredictionInputs = function(model, followupQuestion) {
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
-  parsedPairs = extractPredictionAssignmentPairs(followupQuestion = followupQuestion)
+  parsedPairs = extractPredictionValuesForModel(
+    model = model,
+    followupQuestion = followupQuestion
+  )
   suppliedNames = names(parsedPairs)
 
   missingRequired = setdiff(predictorNames, suppliedNames)
@@ -130,6 +133,36 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
   list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
+}
+
+#' @keywords internal
+#' @noRd
+extractPredictionValuesForModel = function(model, followupQuestion) {
+  parsedPairs = extractPredictionAssignmentPairs(followupQuestion = followupQuestion)
+  text = tolower(trimws(as.character(followupQuestion %||% "")))
+  mf = stats::model.frame(model)
+  predictorNames = names(mf)[-1]
+
+  if (!("Test" %in% names(parsedPairs)) &&
+      ("Test" %in% predictorNames) &&
+      grepl("\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b", text, perl = TRUE)) {
+    matched = sub(".*\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b.*", "\\1", text, perl = TRUE)
+    parsedPairs$Test = matched
+  }
+
+  if (!("Attend" %in% names(parsedPairs)) && ("Attend" %in% predictorNames)) {
+    attendLevels = levels(mf$Attend)
+    if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
+        grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
+      regularLevel = attendLevels[grepl("regular", tolower(attendLevels), perl = TRUE)][1]
+      if (is.na(regularLevel) || !nzchar(regularLevel)) {
+        regularLevel = attendLevels[1]
+      }
+      parsedPairs$Attend = regularLevel
+    }
+  }
+
+  parsedPairs
 }
 
 #' @keywords internal
