@@ -166,3 +166,54 @@ testthat::test_that("unsupported separator x:5 fails safely as missing predictor
   testthat::expect_identical(out$status, "needs_input")
   testthat::expect_identical(out$reason, "missing_predictor_values")
 })
+
+testthat::test_that("Course Follow-Up resolves Attend regular from model factor levels", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+
+  out = computeLmModelQuestionPrediction(
+    model,
+    "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Attend, "regular")
+})
+
+testthat::test_that("models without Attend are not blocked by attendance wording", {
+  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Exam ~ Test, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "I attend regularly; predict exam when Test = 10")
+  testthat::expect_identical(out$status, "ok")
+})
+
+testthat::test_that("non-Attend factor predictors resolve their own levels", {
+  df = data.frame(
+    Exam = c(40, 50, 60, 70, 80, 90),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Group = factor(c("control", "control", "treated", "treated", "treated", "control"), levels = c("control", "treated"))
+  )
+  model = stats::lm(Exam ~ Test + Group, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "predict exam when test = 10 for treated group")
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Group, "treated")
+})
+
+testthat::test_that("ambiguous factor wording fails safely", {
+  df = data.frame(
+    Exam = c(40, 50, 60, 70, 80, 90),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Group = factor(c("yes", "no", "yes", "no", "yes", "no"), levels = c("yes", "no"))
+  )
+  model = stats::lm(Exam ~ Test + Group, data = df)
+
+  out = computeLmModelQuestionPrediction(model, "predict exam when test = 10; yes and no both seem possible")
+  testthat::expect_identical(out$status, "clarification_required")
+  testthat::expect_identical(out$reason, "clarification_required")
+})
