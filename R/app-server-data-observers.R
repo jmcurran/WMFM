@@ -48,7 +48,7 @@ registerDataLoadObservers = function(
     rv$loadedExample = NULL
     exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
-    updateTextAreaInput(session, "modelFollowupQuestion", value = "")
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
   }
 
@@ -82,7 +82,7 @@ registerDataLoadObservers = function(
       rv$researchQuestion = ""
       rv$modelFollowupQuestion = ""
       updateTextInput(session, "researchQuestion", value = "")
-      updateTextAreaInput(session, "modelFollowupQuestion", value = "")
+      shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
       resetModelPage(resetResponse = TRUE)
 
       return(NULL)
@@ -210,7 +210,7 @@ registerDataLoadObservers = function(
     rv$loadedExample = NULL
     exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
-    updateTextAreaInput(session, "modelFollowupQuestion", value = "")
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading a package data set
