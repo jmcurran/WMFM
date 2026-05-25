@@ -63,7 +63,7 @@ testthat::test_that("appUI includes explanation and onboarding controls", {
   testthat::expect_match(html, "Model Explanation", fixed = TRUE)
   testthat::expect_match(html, "model_explanation", fixed = TRUE)
   testthat::expect_match(html, "Start with the main explanation", fixed = TRUE)
-  testthat::expect_match(html, "Ask about this model", fixed = TRUE)
+  testthat::expect_match(html, "Optional follow-up question", fixed = TRUE)
   testthat::expect_match(html, "modelFollowupQuestion", fixed = TRUE)
   testthat::expect_match(html, "Load a built-in example", fixed = TRUE)
   testthat::expect_match(html, "loadExampleBtn", fixed = TRUE)
