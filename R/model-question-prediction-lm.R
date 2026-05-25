@@ -124,7 +124,7 @@ validateLmPredictionInputs = function(model, followupQuestion) {
     return(list(ok = FALSE, reason = "missing_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
   }
 
-  ambiguousFields = suppliedNames[grepl("^\.__ambiguous__", suppliedNames, perl = TRUE)]
+  ambiguousFields = suppliedNames[grepl("^\\.__ambiguous__", suppliedNames, perl = TRUE)]
   if (length(ambiguousFields) > 0) {
     return(list(ok = FALSE, reason = "clarification_required", suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, warnings = "Ambiguous predictor wording; please provide explicit values."))
   }
@@ -164,8 +164,10 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     }
   }
 
-  if (!("Attend" %in% names(parsedPairs)) && ("Attend" %in% predictorNames)) {
-    attendLevels = levels(mf$Attend)
+  attendPredictorName = predictorNames[tolower(predictorNames) == "attend"][1]
+  if (!is.na(attendPredictorName) && nzchar(attendPredictorName) &&
+      !(attendPredictorName %in% names(parsedPairs))) {
+    attendLevels = levels(mf[[attendPredictorName]])
     if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
         grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE) &&
         !grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE)) {
@@ -173,20 +175,20 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
       if (is.na(regularLevel) || !nzchar(regularLevel)) {
         regularLevel = attendLevels[1]
       }
-      parsedPairs$Attend = regularLevel
+      parsedPairs[[attendPredictorName]] = regularLevel
     } else if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
       grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE) &&
       !grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
       notLevel = attendLevels[grepl("^not$|^no$|none|irregular", tolower(attendLevels), perl = TRUE)][1]
       if (!is.na(notLevel) && nzchar(notLevel)) {
-        parsedPairs$Attend = notLevel
+        parsedPairs[[attendPredictorName]] = notLevel
       } else {
-        parsedPairs$.__ambiguous__Attend = "unresolved_factor_level"
+        parsedPairs[[paste0(".__ambiguous__", attendPredictorName)]] = "unresolved_factor_level"
       }
     } else if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
       grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE) &&
       grepl("\\b(not|does not|don't|do not)\\b", text, perl = TRUE)) {
-      parsedPairs$.__ambiguous__Attend = "ambiguous_factor_level"
+      parsedPairs[[paste0(".__ambiguous__", attendPredictorName)]] = "ambiguous_factor_level"
     }
   }
 
