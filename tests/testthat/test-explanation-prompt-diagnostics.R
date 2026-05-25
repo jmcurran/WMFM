@@ -1,9 +1,15 @@
+resolve_package_file <- function(...) {
+  testthat::test_path("..", "..", ...)
+}
+
+read_package_source <- function(...) {
+  path <- resolve_package_file(...)
+  testthat::expect_true(file.exists(path), info = paste("Expected source file to exist:", path))
+  paste(readLines(path, warn = FALSE), collapse = "\n")
+}
+
 testthat::test_that("fit-model server stores explanation prompt diagnostics", {
-  if (!file.exists("R/app-server-fit-model.R")) {
-    testthat::skip("Skipping source-inspection test because R/app-server-fit-model.R is not available in this test environment")
-  }
-  path = normalizePath("R/app-server-fit-model.R", winslash = "/", mustWork = TRUE)
-  text = paste(readLines(path, warn = FALSE), collapse = "\n")
+  text <- read_package_source("R", "app-server-fit-model.R")
 
   testthat::expect_match(text, "rv\\$explanationPromptDiagnostics", perl = TRUE)
   testthat::expect_match(text, "followupPayload = followupClassification", fixed = TRUE)
@@ -14,11 +20,7 @@ testthat::test_that("fit-model server stores explanation prompt diagnostics", {
 
 
 testthat::test_that("developer mode UI exposes explanation prompt diagnostics panel", {
-  if (!file.exists("R/app-server-explanation.R")) {
-    testthat::skip("Skipping source-inspection test because R/app-server-explanation.R is not available in this test environment")
-  }
-  path = normalizePath("R/app-server-explanation.R", winslash = "/", mustWork = TRUE)
-  text = paste(readLines(path, warn = FALSE), collapse = "\n")
+  text <- read_package_source("R", "app-server-explanation.R")
 
   testthat::expect_match(text, "Explanation prompt diagnostics", fixed = TRUE)
   testthat::expect_match(text, "followupPayload", fixed = TRUE)
