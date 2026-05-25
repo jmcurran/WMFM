@@ -70,6 +70,16 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "Deterministic follow-up explanation control:",
       "- Treat the request as a bounded unit-change interpretation preference and explain the model effect using the requested unit framing.",
       "- Do not invent new computations; keep interpretation anchored to WMFM-provided model quantities and safeguards."
+    ),
+    prediction_request = c(
+      "Deterministic follow-up explanation control:",
+      "- Use the WMFM deterministic prediction payload when answering the follow-up prediction request.",
+      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM."
+    ),
+    prediction_interval_request = c(
+      "Deterministic follow-up explanation control:",
+      "- Use the WMFM deterministic prediction payload when answering the follow-up prediction-interval request.",
+      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM."
     )
   )
 
