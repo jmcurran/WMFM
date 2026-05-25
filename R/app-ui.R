@@ -168,6 +168,28 @@ appUI = function() {
             "Briefly state the question you want the fitted model to help answer. ",
             "WMFM uses this to frame the explanation from the start, so it should feel like the reason for the analysis rather than an optional extra."
           ),
+          accordion(
+            id = "model_question_accordion",
+            multiple = TRUE,
+            open = FALSE,
+            accordion_panel(
+              title = "Optional follow-up question",
+              helpText(
+                "Ask an optional follow-up question about the fitted model, predictions, or interpretation."
+              ),
+              textAreaInput(
+                inputId = "modelFollowupQuestion",
+                label = NULL,
+                value = "",
+                width = "100%",
+                rows = 3,
+                placeholder = paste(
+                  "Predict the response for x = 10\n",
+                  "Explain this for a 10-unit increase"
+                )
+              )
+            )
+          ),
 
           tags$hr(class = "hr-tight"),
 
@@ -315,25 +337,6 @@ appUI = function() {
         "Model Explanation",
         helpText(
           "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
-        ),
-        accordion(
-          id = "model_question_accordion",
-          multiple = TRUE,
-          open = FALSE,
-          accordion_panel(
-            title = "Ask about this model",
-            textAreaInput(
-              inputId = "modelFollowupQuestion",
-              label = NULL,
-              value = "",
-              width = "100%",
-              rows = 3,
-              placeholder = "Ask one bounded follow-up question about this fitted model."
-            ),
-            helpText(
-              "Optional: add one bounded model question to prepare a follow-up explanation request in a later stage."
-            )
-          )
         ),
         selectInput(
           inputId = "modelExplanationZoom",
