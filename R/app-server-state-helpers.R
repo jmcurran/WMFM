@@ -147,6 +147,7 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     rv$autoFormula = spec$formula %||% ""
     updateTextInput(session, "formula_text", value = spec$formula %||% "")
     updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
+    updateTextAreaInput(session, "modelFollowupQuestion", value = exampleInfo$followupQuestion %||% "")
   }
 
   list(

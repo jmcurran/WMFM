@@ -303,8 +303,36 @@ registerModelExplanationObservers = function(
                   researchQuestion = researchQuestionText,
                   dataDescription = NULL
                 )
+                )
               )
-            )
+            ),
+            if (isTRUE(developerModeUnlocked())) {
+              bslib::accordion_panel(
+                title = "Explanation prompt diagnostics",
+                {
+                  diagnostics = rv$explanationPromptDiagnostics
+                  if (is.null(diagnostics)) {
+                    tags$p(
+                      class = "wmfm-explanation-helper-note",
+                      "No explanation prompt diagnostics are available yet. Fit a model first."
+                    )
+                  } else {
+                    tagList(
+                      tags$p(
+                        class = "wmfm-explanation-helper-note",
+                        "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt."
+                      ),
+                      tags$strong("Follow-up classification/payload summary"),
+                      tags$pre(paste(capture.output(str(diagnostics$followupPayload)), collapse = "\n")),
+                      tags$strong("Deterministic prediction payload summary"),
+                      tags$pre(paste(capture.output(str(diagnostics$followupPayload$predictionResult %||% list())), collapse = "\n")),
+                      tags$strong("Assembled prompt excerpt"),
+                      tags$pre(substr(diagnostics$assembledPrompt %||% "", 1, 8000))
+                    )
+                  }
+                }
+              )
+            }
           )
         )
       }
