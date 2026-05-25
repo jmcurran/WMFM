@@ -11,7 +11,7 @@ read_package_source <- function(...) {
 testthat::test_that("fit-model server stores explanation prompt diagnostics", {
   text <- read_package_source("R", "app-server-fit-model.R")
 
-  testthat::expect_match(text, "rv\$explanationPromptDiagnostics", perl = TRUE)
+  testthat::expect_match(text, "rv\\$explanationPromptDiagnostics", perl = TRUE)
   testthat::expect_match(text, "followupPayload = followupClassification", fixed = TRUE)
   testthat::expect_match(text, "assembledPrompt = promptPreview", fixed = TRUE)
   testthat::expect_match(text, "hasPredictionPayloadInPrompt", fixed = TRUE)
