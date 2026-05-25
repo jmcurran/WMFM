@@ -118,10 +118,22 @@ validateLmPredictionInputs = function(model, followupQuestion) {
     followupQuestion = followupQuestion
   )
   suppliedNames = names(parsedPairs)
+  unresolvedFactors = parsedPairs[[".wmfm_unresolved_factor_predictors"]] %||% character(0)
+  parsedPairs[[".wmfm_unresolved_factor_predictors"]] = NULL
 
   missingRequired = setdiff(predictorNames, suppliedNames)
   if (length(parsedPairs) == 0) {
     return(list(ok = FALSE, reason = "missing_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
+  }
+
+  if (length(unresolvedFactors) > 0) {
+    return(list(
+      ok = FALSE,
+      reason = "clarification_required",
+      suppliedPredictorValues = parsedPairs,
+      requiredPredictors = predictorNames,
+      warnings = paste0("Ambiguous factor wording for: ", paste(unresolvedFactors, collapse = ", "), ". Please provide explicit values in `name = value` form.")
+    ))
   }
 
   unknownNames = setdiff(suppliedNames, predictorNames)
@@ -150,16 +162,27 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     parsedPairs$Test = matched
   }
 
-  if (!("Attend" %in% names(parsedPairs)) && ("Attend" %in% predictorNames)) {
-    attendLevels = levels(mf$Attend)
-    if (grepl("\\b(attend|attendance)\\b", text, perl = TRUE) &&
-        grepl("\\b(regular|regularly|yes)\\b", text, perl = TRUE)) {
-      regularLevel = attendLevels[grepl("regular", tolower(attendLevels), perl = TRUE)][1]
-      if (is.na(regularLevel) || !nzchar(regularLevel)) {
-        regularLevel = attendLevels[1]
-      }
-      parsedPairs$Attend = regularLevel
+  unresolvedFactors = character(0)
+  for (predictor in predictorNames) {
+    if (predictor %in% names(parsedPairs)) next
+    column = mf[[predictor]]
+    if (!is.factor(column)) next
+
+    levelsLower = tolower(levels(column))
+    matched = levels(column)[vapply(levelsLower, function(levelText) {
+      pattern = paste0("\\b", gsub("([.|()\\[\\]{}+*?^$\\\\])", "\\\\\\1", levelText), "\\b")
+      grepl(pattern, text, perl = TRUE)
+    }, logical(1))]
+
+    if (length(matched) == 1) {
+      parsedPairs[[predictor]] = matched[[1]]
+    } else if (length(matched) > 1) {
+      unresolvedFactors = c(unresolvedFactors, predictor)
     }
+  }
+
+  if (length(unresolvedFactors) > 0) {
+    parsedPairs[[".wmfm_unresolved_factor_predictors"]] = unresolvedFactors
   }
 
   parsedPairs
