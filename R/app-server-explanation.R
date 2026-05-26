@@ -100,7 +100,11 @@ registerModelExplanationObservers = function(
 
   output$diag_followup_json_download = downloadHandler(
     filename = function() {
-      "wmfm-followup-diagnostics.json"
+      paste0(
+        "wmfm-followup-diagnostics-",
+        format(Sys.time(), "%Y%m%d-%H%M%S"),
+        ".json"
+      )
     },
     content = function(file) {
       diagnosticsJson = buildExplanationPromptDiagnosticsJson(

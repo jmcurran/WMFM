@@ -52,7 +52,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$strong("Downloadable diagnostics JSON"),
     tags$p(
       class = "wmfm-explanation-helper-note",
-      "Use this button to save the same diagnostics as a JSON file for upload into a debugging chat. The default filename is wmfm-followup-diagnostics.json."
+      "Use this button to save the same diagnostics as a JSON file for upload into a debugging chat. The default filename includes a timestamp, for example wmfm-followup-diagnostics-YYYYMMDD-HHMMSS.json."
     ),
     downloadButton(
       outputId = "diag_followup_json_download",

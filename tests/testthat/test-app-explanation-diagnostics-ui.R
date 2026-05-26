@@ -28,7 +28,7 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
   testthat::expect_match(html, "diag_followup_prompt_excerpt", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_json_download", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_json_bundle", fixed = TRUE)
-  testthat::expect_match(html, "wmfm-followup-diagnostics.json", fixed = TRUE)
+  testthat::expect_match(html, "wmfm-followup-diagnostics-YYYYMMDD-HHMMSS.json", fixed = TRUE)
 })
 
 
