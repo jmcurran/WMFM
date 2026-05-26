@@ -117,9 +117,9 @@ validateLmPredictionInputs = function(model, followupQuestion) {
     model = model,
     followupQuestion = followupQuestion
   )
-  suppliedNames = names(parsedPairs)
   unresolvedFactors = parsedPairs[[".wmfm_unresolved_factor_predictors"]] %||% character(0)
   parsedPairs[[".wmfm_unresolved_factor_predictors"]] = NULL
+  suppliedNames = names(parsedPairs)
 
   missingRequired = setdiff(predictorNames, suppliedNames)
   if (length(parsedPairs) == 0) {
@@ -161,6 +161,21 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
   text = normalizePredictionText(followupQuestion)
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
+
+  if (length(parsedPairs) > 0) {
+    canonicalized = list()
+    canonicalNames = character(0)
+    for (key in names(parsedPairs)) {
+      keyNorm = normalizePredictionText(key)
+      matchedPredictor = predictorNames[vapply(predictorNames, function(pn) {
+        identical(normalizePredictionText(pn), keyNorm)
+      }, logical(1))]
+      resolvedName = if (length(matchedPredictor) == 1) matchedPredictor[[1]] else key
+      canonicalized[[resolvedName]] = parsedPairs[[key]]
+      canonicalNames = c(canonicalNames, resolvedName)
+    }
+    parsedPairs = canonicalized
+  }
 
   if (!("Test" %in% names(parsedPairs)) &&
       ("Test" %in% predictorNames) &&
