@@ -155,3 +155,40 @@ testthat::test_that("deterministic follow-up answer is not duplicated", {
 
   testthat::expect_identical(twice, once)
 })
+
+testthat::test_that("deterministic follow-up answer removes LLM-authored prediction sentences from same paragraph", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+  followup = "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  payload = classifyModelFollowupQuestion(followupQuestion = followup)
+  payload = enrichFollowupPayloadWithLmPrediction(model = model, followupPayload = payload)
+  payload$predictionResult$fittedPrediction = 49.8773
+  payload$predictionResult$predictionInterval = list(
+    fit = 49.8773,
+    lwr = 26.9374,
+    upr = 72.8173,
+    level = 0.95
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  explanation = paste(
+    "Main research-question answer. If a student scores 10 on the mid-term test and attends class regularly, the expected final exam mark is 49.8773. A 95% prediction interval for an individual student's final mark is from 26.9374 to 72.8173.",
+    collapse = " "
+  )
+
+  out = appendDeterministicFollowupAnswer(
+    explanation = explanation,
+    model = model
+  )
+
+  testthat::expect_match(out, "Main research-question answer", fixed = TRUE)
+  testthat::expect_no_match(out, "49.8773", fixed = TRUE)
+  testthat::expect_no_match(out, "26.9374", fixed = TRUE)
+  testthat::expect_match(out, "\\n\\nFor the follow-up question", perl = TRUE)
+  testthat::expect_match(out, "49.88", fixed = TRUE)
+  testthat::expect_match(out, "26.94", fixed = TRUE)
+})

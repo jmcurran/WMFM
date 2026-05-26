@@ -97,6 +97,19 @@ registerModelExplanationObservers = function(
     }
   )
 
+
+  output$diag_followup_json_download = downloadHandler(
+    filename = function() {
+      "wmfm-followup-diagnostics.json"
+    },
+    content = function(file) {
+      diagnosticsJson = buildExplanationPromptDiagnosticsJson(
+        diagnostics = rv$explanationPromptDiagnostics
+      )
+      writeLines(diagnosticsJson, con = file, useBytes = TRUE)
+    }
+  )
+
   # -------------------------------------------------------------------
   # Model explanation
   # -------------------------------------------------------------------

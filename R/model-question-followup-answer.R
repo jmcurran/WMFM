@@ -125,15 +125,68 @@ removeConflictingLlmFollowupPredictionText = function(explanation, model) {
   }
 
   paragraphs = strsplit(text, "\\n\\s*\\n", perl = TRUE)[[1]]
-  if (length(paragraphs) <= 1) {
-    return(text)
+  cleanedParagraphs = vapply(paragraphs, removeLlmFollowupPredictionSentences, character(1))
+  cleanedParagraphs = trimws(cleanedParagraphs)
+  cleanedParagraphs = cleanedParagraphs[nzchar(cleanedParagraphs)]
+
+  trimws(paste(cleanedParagraphs, collapse = "\n\n"))
+}
+
+#' Remove language-model follow-up prediction sentences
+#'
+#' @param paragraph Character scalar paragraph candidate.
+#'
+#' @return Character scalar with LLM-authored follow-up prediction sentences removed.
+#' @keywords internal
+#' @noRd
+removeLlmFollowupPredictionSentences = function(paragraph) {
+  text = trimws(as.character(paragraph %||% ""))
+  if (!nzchar(text)) {
+    return("")
   }
 
-  keep = vapply(paragraphs, function(paragraph) {
-    !isConflictingLlmFollowupPredictionParagraph(paragraph)
+  if (isConflictingLlmFollowupPredictionParagraph(text)) {
+    return("")
+  }
+
+  sentences = strsplit(text, "(?<=[.!?])\\s+", perl = TRUE)[[1]]
+  keep = vapply(sentences, function(sentence) {
+    !isLlmFollowupPredictionSentence(sentence)
   }, logical(1))
 
-  trimws(paste(paragraphs[keep], collapse = "\n\n"))
+  trimws(paste(sentences[keep], collapse = " "))
+}
+
+#' Detect language-model-authored follow-up prediction sentences
+#'
+#' @param sentence Character scalar sentence candidate.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isLlmFollowupPredictionSentence = function(sentence) {
+  text = tolower(trimws(as.character(sentence %||% "")))
+  if (!nzchar(text)) {
+    return(FALSE)
+  }
+
+  hasPredictionCue = grepl("\\bpredicted?\\b", text, perl = TRUE) ||
+    grepl("\\bexpected\\b", text, perl = TRUE) ||
+    grepl("prediction interval", text, fixed = TRUE)
+
+  hasFollowupCue = grepl("for the follow-up question", text, fixed = TRUE) ||
+    grepl("\\bif a student\\b", text, perl = TRUE) ||
+    grepl("\\bif you\\b", text, perl = TRUE) ||
+    grepl("\\busing attend\\s*=", text, perl = TRUE) ||
+    grepl("\\busing .*test\\s*=", text, perl = TRUE)
+
+  hasCourseCue = grepl("\\bscore", text, perl = TRUE) &&
+    grepl("\\battend", text, perl = TRUE)
+
+  hasIndividualIntervalCue = grepl("individual", text, fixed = TRUE) &&
+    grepl("prediction interval", text, fixed = TRUE)
+
+  isTRUE((hasPredictionCue && (hasFollowupCue || hasCourseCue)) || hasIndividualIntervalCue)
 }
 
 #' Detect conflicting language-model follow-up prediction paragraphs

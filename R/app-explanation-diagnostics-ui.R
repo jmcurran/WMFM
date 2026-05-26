@@ -52,25 +52,11 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$strong("Downloadable diagnostics JSON"),
     tags$p(
       class = "wmfm-explanation-helper-note",
-      "Use this button to save the same diagnostics as a JSON file for upload into a debugging chat."
+      "Use this button to save the same diagnostics as a JSON file for upload into a debugging chat. The default filename is wmfm-followup-diagnostics.json."
     ),
-    tags$button(
-      id = "diag_followup_json_download",
-      type = "button",
-      "Download diagnostics JSON",
-      onclick = paste(
-        "var text = document.getElementById('diag_followup_json_bundle').value;",
-        "var blob = new Blob([text], {type: 'application/json'});",
-        "var url = URL.createObjectURL(blob);",
-        "var a = document.createElement('a');",
-        "a.href = url;",
-        "a.download = 'wmfm-followup-diagnostics.json';",
-        "document.body.appendChild(a);",
-        "a.click();",
-        "document.body.removeChild(a);",
-        "URL.revokeObjectURL(url);",
-        sep = " "
-      )
+    downloadButton(
+      outputId = "diag_followup_json_download",
+      label = "Download diagnostics JSON"
     ),
     tags$textarea(
       id = "diag_followup_json_bundle",

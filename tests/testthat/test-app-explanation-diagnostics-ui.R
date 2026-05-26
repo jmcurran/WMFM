@@ -73,3 +73,21 @@ testthat::test_that("diagnostics JSON helper exposes uploadable follow-up fields
   testthat::expect_match(out, '"Attend": "Yes"', fixed = TRUE)
   testthat::expect_match(out, "assembledPromptExcerpt", fixed = TRUE)
 })
+
+testthat::test_that("diagnostics JSON download uses Shiny download output", {
+  diagnostics = list(
+    followupText = "raw text",
+    followupPayload = list(
+      originalText = "raw text",
+      category = "prediction_request",
+      predictionResult = list(status = "ok")
+    ),
+    assembledPrompt = "Prompt body"
+  )
+
+  html = as.character(buildExplanationPromptDiagnosticsUi(diagnostics = diagnostics))
+
+  testthat::expect_match(html, "Download diagnostics JSON", fixed = TRUE)
+  testthat::expect_match(html, "diag_followup_json_download", fixed = TRUE)
+  testthat::expect_no_match(html, "URL.createObjectURL", fixed = TRUE)
+})
