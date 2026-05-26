@@ -154,6 +154,10 @@ normalizePredictionText = function(x) {
   gsub("[[:space:]]+", " ", x, perl = TRUE)
 }
 
+isSimpleWordLevel = function(levelText) {
+  grepl("^[a-z0-9_]+$", levelText, perl = TRUE)
+}
+
 #' @keywords internal
 #' @noRd
 extractPredictionValuesForModel = function(model, followupQuestion) {
@@ -200,9 +204,7 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
       }, logical(1))]
     }
 
-    textMatched = modelLevels[vapply(modelLevels, function(levelText) {
-      containsStandaloneLevel(text = text, levelText = levelText)
-    }, logical(1))]
+    textMatched = matchFactorLevelCandidates(text = text, modelLevels = modelLevels)
 
     matched = unique(c(explicitMatched, textMatched))
 
@@ -232,10 +234,12 @@ containsStandaloneLevel = function(text, levelText) {
 
   matchPos = gregexpr(levelText, text, fixed = TRUE)[[1]]
   if (length(matchPos) == 1 && identical(matchPos[[1]], -1L)) {
-    if (grepl("^[a-z0-9_]+$", levelText, perl = TRUE)) {
+    if (isSimpleWordLevel(levelText)) {
       tokens = unlist(strsplit(text, "[^a-z0-9_]+", perl = TRUE), use.names = FALSE)
       tokens = tokens[nzchar(tokens)]
       if (any(tokens == levelText)) return(TRUE)
+      # Conservative morphological variant support:
+      # allow "regularly" -> "regular" only when level itself is a simple token.
       if (any(startsWith(tokens, levelText) & (nchar(tokens) - nchar(levelText) <= 2L))) return(TRUE)
     }
     return(FALSE)
@@ -259,6 +263,38 @@ containsStandaloneLevel = function(text, levelText) {
   }
 
   FALSE
+}
+
+#' @keywords internal
+#' @noRd
+matchFactorLevelCandidates = function(text, modelLevels) {
+  textNorm = normalizePredictionText(text)
+  levelsNorm = vapply(modelLevels, normalizePredictionText, character(1))
+  isPunctuated = !vapply(levelsNorm, isSimpleWordLevel, logical(1))
+
+  # Pass 1: direct, boundary-aware literal matching across all levels.
+  boundaryMatches = modelLevels[vapply(levelsNorm, function(levelNorm) {
+    containsStandaloneLevel(text = textNorm, levelText = levelNorm)
+  }, logical(1))]
+  if (length(boundaryMatches) > 0) {
+    return(boundaryMatches)
+  }
+
+  # Pass 2: for punctuated levels (A+B, yes/no, group (1), x{2}), allow literal
+  # substring matching without regex to avoid metacharacter bugs.
+  punctuatedMask = rep(FALSE, length(modelLevels))
+  punctuatedIdx = which(isPunctuated)
+  if (length(punctuatedIdx) > 0) {
+    punctuatedMask[punctuatedIdx] = vapply(levelsNorm[punctuatedIdx], function(levelNorm) {
+      grepl(levelNorm, textNorm, fixed = TRUE)
+    }, logical(1))
+  }
+  punctuatedMatches = modelLevels[punctuatedMask]
+  if (length(punctuatedMatches) > 0) {
+    return(punctuatedMatches)
+  }
+
+  character(0)
 }
 
 
