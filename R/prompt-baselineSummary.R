@@ -76,11 +76,24 @@ buildAnchoredBaselinePromptBlock = function(
     }
   }
 
+  hasFactorPredictor = any(vapply(mf[predictorNames], is.factor, logical(1)))
+  hasNumericPredictor = any(vapply(mf[predictorNames], is.numeric, logical(1)))
+
   lines = c(
     "Precomputed anchored baseline fitted values:",
     "Use these values directly when describing baseline fitted values or group comparisons at the chosen numeric anchor.",
     "Do not derive baseline fitted values from the intercept alone."
   )
+
+  if (isTRUE(hasFactorPredictor) && isTRUE(hasNumericPredictor) && nrow(baselineRows) > 1) {
+    lines = c(
+      lines,
+      "Mandatory anchored factor comparison:",
+      "- When the research question asks about a factor predictor and a numeric predictor, include one concise anchored comparison for the factor predictor.",
+      "- State the numeric anchor used for the comparison, then report the reference fitted value, the comparison fitted value, and the approximate difference on the response scale.",
+      "- Do not omit the factor comparison merely because the numeric slope is also reported."
+    )
+  }
 
   for (i in seq_len(nrow(baselineRows))) {
     label = baselineRows$quantity[[i]]
