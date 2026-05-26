@@ -47,7 +47,7 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
   if (!isTRUE(inputValidation$ok)) {
     return(c(
       list(
-        status = "needs_input",
+        status = inputValidation$status %||% ifelse(identical(inputValidation$reason, "clarification_required"), "clarification_required", "needs_input"),
         reason = inputValidation$reason,
         modelType = "lm",
         predictionType = "mean_response_prediction"
@@ -129,6 +129,7 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   if (length(unresolvedFactors) > 0) {
     return(list(
       ok = FALSE,
+      status = "clarification_required",
       reason = "clarification_required",
       suppliedPredictorValues = parsedPairs,
       requiredPredictors = predictorNames,
@@ -147,11 +148,17 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
 }
 
+
+normalizePredictionText = function(x) {
+  x = tolower(trimws(as.character(x %||% "")))
+  gsub("[[:space:]]+", " ", x, perl = TRUE)
+}
+
 #' @keywords internal
 #' @noRd
 extractPredictionValuesForModel = function(model, followupQuestion) {
   parsedPairs = extractPredictionAssignmentPairs(followupQuestion = followupQuestion)
-  text = tolower(trimws(as.character(followupQuestion %||% "")))
+  text = normalizePredictionText(followupQuestion)
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
 
@@ -190,14 +197,20 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
 #' @keywords internal
 #' @noRd
 containsStandaloneLevel = function(text, levelText) {
-  text = as.character(text %||% "")
-  levelText = as.character(levelText %||% "")
+  text = normalizePredictionText(text)
+  levelText = normalizePredictionText(levelText)
   if (!nzchar(text) || !nzchar(levelText)) {
     return(FALSE)
   }
 
   matchPos = gregexpr(levelText, text, fixed = TRUE)[[1]]
   if (length(matchPos) == 1 && identical(matchPos[[1]], -1L)) {
+    if (grepl("^[a-z0-9_]+$", levelText, perl = TRUE)) {
+      tokens = unlist(strsplit(text, "[^a-z0-9_]+", perl = TRUE), use.names = FALSE)
+      tokens = tokens[nzchar(tokens)]
+      if (any(tokens == levelText)) return(TRUE)
+      if (any(startsWith(tokens, levelText) & (nchar(tokens) - nchar(levelText) <= 2L))) return(TRUE)
+    }
     return(FALSE)
   }
 
@@ -220,6 +233,7 @@ containsStandaloneLevel = function(text, levelText) {
 
   FALSE
 }
+
 
 #' @keywords internal
 #' @noRd
@@ -291,6 +305,8 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
     if (length(kv) == 2) {
       key = trimws(kv[[1]])
       val = trimws(kv[[2]])
+      val = sub("\\s+(?:and|with|for|when|where)\\b.*$", "", val, perl = TRUE)
+      val = trimws(val)
       out[[key]] = val
     }
   }
