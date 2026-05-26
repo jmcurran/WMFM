@@ -285,18 +285,33 @@ containsStandaloneLevel = function(text, levelText) {
 #' @keywords internal
 #' @noRd
 matchFactorLevelCandidates = function(text, modelLevels) {
-  matchFactorLevelInFollowupText(levels = modelLevels, followupText = text)
+  matchFactorLevelsInPredictionText(levels = modelLevels, text = text)
+}
+
+#' @keywords internal
+#' @noRd
+matchFactorLevelsInPredictionText = function(levels, text) {
+  textNorm = normalizePredictionText(text)
+  if (!nzchar(textNorm) || length(levels) == 0) {
+    return(character(0))
+  }
+
+  matchedLevels = character(0)
+  for (level in levels) {
+    levelNorm = normalizePredictionText(level)
+    if (!nzchar(levelNorm)) next
+    if (containsStandaloneLevel(text = textNorm, levelText = levelNorm)) {
+      matchedLevels = c(matchedLevels, level)
+    }
+  }
+
+  unique(matchedLevels)
 }
 
 #' @keywords internal
 #' @noRd
 matchFactorLevelInFollowupText = function(levels, followupText) {
-  textNorm = normalizePredictionText(followupText)
-  levelsNorm = vapply(levels, normalizePredictionText, character(1))
-  boundaryMask = vapply(levelsNorm, function(levelNorm) {
-    containsStandaloneLevel(text = textNorm, levelText = levelNorm)
-  }, logical(1))
-  levels[boundaryMask]
+  matchFactorLevelsInPredictionText(levels = levels, text = followupText)
 }
 
 
