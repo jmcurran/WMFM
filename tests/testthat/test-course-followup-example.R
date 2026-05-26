@@ -100,3 +100,57 @@ testthat::test_that("deterministic follow-up failure text only asks for fitted-m
   testthat::expect_match(out, "Only predictors used by the fitted model are required", fixed = TRUE)
   testthat::expect_no_match(out, "all other predictors in the dataset", fixed = TRUE)
 })
+
+testthat::test_that("deterministic follow-up answer removes unsafe LLM fallback paragraph", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+  followup = "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  payload = classifyModelFollowupQuestion(followupQuestion = followup)
+  payload = enrichFollowupPayloadWithLmPrediction(model = model, followupPayload = payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  explanation = paste(
+    "Main research-question answer.",
+    "To predict the final exam mark for this student, the model would need the values for all other predictors in the dataset.",
+    sep = "\n\n"
+  )
+
+  out = appendDeterministicFollowupAnswer(
+    explanation = explanation,
+    model = model
+  )
+
+  testthat::expect_match(out, "Main research-question answer", fixed = TRUE)
+  testthat::expect_no_match(out, "all other predictors in the dataset", fixed = TRUE)
+  testthat::expect_match(out, "For the follow-up question", fixed = TRUE)
+  testthat::expect_match(out, "WMFM predicts", fixed = TRUE)
+  testthat::expect_match(out, "95% prediction interval", fixed = TRUE)
+})
+
+testthat::test_that("deterministic follow-up answer is not duplicated", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+  followup = "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  payload = classifyModelFollowupQuestion(followupQuestion = followup)
+  payload = enrichFollowupPayloadWithLmPrediction(model = model, followupPayload = payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  once = appendDeterministicFollowupAnswer(
+    explanation = "Main research-question answer.",
+    model = model
+  )
+  twice = appendDeterministicFollowupAnswer(
+    explanation = once,
+    model = model
+  )
+
+  testthat::expect_identical(twice, once)
+})

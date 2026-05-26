@@ -17,11 +17,53 @@ buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
     return(NULL)
   }
 
-  predictionResult = computeModelQuestionPrediction(
+  predictionInputValidation = validateLmPredictionInputs(
     model = model,
     followupQuestion = question,
     allowMissingPredictorCompletion = FALSE
   )
+
+  if (!isTRUE(predictionInputValidation$ok)) {
+    predictionResult = c(
+      list(
+        status = predictionInputValidation$status %||% "needs_input",
+        reason = predictionInputValidation$reason %||% "missing_predictor_values",
+        modelType = if (inherits(model, "glm")) "glm" else "lm",
+        predictionType = "mean_response_prediction"
+      ),
+      predictionInputValidation[c(
+        "suppliedPredictorValues",
+        "requiredPredictors",
+        "missingPredictors",
+        "warnings"
+      )]
+    )
+  } else {
+    predictionResult = computeModelQuestionPrediction(
+      model = model,
+      followupQuestion = question,
+      allowMissingPredictorCompletion = FALSE
+    )
+  }
+  suppliedNames = names(predictionResult$suppliedPredictorValues %||% list())
+  requiredPredictors = predictionResult$requiredPredictors %||% names(stats::model.frame(model))[-1]
+  missingPredictors = setdiff(requiredPredictors, suppliedNames)
+  if (identical(predictionResult$status, "ok") && length(missingPredictors) > 0) {
+    predictionResult = list(
+      status = "needs_input",
+      reason = "missing_predictor_values",
+      modelType = predictionResult$modelType %||% class(model)[[1]],
+      predictionType = predictionResult$predictionType %||% "mean_response_prediction",
+      suppliedPredictorValues = predictionResult$suppliedPredictorValues,
+      requiredPredictors = requiredPredictors,
+      missingPredictors = missingPredictors,
+      warnings = paste0(
+        "Missing fitted-model predictor values: ",
+        paste(missingPredictors, collapse = ", "),
+        "."
+      )
+    )
+  }
 
   list(
     category = if (isTRUE(predictionResult$predictionType == "individual_prediction_interval")) {

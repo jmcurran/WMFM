@@ -18,6 +18,15 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     return(explanation)
   }
 
+  explanation = removeConflictingLlmFollowupPredictionText(
+    explanation = explanation,
+    model = model
+  )
+
+  if (grepl(answer, explanation, fixed = TRUE)) {
+    return(explanation)
+  }
+
   paste(trimws(as.character(explanation %||% "")), answer, sep = "\n\n")
 }
 
@@ -84,6 +93,74 @@ buildDeterministicFollowupAnswer = function(model) {
   }
 
   paste(pieces, collapse = " ")
+}
+
+#' Remove conflicting language-model follow-up prediction text
+#'
+#' @param explanation Character scalar returned by the chat provider.
+#' @param model Fitted model object carrying the follow-up payload attribute.
+#'
+#' @return Character scalar with obvious conflicting follow-up prediction
+#'   fallback paragraphs removed before WMFM appends its deterministic answer.
+#' @keywords internal
+#' @noRd
+removeConflictingLlmFollowupPredictionText = function(explanation, model) {
+  text = trimws(as.character(explanation %||% ""))
+  if (!nzchar(text)) {
+    return(text)
+  }
+
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (!is.list(payload)) {
+    return(text)
+  }
+
+  prediction = payload$predictionResult
+  if (!is.list(prediction) || !identical(prediction$status, "ok")) {
+    return(text)
+  }
+
+  if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
+    return(text)
+  }
+
+  paragraphs = strsplit(text, "\\n\\s*\\n", perl = TRUE)[[1]]
+  if (length(paragraphs) <= 1) {
+    return(text)
+  }
+
+  keep = vapply(paragraphs, function(paragraph) {
+    !isConflictingLlmFollowupPredictionParagraph(paragraph)
+  }, logical(1))
+
+  trimws(paste(paragraphs[keep], collapse = "\n\n"))
+}
+
+#' Detect conflicting language-model follow-up prediction paragraphs
+#'
+#' @param paragraph Character scalar paragraph candidate.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isConflictingLlmFollowupPredictionParagraph = function(paragraph) {
+  text = tolower(trimws(as.character(paragraph %||% "")))
+  if (!nzchar(text)) {
+    return(FALSE)
+  }
+
+  hasFollowupCue = grepl("\\bfollow[- ]?up\\b", text, perl = TRUE) ||
+    grepl("\\bto predict\\b", text, perl = TRUE) ||
+    grepl("\\bpredicted?\\b", text, perl = TRUE)
+
+  hasUnsafeFallback = grepl("all other predictors", text, fixed = TRUE) ||
+    grepl("original data set", text, fixed = TRUE) ||
+    grepl("dataset", text, fixed = TRUE) && grepl("need|values|required", text, perl = TRUE) ||
+    grepl("cannot be made", text, fixed = TRUE) ||
+    grepl("cannot make", text, fixed = TRUE) ||
+    grepl("could not compute", text, fixed = TRUE)
+
+  isTRUE(hasFollowupCue && hasUnsafeFallback)
 }
 
 #' Build deterministic follow-up failure answer text

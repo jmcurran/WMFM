@@ -34,10 +34,14 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence intervals?\\b", lowerText, perl = TRUE)
 
+  # GLM deterministic follow-up predictions require explicit fitted-model
+  # predictor values. Unlike the lm student follow-up pathway, this route does
+  # not complete omitted covariates, because GLM response-scale predictions are
+  # easy to overstate when the conditioning values are not fully specified.
   inputValidation = validateLmPredictionInputs(
     model = model,
     followupQuestion = followupQuestion,
-    allowMissingPredictorCompletion = allowMissingPredictorCompletion
+    allowMissingPredictorCompletion = FALSE
   )
 
   if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
@@ -78,6 +82,25 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     ))
   }
 
+  suppliedNames = names(inputValidation$suppliedPredictorValues %||% list())
+  missingPredictors = setdiff(inputValidation$requiredPredictors %||% character(0), suppliedNames)
+  if (length(missingPredictors) > 0 && !isTRUE(allowMissingPredictorCompletion)) {
+    return(list(
+      status = "needs_input",
+      reason = "missing_predictor_values",
+      modelType = "glm",
+      predictionType = "mean_response_prediction",
+      responseScale = "response",
+      suppliedPredictorValues = inputValidation$suppliedPredictorValues,
+      requiredPredictors = inputValidation$requiredPredictors,
+      missingPredictors = missingPredictors,
+      warnings = paste0(
+        "Missing fitted-model predictor values: ",
+        paste(missingPredictors, collapse = ", "),
+        "."
+      )
+    ))
+  }
 
   newDataInfo = buildLmPredictionNewData(model = model, suppliedPredictorValues = inputValidation$suppliedPredictorValues)
   if (!isTRUE(newDataInfo$ok)) {
