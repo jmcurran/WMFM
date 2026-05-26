@@ -245,3 +245,25 @@ testthat::test_that("factor level resolution handles regex metacharacters safely
   testthat::expect_identical(out_braces$status, "ok")
   testthat::expect_identical(out_braces$resolvedPredictorValues$Group, "x{2}")
 })
+
+testthat::test_that("matchFactorLevelInFollowupText preserves internal punctuation", {
+  levels = c("A+B", "yes/no", "regular")
+
+  out_plus = matchFactorLevelInFollowupText(
+    levels = levels,
+    followupText = "Please predict for group = a+b."
+  )
+  testthat::expect_identical(out_plus, "A+B")
+
+  out_slash = matchFactorLevelInFollowupText(
+    levels = levels,
+    followupText = "I mean the YES/NO group?"
+  )
+  testthat::expect_identical(out_slash, "yes/no")
+
+  out_regular = matchFactorLevelInFollowupText(
+    levels = levels,
+    followupText = "I attend regularly."
+  )
+  testthat::expect_identical(out_regular, "regular")
+})
