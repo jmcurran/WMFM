@@ -171,19 +171,31 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
 
   unresolvedFactors = character(0)
   for (predictor in predictorNames) {
-    if (predictor %in% names(parsedPairs)) next
     column = mf[[predictor]]
     if (!is.factor(column)) next
 
-    levelsLower = tolower(levels(column))
-    matched = levels(column)[vapply(levelsLower, function(levelText) {
+    modelLevels = levels(column)
+    explicitValue = parsedPairs[[predictor]]
+    explicitMatched = character(0)
+
+    if (!is.null(explicitValue) && nzchar(normalizePredictionText(explicitValue))) {
+      explicitNorm = normalizePredictionText(explicitValue)
+      explicitMatched = modelLevels[vapply(modelLevels, function(level) {
+        identical(normalizePredictionText(level), explicitNorm)
+      }, logical(1))]
+    }
+
+    textMatched = modelLevels[vapply(modelLevels, function(levelText) {
       containsStandaloneLevel(text = text, levelText = levelText)
     }, logical(1))]
+
+    matched = unique(c(explicitMatched, textMatched))
 
     if (length(matched) == 1) {
       parsedPairs[[predictor]] = matched[[1]]
     } else if (length(matched) > 1) {
-      unresolvedFactors = c(unresolvedFactors, predictor)
+      unresolvedFactors = unique(c(unresolvedFactors, predictor))
+      parsedPairs[[predictor]] = NULL
     }
   }
 
@@ -294,7 +306,7 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
 #' @noRd
 extractPredictionAssignmentPairs = function(followupQuestion) {
   text = as.character(followupQuestion %||% "")
-  m = gregexpr("([A-Za-z][A-Za-z0-9_.]*)\\s*=\\s*([A-Za-z0-9_.-]+)", text, perl = TRUE)
+  m = gregexpr("([A-Za-z][A-Za-z0-9_.]*)\\s*=\\s*([^,;]+)", text, perl = TRUE)
   pieces = regmatches(text, m)[[1]]
   out = list()
   if (length(pieces) == 0) {
@@ -305,7 +317,7 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
     if (length(kv) == 2) {
       key = trimws(kv[[1]])
       val = trimws(kv[[2]])
-      val = sub("\\s+(?:and|with|for|when|where)\\b.*$", "", val, perl = TRUE)
+      val = sub("\\s+(?:and|with|for|when|where|what|which)\\b.*$", "", val, perl = TRUE)
       val = trimws(val)
       out[[key]] = val
     }
