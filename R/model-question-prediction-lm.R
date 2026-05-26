@@ -374,23 +374,40 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
 #' @noRd
 extractPredictionAssignmentPairs = function(followupQuestion) {
   text = as.character(followupQuestion %||% "")
-  m = gregexpr("([A-Za-z][A-Za-z0-9_.]*)\\s*=\\s*([^,;]+)", text, perl = TRUE)
-  pieces = regmatches(text, m)[[1]]
   out = list()
-  if (length(pieces) == 0) {
+  if (!nzchar(trimws(text))) {
     return(out)
   }
+
+  keyPattern = "[A-Za-z][A-Za-z0-9_.]*"
+  assignmentPattern = paste0(
+    "(", keyPattern, ")\\s*=\\s*",
+    "(.*?)",
+    "(?=\\s+(?:and|with|for|when|where)\\s+", keyPattern, "\\s*=|[,;]|$)"
+  )
+
+  m = gregexpr(assignmentPattern, text, perl = TRUE)
+  pieces = regmatches(text, m)[[1]]
+  if (length(pieces) == 0 || identical(pieces, character(0))) {
+    return(out)
+  }
+
   for (piece in pieces) {
     kv = strsplit(piece, "=", fixed = TRUE)[[1]]
-    if (length(kv) == 2) {
-      key = trimws(kv[[1]])
-      val = trimws(kv[[2]])
-      val = sub("\\s+(?:and|with|for|when|where|what|which)\\b.*$", "", val, perl = TRUE)
-      val = trimws(val)
-      val = stripTrailingAssignmentPunctuation(val)
+    if (length(kv) < 2) {
+      next
+    }
+
+    key = trimws(kv[[1]])
+    val = trimws(paste(kv[-1], collapse = "="))
+    val = sub("\\s+(?:and|with|for|when|where|what|which)\\b.*$", "", val, perl = TRUE)
+    val = trimws(val)
+    val = stripTrailingAssignmentPunctuation(val)
+    if (nzchar(key) && nzchar(val)) {
       out[[key]] = val
     }
   }
+
   out
 }
 

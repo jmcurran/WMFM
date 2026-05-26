@@ -284,3 +284,17 @@ testthat::test_that("matchFactorLevelsInPredictionText matches punctuated levels
   )
   testthat::expect_identical(out_slash, "yes/no")
 })
+
+testthat::test_that("assignment extraction keeps separate predictor assignments with punctuated factor values", {
+  out_plus = extractPredictionAssignmentPairs(
+    "predict exam when test = 10 and group = A+B"
+  )
+  testthat::expect_identical(out_plus$test, "10")
+  testthat::expect_identical(out_plus$group, "A+B")
+
+  out_slash = extractPredictionAssignmentPairs(
+    "predict exam when test = 10 and group = yes/no"
+  )
+  testthat::expect_identical(out_slash$test, "10")
+  testthat::expect_identical(out_slash$group, "yes/no")
+})
