@@ -267,3 +267,20 @@ testthat::test_that("matchFactorLevelInFollowupText preserves internal punctuati
   )
   testthat::expect_identical(out_regular, "regular")
 })
+
+
+testthat::test_that("matchFactorLevelsInPredictionText matches punctuated levels in plain follow-up text", {
+  levels = c("A+B", "control")
+  out_plus = matchFactorLevelsInPredictionText(
+    levels = levels,
+    text = "predict y when x = 10 and group is A+B"
+  )
+  testthat::expect_identical(out_plus, "A+B")
+
+  levels2 = c("yes/no", "control")
+  out_slash = matchFactorLevelsInPredictionText(
+    levels = levels2,
+    text = "predict y when x = 10 and group is yes/no"
+  )
+  testthat::expect_identical(out_slash, "yes/no")
+})
