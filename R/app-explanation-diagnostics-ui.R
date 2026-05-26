@@ -18,6 +18,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
   missingOrAmbiguous = prediction$warnings %||% ""
 
   tagList(
+    tags$strong("Explanation prompt diagnostics"),
     tags$p(
       class = "wmfm-explanation-helper-note",
       "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt."
