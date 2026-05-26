@@ -151,7 +151,11 @@ validateLmPredictionInputs = function(model, followupQuestion) {
 
 normalizePredictionText = function(x) {
   x = tolower(trimws(as.character(x %||% "")))
-  gsub("[[:space:]]+", " ", x, perl = TRUE)
+  x = gsub("[[:space:]]+", " ", x, perl = TRUE)
+  # Strip trailing punctuation/noise while preserving legitimate leading and
+  # internal factor punctuation such as + and / (e.g., +, /A, A+B, yes/no).
+  x = gsub("[^[:alnum:]_+/-]+$", "", x, perl = TRUE)
+  trimws(x)
 }
 
 isSimpleWordLevel = function(levelText) {
@@ -286,28 +290,25 @@ matchFactorLevelCandidates = function(text, modelLevels) {
   isPunctuated = !vapply(levelsNorm, isSimpleWordLevel, logical(1))
 
   # Pass 1: direct, boundary-aware literal matching across all levels.
-  boundaryMatches = modelLevels[vapply(levelsNorm, function(levelNorm) {
+  boundaryMask = vapply(levelsNorm, function(levelNorm) {
     containsStandaloneLevel(text = textNorm, levelText = levelNorm)
-  }, logical(1))]
+  }, logical(1))
+  boundaryMatches = modelLevels[boundaryMask]
   if (length(boundaryMatches) > 0) {
     return(boundaryMatches)
   }
 
-  # Pass 2: for punctuated levels (A+B, yes/no, group (1), x{2}), allow literal
-  # substring matching without regex to avoid metacharacter bugs.
+  # Pass 2: for punctuated levels (A+B, yes/no, group (1), x{2}), allow fixed
+  # literal substring matching (no regex). Caller handles unique vs ambiguous.
   punctuatedMask = rep(FALSE, length(modelLevels))
   punctuatedIdx = which(isPunctuated)
   if (length(punctuatedIdx) > 0) {
     punctuatedMask[punctuatedIdx] = vapply(levelsNorm[punctuatedIdx], function(levelNorm) {
-      grepl(levelNorm, textNorm, fixed = TRUE)
+      nzchar(levelNorm) && grepl(levelNorm, textNorm, fixed = TRUE)
     }, logical(1))
   }
-  punctuatedMatches = modelLevels[punctuatedMask]
-  if (length(punctuatedMatches) > 0) {
-    return(punctuatedMatches)
-  }
 
-  character(0)
+  modelLevels[punctuatedMask]
 }
 
 
