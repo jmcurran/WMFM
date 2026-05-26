@@ -152,9 +152,8 @@ validateLmPredictionInputs = function(model, followupQuestion) {
 normalizePredictionText = function(x) {
   x = tolower(trimws(as.character(x %||% "")))
   x = gsub("[[:space:]]+", " ", x, perl = TRUE)
-  # Strip only edge punctuation/noise while preserving internal factor punctuation
-  # such as + and / (e.g., A+B, yes/no).
-  x = gsub("^[^[:alnum:]_]+", "", x, perl = TRUE)
+  # Strip trailing punctuation/noise while preserving legitimate leading and
+  # internal factor punctuation such as + and / (e.g., +, /A, A+B, yes/no).
   x = gsub("[^[:alnum:]_+/-]+$", "", x, perl = TRUE)
   trimws(x)
 }
