@@ -21,7 +21,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$strong("Explanation prompt diagnostics"),
     tags$p(
       class = "wmfm-explanation-helper-note",
-      "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt."
+      "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt. Copy these blocks into a debugging request when follow-up answers look wrong."
     ),
     tags$strong("Raw follow-up question text received by server"),
     tags$pre(id = "diag_followup_raw_text", payload$originalText %||% diagnostics$followupText %||% ""),

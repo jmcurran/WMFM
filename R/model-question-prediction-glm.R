@@ -6,7 +6,7 @@
 #' @return Named list prediction payload.
 #' @keywords internal
 #' @noRd
-computeGlmModelQuestionPrediction = function(model, followupQuestion) {
+computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissingPredictorCompletion = FALSE) {
   if (!inherits(model, "glm")) {
     return(list(
       status = "unsupported",
@@ -34,7 +34,11 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion) {
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence intervals?\\b", lowerText, perl = TRUE)
 
-  inputValidation = validateLmPredictionInputs(model = model, followupQuestion = followupQuestion)
+  inputValidation = validateLmPredictionInputs(
+    model = model,
+    followupQuestion = followupQuestion,
+    allowMissingPredictorCompletion = allowMissingPredictorCompletion
+  )
 
   if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
     requestedType = if (isTRUE(requestsPredictionInterval)) {
@@ -96,8 +100,11 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion) {
     responseScale = "response",
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
-    completedPredictorValues = newDataInfo$resolvedPredictorValues,
+    completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = fittedPrediction,
-    warnings = sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName)
+    warnings = c(
+      sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName),
+      newDataInfo$warnings
+    )
   )
 }

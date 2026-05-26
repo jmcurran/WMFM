@@ -48,6 +48,26 @@ testthat::test_that("plural prediction intervals wording is recognized", {
   testthat::expect_true(!is.null(out$predictionInterval))
 })
 
+
+
+testthat::test_that("individual lm prediction wording requests prediction interval", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+
+  out = computeLmModelQuestionPrediction(
+    model,
+    "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$predictionType, "individual_prediction_interval")
+  testthat::expect_true(is.list(out$predictionInterval))
+})
+
 testthat::test_that("prediction interval is wider than confidence interval", {
   df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
   model = stats::lm(Exam ~ Test, data = df)
@@ -67,13 +87,14 @@ testthat::test_that("factor predictor values are validated against known levels"
   testthat::expect_identical(out$reason, "invalid_factor_level")
 })
 
-testthat::test_that("missing required predictor values fail safely", {
+testthat::test_that("omitted fitted-model predictor values are completed deterministically", {
   df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7), Attend = factor(c("No", "Yes", "Yes", "Yes", "No", "Yes")))
   model = stats::lm(Exam ~ Test + Attend, data = df)
 
   out = computeLmModelQuestionPrediction(model, "Predict exam for Test = 10")
-  testthat::expect_identical(out$status, "needs_input")
-  testthat::expect_identical(out$reason, "missing_predictor_values")
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Attend, "No")
+  testthat::expect_match(paste(out$warnings, collapse = " "), "reference level", fixed = TRUE)
 })
 
 testthat::test_that("unsupported model types fail safely", {

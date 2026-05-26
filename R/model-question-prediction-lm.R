@@ -22,16 +22,24 @@ enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
 
 #' @keywords internal
 #' @noRd
-computeModelQuestionPrediction = function(model, followupQuestion) {
+computeModelQuestionPrediction = function(model, followupQuestion, allowMissingPredictorCompletion = TRUE) {
   if (inherits(model, "glm")) {
-    return(computeGlmModelQuestionPrediction(model = model, followupQuestion = followupQuestion))
+    return(computeGlmModelQuestionPrediction(
+      model = model,
+      followupQuestion = followupQuestion,
+      allowMissingPredictorCompletion = allowMissingPredictorCompletion
+    ))
   }
-  computeLmModelQuestionPrediction(model = model, followupQuestion = followupQuestion)
+  computeLmModelQuestionPrediction(
+    model = model,
+    followupQuestion = followupQuestion,
+    allowMissingPredictorCompletion = allowMissingPredictorCompletion
+  )
 }
 
 #' @keywords internal
 #' @noRd
-computeLmModelQuestionPrediction = function(model, followupQuestion) {
+computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissingPredictorCompletion = TRUE) {
   if (!inherits(model, "lm") || inherits(model, "glm")) {
     return(list(
       status = "unsupported",
@@ -43,7 +51,11 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
     ))
   }
 
-  inputValidation = validateLmPredictionInputs(model = model, followupQuestion = followupQuestion)
+  inputValidation = validateLmPredictionInputs(
+    model = model,
+    followupQuestion = followupQuestion,
+    allowMissingPredictorCompletion = allowMissingPredictorCompletion
+  )
   if (!isTRUE(inputValidation$ok)) {
     return(c(
       list(
@@ -101,6 +113,7 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
     predictionType = predictionType,
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
+    completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = predFit,
     confidenceInterval = confidenceInterval,
     predictionInterval = predictionInterval,
@@ -110,7 +123,7 @@ computeLmModelQuestionPrediction = function(model, followupQuestion) {
 
 #' @keywords internal
 #' @noRd
-validateLmPredictionInputs = function(model, followupQuestion) {
+validateLmPredictionInputs = function(model, followupQuestion, allowMissingPredictorCompletion = TRUE) {
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
   parsedPairs = extractPredictionValuesForModel(
@@ -124,6 +137,22 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   missingRequired = setdiff(predictorNames, suppliedNames)
   if (length(parsedPairs) == 0) {
     return(list(ok = FALSE, reason = "missing_predictor_values", suppliedPredictorValues = list(), requiredPredictors = predictorNames, warnings = "Provide predictor values in explicit `name = value` form."))
+  }
+
+  if (length(missingRequired) > 0 && !isTRUE(allowMissingPredictorCompletion)) {
+    return(list(
+      ok = FALSE,
+      status = "needs_input",
+      reason = "missing_predictor_values",
+      suppliedPredictorValues = parsedPairs,
+      requiredPredictors = predictorNames,
+      missingPredictors = missingRequired,
+      warnings = paste0(
+        "Missing fitted-model predictor values: ",
+        paste(missingRequired, collapse = ", "),
+        "."
+      )
+    ))
   }
 
   if (length(unresolvedFactors) > 0) {
@@ -143,9 +172,45 @@ validateLmPredictionInputs = function(model, followupQuestion) {
   }
 
   lowerText = tolower(followupQuestion)
-  requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
-  requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE)
-  list(ok = length(missingRequired) == 0, reason = ifelse(length(missingRequired) == 0, "ok", "missing_predictor_values"), suppliedPredictorValues = parsedPairs, requiredPredictors = predictorNames, requestsPredictionInterval = requestsPredictionInterval, requestsConfidenceInterval = requestsConfidenceInterval, warnings = ifelse(length(missingRequired) == 0, "", paste0("Missing predictor values: ", paste(missingRequired, collapse = ", "))))
+  requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE) ||
+    isIndividualLmPredictionRequest(lowerText)
+  requestsConfidenceInterval = grepl("\\bconfidence interval\\b", lowerText, perl = TRUE) &&
+    !isTRUE(requestsPredictionInterval)
+
+  list(
+    ok = TRUE,
+    reason = "ok",
+    suppliedPredictorValues = parsedPairs,
+    requiredPredictors = predictorNames,
+    missingPredictors = missingRequired,
+    requestsPredictionInterval = requestsPredictionInterval,
+    requestsConfidenceInterval = requestsConfidenceInterval,
+    warnings = ifelse(
+      length(missingRequired) == 0,
+      "",
+      paste0(
+        "Omitted fitted-model predictor values will be completed deterministically: ",
+        paste(missingRequired, collapse = ", "),
+        "."
+      )
+    )
+  )
+}
+
+#' Detect individual-outcome prediction wording for lm follow-up questions
+#'
+#' @param lowerText Lower-case follow-up question text.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isIndividualLmPredictionRequest = function(lowerText) {
+  text = as.character(lowerText %||% "")
+  hasPredictionWording = grepl("\\b(predict|predicted|prediction|would|will)\\b", text, perl = TRUE)
+  hasIndividualWording = grepl("\\b(i|me|my|student|person|individual|case|observation)\\b", text, perl = TRUE)
+  hasOutcomeQuestion = grepl("\\bwhat\\b.*\\b(mark|score|value|outcome|response)\\b", text, perl = TRUE)
+
+  isTRUE(hasPredictionWording && (hasIndividualWording || hasOutcomeQuestion))
 }
 
 
@@ -322,13 +387,27 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
   predictorNames = names(mf)[-1]
   newData = mf[1, predictorNames, drop = FALSE]
   resolvedPredictorValues = list()
+  completedPredictorValues = list()
   warnings = character(0)
 
   for (name in predictorNames) {
     value = suppliedPredictorValues[[name]]
     column = mf[[name]]
+    valueWasSupplied = !is.null(value) && nzchar(trimws(as.character(value)))
+
     if (is.factor(column)) {
       lvl = levels(column)
+      if (!isTRUE(valueWasSupplied)) {
+        value = lvl[[1]]
+        warnings = c(
+          warnings,
+          sprintf(
+            "Predictor '%s' was not supplied; WMFM used the reference level '%s' to complete the fitted-model prediction.",
+            name,
+            value
+          )
+        )
+      }
       if (!(value %in% lvl)) {
         return(list(
           ok = FALSE,
@@ -341,8 +420,21 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
       }
       newData[[name]] = factor(value, levels = lvl)
       resolvedPredictorValues[[name]] = value
+      completedPredictorValues[[name]] = value
     } else if (is.numeric(column)) {
-      numericValue = suppressWarnings(as.numeric(value))
+      if (!isTRUE(valueWasSupplied)) {
+        numericValue = mean(column, na.rm = TRUE)
+        warnings = c(
+          warnings,
+          sprintf(
+            "Predictor '%s' was not supplied; WMFM used the sample mean %.6g to complete the fitted-model prediction.",
+            name,
+            numericValue
+          )
+        )
+      } else {
+        numericValue = suppressWarnings(as.numeric(value))
+      }
       if (!is.finite(numericValue)) {
         return(list(
           ok = FALSE,
@@ -355,6 +447,7 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
       }
       newData[[name]] = numericValue
       resolvedPredictorValues[[name]] = numericValue
+      completedPredictorValues[[name]] = numericValue
     } else {
       return(list(
         ok = FALSE,
@@ -367,7 +460,15 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
     }
   }
 
-  list(ok = TRUE, newData = newData, suppliedPredictorValues = suppliedPredictorValues, requiredPredictors = predictorNames, resolvedPredictorValues = resolvedPredictorValues, warnings = warnings)
+  list(
+    ok = TRUE,
+    newData = newData,
+    suppliedPredictorValues = suppliedPredictorValues,
+    requiredPredictors = predictorNames,
+    resolvedPredictorValues = resolvedPredictorValues,
+    completedPredictorValues = completedPredictorValues,
+    warnings = warnings
+  )
 }
 
 #' @keywords internal

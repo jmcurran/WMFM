@@ -314,6 +314,13 @@ Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)
         piBlock = glue::glue("
 Prediction interval for an individual outcome (95%): [{signif(pi$lwr, 6)}, {signif(pi$upr, 6)}]")
       }
+      warningsText = paste(predictionResult$warnings %||% character(0), collapse = " ")
+      warningBlock = if (nzchar(trimws(warningsText))) {
+        glue::glue("
+Deterministic completion notes: {warningsText}")
+      } else {
+        ""
+      }
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
@@ -324,12 +331,14 @@ WMFM deterministic prediction payload:
 - Do not recompute, round further, or invent intervals.
 - Do not invent prediction intervals.
 - Do not call a confidence interval for the average/expected response a prediction interval.
+- You must answer this follow-up request using the WMFM deterministic prediction payload.
+- Put this follow-up answer in a separate paragraph after the main research-question answer.
 
 Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}
 Supplied predictor values: {suppliedText}
 Resolved predictor values: {resolvedText}
-Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}
+Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}
 "))
     }
 
@@ -339,7 +348,8 @@ Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{
 
 WMFM could not compute the requested prediction for this pathway.
 Do not invent the prediction.
-Explain what additional predictor information is needed, if appropriate.
+Explain what additional fitted-model predictor information is needed, if appropriate.
+Only predictors used by the fitted model are required; do not ask for unrelated variables from the original data set.
 Status: {predictionResult$status %||% 'unsupported'}
 Reason: {predictionResult$reason %||% 'not_available'}
 "))

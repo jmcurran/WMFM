@@ -261,7 +261,13 @@ registerModelExplanationObservers = function(
                   dataDescription = teachingSummary$dataDescription %||% NULL
                 )
               )
-            )
+            ),
+            if (isTRUE(developerModeUnlocked())) {
+              bslib::accordion_panel(
+                title = "Explanation prompt diagnostics",
+                buildExplanationPromptDiagnosticsUi(diagnostics = rv$explanationPromptDiagnostics)
+              )
+            }
           )
         )
       } else {

@@ -40,6 +40,8 @@ testthat::test_that("follow-up prediction request is classified and deterministi
   testthat::expect_match(prompt, followup, fixed = TRUE)
   testthat::expect_match(prompt, "separate paragraph after the main research-question answer", fixed = TRUE)
   testthat::expect_match(prompt, "Fitted mean prediction:", fixed = TRUE)
+  testthat::expect_match(prompt, "Prediction interval for an individual outcome", fixed = TRUE)
+  testthat::expect_match(prompt, "Put this follow-up answer in a separate paragraph", fixed = TRUE)
 })
 
 testthat::test_that("Course Follow-Up never defaults regular attendance to not", {

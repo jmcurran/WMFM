@@ -25,3 +25,20 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
   testthat::expect_match(html, "diag_followup_prediction_payload", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_prompt_excerpt", fixed = TRUE)
 })
+
+
+testthat::test_that("diagnostics helper tells developers what to copy", {
+  diagnostics = list(
+    followupText = "raw text",
+    followupPayload = list(
+      originalText = "raw text",
+      category = "prediction_request",
+      predictionResult = list(status = "ok")
+    ),
+    assembledPrompt = "Prompt body"
+  )
+
+  html = as.character(buildExplanationPromptDiagnosticsUi(diagnostics = diagnostics))
+
+  testthat::expect_match(html, "Copy these blocks", fixed = TRUE)
+})

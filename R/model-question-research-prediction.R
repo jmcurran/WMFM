@@ -19,7 +19,8 @@ buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
 
   predictionResult = computeModelQuestionPrediction(
     model = model,
-    followupQuestion = question
+    followupQuestion = question,
+    allowMissingPredictorCompletion = FALSE
   )
 
   list(
