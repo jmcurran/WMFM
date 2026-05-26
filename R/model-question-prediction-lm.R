@@ -158,6 +158,14 @@ isSimpleWordLevel = function(levelText) {
   grepl("^[a-z0-9_]+$", levelText, perl = TRUE)
 }
 
+stripTrailingAssignmentPunctuation = function(valueText) {
+  valueText = trimws(as.character(valueText %||% ""))
+  if (!nzchar(valueText)) {
+    return(valueText)
+  }
+  trimws(sub("[?.,;:]+$", "", valueText, perl = TRUE))
+}
+
 #' @keywords internal
 #' @noRd
 extractPredictionValuesForModel = function(model, followupQuestion) {
@@ -375,6 +383,7 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
       val = trimws(kv[[2]])
       val = sub("\\s+(?:and|with|for|when|where|what|which)\\b.*$", "", val, perl = TRUE)
       val = trimws(val)
+      val = stripTrailingAssignmentPunctuation(val)
       out[[key]] = val
     }
   }
