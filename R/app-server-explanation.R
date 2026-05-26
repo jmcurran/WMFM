@@ -180,7 +180,7 @@ registerModelExplanationObservers = function(
           bslib::accordion(
             id = "model_explanation_support_accordion",
             multiple = TRUE,
-            open = FALSE,
+            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
             bslib::accordion_panel(
               title = "How each sentence was supported",
               tags$p(
@@ -276,7 +276,7 @@ registerModelExplanationObservers = function(
           bslib::accordion(
             id = "model_explanation_support_accordion",
             multiple = TRUE,
-            open = FALSE,
+            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
             bslib::accordion_panel(
               title = "How each sentence was supported",
               tags$p(

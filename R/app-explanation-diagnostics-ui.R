@@ -16,12 +16,34 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   missingOrAmbiguous = prediction$warnings %||% ""
+  diagnosticsBundle = paste(
+    "Raw follow-up question:", payload$originalText %||% diagnostics$followupText %||% "",
+    "",
+    "Follow-up category:", as.character(payload$category %||% ""),
+    "",
+    "Deterministic status:", as.character(prediction$status %||% "not_applicable"),
+    "",
+    "Resolved predictor values:", paste(capture.output(str(prediction$resolvedPredictorValues %||% list())), collapse = "\n"),
+    "",
+    "Prediction payload:", paste(capture.output(str(prediction)), collapse = "\n"),
+    "",
+    "Assembled prompt excerpt:", substr(diagnostics$assembledPrompt %||% "", 1, 8000),
+    sep = "\n"
+  )
 
   tagList(
     tags$strong("Explanation prompt diagnostics"),
     tags$p(
       class = "wmfm-explanation-helper-note",
-      "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt. Copy these blocks into a debugging request when follow-up answers look wrong."
+      "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt. Copy the diagnostics bundle into a debugging request when follow-up answers look wrong."
+    ),
+    tags$strong("Copyable diagnostics bundle"),
+    tags$textarea(
+      id = "diag_followup_bundle",
+      readonly = "readonly",
+      rows = 18,
+      style = "width: 100%; font-family: monospace; white-space: pre;",
+      diagnosticsBundle
     ),
     tags$strong("Raw follow-up question text received by server"),
     tags$pre(id = "diag_followup_raw_text", payload$originalText %||% diagnostics$followupText %||% ""),

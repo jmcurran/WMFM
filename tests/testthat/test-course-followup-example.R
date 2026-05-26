@@ -63,3 +63,40 @@ testthat::test_that("Course Follow-Up never defaults regular attendance to not",
   }
   testthat::expect_false(identical(payload$predictionResult$resolvedPredictorValues$Attend %||% NULL, "not"))
 })
+
+testthat::test_that("deterministic follow-up answer is appended after chat output", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+  followup = "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  payload = classifyModelFollowupQuestion(followupQuestion = followup)
+  payload = enrichFollowupPayloadWithLmPrediction(model = model, followupPayload = payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  out = appendDeterministicFollowupAnswer(
+    explanation = "Main research-question answer.",
+    model = model
+  )
+
+  testthat::expect_match(out, "Main research-question answer\\.\\n\\nFor the follow-up question", perl = TRUE)
+  testthat::expect_match(out, "Test = 10", fixed = TRUE)
+  testthat::expect_match(out, "Attend = regular", fixed = TRUE)
+  testthat::expect_match(out, "95% prediction interval", fixed = TRUE)
+  testthat::expect_no_match(out, "all other predictors in the dataset", fixed = TRUE)
+})
+
+testthat::test_that("deterministic follow-up failure text only asks for fitted-model predictors", {
+  prediction = list(
+    status = "needs_input",
+    reason = "missing_predictor_values",
+    warnings = "Missing fitted-model predictor values: Attend."
+  )
+
+  out = buildDeterministicFollowupFailureAnswer(prediction = prediction)
+
+  testthat::expect_match(out, "Only predictors used by the fitted model are required", fixed = TRUE)
+  testthat::expect_no_match(out, "all other predictors in the dataset", fixed = TRUE)
+})
