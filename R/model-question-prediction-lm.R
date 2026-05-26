@@ -285,30 +285,18 @@ containsStandaloneLevel = function(text, levelText) {
 #' @keywords internal
 #' @noRd
 matchFactorLevelCandidates = function(text, modelLevels) {
-  textNorm = normalizePredictionText(text)
-  levelsNorm = vapply(modelLevels, normalizePredictionText, character(1))
-  isPunctuated = !vapply(levelsNorm, isSimpleWordLevel, logical(1))
+  matchFactorLevelInFollowupText(levels = modelLevels, followupText = text)
+}
 
-  # Pass 1: direct, boundary-aware literal matching across all levels.
+#' @keywords internal
+#' @noRd
+matchFactorLevelInFollowupText = function(levels, followupText) {
+  textNorm = normalizePredictionText(followupText)
+  levelsNorm = vapply(levels, normalizePredictionText, character(1))
   boundaryMask = vapply(levelsNorm, function(levelNorm) {
     containsStandaloneLevel(text = textNorm, levelText = levelNorm)
   }, logical(1))
-  boundaryMatches = modelLevels[boundaryMask]
-  if (length(boundaryMatches) > 0) {
-    return(boundaryMatches)
-  }
-
-  # Pass 2: for punctuated levels (A+B, yes/no, group (1), x{2}), allow fixed
-  # literal substring matching (no regex). Caller handles unique vs ambiguous.
-  punctuatedMask = rep(FALSE, length(modelLevels))
-  punctuatedIdx = which(isPunctuated)
-  if (length(punctuatedIdx) > 0) {
-    punctuatedMask[punctuatedIdx] = vapply(levelsNorm[punctuatedIdx], function(levelNorm) {
-      nzchar(levelNorm) && grepl(levelNorm, textNorm, fixed = TRUE)
-    }, logical(1))
-  }
-
-  modelLevels[punctuatedMask]
+  levels[boundaryMask]
 }
 
 
