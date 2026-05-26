@@ -233,16 +233,21 @@ containsStandaloneLevel = function(text, levelText) {
   }
 
   matchPos = gregexpr(levelText, text, fixed = TRUE)[[1]]
-  if (length(matchPos) == 1 && identical(matchPos[[1]], -1L)) {
-    if (isSimpleWordLevel(levelText)) {
-      tokens = unlist(strsplit(text, "[^a-z0-9_]+", perl = TRUE), use.names = FALSE)
-      tokens = tokens[nzchar(tokens)]
-      if (any(tokens == levelText)) return(TRUE)
+  hasSimpleTokenVariant = FALSE
+  if (isSimpleWordLevel(levelText)) {
+    tokens = unlist(strsplit(text, "[^a-z0-9_]+", perl = TRUE), use.names = FALSE)
+    tokens = tokens[nzchar(tokens)]
+    if (any(tokens == levelText)) {
+      hasSimpleTokenVariant = TRUE
+    } else if (any(startsWith(tokens, levelText) & (nchar(tokens) - nchar(levelText) <= 2L))) {
       # Conservative morphological variant support:
       # allow "regularly" -> "regular" only when level itself is a simple token.
-      if (any(startsWith(tokens, levelText) & (nchar(tokens) - nchar(levelText) <= 2L))) return(TRUE)
+      hasSimpleTokenVariant = TRUE
     }
-    return(FALSE)
+  }
+
+  if (length(matchPos) == 1 && identical(matchPos[[1]], -1L)) {
+    return(hasSimpleTokenVariant)
   }
 
   levelLength = nchar(levelText, type = "chars")
@@ -262,7 +267,7 @@ containsStandaloneLevel = function(text, levelText) {
     }
   }
 
-  FALSE
+  hasSimpleTokenVariant
 }
 
 #' @keywords internal
