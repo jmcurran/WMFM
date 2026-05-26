@@ -24,7 +24,7 @@
 #' @importFrom shiny fluidPage withMathJax titlePanel
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
-#' @importFrom shiny textInput verbatimTextOutput
+#' @importFrom shiny textInput textAreaInput verbatimTextOutput
 #' @importFrom shiny br actionButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
@@ -168,6 +168,28 @@ appUI = function() {
             "Briefly state the question you want the fitted model to help answer. ",
             "WMFM uses this to frame the explanation from the start, so it should feel like the reason for the analysis rather than an optional extra."
           ),
+          accordion(
+            id = "model_question_accordion",
+            multiple = TRUE,
+            open = FALSE,
+            accordion_panel(
+              title = "Optional follow-up question",
+              helpText(
+                "Ask an optional follow-up question about the fitted model, predictions, or interpretation."
+              ),
+              textAreaInput(
+                inputId = "modelFollowupQuestion",
+                label = NULL,
+                value = "",
+                width = "100%",
+                rows = 3,
+                placeholder = paste(
+                  "Predict the response for x = 10\n",
+                  "Explain this for a 10-unit increase"
+                )
+              )
+            )
+          ),
 
           tags$hr(class = "hr-tight"),
 
@@ -239,7 +261,7 @@ appUI = function() {
                 "Use compact interaction formula",
                 value = FALSE
               ),
-              textOutput("formula_status")
+              uiOutput("formula_status")
             )
           )
         )

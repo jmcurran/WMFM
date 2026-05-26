@@ -435,6 +435,15 @@ buildNoInteractionConfidenceIntervalRows = function(
       factorName = factorName,
       appendRow = appendRow
     )
+
+    addLinearTwoLevelFactorComparisonRow(
+      model = model,
+      mf = mf,
+      level = level,
+      baseInfo = baseInfo,
+      factorName = factorName,
+      appendRow = appendRow
+    )
   }
 
   for (numericName in numericNames) {
@@ -1318,6 +1327,79 @@ addFittedQuantityRows = function(
       scaleNote = "Computed on the log scale, then exponentiated to the E(Y) scale."
     )
   }
+
+  invisible(NULL)
+}
+
+
+#' Add a response-scale difference row for a two-level linear factor
+#'
+#' Adds the direct factor comparison for a two-level linear model without
+#' interactions. The fitted-value rows remain available, while this effect row
+#' gives the student-facing difference at the same reference settings.
+#'
+#' @param model A fitted model object.
+#' @param mf Model frame.
+#' @param level Confidence level.
+#' @param baseInfo Base-setting information.
+#' @param factorName Name of the two-level factor predictor.
+#' @param appendRow Row appender closure.
+#'
+#' @return Invisibly returns \code{NULL}.
+#' @keywords internal
+addLinearTwoLevelFactorComparisonRow = function(
+    model,
+    mf,
+    level,
+    baseInfo,
+    factorName,
+    appendRow
+) {
+
+  if (!isLmIdentityModel(model = model)) {
+    return(invisible(NULL))
+  }
+
+  if (!factorName %in% names(mf) || !is.factor(mf[[factorName]])) {
+    return(invisible(NULL))
+  }
+
+  levs = levels(mf[[factorName]])
+
+  if (length(levs) != 2) {
+    return(invisible(NULL))
+  }
+
+  referenceData = baseInfo$baseRow
+  comparisonData = baseInfo$baseRow
+  referenceData[[factorName]] = factor(levs[1], levels = levs)
+  comparisonData[[factorName]] = factor(levs[2], levels = levs)
+
+  otherSettings = buildOtherBaseSettingsText(
+    mf = mf,
+    baseRow = baseInfo$baseRow,
+    excludeVarName = factorName,
+    numericReference = baseInfo$numericReference
+  )
+
+  contextText = if (nzchar(otherSettings)) {
+    paste0(" when ", otherSettings)
+  } else {
+    ""
+  }
+
+  addLinearFactorDifferenceRow(
+    model = model,
+    mf = mf,
+    level = level,
+    referenceData = referenceData,
+    comparisonData = comparisonData,
+    focalFactor = factorName,
+    referenceLevel = levs[1],
+    comparisonLevel = levs[2],
+    contextText = contextText,
+    appendRow = appendRow
+  )
 
   invisible(NULL)
 }

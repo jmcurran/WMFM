@@ -81,7 +81,8 @@ buildFormattedPromptQuantityBlock = function(
   lines = c(
     "Formatted model quantities for the explanation:",
     "Use these formatted quantities directly. Do not round, exponentiate, back-transform, or recompute them.",
-    "Keep each estimate and its 95% confidence interval together in the same sentence where possible."
+    "Keep each estimate and its 95% confidence interval together in the same sentence where possible.",
+    "For factor predictors, include the supplied direct difference or odds-ratio comparison, not only the separate fitted values."
   )
 
   for (sectionName in c("baseline", "effect", "contrast")) {

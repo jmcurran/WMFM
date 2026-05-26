@@ -44,9 +44,11 @@ registerDataLoadObservers = function(
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
+    rv$modelFollowupQuestion = ""
     rv$loadedExample = NULL
     exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
   }
 
@@ -78,7 +80,9 @@ registerDataLoadObservers = function(
       rv$allVars = names(df)
       rv$userDatasetContext = ""
       rv$researchQuestion = ""
+      rv$modelFollowupQuestion = ""
       updateTextInput(session, "researchQuestion", value = "")
+      shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
       resetModelPage(resetResponse = TRUE)
 
       return(NULL)
@@ -202,9 +206,11 @@ registerDataLoadObservers = function(
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
+    rv$modelFollowupQuestion = ""
     rv$loadedExample = NULL
     exampleLoadStatus(buildExampleReadyStatus())
     updateTextInput(session, "researchQuestion", value = "")
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = "")
     resetModelPage(resetResponse = TRUE)
 
     # Switch to the Model tab after loading a package data set
@@ -235,6 +241,7 @@ registerDataLoadObservers = function(
     rv$allVars = names(exampleInfo$data)
     rv$userDatasetContext = trimws(exampleInfo$dataContext %||% "")
     rv$researchQuestion = trimws(exampleInfo$researchQuestion %||% "")
+    rv$modelFollowupQuestion = trimws(exampleInfo$followupQuestion %||% "")
     rv$loadedExample = utils::modifyList(
       exampleInfo,
       list(name = exampleName)

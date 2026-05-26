@@ -101,6 +101,26 @@ testthat::test_that("logistic factor formatted prompt quantities include a direc
   testthat::expect_no_match(promptBlock, "odds scale", fixed = TRUE)
 })
 
+
+
+testthat::test_that("linear factor formatted prompt quantities include anchored direct difference", {
+  dat = data.frame(
+    Exam = c(42, 45, 54, 57, 61, 64),
+    Attend = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes")),
+    Test = c(9, 11, 10, 12, 14, 16)
+  )
+
+  fit = stats::lm(Exam ~ Attend + Test, data = dat)
+  promptBlock = suppressWarnings(buildFormattedPromptQuantityBlock(fit))
+
+  testthat::expect_match(promptBlock, "Baseline or fitted values:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Expected Exam when Attend = No", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Expected Exam when Attend = Yes", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Difference in Exam comparing Attend = Yes with Attend = No", fixed = TRUE)
+  testthat::expect_match(promptBlock, "Other numeric predictors fixed at:", fixed = TRUE)
+  testthat::expect_match(promptBlock, "For factor predictors, include the supplied direct difference", fixed = TRUE)
+})
+
 testthat::test_that("intercept-only lm formatted prompt quantities include the mean and interval", {
   dat = data.frame(
     Exam = c(60, 70, 80, 90)

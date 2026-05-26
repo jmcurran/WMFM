@@ -400,6 +400,10 @@ runModel = function(
 
   if (!is.null(explanation)) {
     explanation = postProcessExplanationText(explanation)
+    explanation = ensureAnchoredFactorComparisonText(
+      text = explanation,
+      model = model
+    )
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(

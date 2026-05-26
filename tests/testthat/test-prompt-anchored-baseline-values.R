@@ -69,3 +69,25 @@ test_that("buildAnchoredBaselinePromptBlock uses probability baselines for logis
   expect_no_match(block, "Odds(", fixed = TRUE)
   expect_no_match(block, "Assign = 0.", fixed = TRUE)
 })
+
+
+test_that("anchored baseline prompt requires factor comparison with numeric covariates", {
+  dat = data.frame(
+    Exam = c(38, 42, 47, 52, 50, 55, 61, 66),
+    Attend = factor(c("No", "No", "No", "No", "Yes", "Yes", "Yes", "Yes")),
+    Test = c(8, 10, 12, 14, 8, 10, 12, 14)
+  )
+
+  fit = stats::lm(Exam ~ Attend + Test, data = dat)
+  attr(fit, "wmfm_research_question") = "Do students who attend class regularly and score higher on the mid-term test tend to get better final exam marks?"
+
+  block = suppressWarnings(buildAnchoredBaselinePromptBlock(fit))
+  prompt = suppressWarnings(lmToExplanationPrompt(fit))
+
+  expect_match(block, "Mandatory anchored factor comparison:", fixed = TRUE)
+  expect_match(block, "reference fitted value", fixed = TRUE)
+  expect_match(block, "comparison fitted value", fixed = TRUE)
+  expect_match(block, "approximate difference", fixed = TRUE)
+  expect_match(prompt, "Mandatory anchored factor comparison:", fixed = TRUE)
+  expect_match(prompt, "Do not omit the factor comparison", fixed = TRUE)
+})

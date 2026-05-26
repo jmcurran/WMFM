@@ -1,0 +1,188 @@
+#' Classify bounded follow-up model-question text
+#'
+#' Deterministically classifies bounded follow-up text into conservative
+#' categories used by WMFM prompt payloads.
+#'
+#' @param followupQuestion Optional character scalar bounded follow-up question.
+#'
+#' @return Named list with fields `originalText`, `normalizedText`, `category`,
+#'   `supported`, `requiresDeterministicComputation`, and `message`.
+#' @keywords internal
+#' @noRd
+classifyModelFollowupQuestion = function(followupQuestion = NULL) {
+  originalText = as.character(followupQuestion %||% "")
+  originalText = ifelse(length(originalText) >= 1, originalText[[1]], "")
+  normalizedText = tolower(trimws(originalText))
+  normalizedText = gsub("\\s+", " ", normalizedText, perl = TRUE)
+
+  result = list(
+    originalText = trimws(originalText),
+    normalizedText = normalizedText,
+    category = "unsupported_or_out_of_scope",
+    supported = FALSE,
+    requiresDeterministicComputation = FALSE,
+    message = "Request is unsupported for this pathway."
+  )
+
+  if (!nzchar(normalizedText)) {
+    result$category = "no_followup"
+    result$supported = TRUE
+    result$message = "No follow-up question provided."
+    return(result)
+  }
+
+  injectionPattern = paste(
+    c(
+      "ignore (all )?(previous|prior) instructions",
+      "disregard (all )?(previous|prior)",
+      "system prompt",
+      "developer message",
+      "jailbreak",
+      "override",
+      "bypass",
+      "reveal .*prompt"
+    ),
+    collapse = "|"
+  )
+
+  unrelatedPattern = "\\b(poem|song|cats?|haiku|joke|story)\\b"
+
+  if (grepl(injectionPattern, normalizedText, perl = TRUE) ||
+      grepl(unrelatedPattern, normalizedText, perl = TRUE)) {
+    result$category = "unsupported_or_out_of_scope"
+    result$reason = "unsupported_freeform_instruction"
+    result$message = "Unsupported or out-of-scope follow-up request."
+    return(result)
+  }
+
+  unitChangeValues = extractRequestedUnitChangeValues(normalizedText)
+  if (length(unitChangeValues) > 1L) {
+    result$category = "unsupported_or_out_of_scope"
+    result$supported = FALSE
+    result$reason = "ambiguous_predictor_values"
+    result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
+    result$unitChangeValues = unitChangeValues
+    return(result)
+  }
+
+  if (grepl("prediction interval", normalizedText, perl = TRUE)) {
+    result$category = "prediction_interval_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Prediction-interval style request captured for a later stage."
+    return(result)
+  }
+
+  if (grepl("\\bpredict|predicted|prediction\\b", normalizedText, perl = TRUE)) {
+    result$category = "prediction_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Prediction-style request captured for a later stage."
+    return(result)
+  }
+
+  if (grepl("\\b(confidence interval|uncertainty|precision|how sure|how certain)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_uncertainty"
+    result$supported = TRUE
+    result$message = "Uncertainty-emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(effect size|magnitude|how big|size of the effect|size of effect)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_effect_size"
+    result$supported = TRUE
+    result$message = "Effect-size emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(practical|real[- ]world|in practice|practically)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_practical_interpretation"
+    result$supported = TRUE
+    result$message = "Practical-interpretation preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(compare|comparison|difference between|focus on the comparison|versus|vs\\.?)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_group_comparison"
+    result$supported = TRUE
+    result$message = "Group-comparison emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(interaction|interact|effect modification|moderation|moderator)\\b", normalizedText, perl = TRUE)) {
+    result$category = "emphasis_interaction"
+    result$supported = TRUE
+    result$message = "Interaction-emphasis preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(beginner|novice|audience|for students|for a student|plain english|non-technical)\\b", normalizedText, perl = TRUE)) {
+    result$category = "beginner_friendly"
+    result$supported = TRUE
+    result$message = "Beginner-friendly preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(brief|briefly|concise|shorter|summari[sz]e|keep the answer short|keep it short)\\b", normalizedText, perl = TRUE)) {
+    result$category = "concise_answer"
+    result$supported = TRUE
+    result$message = "Concise-answer preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b(research question|main question|original question|focus on the question)\\b", normalizedText, perl = TRUE)) {
+    result$category = "focus_research_question"
+    result$supported = TRUE
+    result$message = "Research-question focus preference captured."
+    return(result)
+  }
+
+  if (grepl("\\b((\\d+|a)\\s*[- ]?unit\\s+(increase|change)|per\\s+unit(\\s+increase|\\s+change)?|increase\\s+of\\s+\\d+|for\\s+a?\\s*\\d+\\s*[- ]?unit\\s+(increase|change)|interpret\\s+.*\\b\\d+\\s*[- ]?unit\\s+change|use\\s+a?\\s*\\d+\\s*[- ]?unit\\s+change\\s+instead)\\b", normalizedText, perl = TRUE)) {
+    result$category = "alternative_unit_change"
+    result$supported = TRUE
+    result$message = "Alternative unit-change interpretation request captured."
+    result$unitChangeValues = unitChangeValues
+    return(result)
+  }
+
+  result
+}
+
+#' @keywords internal
+#' @noRd
+extractRequestedUnitChangeValues = function(normalizedText) {
+  text = tolower(trimws(as.character(normalizedText %||% "")))
+  if (!nzchar(text)) {
+    return(numeric(0))
+  }
+
+  pattern = paste(
+    c(
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\b(?=\\s+(?:and|or)\\s+(?:a\\s+)?\\d+(?:\\.\\d+)?\\s*[- ]?unit\\s+(?:increase|change)\\b)",
+      "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
+    ),
+    collapse = "|"
+  )
+  matches = gregexpr(pattern, text, perl = TRUE)
+  matchedText = regmatches(text, matches)[[1]]
+
+  if (!length(matchedText) || identical(matchedText, "-1")) {
+    return(numeric(0))
+  }
+
+  values = vapply(matchedText, function(x) {
+    numericMatch = regmatches(x, gregexpr("\\d+(?:\\.\\d+)?", x, perl = TRUE))[[1]]
+    if (!length(numericMatch) || identical(numericMatch, "-1")) {
+      return(NA_real_)
+    }
+    suppressWarnings(as.numeric(numericMatch[[1]]))
+  }, numeric(1))
+
+  values = values[is.finite(values)]
+  if (!length(values)) {
+    return(numeric(0))
+  }
+
+  sort(unique(values))
+}

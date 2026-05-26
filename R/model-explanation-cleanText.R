@@ -258,7 +258,7 @@ postProcessPreservesNumericTokens = function(before, after) {
 #' @keywords internal
 postProcessExtractNumericTokens = function(text) {
   matches = gregexpr(
-    pattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?",
+    pattern = "(?<![0-9])[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?",
     text = text,
     perl = TRUE
   )
@@ -426,6 +426,44 @@ postProcessVerbalFractions = function(text) {
 #' @return A character vector with safer confidence interval terminology.
 #' @keywords internal
 postProcessConfidenceIntervalTerminology = function(text) {
+  numberPattern = "(-?\\d+(?:\\.\\d+)?)"
+  percentPattern = "(\\d+(?:\\.\\d+)?)"
+  nonBreakingSpace = intToUtf8(0x00A0)
+  narrowNonBreakingSpace = intToUtf8(0x202F)
+  enDash = intToUtf8(0x2013)
+
+  text = gsub(nonBreakingSpace, " ", text, fixed = TRUE)
+  text = gsub(narrowNonBreakingSpace, " ", text, fixed = TRUE)
+  spacePattern = "[[:space:]]*"
+  separatorPattern = paste0(
+    spacePattern,
+    "(?:-|\\x{2013}|\\x{2014}|to)",
+    spacePattern
+  )
+
+  compactCiPattern = paste0(
+    "\\b",
+    percentPattern,
+    spacePattern,
+    "%",
+    spacePattern,
+    "(?:CI|C\\.I\\.|c\\.i\\.|confidence interval)",
+    spacePattern,
+    "\\[?",
+    numberPattern,
+    separatorPattern,
+    numberPattern,
+    "\\]?"
+  )
+
+  text = gsub(
+    pattern = compactCiPattern,
+    replacement = paste0("\\1% c.i.: [\\2", enDash, "\\3]"),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
   text = gsub(
     pattern = "\\b[Mm]ultiplicative confidence interval(s?)\\b",
     replacement = "confidence interval\\1 for the multiplier",
@@ -716,9 +754,12 @@ postProcessGrammarCleanup = function(text) {
 #' @return A character vector with repeated whitespace cleaned up.
 #' @keywords internal
 postProcessWhitespace = function(text) {
-  text = gsub("[[:space:]]+([.,;:!?])", "\\1", text, perl = TRUE)
-  text = gsub("([.!?])[[:space:]]+([.!?])", "\\1", text, perl = TRUE)
-  text = gsub("[[:space:]]{2,}", " ", text, perl = TRUE)
+  text = gsub("\\r\\n?", "\\n", text, perl = TRUE)
+  text = gsub("[ \t\f\v]+([.,;:!?])", "\\1", text, perl = TRUE)
+  text = gsub("([.!?])[ \t\f\v]+([.!?])", "\\1", text, perl = TRUE)
+  text = gsub("[ \t\f\v]{2,}", " ", text, perl = TRUE)
+  text = gsub("[ \t\f\v]*\\n[ \t\f\v]*", "\n", text, perl = TRUE)
+  text = gsub("\\n{3,}", "\n\n", text, perl = TRUE)
   trimws(text)
 }
 

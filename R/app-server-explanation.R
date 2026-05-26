@@ -97,6 +97,23 @@ registerModelExplanationObservers = function(
     }
   )
 
+
+  output$diag_followup_json_download = downloadHandler(
+    filename = function() {
+      paste0(
+        "wmfm-followup-diagnostics-",
+        format(Sys.time(), "%Y%m%d-%H%M%S"),
+        ".json"
+      )
+    },
+    content = function(file) {
+      diagnosticsJson = buildExplanationPromptDiagnosticsJson(
+        diagnostics = rv$explanationPromptDiagnostics
+      )
+      writeLines(diagnosticsJson, con = file, useBytes = TRUE)
+    }
+  )
+
   # -------------------------------------------------------------------
   # Model explanation
   # -------------------------------------------------------------------
@@ -180,7 +197,7 @@ registerModelExplanationObservers = function(
           bslib::accordion(
             id = "model_explanation_support_accordion",
             multiple = TRUE,
-            open = FALSE,
+            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
             bslib::accordion_panel(
               title = "How each sentence was supported",
               tags$p(
@@ -261,7 +278,13 @@ registerModelExplanationObservers = function(
                   dataDescription = teachingSummary$dataDescription %||% NULL
                 )
               )
-            )
+            ),
+            if (isTRUE(developerModeUnlocked())) {
+              bslib::accordion_panel(
+                title = "Explanation prompt diagnostics",
+                buildExplanationPromptDiagnosticsUi(diagnostics = rv$explanationPromptDiagnostics)
+              )
+            }
           )
         )
       } else {
@@ -270,7 +293,7 @@ registerModelExplanationObservers = function(
           bslib::accordion(
             id = "model_explanation_support_accordion",
             multiple = TRUE,
-            open = FALSE,
+            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
             bslib::accordion_panel(
               title = "How each sentence was supported",
               tags$p(
@@ -303,10 +326,18 @@ registerModelExplanationObservers = function(
                   researchQuestion = researchQuestionText,
                   dataDescription = NULL
                 )
+                )
               )
-            )
+            ),
+            if (isTRUE(developerModeUnlocked())) {
+              bslib::accordion_panel(
+                title = "Explanation prompt diagnostics",
+                {
+                  buildExplanationPromptDiagnosticsUi(diagnostics = rv$explanationPromptDiagnostics)
+                }
+              )
+            }
           )
-        )
       }
     )
   })

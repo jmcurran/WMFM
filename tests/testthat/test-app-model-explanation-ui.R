@@ -63,6 +63,8 @@ testthat::test_that("appUI includes explanation and onboarding controls", {
   testthat::expect_match(html, "Model Explanation", fixed = TRUE)
   testthat::expect_match(html, "model_explanation", fixed = TRUE)
   testthat::expect_match(html, "Start with the main explanation", fixed = TRUE)
+  testthat::expect_match(html, "Optional follow-up question", fixed = TRUE)
+  testthat::expect_match(html, "modelFollowupQuestion", fixed = TRUE)
   testthat::expect_match(html, "Load a built-in example", fixed = TRUE)
   testthat::expect_match(html, "loadExampleBtn", fixed = TRUE)
   testthat::expect_match(html, "Research question", fixed = TRUE)
@@ -265,4 +267,28 @@ testthat::test_that("research question input uses one visible label", {
   testthat::expect_match(html, "<h5>Research question</h5>", fixed = TRUE)
   testthat::expect_match(html, "placeholder=\"For example, how does the expected response change", fixed = TRUE)
   testthat::expect_no_match(html, "<label.*Research question", perl = TRUE)
+})
+
+
+testthat::test_that("model tab groups optional follow-up question with research question", {
+  ui = appUI()
+  html = as.character(ui)
+
+  testthat::expect_match(html, "<h5>Research question</h5>", fixed = TRUE)
+  testthat::expect_match(html, "Optional follow-up question", fixed = TRUE)
+  testthat::expect_match(
+    html,
+    "Ask an optional follow-up question about the fitted model, predictions, or interpretation.",
+    fixed = TRUE
+  )
+  testthat::expect_match(html, "Predict the response for x = 10", fixed = TRUE)
+  testthat::expect_match(html, "Explain this for a 10-unit increase", fixed = TRUE)
+
+  rqPos = regexpr("<h5>Research question</h5>", html, fixed = TRUE)[1]
+  followupPos = regexpr("Optional follow-up question", html, fixed = TRUE)[1]
+  assignPos = regexpr("<h5>Assign explanatory/predictor variables</h5>", html, fixed = TRUE)[1]
+
+  testthat::expect_true(rqPos > 0)
+  testthat::expect_true(followupPos > rqPos)
+  testthat::expect_true(assignPos > followupPos)
 })
