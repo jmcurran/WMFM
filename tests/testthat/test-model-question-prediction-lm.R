@@ -319,3 +319,21 @@ testthat::test_that("assignment extraction keeps separate predictor assignments 
   testthat::expect_identical(out_slash$test, "10")
   testthat::expect_identical(out_slash$group, "yes/no")
 })
+
+testthat::test_that("Course Follow-Up resolves regular attendance for Yes/No factors", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+
+  out = computeLmModelQuestionPrediction(
+    model,
+    "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
+  testthat::expect_false(grepl("reference level 'No'", paste(out$warnings, collapse = " "), fixed = TRUE))
+})

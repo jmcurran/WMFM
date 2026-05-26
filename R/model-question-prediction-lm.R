@@ -282,8 +282,13 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     }
 
     textMatched = matchFactorLevelCandidates(text = text, modelLevels = modelLevels)
+    semanticMatched = matchSemanticBinaryFactorLevel(
+      predictor = predictor,
+      modelLevels = modelLevels,
+      text = text
+    )
 
-    matched = unique(c(explicitMatched, textMatched))
+    matched = unique(c(explicitMatched, textMatched, semanticMatched))
 
     if (length(matched) == 1) {
       parsedPairs[[predictor]] = matched[[1]]
@@ -345,6 +350,42 @@ containsStandaloneLevel = function(text, levelText) {
   }
 
   hasSimpleTokenVariant
+}
+
+
+#' @keywords internal
+#' @noRd
+matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
+  textNorm = normalizePredictionText(text)
+  predictorNorm = normalizePredictionText(predictor)
+  levelNorms = vapply(modelLevels, normalizePredictionText, character(1))
+
+  if (!nzchar(textNorm) || length(modelLevels) != 2) {
+    return(character(0))
+  }
+
+  yesIndex = which(levelNorms %in% c("yes", "y", "true"))
+  noIndex = which(levelNorms %in% c("no", "n", "false"))
+
+  if (length(yesIndex) != 1 || length(noIndex) != 1) {
+    return(character(0))
+  }
+
+  if (predictorNorm %in% c("attend", "attendance", "attended")) {
+    if (grepl("\\b(do not|does not|did not|don'?t|not)\\s+attend\\b", textNorm, perl = TRUE) ||
+        grepl("\\bwithout\\s+(regular\\s+)?attend", textNorm, perl = TRUE)) {
+      return(modelLevels[[noIndex]])
+    }
+
+    hasPositiveAttendance = grepl("\\battend(s|ed|ing)?\\b", textNorm, perl = TRUE) &&
+      grepl("\\b(regular|regularly|yes)\\b", textNorm, perl = TRUE)
+
+    if (isTRUE(hasPositiveAttendance)) {
+      return(modelLevels[[yesIndex]])
+    }
+  }
+
+  character(0)
 }
 
 #' @keywords internal

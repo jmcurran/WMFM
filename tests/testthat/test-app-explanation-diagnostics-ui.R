@@ -26,6 +26,9 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
   testthat::expect_match(html, "diag_followup_missing_values", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_prediction_payload", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_prompt_excerpt", fixed = TRUE)
+  testthat::expect_match(html, "diag_followup_json_download", fixed = TRUE)
+  testthat::expect_match(html, "diag_followup_json_bundle", fixed = TRUE)
+  testthat::expect_match(html, "wmfm-followup-diagnostics.json", fixed = TRUE)
 })
 
 
@@ -44,4 +47,29 @@ testthat::test_that("diagnostics helper tells developers what to copy", {
 
   testthat::expect_match(html, "Copy the diagnostics bundle", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_bundle", fixed = TRUE)
+})
+
+
+testthat::test_that("diagnostics JSON helper exposes uploadable follow-up fields", {
+  diagnostics = list(
+    followupText = "raw text",
+    followupPayload = list(
+      originalText = "raw text",
+      category = "prediction_request",
+      predictionResult = list(
+        status = "ok",
+        suppliedPredictorValues = list(Test = "10"),
+        resolvedPredictorValues = list(Test = 10, Attend = "Yes"),
+        completedPredictorValues = list(Test = 10, Attend = "Yes")
+      )
+    ),
+    assembledPrompt = "Prompt body"
+  )
+
+  out = buildExplanationPromptDiagnosticsJson(diagnostics = diagnostics)
+
+  testthat::expect_match(out, "rawFollowupQuestion", fixed = TRUE)
+  testthat::expect_match(out, "completedPredictorValues", fixed = TRUE)
+  testthat::expect_match(out, '"Attend": "Yes"', fixed = TRUE)
+  testthat::expect_match(out, "assembledPromptExcerpt", fixed = TRUE)
 })
