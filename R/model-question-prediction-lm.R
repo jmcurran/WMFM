@@ -170,8 +170,7 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
 
     levelsLower = tolower(levels(column))
     matched = levels(column)[vapply(levelsLower, function(levelText) {
-      pattern = paste0("\\b", gsub("([.|()\\[\\]{}+*?^$\\\\])", "\\\\\\1", levelText), "\\b")
-      grepl(pattern, text, perl = TRUE)
+      containsStandaloneLevel(text = text, levelText = levelText)
     }, logical(1))]
 
     if (length(matched) == 1) {
@@ -186,6 +185,40 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
   }
 
   parsedPairs
+}
+
+#' @keywords internal
+#' @noRd
+containsStandaloneLevel = function(text, levelText) {
+  text = as.character(text %||% "")
+  levelText = as.character(levelText %||% "")
+  if (!nzchar(text) || !nzchar(levelText)) {
+    return(FALSE)
+  }
+
+  matchPos = gregexpr(levelText, text, fixed = TRUE)[[1]]
+  if (length(matchPos) == 1 && identical(matchPos[[1]], -1L)) {
+    return(FALSE)
+  }
+
+  levelLength = nchar(levelText, type = "chars")
+  textLength = nchar(text, type = "chars")
+
+  isBoundary = function(ch) {
+    if (!nzchar(ch)) return(TRUE)
+    !grepl("[[:alnum:]_]", ch, perl = TRUE)
+  }
+
+  for (startPos in matchPos) {
+    beforeChar = if (startPos <= 1) "" else substr(text, startPos - 1, startPos - 1)
+    afterPos = startPos + levelLength
+    afterChar = if (afterPos > textLength) "" else substr(text, afterPos, afterPos)
+    if (isBoundary(beforeChar) && isBoundary(afterChar)) {
+      return(TRUE)
+    }
+  }
+
+  FALSE
 }
 
 #' @keywords internal

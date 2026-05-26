@@ -217,3 +217,31 @@ testthat::test_that("ambiguous factor wording fails safely", {
   testthat::expect_identical(out$status, "clarification_required")
   testthat::expect_identical(out$reason, "clarification_required")
 })
+
+testthat::test_that("factor level resolution handles regex metacharacters safely", {
+  df = data.frame(
+    Exam = c(40, 45, 50, 55, 60, 65, 70, 75),
+    Test = c(8, 9, 10, 11, 12, 13, 14, 15),
+    Group = factor(
+      c("A+B", "yes/no", "group (1)", "x{2}", "A+B", "yes/no", "group (1)", "x{2}"),
+      levels = c("A+B", "yes/no", "group (1)", "x{2}")
+    )
+  )
+  model = stats::lm(Exam ~ Test + Group, data = df)
+
+  out_plus = computeLmModelQuestionPrediction(model, "predict exam when test = 10 and group = A+B")
+  testthat::expect_identical(out_plus$status, "ok")
+  testthat::expect_identical(out_plus$resolvedPredictorValues$Group, "A+B")
+
+  out_slash = computeLmModelQuestionPrediction(model, "predict exam when test = 10 and group = yes/no")
+  testthat::expect_identical(out_slash$status, "ok")
+  testthat::expect_identical(out_slash$resolvedPredictorValues$Group, "yes/no")
+
+  out_paren = computeLmModelQuestionPrediction(model, "predict exam when test = 10 for group (1)")
+  testthat::expect_identical(out_paren$status, "ok")
+  testthat::expect_identical(out_paren$resolvedPredictorValues$Group, "group (1)")
+
+  out_braces = computeLmModelQuestionPrediction(model, "predict exam when test = 10 for x{2}")
+  testthat::expect_identical(out_braces$status, "ok")
+  testthat::expect_identical(out_braces$resolvedPredictorValues$Group, "x{2}")
+})
