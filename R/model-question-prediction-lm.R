@@ -282,9 +282,14 @@ matchFactorLevelCandidates = function(text, modelLevels) {
 
   # Pass 2: for punctuated levels (A+B, yes/no, group (1), x{2}), allow literal
   # substring matching without regex to avoid metacharacter bugs.
-  punctuatedMatches = modelLevels[isPunctuated & vapply(levelsNorm[isPunctuated], function(levelNorm) {
-    grepl(levelNorm, textNorm, fixed = TRUE)
-  }, logical(1))]
+  punctuatedMask = rep(FALSE, length(modelLevels))
+  punctuatedIdx = which(isPunctuated)
+  if (length(punctuatedIdx) > 0) {
+    punctuatedMask[punctuatedIdx] = vapply(levelsNorm[punctuatedIdx], function(levelNorm) {
+      grepl(levelNorm, textNorm, fixed = TRUE)
+    }, logical(1))
+  }
+  punctuatedMatches = modelLevels[punctuatedMask]
   if (length(punctuatedMatches) > 0) {
     return(punctuatedMatches)
   }
