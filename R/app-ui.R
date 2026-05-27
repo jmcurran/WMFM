@@ -208,6 +208,7 @@ appUI = function() {
             column(
               width = 4,
               div(
+                style = "padding-left: 15px;",
                 actionButton(
                   "addDerivedVarBtn",
                   "Add derived variable",
