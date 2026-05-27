@@ -32,9 +32,9 @@ registerModelHelpObservers = function(input, output, session, rv) {
     } else {
       btnLabel = if (hasUserContext) "Edit data context" else "Provide data context"
       btnClass = if (hasUserContext) {
-        "btn btn-success action-button"
+        "btn btn-success action-button wmfm-model-compact-action-btn"
       } else {
-        "btn btn-danger action-button"
+        "btn btn-danger action-button wmfm-model-compact-action-btn"
       }
       statusUi = tags$div(
         style = "margin-top: 6px;",
