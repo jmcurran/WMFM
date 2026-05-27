@@ -15,11 +15,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::devtools
-
-      - name: Regenerate roxygen documentation
-        run: devtools::document()
-        shell: Rscript {0}
+          extra-packages: |
+            any::devtools
+            any::rcmdcheck
 
       - name: Check for stale generated documentation
         run: |
@@ -30,4 +28,8 @@ jobs:
 
       - name: Run testthat suite
         run: devtools::test()
+        shell: Rscript {0}
+
+      - name: Run R CMD check
+        run: devtools::check(error_on = "note")
         shell: Rscript {0}
