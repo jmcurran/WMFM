@@ -156,17 +156,24 @@ appUI = function() {
 
           tags$hr(class = "hr-tight"),
 
-          h5("Research question"),
+          h5(
+            "Research question ",
+            tags$span(
+              icon("circle-info"),
+              title = paste(
+                "Briefly state the question you want the fitted model to help answer.",
+                "WMFM uses this to frame the explanation from the start,",
+                "so it should feel like the reason for the analysis rather than an optional extra."
+              ),
+              style = "cursor: help;"
+            )
+          ),
           textInput(
             "researchQuestion",
             label = NULL,
             placeholder = "For example, how does the expected response change as the predictor changes?",
             value = "",
             width = "100%"
-          ),
-          helpText(
-            "Briefly state the question you want the fitted model to help answer. ",
-            "WMFM uses this to frame the explanation from the start, so it should feel like the reason for the analysis rather than an optional extra."
           ),
           accordion(
             id = "model_question_accordion",
@@ -196,15 +203,22 @@ appUI = function() {
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
           uiOutput("adjustment_variables_ui"),
-          div(
-            actionButton(
-              "addDerivedVarBtn",
-              "Add derived variable",
-              class = "btn btn-success"
+          fluidRow(
+            column(
+              width = 4,
+              div(
+                actionButton(
+                  "addDerivedVarBtn",
+                  "Add derived variable",
+                  class = "btn btn-success"
+                )
+              )
+            ),
+            column(
+              width = 8,
+              uiOutput("interaction_ui")
             )
           ),
-
-          uiOutput("interaction_ui"),
 
           tags$hr(class = "hr-tight"),
 

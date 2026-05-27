@@ -216,9 +216,15 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     }
 
     tagList(
-      h5("Interactions (optional)"),
+      h5(
+        "Interactions (optional) ",
+        tags$span(
+          icon("circle-info"),
+          title = "Select 2-way or 3-way interaction terms to include in the model formula.",
+          style = "cursor: help;"
+        )
+      ),
       infoText,
-      helpText("Select 2-way or 3-way interaction terms to include in the model formula."),
       selectInput(
         inputId  = "interactions",
         label    = NULL,
