@@ -25,4 +25,7 @@ testthat::test_that("model help UI includes data context status-aware button mar
   testthat::expect_true(grepl("Edit data context", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("Data context provided.", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("No data context provided yet.", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("wmfm-status-badge wmfm-status-badge-ok", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("wmfm-status-badge wmfm-status-badge-error", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("icon(\"check\")", modelHelpText, fixed = TRUE))
 })

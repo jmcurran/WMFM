@@ -37,17 +37,19 @@ registerModelHelpObservers = function(input, output, session, rv) {
         "btn btn-danger action-button"
       }
       statusUi = tags$div(
-        class = if (hasUserContext) {
-          "text-success"
-        } else {
-          "text-danger"
-        },
-        style = "margin-top: 6px; font-size: 0.9em;",
-        if (hasUserContext) {
-          "Data context provided."
-        } else {
-          "No data context provided yet."
-        }
+        style = "margin-top: 6px;",
+        tags$span(
+          class = if (hasUserContext) {
+            "wmfm-status-badge wmfm-status-badge-ok"
+          } else {
+            "wmfm-status-badge wmfm-status-badge-error"
+          },
+          if (hasUserContext) {
+            tagList(icon("check"), " Data context provided.")
+          } else {
+            "No data context provided yet."
+          }
+        )
       )
     }
 

@@ -204,6 +204,7 @@ appUI = function() {
           uiOutput("var_buckets"),
           uiOutput("adjustment_variables_ui"),
           fluidRow(
+            class = "wmfm-optional-controls-row",
             column(
               width = 4,
               div(
