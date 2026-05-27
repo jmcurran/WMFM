@@ -112,6 +112,32 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
   # -------------------------------------------------------------------
   # Interactions UI (2-way and 3-way) built from Factor + Continuous buckets
   # -------------------------------------------------------------------
+  output$interaction_label_ui = renderUI({
+    if (is.null(rv$data)) {
+      return(NULL)
+    }
+
+    factors = rv$bucketFactors %||% character(0)
+    cont = rv$bucketContinuous %||% character(0)
+    resp = input$response_var
+
+    predsAll = unique(setdiff(c(factors, cont), resp))
+
+    if (length(predsAll) < 2) {
+      return(NULL)
+    }
+
+    h5(
+      class = "wmfm-optional-controls-label",
+      "Interactions (optional) ",
+      tags$span(
+        icon("circle-info"),
+        title = "Select 2-way or 3-way interaction terms to include in the model formula.",
+        style = "cursor: help;"
+      )
+    )
+  })
+
   output$interaction_ui = renderUI({
     if (is.null(rv$data)) {
       return(NULL)
@@ -216,26 +242,14 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     }
 
     tagList(
-      div(
-        class = "text-right",
-        h5(
-          class = "wmfm-optional-controls-label",
-          "Interactions (optional) ",
-          tags$span(
-            icon("circle-info"),
-            title = "Select 2-way or 3-way interaction terms to include in the model formula.",
-            style = "cursor: help;"
-          )
-        )
-      ),
       infoText,
       selectInput(
-        inputId  = "interactions",
-        label    = NULL,
-        choices  = choices,
+        inputId = "interactions",
+        label = NULL,
+        choices = choices,
         selected = selectedInteractions,
         multiple = TRUE,
-        width    = "100%"
+        width = "100%"
       )
     )
   })
