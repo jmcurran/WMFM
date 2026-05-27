@@ -206,6 +206,16 @@ appUI = function() {
           fluidRow(
             class = "wmfm-optional-controls-row",
             column(
+              width = 4
+            ),
+            column(
+              width = 8,
+              uiOutput("interaction_label_ui")
+            )
+          ),
+          fluidRow(
+            class = "wmfm-optional-controls-row",
+            column(
               width = 4,
               div(
                 style = "padding-left: 15px;",
