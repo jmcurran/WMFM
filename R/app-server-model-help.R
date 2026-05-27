@@ -40,12 +40,12 @@ registerModelHelpObservers = function(input, output, session, rv) {
         style = "margin-top: 6px;",
         tags$span(
           class = if (hasUserContext) {
-            "wmfm-status-badge wmfm-status-badge-ok"
+            "wmfm-formula-status wmfm-formula-status-ok"
           } else {
-            "wmfm-status-badge wmfm-status-badge-error"
+            "wmfm-formula-status wmfm-formula-status-error"
           },
           if (hasUserContext) {
-            tagList(icon("check"), " Data context provided.")
+            "Data context provided."
           } else {
             "No data context provided yet."
           }
