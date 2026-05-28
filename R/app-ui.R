@@ -140,6 +140,7 @@ appUI = function() {
           tagList(
           h5("Select response variable"),
           fluidRow(
+            class = "wmfm-response-context-row",
             column(
               width = 8,
               uiOutput("response_picker")
@@ -148,6 +149,7 @@ appUI = function() {
               width = 4,
               div(
                 class = "wmfm-data-context-control",
+                style = "padding-top: 27px;",
                 uiOutput(outputId = "modelHelpBtnUi")
               )
             )
