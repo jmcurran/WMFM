@@ -251,6 +251,11 @@ test_that("developer test example ladder contains the expected model families", 
     "test-17-P10F",
     "test-18-P11F",
     "test-19-P11T",
+    "test-20-B01F-followup",
+    "test-21-B11F-followup",
+    "test-22-P01F-followup",
+    "test-23-P11F-followup",
+    "test-Course Follow-Up",
     "test-arousal-01"
   )
 

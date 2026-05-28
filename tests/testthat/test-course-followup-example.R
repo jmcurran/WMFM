@@ -1,8 +1,13 @@
-testthat::test_that("Course Follow-Up example exists and loads follow-up question", {
-  examples = listWMFMExamples(package = "WMFM")
-  testthat::expect_true("Course Follow-Up" %in% examples)
+testthat::test_that("test Course Follow-Up example exists and loads follow-up question", {
+  visibleExamples = listWMFMExamples(package = "WMFM")
+  developerExamples = listWMFMExamples(
+    package = "WMFM",
+    includeTestExamples = TRUE
+  )
+  testthat::expect_false("test-Course Follow-Up" %in% visibleExamples)
+  testthat::expect_true("test-Course Follow-Up" %in% developerExamples)
 
-  info = loadExampleSpec("Course Follow-Up")
+  info = loadExampleSpec("test-Course Follow-Up")
   testthat::expect_match(
     info$researchQuestion,
     "Do students who attend class regularly and score higher on the mid-term test tend to get better final exam marks\\?"
@@ -45,7 +50,7 @@ testthat::test_that("follow-up prediction request is classified and deterministi
   testthat::expect_match(prompt, "WMFM will append the deterministic numeric follow-up answer", fixed = TRUE)
 })
 
-testthat::test_that("Course Follow-Up never defaults regular attendance to not", {
+testthat::test_that("test Course Follow-Up never defaults regular attendance to not", {
   df = data.frame(
     Exam = c(45, 54, 62, 71, 80, 88),
     Test = c(8, 10, 12, 14, 16, 18),

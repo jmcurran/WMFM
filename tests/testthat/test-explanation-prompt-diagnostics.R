@@ -42,12 +42,12 @@ testthat::test_that("model explanation prompt carries deterministic follow-up di
 })
 
 
-testthat::test_that("list and load Course Follow-Up example through display name", {
-  examples = listWMFMExamples()
-  testthat::expect_true("Course Follow-Up" %in% examples)
+testthat::test_that("list and load test Course Follow-Up example through display name", {
+  examples = listWMFMExamples(includeTestExamples = TRUE)
+  testthat::expect_true("test-Course Follow-Up" %in% examples)
 
-  info = loadExampleSpec("Course Follow-Up")
+  info = loadExampleSpec("test-Course Follow-Up")
   testthat::expect_true(is.list(info$spec))
-  testthat::expect_identical(info$spec$displayName, "Course Follow-Up")
+  testthat::expect_identical(info$spec$displayName, "test-Course Follow-Up")
   testthat::expect_true(nzchar(info$followupQuestion %||% ""))
 })

@@ -1,0 +1,6 @@
+modelType: poisson
+formula: Freq ~ Magnitude + Locn
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: How do magnitude and location relate to expected earthquake frequency?
+followupQuestion: If the magnitude is 6.25 and the location is Washington, what is the predicted expected earthquake frequency?

@@ -1,0 +1,6 @@
+modelType: poisson
+formula: Freq ~ Magnitude
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: How does expected earthquake frequency change as magnitude increases?
+followupQuestion: If the magnitude is 6.25, what is the predicted expected earthquake frequency?
