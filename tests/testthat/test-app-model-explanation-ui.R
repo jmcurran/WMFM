@@ -264,7 +264,8 @@ testthat::test_that("research question input uses one visible label", {
   ui = appUI()
   html = as.character(ui)
 
-  testthat::expect_match(html, "<h5>Research question</h5>", fixed = TRUE)
+  testthat::expect_match(html, "Research question", fixed = TRUE)
+  testthat::expect_match(html, "circle-info", fixed = TRUE)
   testthat::expect_match(html, "placeholder=\"For example, how does the expected response change", fixed = TRUE)
   testthat::expect_no_match(html, "<label.*Research question", perl = TRUE)
 })
@@ -274,7 +275,7 @@ testthat::test_that("model tab groups optional follow-up question with research 
   ui = appUI()
   html = as.character(ui)
 
-  testthat::expect_match(html, "<h5>Research question</h5>", fixed = TRUE)
+  testthat::expect_match(html, "Research question", fixed = TRUE)
   testthat::expect_match(html, "Optional follow-up question", fixed = TRUE)
   testthat::expect_match(
     html,
@@ -284,7 +285,7 @@ testthat::test_that("model tab groups optional follow-up question with research 
   testthat::expect_match(html, "Predict the response for x = 10", fixed = TRUE)
   testthat::expect_match(html, "Explain this for a 10-unit increase", fixed = TRUE)
 
-  rqPos = regexpr("<h5>Research question</h5>", html, fixed = TRUE)[1]
+  rqPos = regexpr("Research question", html, fixed = TRUE)[1]
   followupPos = regexpr("Optional follow-up question", html, fixed = TRUE)[1]
   assignPos = regexpr("<h5>Assign explanatory/predictor variables</h5>", html, fixed = TRUE)[1]
 

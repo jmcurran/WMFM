@@ -35,7 +35,7 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: flex;\n        flex-direction: column;\n        align-items: flex-start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n      }\n\n      .tab-content {\n        overflow: visible;\n      }\n    ")),
+    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn {\n        display: flex;\n        align-items: center;\n        min-height: 34px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-model-compact-action-btn {\n        padding: 4px 10px;\n        font-size: 12px;\n        line-height: 1.5;\n        border-radius: 3px;\n        min-height: 30px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: grid;\n        grid-template-columns: repeat(2, minmax(0, auto));\n        align-items: center;\n        justify-content: start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n        width: auto;\n      }\n\n      .wmfm-model-fit-actions {\n        margin-top: 25px;\n      }\n\n      @media (max-width: 767px) {\n        .wmfm-model-fit-buttons {\n          grid-template-columns: 1fr;\n        }\n      }\n\n      .wmfm-data-context-control {\n        display: flex;\n        align-items: flex-start;\n        min-height: 34px;\n      }\n\n      .wmfm-data-context-control .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .tab-content {\n        overflow: visible;\n      }\n    ")),
 
     tabsetPanel(
       id = "main_tabs",
@@ -140,6 +140,7 @@ appUI = function() {
           tagList(
           h5("Select response variable"),
           fluidRow(
+            class = "wmfm-response-context-row",
             column(
               width = 8,
               uiOutput("response_picker")
@@ -147,7 +148,8 @@ appUI = function() {
             column(
               width = 4,
               div(
-                style = "margin-top: 8px;",
+                class = "wmfm-data-context-control",
+                style = "padding-top: 27px;",
                 uiOutput(outputId = "modelHelpBtnUi")
               )
             )
@@ -156,17 +158,24 @@ appUI = function() {
 
           tags$hr(class = "hr-tight"),
 
-          h5("Research question"),
+          h5(
+            "Research question ",
+            tags$span(
+              icon("circle-info"),
+              title = paste(
+                "Briefly state the question you want the fitted model to help answer.",
+                "WMFM uses this to frame the explanation from the start,",
+                "so it should feel like the reason for the analysis rather than an optional extra."
+              ),
+              style = "cursor: help;"
+            )
+          ),
           textInput(
             "researchQuestion",
             label = NULL,
             placeholder = "For example, how does the expected response change as the predictor changes?",
             value = "",
             width = "100%"
-          ),
-          helpText(
-            "Briefly state the question you want the fitted model to help answer. ",
-            "WMFM uses this to frame the explanation from the start, so it should feel like the reason for the analysis rather than an optional extra."
           ),
           accordion(
             id = "model_question_accordion",
@@ -196,20 +205,41 @@ appUI = function() {
           h5("Assign explanatory/predictor variables"),
           uiOutput("var_buckets"),
           uiOutput("adjustment_variables_ui"),
-          div(
-            actionButton(
-              "addDerivedVarBtn",
-              "Add derived variable",
-              class = "btn btn-success"
+          fluidRow(
+            class = "wmfm-optional-controls-row",
+            column(
+              width = 4
+            ),
+            column(
+              width = 8,
+              uiOutput("interaction_label_ui")
             )
           ),
-
-          uiOutput("interaction_ui"),
+          fluidRow(
+            class = "wmfm-optional-controls-row",
+            column(
+              width = 4,
+              div(
+                class = "wmfm-optional-control-btn",
+                style = "padding-left: 15px;",
+                actionButton(
+                  "addDerivedVarBtn",
+                  "Add derived variable",
+                  class = "btn btn-success wmfm-model-compact-action-btn"
+                )
+              )
+            ),
+            column(
+              width = 8,
+              uiOutput("interaction_ui")
+            )
+          ),
 
           tags$hr(class = "hr-tight"),
 
           h5("Model type and model fitting"),
           fluidRow(
+            class = "wmfm-model-fit-row",
             column(
               width = 8,
               selectInput(
@@ -229,8 +259,7 @@ appUI = function() {
               width = 4,
               h5(""),
               div(
-                class = "wmfm-model-fit-buttons",
-                style = "margin-top: 0;",
+                class = "wmfm-model-fit-buttons wmfm-model-fit-actions",
                 actionButton(
                   "fit_btn",
                   "Fit model",
