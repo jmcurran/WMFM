@@ -6,7 +6,7 @@
 #' @return Named list prediction payload.
 #' @keywords internal
 #' @noRd
-computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissingPredictorCompletion = FALSE) {
+computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissingPredictorCompletion = TRUE) {
   if (!inherits(model, "glm")) {
     return(list(
       status = "unsupported",
@@ -19,11 +19,14 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   }
 
   familyName = tolower(model$family$family %||% "")
+  linkName = tolower(model$family$link %||% "")
   if (!(familyName %in% c("binomial", "poisson"))) {
     return(list(
       status = "unsupported",
       reason = "unsupported_glm_family",
       modelType = "glm",
+      glmFamily = familyName,
+      glmLink = linkName,
       predictionType = "mean_response_prediction",
       responseScale = "response",
       warnings = "This stage supports deterministic GLM mean predictions only for binomial logistic and Poisson models."
@@ -34,14 +37,10 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence intervals?\\b", lowerText, perl = TRUE)
 
-  # GLM deterministic follow-up predictions require explicit fitted-model
-  # predictor values. Unlike the lm student follow-up pathway, this route does
-  # not complete omitted covariates, because GLM response-scale predictions are
-  # easy to overstate when the conditioning values are not fully specified.
   inputValidation = validateLmPredictionInputs(
     model = model,
     followupQuestion = followupQuestion,
-    allowMissingPredictorCompletion = FALSE
+    allowMissingPredictorCompletion = allowMissingPredictorCompletion
   )
 
   if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
@@ -56,13 +55,14 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
         reason = "unsupported_glm_interval_request",
         modelType = "glm",
         glmFamily = familyName,
+        glmLink = linkName,
         predictionType = requestedType,
         responseScale = "response"
       ),
       inputValidation[c("suppliedPredictorValues", "requiredPredictors")],
       list(
         warnings = paste(
-          "Deterministic GLM interval support is not implemented in Stage 23.11.",
+          "Deterministic GLM interval support is not implemented in Stage 25.",
           "Use mean-response prediction on the response scale, or provide follow-up interval support in a later stage."
         )
       )
@@ -72,9 +72,11 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   if (!isTRUE(inputValidation$ok)) {
     return(c(
       list(
-        status = "needs_input",
+        status = inputValidation$status %||% ifelse(identical(inputValidation$reason, "clarification_required"), "clarification_required", "needs_input"),
         reason = inputValidation$reason,
         modelType = "glm",
+        glmFamily = familyName,
+        glmLink = linkName,
         predictionType = "mean_response_prediction",
         responseScale = "response"
       ),
@@ -89,6 +91,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       status = "needs_input",
       reason = "missing_predictor_values",
       modelType = "glm",
+      glmFamily = familyName,
+      glmLink = linkName,
       predictionType = "mean_response_prediction",
       responseScale = "response",
       suppliedPredictorValues = inputValidation$suppliedPredictorValues,
@@ -109,6 +113,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
         status = "needs_input",
         reason = newDataInfo$reason,
         modelType = "glm",
+        glmFamily = familyName,
+        glmLink = linkName,
         predictionType = "mean_response_prediction",
         responseScale = "response"
       ),
@@ -117,7 +123,15 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   }
 
   fittedPrediction = as.numeric(stats::predict(model, newdata = newDataInfo$newData, type = "response"))[1]
-  formatModelQuestionPredictionPayload(
+  responseDescription = if (identical(familyName, "binomial")) {
+    "probability"
+  } else if (identical(familyName, "poisson")) {
+    "expected_count"
+  } else {
+    "mean_response"
+  }
+
+  payload = formatModelQuestionPredictionPayload(
     modelType = "glm",
     predictionType = "mean_response_prediction",
     responseScale = "response",
@@ -130,4 +144,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       newDataInfo$warnings
     )
   )
+  payload$glmFamily = familyName
+  payload$glmLink = linkName
+  payload$responseDescription = responseDescription
+  payload
 }
