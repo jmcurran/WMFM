@@ -55,15 +55,30 @@ buildDeterministicFollowupAnswer = function(model) {
   responseName = names(stats::model.frame(model))[[1]]
   settingsText = formatFollowupPredictorSettings(prediction$resolvedPredictorValues)
   fittedText = formatFollowupPredictionNumber(prediction$fittedPrediction)
-
-  pieces = c(
+  predictionSentence = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
+    sprintf(
+      "For the follow-up question, using %s, WMFM predicts a probability for %s of %s.",
+      settingsText,
+      responseName,
+      fittedText
+    )
+  } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
+    sprintf(
+      "For the follow-up question, using %s, WMFM predicts an expected count for %s of %s.",
+      settingsText,
+      responseName,
+      fittedText
+    )
+  } else {
     sprintf(
       "For the follow-up question, using %s, WMFM predicts an expected %s of %s.",
       settingsText,
       responseName,
       fittedText
     )
-  )
+  }
+
+  pieces = c(predictionSentence)
 
   if (is.list(prediction$predictionInterval)) {
     interval = prediction$predictionInterval

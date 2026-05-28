@@ -321,6 +321,16 @@ Deterministic completion notes: {warningsText}")
       } else {
         ""
       }
+      glmBlock = if (identical(predictionResult$modelType, "glm")) {
+        glue::glue("
+
+WMFM deterministic GLM follow-up block:
+GLM family: {predictionResult$glmFamily %||% 'not_available'}
+GLM link: {predictionResult$glmLink %||% 'not_available'}
+Response-scale interpretation: {predictionResult$responseDescription %||% predictionResult$responseScale %||% 'response'}")
+      } else {
+        ""
+      }
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
@@ -338,7 +348,7 @@ Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}
 Supplied predictor values: {suppliedText}
 Resolved predictor values: {resolvedText}
-Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}
+Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}{glmBlock}
 "))
     }
 
