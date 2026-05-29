@@ -118,6 +118,7 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     resolvedPredictorValues = prediction$resolvedPredictorValues %||% list(),
     completedPredictorValues = prediction$completedPredictorValues %||% list(),
     predictionPayload = prediction,
+    generatedExplanation = diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% "",
     promptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000),
     assembledPromptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000)
   )

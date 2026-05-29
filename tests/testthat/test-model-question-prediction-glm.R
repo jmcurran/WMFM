@@ -66,14 +66,16 @@ testthat::test_that("GLM factor-level resolution is literal and response-scale",
   testthat::expect_equal(out$fittedPrediction, ref)
 })
 
-testthat::test_that("GLM interval requests are unsupported safely", {
+testthat::test_that("GLM confidence interval requests return deterministic response-scale intervals", {
   df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
   model = stats::glm(Y ~ X, data = df, family = stats::poisson())
 
   out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 3 with confidence interval")
-  testthat::expect_identical(out$status, "unsupported")
-  testthat::expect_identical(out$reason, "unsupported_glm_interval_request")
+  testthat::expect_identical(out$status, "ok")
   testthat::expect_identical(out$glmFamily, "poisson")
+  testthat::expect_true(is.list(out$confidenceInterval))
+  testthat::expect_identical(out$confidenceInterval$intervalScale, "response")
+  testthat::expect_match(out$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
 })
 
 testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics JSON, and appended answer", {

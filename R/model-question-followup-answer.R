@@ -92,10 +92,18 @@ buildDeterministicFollowupAnswer = function(model) {
     )
   } else if (is.list(prediction$confidenceInterval)) {
     interval = prediction$confidenceInterval
+    intervalSubject = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
+      "predicted probability"
+    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
+      "expected count"
+    } else {
+      "average response"
+    }
     pieces = c(
       pieces,
       sprintf(
-        "For the average response at these predictor values, the 95%% confidence interval is %s to %s.",
+        "For the %s at these predictor values, the 95%% confidence interval is %s to %s.",
+        intervalSubject,
         formatFollowupPredictionNumber(interval$lwr),
         formatFollowupPredictionNumber(interval$upr)
       )

@@ -3,4 +3,4 @@ formula: Freq ~ Magnitude + Locn
 data: ../Quakes/Quakes.df.rda
 context: ../Quakes/Quakes.Rmd
 researchQuestion: How do magnitude and location relate to expected earthquake frequency?
-followupQuestion: If Magnitude = 6.25 and Locn = WA, what is the predicted expected earthquake frequency?
+followupQuestion: What earthquake frequency would you expect for Magnitude = 3 and Locn = WA?

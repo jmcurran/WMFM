@@ -43,12 +43,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     allowMissingPredictorCompletion = allowMissingPredictorCompletion
   )
 
-  if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
-    requestedType = if (isTRUE(requestsPredictionInterval)) {
-      "individual_prediction_interval"
-    } else {
-      "confidence_interval_for_mean_response"
-    }
+  if (isTRUE(requestsPredictionInterval)) {
     return(c(
       list(
         status = "unsupported",
@@ -56,14 +51,15 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
         modelType = "glm",
         glmFamily = familyName,
         glmLink = linkName,
-        predictionType = requestedType,
+        predictionType = "individual_prediction_interval",
         responseScale = "response"
       ),
       inputValidation[c("suppliedPredictorValues", "requiredPredictors")],
       list(
+        predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead.",
         warnings = paste(
-          "Deterministic GLM interval support is not implemented in Stage 25.",
-          "Use mean-response prediction on the response scale, or provide follow-up interval support in a later stage."
+          "Deterministic GLM prediction intervals for a future observation are not currently supported in Stage 25.",
+          "Use the fitted mean-response prediction and its confidence interval instead."
         )
       )
     ))
@@ -122,7 +118,24 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     ))
   }
 
-  fittedPrediction = as.numeric(stats::predict(model, newdata = newDataInfo$newData, type = "response"))[1]
+  linkPrediction = stats::predict(model, newdata = newDataInfo$newData, type = "link", se.fit = TRUE)
+  linkFit = as.numeric(linkPrediction$fit)[1]
+  linkSe = as.numeric(linkPrediction$se.fit)[1]
+  fittedPrediction = as.numeric(model$family$linkinv(linkFit))[1]
+  confidenceInterval = NULL
+  if (is.finite(linkFit) && is.finite(linkSe)) {
+    linkLwr = linkFit - stats::qnorm(0.975) * linkSe
+    linkUpr = linkFit + stats::qnorm(0.975) * linkSe
+    confidenceInterval = list(
+      fit = fittedPrediction,
+      lwr = as.numeric(model$family$linkinv(linkLwr))[1],
+      upr = as.numeric(model$family$linkinv(linkUpr))[1],
+      level = 0.95,
+      scale = "response",
+      intervalScale = "response",
+      method = "link_scale_delta_back_transform"
+    )
+  }
   responseDescription = if (identical(familyName, "binomial")) {
     "probability"
   } else if (identical(familyName, "poisson")) {
@@ -139,6 +152,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = fittedPrediction,
+    confidenceInterval = confidenceInterval,
+    predictionInterval = NULL,
     warnings = c(
       sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName),
       newDataInfo$warnings
@@ -147,5 +162,6 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload$glmFamily = familyName
   payload$glmLink = linkName
   payload$responseDescription = responseDescription
+  payload$predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead."
   payload
 }

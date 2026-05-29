@@ -4,4 +4,4 @@ dataSource: package
 dataPackage: s20x
 dataObject: course.df
 researchQuestion: How do attendance and test mark relate to the probability of passing?
-followupQuestion: If Test = 10 and Attend = Yes, what is my predicted probability of passing?
+followupQuestion: Suppose a student has Test = 10 and Attend = Yes. What probability of passing would you predict?
