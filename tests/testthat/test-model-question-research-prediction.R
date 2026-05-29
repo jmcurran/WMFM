@@ -42,12 +42,13 @@ testthat::test_that("individual prediction wording in research question requests
   testthat::expect_true(is.list(payload$predictionResult$predictionInterval))
 })
 
-testthat::test_that("glm prediction interval via research question fails safely", {
+testthat::test_that("glm prediction interval via research question returns mean prediction with unsupported interval reason", {
   df = data.frame(Y = c(0, 1, 0, 1, 1, 0), X = c(1, 2, 3, 4, 5, 6))
   model = stats::glm(Y ~ X, data = df, family = stats::binomial())
 
   payload = buildResearchQuestionPredictionPayload(model, "Predict Y for X = 3 with prediction interval")
-  testthat::expect_identical(payload$predictionResult$status, "unsupported")
+  testthat::expect_identical(payload$predictionResult$status, "ok")
+  testthat::expect_match(payload$predictionResult$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
 })
 
 testthat::test_that("prompt includes research-question deterministic prediction payload", {

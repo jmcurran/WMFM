@@ -314,6 +314,13 @@ Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)
         piBlock = glue::glue("
 Prediction interval for an individual outcome (95%): [{signif(pi$lwr, 6)}, {signif(pi$upr, 6)}]")
       }
+      piUnsupportedText = trimws(as.character(predictionResult$predictionIntervalUnsupportedReason %||% ""))
+      piUnsupportedBlock = if (nzchar(piUnsupportedText)) {
+        glue::glue("
+Prediction interval unsupported reason: {piUnsupportedText}")
+      } else {
+        ""
+      }
       warningsText = paste(predictionResult$warnings %||% character(0), collapse = " ")
       warningBlock = if (nzchar(trimws(warningsText))) {
         glue::glue("
@@ -348,7 +355,7 @@ Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}
 Supplied predictor values: {suppliedText}
 Resolved predictor values: {resolvedText}
-Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}{glmBlock}
+Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{piUnsupportedBlock}{warningBlock}{glmBlock}
 "))
     }
 

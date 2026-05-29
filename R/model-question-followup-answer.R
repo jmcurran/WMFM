@@ -102,6 +102,11 @@ buildDeterministicFollowupAnswer = function(model) {
     )
   }
 
+  piUnsupportedText = trimws(as.character(prediction$predictionIntervalUnsupportedReason %||% ""))
+  if (nzchar(piUnsupportedText)) {
+    pieces = c(pieces, piUnsupportedText)
+  }
+
   warningsText = paste(prediction$warnings %||% character(0), collapse = " ")
   if (nzchar(trimws(warningsText))) {
     pieces = c(pieces, warningsText)

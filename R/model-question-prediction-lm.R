@@ -525,7 +525,7 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
   assignmentPattern = paste0(
     "(", keyPattern, ")\\s*=\\s*",
     "(.*?)",
-    "(?=\\s+(?:and|with|for|when|where)\\s+", keyPattern, "\\s*=|[,;]|$)"
+    "(?=\\s+(?:and|with|for|in|when|where)\\s+", keyPattern, "\\s*=|[,;]|$)"
   )
 
   m = gregexpr(assignmentPattern, text, perl = TRUE)
@@ -542,7 +542,7 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
     key = trimws(kv[[1]])
     val = trimws(paste(kv[-1], collapse = "="))
-    val = sub("\\s+(?:and|with|for|when|where|what|which)\\b.*$", "", val, perl = TRUE)
+    val = sub("\\s+(?:and|with|for|in|when|where|what|which)\\b.*$", "", val, perl = TRUE)
     val = trimws(val)
     val = stripTrailingAssignmentPunctuation(val)
     if (nzchar(key) && nzchar(val)) {
@@ -555,8 +555,8 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
 #' @keywords internal
 #' @noRd
-formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", responseScale = "response", suppliedPredictorValues, resolvedPredictorValues, completedPredictorValues = resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, warnings = character(0)) {
-  list(
+formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", responseScale = "response", suppliedPredictorValues, resolvedPredictorValues, completedPredictorValues = resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, predictionIntervalUnsupportedReason = NULL, warnings = character(0)) {
+  payload = list(
     status = "ok",
     modelType = modelType,
     predictionType = predictionType,
@@ -569,4 +569,8 @@ formatModelQuestionPredictionPayload = function(modelType, predictionType = "mea
     predictionInterval = predictionInterval,
     warnings = warnings
   )
+  if (!is.null(predictionIntervalUnsupportedReason)) {
+    payload$predictionIntervalUnsupportedReason = predictionIntervalUnsupportedReason
+  }
+  payload
 }

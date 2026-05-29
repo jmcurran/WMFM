@@ -43,31 +43,6 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     allowMissingPredictorCompletion = allowMissingPredictorCompletion
   )
 
-  if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
-    requestedType = if (isTRUE(requestsPredictionInterval)) {
-      "individual_prediction_interval"
-    } else {
-      "confidence_interval_for_mean_response"
-    }
-    return(c(
-      list(
-        status = "unsupported",
-        reason = "unsupported_glm_interval_request",
-        modelType = "glm",
-        glmFamily = familyName,
-        glmLink = linkName,
-        predictionType = requestedType,
-        responseScale = "response"
-      ),
-      inputValidation[c("suppliedPredictorValues", "requiredPredictors")],
-      list(
-        warnings = paste(
-          "Deterministic GLM interval support is not implemented in Stage 25.",
-          "Use mean-response prediction on the response scale, or provide follow-up interval support in a later stage."
-        )
-      )
-    ))
-  }
 
   if (!isTRUE(inputValidation$ok)) {
     return(c(
@@ -123,6 +98,16 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   }
 
   fittedPrediction = as.numeric(stats::predict(model, newdata = newDataInfo$newData, type = "response"))[1]
+  confidenceInterval = if (isTRUE(requestsConfidenceInterval)) {
+    computeGlmMeanResponseConfidenceInterval(model = model, newData = newDataInfo$newData)
+  } else {
+    NULL
+  }
+  predictionIntervalUnsupportedReason = if (isTRUE(requestsPredictionInterval)) {
+    "GLM prediction intervals for individual outcomes are not currently supported by the deterministic follow-up pathway."
+  } else {
+    NULL
+  }
   responseDescription = if (identical(familyName, "binomial")) {
     "probability"
   } else if (identical(familyName, "poisson")) {
@@ -139,8 +124,12 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = fittedPrediction,
+    confidenceInterval = confidenceInterval,
+    predictionIntervalUnsupportedReason = predictionIntervalUnsupportedReason,
     warnings = c(
       sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName),
+      if (isTRUE(requestsConfidenceInterval)) "Computed the GLM mean-response confidence interval on the link scale and transformed it to the response scale.",
+      if (isTRUE(requestsPredictionInterval)) predictionIntervalUnsupportedReason,
       newDataInfo$warnings
     )
   )
@@ -148,4 +137,25 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload$glmLink = linkName
   payload$responseDescription = responseDescription
   payload
+}
+
+#' Compute a response-scale confidence interval for a GLM mean response
+#'
+#' @keywords internal
+#' @noRd
+computeGlmMeanResponseConfidenceInterval = function(model, newData, level = 0.95) {
+  pred = stats::predict(model, newdata = newData, type = "link", se.fit = TRUE)
+  fitLink = as.numeric(pred$fit)[1]
+  seLink = as.numeric(pred$se.fit)[1]
+  alpha = 1 - level
+  critical = stats::qnorm(1 - alpha / 2)
+  linkInv = model$family$linkinv
+
+  list(
+    fit = as.numeric(linkInv(fitLink)),
+    lwr = as.numeric(linkInv(fitLink - critical * seLink)),
+    upr = as.numeric(linkInv(fitLink + critical * seLink)),
+    level = level,
+    scale = "response"
+  )
 }
