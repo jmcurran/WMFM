@@ -81,6 +81,28 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  expectedPredictionPattern = paste(
+    c(
+      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b.*\\b(expect|expected)\\b",
+      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b",
+      "\\bhow many\\b.*\\b(expect|expected)\\b",
+      "\\bhow much\\b.*\\b(expect|expected)\\b"
+    ),
+    collapse = "|"
+  )
+  hasPredictionCondition = grepl(
+    "\\b(for|when|with|where)\\b.*\\b[A-Za-z][A-Za-z0-9_.]*\\s*=",
+    originalText,
+    perl = TRUE
+  )
+  if (grepl(expectedPredictionPattern, normalizedText, perl = TRUE) && isTRUE(hasPredictionCondition)) {
+    result$category = "prediction_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Expected-value prediction-style request captured for deterministic follow-up handling."
+    return(result)
+  }
+
   if (grepl("\\b(confidence interval|uncertainty|precision|how sure|how certain)\\b", normalizedText, perl = TRUE)) {
     result$category = "emphasis_uncertainty"
     result$supported = TRUE

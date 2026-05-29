@@ -10,6 +10,23 @@ testthat::test_that("prediction wording classifies as prediction_request", {
   testthat::expect_true(out$requiresDeterministicComputation)
 })
 
+
+
+testthat::test_that("expected-value follow-ups with explicit predictor values classify as prediction_request", {
+  prompts = c(
+    "What earthquake frequency would you expect for Magnitude = 3?",
+    "What earthquake frequency would you expect for Magnitude = 3 and Locn = WA?",
+    "What expected count would you report when X = 3?"
+  )
+
+  for (prompt in prompts) {
+    out = classifyModelFollowupQuestion(prompt)
+    testthat::expect_identical(out$category, "prediction_request")
+    testthat::expect_true(out$supported)
+    testthat::expect_true(out$requiresDeterministicComputation)
+  }
+})
+
 testthat::test_that("prediction interval wording classifies as prediction_interval_request", {
   out = classifyModelFollowupQuestion("Give me a prediction interval for this student")
   testthat::expect_identical(out$category, "prediction_interval_request")
