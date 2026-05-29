@@ -313,7 +313,7 @@ Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)
         pi = predictionResult$predictionInterval
         piBlock = glue::glue("
 Prediction interval for an individual outcome (95%): [{signif(pi$lwr, 6)}, {signif(pi$upr, 6)}]")
-      } else if (identical(predictionResult$modelType, "glm") && !isTRUE(predictionResult$predictionIntervalSupported)) {
+      } else if (identical(payload$category, "prediction_interval_request") && identical(predictionResult$modelType, "glm") && !isTRUE(predictionResult$predictionIntervalSupported)) {
         piBlock = glue::glue("
 Prediction interval support: unsupported. Reason: {predictionResult$predictionIntervalUnsupportedReason %||% 'GLM prediction intervals are not currently supported deterministically.'}")
       }

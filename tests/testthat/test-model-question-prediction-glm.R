@@ -112,6 +112,7 @@ testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics
   block = buildModelFollowupPromptBlock(payload)
   testthat::expect_match(block, "WMFM deterministic GLM follow-up block", fixed = TRUE)
   testthat::expect_match(block, "GLM family: binomial", fixed = TRUE)
+  testthat::expect_false(grepl("Prediction interval support: unsupported", block, fixed = TRUE))
 
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(list(
     followupPayload = payload,
