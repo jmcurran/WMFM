@@ -265,6 +265,26 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     parsedPairs$Test = matched
   }
 
+  for (predictor in predictorNames) {
+    if (predictor %in% names(parsedPairs)) {
+      next
+    }
+
+    column = mf[[predictor]]
+    if (!is.numeric(column)) {
+      next
+    }
+
+    matchedValue = extractNaturalNumericPredictionValue(
+      predictor = predictor,
+      text = text
+    )
+
+    if (!is.null(matchedValue)) {
+      parsedPairs[[predictor]] = matchedValue
+    }
+  }
+
   unresolvedFactors = character(0)
   for (predictor in predictorNames) {
     column = mf[[predictor]]
@@ -303,6 +323,50 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
   }
 
   parsedPairs
+}
+
+
+#' @keywords internal
+#' @noRd
+extractNaturalNumericPredictionValue = function(predictor, text) {
+  predictorNorm = normalizePredictionText(predictor)
+  textNorm = normalizePredictionText(text)
+  if (!nzchar(predictorNorm) || !nzchar(textNorm)) {
+    return(NULL)
+  }
+
+  extractFirstCapture = function(pattern) {
+    match = regmatches(textNorm, regexec(pattern, textNorm, perl = TRUE))[[1]]
+    if (length(match) < 2) {
+      return(NULL)
+    }
+    match[[2]]
+  }
+
+  numberPattern = "(-?\\d+(?:\\.\\d+)?)"
+  predictorPattern = paste0("\\b", predictorNorm, "\\b")
+  nearbyAfterPattern = paste0(
+    predictorPattern,
+    "(?:\\s+(?:is|of|at|mark|score|value|equal(?:s)?|=|would be))*\\s+",
+    numberPattern
+  )
+  nearbyBeforePattern = paste0(
+    numberPattern,
+    "(?:\\s+(?:on|for|in|as|at|out of \\d+))*\\s+",
+    predictorPattern
+  )
+
+  matchedValue = extractFirstCapture(nearbyAfterPattern)
+  if (!is.null(matchedValue)) {
+    return(matchedValue)
+  }
+
+  matchedValue = extractFirstCapture(nearbyBeforePattern)
+  if (!is.null(matchedValue)) {
+    return(matchedValue)
+  }
+
+  NULL
 }
 
 #' @keywords internal
@@ -436,8 +500,17 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
     column = mf[[name]]
     valueWasSupplied = !is.null(value) && nzchar(trimws(as.character(value)))
 
+    categoricalLevels = character(0)
     if (is.factor(column)) {
-      lvl = levels(column)
+      categoricalLevels = levels(column)
+    } else if (!is.null(model$xlevels[[name]])) {
+      categoricalLevels = model$xlevels[[name]]
+    } else if (is.character(column)) {
+      categoricalLevels = sort(unique(stats::na.omit(as.character(column))))
+    }
+
+    if (length(categoricalLevels) > 0) {
+      lvl = categoricalLevels
       if (!isTRUE(valueWasSupplied)) {
         value = lvl[[1]]
         warnings = c(

@@ -306,7 +306,7 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
       if (is.list(predictionResult$confidenceInterval)) {
         ci = predictionResult$confidenceInterval
         ciBlock = glue::glue("
-Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+Confidence interval for the requested prediction scale (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
       }
       piBlock = ""
       if (is.list(predictionResult$predictionInterval)) {
@@ -318,6 +318,16 @@ Prediction interval for an individual outcome (95%): [{signif(pi$lwr, 6)}, {sign
       warningBlock = if (nzchar(trimws(warningsText))) {
         glue::glue("
 Deterministic completion notes: {warningsText}")
+      } else {
+        ""
+      }
+      glmBlock = if (identical(predictionResult$modelType, "glm")) {
+        glue::glue("
+
+WMFM deterministic GLM follow-up block:
+GLM family: {predictionResult$glmFamily %||% 'not_available'}
+GLM link: {predictionResult$glmLink %||% 'not_available'}
+Response-scale interpretation: {predictionResult$responseDescription %||% predictionResult$responseScale %||% 'response'}")
       } else {
         ""
       }
@@ -338,7 +348,7 @@ Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}
 Supplied predictor values: {suppliedText}
 Resolved predictor values: {resolvedText}
-Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}
+Fitted mean prediction: {signif(predictionResult$fittedPrediction, 6)}{ciBlock}{piBlock}{warningBlock}{glmBlock}
 "))
     }
 

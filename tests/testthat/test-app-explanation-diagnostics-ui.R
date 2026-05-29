@@ -91,3 +91,45 @@ testthat::test_that("diagnostics JSON download uses Shiny download output", {
   testthat::expect_match(html, "diag_followup_json_download", fixed = TRUE)
   testthat::expect_no_match(html, "URL.createObjectURL", fixed = TRUE)
 })
+
+testthat::test_that("diagnostics JSON sanitises ellmer output explanation objects", {
+  explanationObject = list(content = "Generated Poisson explanation", meta = list(tokens = 12))
+  class(explanationObject) = c("ellmer_output", "list")
+
+  diagnostics = list(
+    followupText = "raw text",
+    followupPayload = list(
+      originalText = "raw text",
+      category = "prediction_request",
+      predictionResult = list(
+        status = "ok",
+        modelType = "glm",
+        glmFamily = "poisson",
+        glmLink = "log",
+        responseScale = "response",
+        responseDescription = "expected_count",
+        confidenceInterval = list(
+          fit = 3.2,
+          lwr = 2.1,
+          upr = 4.7,
+          intervalScale = "response"
+        ),
+        predictionIntervalUnsupportedReason = "not currently supported"
+      )
+    ),
+    generatedExplanation = explanationObject,
+    assembledPrompt = "Prompt body"
+  )
+
+  out = buildExplanationPromptDiagnosticsJson(diagnostics = diagnostics)
+  parsed = jsonlite::fromJSON(out, simplifyVector = FALSE)
+
+  testthat::expect_identical(parsed$generatedExplanation, "Generated Poisson explanation")
+  testthat::expect_identical(parsed$predictionPayload$glmFamily, "poisson")
+  testthat::expect_identical(parsed$predictionPayload$confidenceInterval$intervalScale, "response")
+  testthat::expect_match(
+    parsed$predictionPayload$predictionIntervalUnsupportedReason,
+    "not currently supported",
+    fixed = TRUE
+  )
+})

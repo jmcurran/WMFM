@@ -1,0 +1,7 @@
+modelType: logistic
+formula: Pass ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: How do attendance and test mark relate to the odds of passing?
+followupQuestion: Suppose a student has Test = 10 and Attend = Yes. What odds of passing would you predict?

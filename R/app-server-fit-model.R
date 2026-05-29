@@ -430,6 +430,9 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
         chatProvider = chatProvider
       )
       explanation = postProcessExplanationText(explanation)
+      if (is.list(rv$explanationPromptDiagnostics)) {
+        rv$explanationPromptDiagnostics$generatedExplanation = explanation %||% ""
+      }
       explanationAudit = buildAppExplanationAudit(model = m)
 
       incProgress(0.35, detail = outputMessages$updateDetail)

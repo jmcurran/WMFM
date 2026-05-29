@@ -1,4 +1,4 @@
-displayName: Course Follow-Up
+displayName: test-Course Follow-Up
 modelType: lm
 formula: Exam ~ Attend + Test
 dataSource: package
