@@ -46,7 +46,7 @@ testthat::test_that("Stage 25.3 explicit GLM prediction interval requests still 
   testthat::expect_identical(out$reason, "unsupported_glm_interval_request")
 })
 
-testthat::test_that("Stage 25.3 earthquake follow-ups predict at Magnitude 3", {
+testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnitude 5.4", {
   quakePath = system.file(
     "extdata",
     "examples",
@@ -63,11 +63,11 @@ testthat::test_that("Stage 25.3 earthquake follow-ups predict at Magnitude 3", {
   fitMagnitude = stats::glm(Freq ~ Magnitude, data = quakeDf, family = stats::poisson())
   outMagnitude = computeGlmModelQuestionPrediction(
     model = fitMagnitude,
-    followupQuestion = "What earthquake frequency would you expect for Magnitude = 3?"
+    followupQuestion = "What earthquake frequency would you expect for Magnitude = 5.4?"
   )
 
   testthat::expect_identical(outMagnitude$status, "ok")
-  testthat::expect_equal(outMagnitude$resolvedPredictorValues$Magnitude, 3)
+  testthat::expect_equal(outMagnitude$resolvedPredictorValues$Magnitude, 5.4)
   testthat::expect_true(is.list(outMagnitude$confidenceInterval))
   testthat::expect_match(
     outMagnitude$predictionIntervalUnsupportedReason,
@@ -78,11 +78,11 @@ testthat::test_that("Stage 25.3 earthquake follow-ups predict at Magnitude 3", {
   fitMagnitudeLocn = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
   outMagnitudeLocn = computeGlmModelQuestionPrediction(
     model = fitMagnitudeLocn,
-    followupQuestion = "What earthquake frequency would you expect for Magnitude = 3 and Locn = WA?"
+    followupQuestion = "What earthquake frequency would you expect for Magnitude = 5.4 and Locn = WA?"
   )
 
   testthat::expect_identical(outMagnitudeLocn$status, "ok")
-  testthat::expect_equal(outMagnitudeLocn$resolvedPredictorValues$Magnitude, 3)
+  testthat::expect_equal(outMagnitudeLocn$resolvedPredictorValues$Magnitude, 5.4)
   testthat::expect_identical(outMagnitudeLocn$resolvedPredictorValues$Locn, "WA")
   testthat::expect_true(is.list(outMagnitudeLocn$confidenceInterval))
   testthat::expect_match(

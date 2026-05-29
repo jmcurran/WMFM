@@ -14,9 +14,9 @@ testthat::test_that("prediction wording classifies as prediction_request", {
 
 testthat::test_that("expected-value follow-ups with explicit predictor values classify as prediction_request", {
   prompts = c(
-    "What earthquake frequency would you expect for Magnitude = 3?",
-    "What earthquake frequency would you expect for Magnitude = 3 and Locn = WA?",
-    "What expected count would you report when X = 3?"
+    "What earthquake frequency would you expect for Magnitude = 5.4?",
+    "What earthquake frequency would you expect for Magnitude = 5.4 and Locn = WA?",
+    "What expected count would you report when X = 5.4?"
   )
 
   for (prompt in prompts) {
