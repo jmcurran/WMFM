@@ -89,6 +89,127 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
 }
 
 
+
+#' Sanitise explanation diagnostics values for JSON
+#'
+#' Converts provider outputs and classed values into plain JSON-safe lists,
+#' vectors, and scalars before diagnostics serialisation.
+#'
+#' @param x Object to sanitise.
+#' @param depth Current recursion depth.
+#' @param maxDepth Maximum recursion depth.
+#'
+#' @return A plain JSON-safe object.
+#' @keywords internal
+#' @noRd
+sanitiseExplanationDiagnosticsJsonValue = function(x, depth = 0L, maxDepth = 10L) {
+  if (depth > maxDepth) {
+    return("<max depth reached>")
+  }
+
+  if (is.null(x)) {
+    return(NULL)
+  }
+
+  if (inherits(x, "POSIXt")) {
+    return(as.character(x))
+  }
+
+  if (is.function(x) || is.environment(x) || inherits(x, "externalptr")) {
+    return(paste0("<", paste(class(x), collapse = "/"), ">"))
+  }
+
+  if (is.data.frame(x)) {
+    out = as.data.frame(x, stringsAsFactors = FALSE)
+    for (colName in names(out)) {
+      out[[colName]] = sanitiseExplanationDiagnosticsJsonValue(
+        out[[colName]],
+        depth = depth + 1L,
+        maxDepth = maxDepth
+      )
+    }
+    rownames(out) = NULL
+    return(out)
+  }
+
+  if (is.factor(x)) {
+    return(as.character(x))
+  }
+
+  if (is.atomic(x)) {
+    out = unclass(x)
+    attributes(out) = NULL
+
+    if (is.numeric(out)) {
+      out[!is.finite(out)] = NA_real_
+    }
+
+    return(unname(out))
+  }
+
+  if (is.list(x)) {
+    x = unclass(x)
+    attributes(x) = attributes(x)[intersect(names(attributes(x)), "names")]
+
+    out = lapply(
+      x,
+      sanitiseExplanationDiagnosticsJsonValue,
+      depth = depth + 1L,
+      maxDepth = maxDepth
+    )
+
+    itemNames = names(out)
+
+    if (!is.null(itemNames)) {
+      names(out) = make.names(itemNames, unique = TRUE)
+    }
+
+    return(out)
+  }
+
+  as.character(x)
+}
+
+#' Coerce generated explanation diagnostics text to a JSON-safe scalar
+#'
+#' @param x Candidate generated explanation object.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+coerceExplanationDiagnosticsText = function(x) {
+  if (is.null(x)) {
+    return("")
+  }
+
+  if (is.character(x)) {
+    return(paste(x, collapse = "\n"))
+  }
+
+  if (is.atomic(x)) {
+    out = unclass(x)
+    attributes(out) = NULL
+    return(paste(as.character(out), collapse = "\n"))
+  }
+
+  if (is.list(x) && !is.null(x$content) && is.character(x$content)) {
+    return(paste(x$content, collapse = "\n"))
+  }
+
+  text = tryCatch(
+    as.character(x),
+    error = function(e) {
+      character(0)
+    }
+  )
+
+  if (length(text) > 0L) {
+    return(paste(text, collapse = "\n"))
+  }
+
+  paste(capture.output(str(x)), collapse = "\n")
+}
+
 #' Build Developer Mode explanation prompt diagnostics JSON
 #'
 #' @param diagnostics Optional diagnostics list from model fitting.
@@ -118,10 +239,14 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     resolvedPredictorValues = prediction$resolvedPredictorValues %||% list(),
     completedPredictorValues = prediction$completedPredictorValues %||% list(),
     predictionPayload = prediction,
-    generatedExplanation = diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% "",
-    promptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000),
-    assembledPromptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000)
+    generatedExplanation = coerceExplanationDiagnosticsText(
+      diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% ""
+    ),
+    promptExcerpt = substr(coerceExplanationDiagnosticsText(diagnostics$assembledPrompt %||% ""), 1, 8000),
+    assembledPromptExcerpt = substr(coerceExplanationDiagnosticsText(diagnostics$assembledPrompt %||% ""), 1, 8000)
   )
+
+  out = sanitiseExplanationDiagnosticsJsonValue(out)
 
   toJSON(
     out,
