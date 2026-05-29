@@ -28,3 +28,12 @@ testthat::test_that("Stage 25.3 assignment extraction separates for/in predictor
   testthat::expect_identical(outAnd$Magnitude, "3")
   testthat::expect_identical(outAnd$Locn, "WA")
 })
+
+testthat::test_that("Stage 25.3 assignment extraction keeps in inside factor values", {
+  out = extractPredictionAssignmentPairs("Predict outcome for Mode = lives in dorm")
+  testthat::expect_identical(out$Mode, "lives in dorm")
+
+  separated = extractPredictionAssignmentPairs("Predict outcome for Mode = lives in dorm in Group = first year")
+  testthat::expect_identical(separated$Mode, "lives in dorm")
+  testthat::expect_identical(separated$Group, "first year")
+})

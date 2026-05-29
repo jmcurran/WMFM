@@ -542,7 +542,8 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
     key = trimws(kv[[1]])
     val = trimws(paste(kv[-1], collapse = "="))
-    val = sub("\\s+(?:and|with|for|in|when|where|what|which)\\b.*$", "", val, perl = TRUE)
+    val = sub(paste0("\\s+(?:and|with|for|in|when|where)\\s+", keyPattern, "\\s*=.*$"), "", val, perl = TRUE)
+    val = sub("\\s+(?:what|which)\\b.*$", "", val, perl = TRUE)
     val = trimws(val)
     val = stripTrailingAssignmentPunctuation(val)
     if (nzchar(key) && nzchar(val)) {
