@@ -4,4 +4,4 @@ dataSource: package
 dataPackage: s20x
 dataObject: course.df
 researchQuestion: How does the probability of passing tend to change as the assignment mark changes?
-followupQuestion: If my assignment mark is 80, what is my predicted probability of passing?
+followupQuestion: If Assign = 80, what is my predicted probability of passing?
