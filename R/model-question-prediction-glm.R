@@ -36,6 +36,9 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   lowerText = tolower(as.character(followupQuestion %||% ""))
   requestsPredictionInterval = grepl("\\bprediction intervals?\\b", lowerText, perl = TRUE)
   requestsConfidenceInterval = grepl("\\bconfidence intervals?\\b", lowerText, perl = TRUE)
+  requestsOddsScale = identical(familyName, "binomial") &&
+    identical(linkName, "logit") &&
+    grepl("\\bodds\\b", lowerText, perl = TRUE)
 
   inputValidation = validateLmPredictionInputs(
     model = model,
@@ -121,22 +124,41 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   linkPrediction = stats::predict(model, newdata = newDataInfo$newData, type = "link", se.fit = TRUE)
   linkFit = as.numeric(linkPrediction$fit)[1]
   linkSe = as.numeric(linkPrediction$se.fit)[1]
-  fittedPrediction = as.numeric(model$family$linkinv(linkFit))[1]
+  responseScale = if (isTRUE(requestsOddsScale)) "odds" else "response"
+  fittedPrediction = if (isTRUE(requestsOddsScale)) {
+    exp(linkFit)
+  } else {
+    as.numeric(model$family$linkinv(linkFit))[1]
+  }
   confidenceInterval = NULL
   if (is.finite(linkFit) && is.finite(linkSe)) {
     linkLwr = linkFit - stats::qnorm(0.975) * linkSe
     linkUpr = linkFit + stats::qnorm(0.975) * linkSe
-    confidenceInterval = list(
-      fit = fittedPrediction,
-      lwr = as.numeric(model$family$linkinv(linkLwr))[1],
-      upr = as.numeric(model$family$linkinv(linkUpr))[1],
-      level = 0.95,
-      scale = "response",
-      intervalScale = "response",
-      method = "link_scale_delta_back_transform"
-    )
+    if (isTRUE(requestsOddsScale)) {
+      confidenceInterval = list(
+        fit = fittedPrediction,
+        lwr = exp(linkLwr),
+        upr = exp(linkUpr),
+        level = 0.95,
+        scale = "odds",
+        intervalScale = "odds",
+        method = "link_scale_exponentiate"
+      )
+    } else {
+      confidenceInterval = list(
+        fit = fittedPrediction,
+        lwr = as.numeric(model$family$linkinv(linkLwr))[1],
+        upr = as.numeric(model$family$linkinv(linkUpr))[1],
+        level = 0.95,
+        scale = "response",
+        intervalScale = "response",
+        method = "link_scale_delta_back_transform"
+      )
+    }
   }
-  responseDescription = if (identical(familyName, "binomial")) {
+  responseDescription = if (isTRUE(requestsOddsScale)) {
+    "odds"
+  } else if (identical(familyName, "binomial")) {
     "probability"
   } else if (identical(familyName, "poisson")) {
     "expected_count"
@@ -147,7 +169,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload = formatModelQuestionPredictionPayload(
     modelType = "glm",
     predictionType = "mean_response_prediction",
-    responseScale = "response",
+    responseScale = responseScale,
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     completedPredictorValues = newDataInfo$completedPredictorValues,
@@ -155,7 +177,11 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     confidenceInterval = confidenceInterval,
     predictionInterval = NULL,
     warnings = c(
-      sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName),
+      if (isTRUE(requestsOddsScale)) {
+        sprintf("Computed with stats::predict(type = 'link') and exponentiated to the odds scale for %s GLM.", familyName)
+      } else {
+        sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName)
+      },
       newDataInfo$warnings
     )
   )

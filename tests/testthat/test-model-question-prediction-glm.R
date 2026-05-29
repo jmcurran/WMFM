@@ -108,3 +108,20 @@ testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics
   testthat::expect_match(answer, "For the follow-up question", fixed = TRUE)
   testthat::expect_match(answer, "probability for Y", fixed = TRUE)
 })
+
+testthat::test_that("binomial GLM odds requests return deterministic odds-scale intervals", {
+  df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
+  model = stats::glm(Y ~ X, data = df, family = stats::binomial())
+
+  out = computeGlmModelQuestionPrediction(model, "What odds for Y would you predict when X = 3 with confidence interval?")
+  ref = exp(as.numeric(stats::predict(model, newdata = data.frame(X = 3), type = "link"))[1])
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$glmFamily, "binomial")
+  testthat::expect_identical(out$responseScale, "odds")
+  testthat::expect_identical(out$responseDescription, "odds")
+  testthat::expect_equal(out$fittedPrediction, ref)
+  testthat::expect_true(is.list(out$confidenceInterval))
+  testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
+  testthat::expect_identical(out$confidenceInterval$method, "link_scale_exponentiate")
+})

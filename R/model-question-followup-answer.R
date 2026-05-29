@@ -69,6 +69,13 @@ buildDeterministicFollowupAnswer = function(model) {
       responseName,
       fittedText
     )
+  } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "odds")) {
+    sprintf(
+      "For the follow-up question, using %s, WMFM predicts odds for %s of %s.",
+      settingsText,
+      responseName,
+      fittedText
+    )
   } else {
     sprintf(
       "For the follow-up question, using %s, WMFM predicts an expected %s of %s.",
@@ -96,6 +103,8 @@ buildDeterministicFollowupAnswer = function(model) {
       "predicted probability"
     } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
       "expected count"
+    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "odds")) {
+      "predicted odds"
     } else {
       "average response"
     }

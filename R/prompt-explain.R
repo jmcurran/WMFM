@@ -306,7 +306,7 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
       if (is.list(predictionResult$confidenceInterval)) {
         ci = predictionResult$confidenceInterval
         ciBlock = glue::glue("
-Confidence interval for the average/expected response (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+Confidence interval for the requested prediction scale (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
       }
       piBlock = ""
       if (is.list(predictionResult$predictionInterval)) {
