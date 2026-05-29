@@ -21,3 +21,20 @@ Implemented scope:
 
 No zip files, tarballs, RData files, rds files, or generated binary artifacts
 belong in the Stage 25 pull request.
+
+## Stage 25.3 follow-up test examples and diagnostics
+
+Stage 25.3 keeps the four GLM developer-only follow-up examples under the
+`test-` prefix while making their follow-up questions more like student wording.
+The deterministic assignments remain explicit enough for offline parsing, use
+in-range course assignment values, and use `Magnitude = 3` for earthquake
+follow-ups instead of the earlier anchor-style magnitude.
+
+GLM mean-response payloads now include a 95% confidence interval computed by
+`predict(..., type = "link", se.fit = TRUE)` and back-transformed to the response
+scale. GLM prediction intervals remain unsupported in this deterministic
+pathway; payloads and diagnostics now say this explicitly rather than leaving the
+absence implicit.
+
+Developer follow-up diagnostics now include the final generated explanation text
+alongside the prompt excerpt and deterministic prediction payload.

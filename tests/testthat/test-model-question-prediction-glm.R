@@ -66,14 +66,37 @@ testthat::test_that("GLM factor-level resolution is literal and response-scale",
   testthat::expect_equal(out$fittedPrediction, ref)
 })
 
-testthat::test_that("GLM interval requests are unsupported safely", {
+testthat::test_that("GLM confidence interval requests use link SE and response back-transform", {
   df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
   model = stats::glm(Y ~ X, data = df, family = stats::poisson())
 
   out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 3 with confidence interval")
-  testthat::expect_identical(out$status, "unsupported")
-  testthat::expect_identical(out$reason, "unsupported_glm_interval_request")
+  ref = stats::predict(model, newdata = data.frame(X = 3), type = "link", se.fit = TRUE)
+  z = stats::qnorm(0.975)
+  refFit = model$family$linkinv(as.numeric(ref$fit)[1])
+  refLwr = model$family$linkinv(as.numeric(ref$fit)[1] - z * as.numeric(ref$se.fit)[1])
+  refUpr = model$family$linkinv(as.numeric(ref$fit)[1] + z * as.numeric(ref$se.fit)[1])
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$predictionType, "confidence_interval_for_mean_response")
   testthat::expect_identical(out$glmFamily, "poisson")
+  testthat::expect_true(is.list(out$confidenceInterval))
+  testthat::expect_equal(out$confidenceInterval$fit, refFit)
+  testthat::expect_equal(out$confidenceInterval$lwr, refLwr)
+  testthat::expect_equal(out$confidenceInterval$upr, refUpr)
+  testthat::expect_identical(out$predictionIntervalSupported, FALSE)
+  testthat::expect_match(out$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
+})
+
+testthat::test_that("GLM prediction interval requests are unsupported explicitly", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 3 with prediction interval")
+  testthat::expect_identical(out$status, "unsupported")
+  testthat::expect_identical(out$reason, "unsupported_glm_prediction_interval")
+  testthat::expect_identical(out$predictionIntervalSupported, FALSE)
+  testthat::expect_match(out$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
 })
 
 testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics JSON, and appended answer", {
@@ -92,13 +115,18 @@ testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics
 
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(list(
     followupPayload = payload,
-    assembledPrompt = block
+    assembledPrompt = block,
+    finalExplanationText = "Final answer shown to the student."
   ))
   diagnostics = jsonlite::fromJSON(diagnosticsJson, simplifyVector = FALSE)
   testthat::expect_identical(diagnostics$modelType, "glm")
   testthat::expect_identical(diagnostics$glmFamily, "binomial")
   testthat::expect_identical(diagnostics$glmLink, "logit")
   testthat::expect_identical(diagnostics$predictionPayload$modelType, "glm")
+  testthat::expect_true(is.list(diagnostics$predictionPayload$confidenceInterval))
+  testthat::expect_identical(diagnostics$predictionPayload$predictionIntervalSupported, FALSE)
+  testthat::expect_match(diagnostics$predictionPayload$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
+  testthat::expect_identical(diagnostics$finalExplanationText, "Final answer shown to the student.")
   testthat::expect_match(diagnostics$promptExcerpt, "WMFM deterministic GLM follow-up block", fixed = TRUE)
 
   attr(model, "wmfm_model_followup_payload") = payload

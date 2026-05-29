@@ -35,6 +35,8 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     "",
     "Prediction payload:", paste(capture.output(str(prediction)), collapse = "\n"),
     "",
+    "Final generated explanation text:", diagnostics$finalExplanationText %||% "",
+    "",
     "Assembled prompt excerpt:", substr(diagnostics$assembledPrompt %||% "", 1, 8000),
     sep = "\n"
   )
@@ -83,6 +85,8 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$pre(id = "diag_followup_missing_values", paste(capture.output(str(missingOrAmbiguous)), collapse = "\n")),
     tags$strong("Deterministic prediction payload"),
     tags$pre(id = "diag_followup_prediction_payload", paste(capture.output(str(prediction)), collapse = "\n")),
+    tags$strong("Final generated explanation text"),
+    tags$pre(id = "diag_followup_final_explanation_text", diagnostics$finalExplanationText %||% ""),
     tags$strong("Final assembled prompt excerpt"),
     tags$pre(id = "diag_followup_prompt_excerpt", substr(diagnostics$assembledPrompt %||% "", 1, 8000))
   )
@@ -113,11 +117,16 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     glmLink = as.character(prediction$glmLink %||% ""),
     responseScale = as.character(prediction$responseScale %||% ""),
     responseDescription = as.character(prediction$responseDescription %||% ""),
+    confidenceIntervalSupported = prediction$confidenceIntervalSupported %||% is.list(prediction$confidenceInterval),
+    confidenceIntervalUnsupportedReason = as.character(prediction$confidenceIntervalUnsupportedReason %||% ""),
+    predictionIntervalSupported = prediction$predictionIntervalSupported %||% is.list(prediction$predictionInterval),
+    predictionIntervalUnsupportedReason = as.character(prediction$predictionIntervalUnsupportedReason %||% ""),
     warnings = prediction$warnings %||% character(0),
     suppliedPredictorValues = prediction$suppliedPredictorValues %||% list(),
     resolvedPredictorValues = prediction$resolvedPredictorValues %||% list(),
     completedPredictorValues = prediction$completedPredictorValues %||% list(),
     predictionPayload = prediction,
+    finalExplanationText = diagnostics$finalExplanationText %||% "",
     promptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000),
     assembledPromptExcerpt = substr(diagnostics$assembledPrompt %||% "", 1, 8000)
   )

@@ -14,6 +14,10 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       modelType = class(model)[[1]],
       predictionType = "mean_response_prediction",
       responseScale = "response",
+      confidenceIntervalSupported = FALSE,
+      confidenceIntervalUnsupportedReason = "GLM confidence intervals require a fitted glm model.",
+      predictionIntervalSupported = FALSE,
+      predictionIntervalUnsupportedReason = "GLM prediction intervals are not currently supported deterministically.",
       warnings = "GLM deterministic prediction pathway requires a fitted glm model."
     ))
   }
@@ -29,6 +33,10 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       glmLink = linkName,
       predictionType = "mean_response_prediction",
       responseScale = "response",
+      confidenceIntervalSupported = FALSE,
+      confidenceIntervalUnsupportedReason = "GLM confidence intervals are currently supported only for binomial logistic and Poisson models in this deterministic pathway.",
+      predictionIntervalSupported = FALSE,
+      predictionIntervalUnsupportedReason = "GLM prediction intervals are not currently supported deterministically.",
       warnings = "This stage supports deterministic GLM mean predictions only for binomial logistic and Poisson models."
     ))
   }
@@ -43,27 +51,29 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     allowMissingPredictorCompletion = allowMissingPredictorCompletion
   )
 
-  if (isTRUE(requestsPredictionInterval) || isTRUE(requestsConfidenceInterval)) {
-    requestedType = if (isTRUE(requestsPredictionInterval)) {
-      "individual_prediction_interval"
-    } else {
-      "confidence_interval_for_mean_response"
-    }
+  if (isTRUE(requestsPredictionInterval)) {
     return(c(
       list(
         status = "unsupported",
-        reason = "unsupported_glm_interval_request",
+        reason = "unsupported_glm_prediction_interval",
         modelType = "glm",
         glmFamily = familyName,
         glmLink = linkName,
-        predictionType = requestedType,
-        responseScale = "response"
+        predictionType = "individual_prediction_interval",
+        responseScale = "response",
+        predictionInterval = NULL,
+        predictionIntervalSupported = FALSE,
+        predictionIntervalUnsupportedReason = paste(
+          "GLM follow-up prediction intervals are not currently supported deterministically.",
+          "For binomial and Poisson GLMs, WMFM can compute a confidence interval for the mean response on the response scale,",
+          "but an individual prediction interval requires a distribution-specific predictive calculation that is not implemented in Stage 25.3."
+        )
       ),
       inputValidation[c("suppliedPredictorValues", "requiredPredictors")],
       list(
         warnings = paste(
-          "Deterministic GLM interval support is not implemented in Stage 25.",
-          "Use mean-response prediction on the response scale, or provide follow-up interval support in a later stage."
+          "GLM prediction interval request was not computed.",
+          "Use a mean-response prediction or confidence interval follow-up instead."
         )
       )
     ))
@@ -123,6 +133,19 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   }
 
   fittedPrediction = as.numeric(stats::predict(model, newdata = newDataInfo$newData, type = "response"))[1]
+  confidenceInterval = computeGlmMeanResponseConfidenceInterval(
+    model = model,
+    newData = newDataInfo$newData
+  )
+  predictionType = if (isTRUE(requestsConfidenceInterval)) {
+    "confidence_interval_for_mean_response"
+  } else {
+    "mean_response_prediction"
+  }
+  predictionIntervalUnsupportedReason = paste(
+    "GLM follow-up prediction intervals are not currently supported deterministically.",
+    "For binomial and Poisson GLMs, this payload reports the fitted mean response and its confidence interval on the response scale instead."
+  )
   responseDescription = if (identical(familyName, "binomial")) {
     "probability"
   } else if (identical(familyName, "poisson")) {
@@ -133,19 +156,58 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
 
   payload = formatModelQuestionPredictionPayload(
     modelType = "glm",
-    predictionType = "mean_response_prediction",
+    predictionType = predictionType,
     responseScale = "response",
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = fittedPrediction,
+    confidenceInterval = confidenceInterval,
+    predictionInterval = NULL,
     warnings = c(
       sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName),
+      "GLM mean-response confidence interval computed with stats::predict(type = 'link', se.fit = TRUE), then back-transformed to the response scale.",
       newDataInfo$warnings
     )
   )
   payload$glmFamily = familyName
   payload$glmLink = linkName
   payload$responseDescription = responseDescription
+  payload$confidenceIntervalSupported = is.list(confidenceInterval)
+  payload$predictionIntervalSupported = FALSE
+  payload$predictionIntervalUnsupportedReason = predictionIntervalUnsupportedReason
   payload
+}
+
+#' Compute a GLM mean-response confidence interval on the response scale
+#'
+#' Uses the fitted model's link function for the standard-error calculation,
+#' then back-transforms the interval endpoints with the inverse link.
+#'
+#' @param model Fitted glm model.
+#' @param newData One-row prediction data frame.
+#'
+#' @return Named list with fit/lwr/upr/level, or NULL if unavailable.
+#' @keywords internal
+#' @noRd
+computeGlmMeanResponseConfidenceInterval = function(model, newData) {
+  pred = stats::predict(model, newdata = newData, type = "link", se.fit = TRUE)
+  fit = as.numeric(pred$fit)[1]
+  se = as.numeric(pred$se.fit)[1]
+  if (!is.finite(fit) || !is.finite(se)) {
+    return(NULL)
+  }
+
+  level = 0.95
+  alpha = 1 - level
+  z = stats::qnorm(1 - alpha / 2)
+  invLink = model$family$linkinv
+  list(
+    fit = as.numeric(invLink(fit)),
+    lwr = as.numeric(invLink(fit - z * se)),
+    upr = as.numeric(invLink(fit + z * se)),
+    level = level,
+    scale = "response",
+    method = "link_se_back_transform"
+  )
 }

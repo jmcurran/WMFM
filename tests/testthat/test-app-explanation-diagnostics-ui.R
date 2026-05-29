@@ -10,7 +10,8 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
         warnings = ""
       )
     ),
-    assembledPrompt = "Prompt body"
+    assembledPrompt = "Prompt body",
+    finalExplanationText = "Final generated explanation."
   )
 
   ui = buildExplanationPromptDiagnosticsUi(diagnostics = diagnostics)
@@ -25,6 +26,7 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
   testthat::expect_match(html, "diag_followup_resolved_values", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_missing_values", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_prediction_payload", fixed = TRUE)
+  testthat::expect_match(html, "diag_followup_final_explanation_text", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_prompt_excerpt", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_json_download", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_json_bundle", fixed = TRUE)
@@ -63,7 +65,8 @@ testthat::test_that("diagnostics JSON helper exposes uploadable follow-up fields
         completedPredictorValues = list(Test = 10, Attend = "Yes")
       )
     ),
-    assembledPrompt = "Prompt body"
+    assembledPrompt = "Prompt body",
+    finalExplanationText = "Final generated explanation."
   )
 
   out = buildExplanationPromptDiagnosticsJson(diagnostics = diagnostics)
@@ -72,6 +75,8 @@ testthat::test_that("diagnostics JSON helper exposes uploadable follow-up fields
   testthat::expect_match(out, "completedPredictorValues", fixed = TRUE)
   testthat::expect_match(out, '"Attend": "Yes"', fixed = TRUE)
   testthat::expect_match(out, "assembledPromptExcerpt", fixed = TRUE)
+  testthat::expect_match(out, "finalExplanationText", fixed = TRUE)
+  testthat::expect_match(out, "Final generated explanation.", fixed = TRUE)
 })
 
 testthat::test_that("diagnostics JSON download uses Shiny download output", {

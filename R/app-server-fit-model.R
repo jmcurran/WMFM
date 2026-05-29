@@ -436,6 +436,9 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
       rv$modelEquations = equationResults$equations
       rv$modelExplanation = explanation
+      if (is.list(rv$explanationPromptDiagnostics)) {
+        rv$explanationPromptDiagnostics$finalExplanationText = explanation %||% ""
+      }
       rv$modelExplanationProvenance = if (!is.null(explanation)) {
         list(
           providerLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama",
