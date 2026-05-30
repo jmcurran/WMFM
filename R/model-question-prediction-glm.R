@@ -46,6 +46,12 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     allowMissingPredictorCompletion = allowMissingPredictorCompletion
   )
 
+  predictionIntervalPolicy = buildGlmPredictionIntervalPolicy(
+    familyName = familyName,
+    linkName = linkName,
+    requestedPredictionInterval = requestsPredictionInterval
+  )
+
   if (isTRUE(requestsPredictionInterval)) {
     return(c(
       list(
@@ -59,9 +65,10 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       ),
       inputValidation[c("suppliedPredictorValues", "requiredPredictors")],
       list(
-        predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead.",
+        predictionIntervalPolicy = predictionIntervalPolicy,
+        predictionIntervalUnsupportedReason = predictionIntervalPolicy$studentExplanation,
         warnings = paste(
-          "Deterministic GLM prediction intervals for a future observation are not currently supported in Stage 25.",
+          "Deterministic GLM prediction intervals for a future observation are not currently supported in Stage 27.4.",
           "Use the fitted mean-response prediction and its confidence interval instead."
         )
       )
@@ -217,7 +224,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload$extrapolationPolicy = extrapolationPolicy
   payload$extrapolationDiagnostics = extrapolationPolicy$diagnostics
   payload$extrapolationExplanation = extrapolationPolicy$explanationText
-  payload$predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead."
+  payload$predictionIntervalPolicy = predictionIntervalPolicy
+  payload$predictionIntervalUnsupportedReason = predictionIntervalPolicy$studentExplanation
   payload
 }
 

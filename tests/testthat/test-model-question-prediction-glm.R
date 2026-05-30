@@ -194,3 +194,53 @@ testthat::test_that("blocked GLM extrapolation diagnostics are retained without 
   testthat::expect_match(out$extrapolationExplanation, "suppressed", fixed = TRUE)
   testthat::expect_null(out$fittedPrediction)
 })
+
+testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy metadata", {
+  poissonDf = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  poissonModel = stats::glm(Y ~ X, data = poissonDf, family = stats::poisson())
+
+  poissonOut = computeGlmModelQuestionPrediction(poissonModel, "Predict Y when X = 3")
+
+  testthat::expect_identical(poissonOut$status, "ok")
+  testthat::expect_true(is.list(poissonOut$predictionIntervalPolicy))
+  testthat::expect_false(poissonOut$predictionIntervalPolicy$supported)
+  testthat::expect_identical(poissonOut$predictionIntervalPolicy$futureObservationType, "future_count")
+  testthat::expect_identical(
+    poissonOut$predictionIntervalPolicy$recommendedNextStage,
+    "implement_conditional_poisson_future_count_interval"
+  )
+  testthat::expect_match(
+    poissonOut$predictionIntervalUnsupportedReason,
+    "future count",
+    fixed = TRUE
+  )
+
+  binomialDf = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
+  binomialModel = stats::glm(Y ~ X, data = binomialDf, family = stats::binomial())
+
+  binomialOut = computeGlmModelQuestionPrediction(binomialModel, "Predict Y when X = 3")
+
+  testthat::expect_identical(binomialOut$status, "ok")
+  testthat::expect_true(is.list(binomialOut$predictionIntervalPolicy))
+  testthat::expect_false(binomialOut$predictionIntervalPolicy$supported)
+  testthat::expect_identical(binomialOut$predictionIntervalPolicy$futureObservationType, "future_binary_outcome")
+  testthat::expect_identical(
+    binomialOut$predictionIntervalPolicy$recommendedNextStage,
+    "add_bernoulli_future_outcome_framing"
+  )
+})
+
+testthat::test_that("Stage 27.4 explicit GLM prediction-interval requests carry policy metadata", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "What is the prediction interval when X = 3?")
+
+  testthat::expect_identical(out$status, "unsupported")
+  testthat::expect_identical(out$predictionType, "individual_prediction_interval")
+  testthat::expect_true(is.list(out$predictionIntervalPolicy))
+  testthat::expect_false(out$predictionIntervalPolicy$supported)
+  testthat::expect_true(out$predictionIntervalPolicy$requested)
+  testthat::expect_identical(out$predictionIntervalPolicy$futureObservationType, "future_count")
+  testthat::expect_match(out$warnings, "Stage 27.4", fixed = TRUE)
+})
