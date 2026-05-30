@@ -121,6 +121,27 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     ))
   }
 
+  extrapolationPolicy = classifyGlmFollowupExtrapolation(
+    model = model,
+    suppliedPredictorValues = inputValidation$suppliedPredictorValues
+  )
+  if (identical(extrapolationPolicy$status, "extrapolation_blocked")) {
+    return(list(
+      status = "extrapolation_blocked",
+      reason = "extrapolation_blocked",
+      modelType = "glm",
+      glmFamily = familyName,
+      glmLink = linkName,
+      predictionType = "mean_response_prediction",
+      responseScale = "response",
+      suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
+      resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
+      completedPredictorValues = newDataInfo$completedPredictorValues,
+      extrapolationPolicy = extrapolationPolicy,
+      warnings = extrapolationPolicy$message
+    ))
+  }
+
   linkPrediction = stats::predict(model, newdata = newDataInfo$newData, type = "link", se.fit = TRUE)
   linkFit = as.numeric(linkPrediction$fit)[1]
   linkSe = as.numeric(linkPrediction$se.fit)[1]
@@ -182,12 +203,144 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       } else {
         sprintf("Computed with stats::predict(type = 'response') for %s GLM.", familyName)
       },
+      if (identical(extrapolationPolicy$status, "extrapolation_warning")) {
+        extrapolationPolicy$message
+      },
       newDataInfo$warnings
     )
   )
   payload$glmFamily = familyName
   payload$glmLink = linkName
   payload$responseDescription = responseDescription
+  payload$extrapolationPolicy = extrapolationPolicy
   payload$predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead."
   payload
+}
+
+#' Classify extrapolation for GLM follow-up prediction values
+#'
+#' @param model Fitted GLM object.
+#' @param suppliedPredictorValues Named list of values parsed from the follow-up
+#'   question. Only explicitly supplied numeric predictors are classified.
+#' @param thresholdFraction Numeric scalar giving the proportion of the observed
+#'   range width allowed beyond the nearest boundary before suppressing the
+#'   prediction.
+#'
+#' @return Named list describing the overall extrapolation status and per-predictor
+#'   diagnostics.
+#' @keywords internal
+#' @noRd
+classifyGlmFollowupExtrapolation = function(model, suppliedPredictorValues, thresholdFraction = 0.10) {
+  mf = stats::model.frame(model)
+  predictorNames = names(mf)[-1]
+  suppliedPredictorValues = suppliedPredictorValues %||% list()
+  numericDiagnostics = list()
+
+  for (predictorName in predictorNames) {
+    column = mf[[predictorName]]
+    suppliedValue = suppliedPredictorValues[[predictorName]]
+    valueWasSupplied = !is.null(suppliedValue) && nzchar(trimws(as.character(suppliedValue)))
+
+    if (!isTRUE(valueWasSupplied) || !is.numeric(column)) {
+      next
+    }
+
+    requestedValue = suppressWarnings(as.numeric(suppliedValue))
+    observedMin = suppressWarnings(min(column, na.rm = TRUE))
+    observedMax = suppressWarnings(max(column, na.rm = TRUE))
+
+    if (!is.finite(requestedValue) || !is.finite(observedMin) || !is.finite(observedMax)) {
+      next
+    }
+
+    observedWidth = observedMax - observedMin
+    tolerance = max(observedWidth * thresholdFraction, 0)
+    nearestBoundary = NA_real_
+    distanceOutside = 0
+    classification = "in_range"
+
+    if (requestedValue < observedMin) {
+      nearestBoundary = observedMin
+      distanceOutside = observedMin - requestedValue
+    } else if (requestedValue > observedMax) {
+      nearestBoundary = observedMax
+      distanceOutside = requestedValue - observedMax
+    }
+
+    if (distanceOutside > 0) {
+      classification = if (distanceOutside <= tolerance) {
+        "extrapolation_warning"
+      } else {
+        "extrapolation_blocked"
+      }
+    }
+
+    numericDiagnostics[[predictorName]] = list(
+      predictor = predictorName,
+      observedMin = observedMin,
+      observedMax = observedMax,
+      requestedValue = requestedValue,
+      nearestBoundary = nearestBoundary,
+      distanceOutside = distanceOutside,
+      tolerance = tolerance,
+      classification = classification
+    )
+  }
+
+  classifications = vapply(numericDiagnostics, function(x) {
+    x$classification %||% "in_range"
+  }, character(1))
+
+  status = if (any(classifications == "extrapolation_blocked")) {
+    "extrapolation_blocked"
+  } else if (any(classifications == "extrapolation_warning")) {
+    "extrapolation_warning"
+  } else {
+    "in_range"
+  }
+
+  message = buildGlmExtrapolationMessage(status = status, numericDiagnostics = numericDiagnostics)
+
+  list(
+    status = status,
+    thresholdFraction = thresholdFraction,
+    numericPredictors = numericDiagnostics,
+    message = message
+  )
+}
+
+#' Build a plain-language GLM extrapolation message
+#'
+#' @param status Overall extrapolation status.
+#' @param numericDiagnostics Per-predictor extrapolation diagnostics.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildGlmExtrapolationMessage = function(status, numericDiagnostics) {
+  if (identical(status, "in_range")) {
+    return("All supplied numeric predictor values are inside the observed data range.")
+  }
+
+  affected = numericDiagnostics[vapply(numericDiagnostics, function(x) {
+    !identical(x$classification %||% "in_range", "in_range")
+  }, logical(1))]
+
+  parts = vapply(affected, function(x) {
+    sprintf(
+      "%s = %.6g is outside the observed range [%.6g, %.6g]",
+      x$predictor,
+      x$requestedValue,
+      x$observedMin,
+      x$observedMax
+    )
+  }, character(1))
+
+  prefix = if (identical(status, "extrapolation_blocked")) {
+    "WMFM suppressed this GLM follow-up prediction because it requires extrapolation beyond the configured range policy:"
+  } else {
+    "WMFM computed this GLM follow-up prediction, but it uses slight extrapolation beyond the observed data range:"
+  }
+
+  paste(prefix, paste(parts, collapse = "; "))
 }

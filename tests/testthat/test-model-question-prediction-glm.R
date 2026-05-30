@@ -125,3 +125,41 @@ testthat::test_that("binomial GLM odds requests return deterministic odds-scale 
   testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
   testthat::expect_identical(out$confidenceInterval$method, "link_scale_exponentiate")
 })
+
+testthat::test_that("GLM prediction records in-range numeric extrapolation diagnostics", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 3")
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$extrapolationPolicy$status, "in_range")
+  testthat::expect_equal(out$extrapolationPolicy$numericPredictors$X$observedMin, 1)
+  testthat::expect_equal(out$extrapolationPolicy$numericPredictors$X$observedMax, 6)
+  testthat::expect_equal(out$extrapolationPolicy$numericPredictors$X$requestedValue, 3)
+})
+
+testthat::test_that("GLM prediction warns for slight numeric extrapolation", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 6.4")
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$extrapolationPolicy$status, "extrapolation_warning")
+  testthat::expect_identical(out$extrapolationPolicy$numericPredictors$X$classification, "extrapolation_warning")
+  testthat::expect_match(paste(out$warnings, collapse = " "), "slight extrapolation", fixed = TRUE)
+})
+
+testthat::test_that("GLM prediction is suppressed for extreme numeric extrapolation", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 8")
+
+  testthat::expect_identical(out$status, "extrapolation_blocked")
+  testthat::expect_identical(out$reason, "extrapolation_blocked")
+  testthat::expect_identical(out$extrapolationPolicy$status, "extrapolation_blocked")
+  testthat::expect_identical(out$extrapolationPolicy$numericPredictors$X$classification, "extrapolation_blocked")
+  testthat::expect_null(out$fittedPrediction)
+})
