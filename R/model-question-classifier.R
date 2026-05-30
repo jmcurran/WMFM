@@ -68,7 +68,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   unitChangePattern = paste(
     c(
       "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",
-      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(point|mark|carat|unit)?\\s*(increase|change)\\b",
+      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(point|mark|carat|magnitude|unit)?\\s*(increase|change)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bper\\s+unit(\\s+increase|\\s+change)?\\b",
@@ -220,8 +220,8 @@ extractRequestedUnitChangeValues = function(normalizedText) {
   pattern = paste(
     c(
       "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
-      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:point|mark|carat)\\s+(?:increase|change)\\b",
-      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark|carat)\\b",
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:point|mark|carat|magnitude)\\s+(?:increase|change)\\b",
+      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark|carat|magnitude)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
     ),

@@ -5,4 +5,4 @@ dataSource: package
 dataPackage: s20x
 dataObject: diamonds.df
 researchQuestion: How does the price of a diamond change as its weight in carats increases?
-followupQuestion: Can you explain the carat effect for a 0.1 carat increase rather than a 1 carat increase?
+followupQuestion: Can you explain the carat effect for a 0.1 carat increase?
