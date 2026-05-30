@@ -1,10 +1,10 @@
-testthat::test_that("Diamonds unit-change example loads with deterministic follow-up", {
+testthat::test_that("Diamonds example loads with deterministic unit-change follow-up", {
   examples = listWMFMExamples(package = "WMFM")
-  testthat::expect_true("Diamonds unit-change example" %in% examples)
+  testthat::expect_true("Diamonds" %in% examples)
 
-  info = loadExampleSpec("Diamonds unit-change example", package = "WMFM")
+  info = loadExampleSpec("Diamonds", package = "WMFM")
   testthat::expect_identical(info$spec$modelType, "lm")
-  testthat::expect_identical(info$spec$formula, "price ~ carat")
+  testthat::expect_identical(info$spec$formula, "price ~ weight")
   testthat::expect_match(info$followupQuestion, "0.1 carat", fixed = TRUE)
 
   payload = classifyModelFollowupQuestion(info$followupQuestion)
@@ -14,11 +14,11 @@ testthat::test_that("Diamonds unit-change example loads with deterministic follo
   testthat::expect_equal(payload$unitChangeValues, 0.1)
 })
 
-testthat::test_that("Quakes 0.1 magnitude unit-change example loads with deterministic follow-up", {
+testthat::test_that("Quakes unit-change example loads with deterministic follow-up", {
   examples = listWMFMExamples(package = "WMFM")
-  testthat::expect_true("Quakes 0.1 magnitude unit-change example" %in% examples)
+  testthat::expect_true("Quakes-unit-change" %in% examples)
 
-  info = loadExampleSpec("Quakes 0.1 magnitude unit-change example", package = "WMFM")
+  info = loadExampleSpec("Quakes-unit-change", package = "WMFM")
   testthat::expect_identical(info$spec$modelType, "poisson")
   testthat::expect_identical(info$spec$formula, "Freq ~ Magnitude")
   testthat::expect_match(info$followupQuestion, "0.1 magnitude", fixed = TRUE)

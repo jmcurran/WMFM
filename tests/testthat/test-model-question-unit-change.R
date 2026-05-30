@@ -87,6 +87,7 @@ testthat::test_that("binomial unit-change payload reports odds multiplier and pe
   testthat::expect_equal(payload$unitChangeResult$transformedEstimate, exp(coefHours * 0.5))
   testthat::expect_equal(payload$unitChangeResult$percentChange, 100 * (exp(coefHours * 0.5) - 1))
   testthat::expect_match(payload$unitChangeResult$percentChangeText, "%")
+  testthat::expect_match(payload$unitChangeResult$percentChangeIntervalText, "%")
   testthat::expect_match(payload$unitChangeResult$interpretation, "odds")
 })
 
@@ -104,5 +105,7 @@ testthat::test_that("multiplicative unit-change prompt includes percent-change g
   prompt = lmToExplanationPrompt(model)
 
   testthat::expect_match(prompt, "Requested unit-change percent interpretation", fixed = TRUE)
+  testthat::expect_match(prompt, "Requested unit-change percent interval wording", fixed = TRUE)
+  testthat::expect_match(prompt, "natural low-to-high decrease order", fixed = TRUE)
   testthat::expect_match(prompt, "prefer the supplied percent-change wording", fixed = TRUE)
 })

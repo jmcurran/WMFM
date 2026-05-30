@@ -193,14 +193,20 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
     oneUnitUpr = unname(ciValues[[2]])
     lwr = exp(oneUnitLwr * unitChange)
     upr = exp(oneUnitUpr * unitChange)
+    percentChangeLwr = 100 * (lwr - 1)
+    percentChangeUpr = 100 * (upr - 1)
     confidenceInterval = list(
       level = 0.95,
       oneUnitLwr = oneUnitLwr,
       oneUnitUpr = oneUnitUpr,
       lwr = lwr,
       upr = upr,
-      percentChangeLwr = 100 * (lwr - 1),
-      percentChangeUpr = 100 * (upr - 1)
+      percentChangeLwr = percentChangeLwr,
+      percentChangeUpr = percentChangeUpr,
+      percentChangeIntervalText = formatUnitChangePercentIntervalText(
+        percentChangeLwr = percentChangeLwr,
+        percentChangeUpr = percentChangeUpr
+      )
     )
   }
 
@@ -219,6 +225,11 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
     unitChangeEffect = transformedEstimate,
     percentChange = percentChange,
     percentChangeText = formatUnitChangePercentText(percentChange),
+    percentChangeIntervalText = if (is.list(confidenceInterval)) {
+      confidenceInterval$percentChangeIntervalText
+    } else {
+      NULL
+    },
     confidenceInterval = confidenceInterval,
     interpretation = paste0(
       "For a ", signif(unitChange, 6), "-unit increase in ", predictorName,
@@ -246,6 +257,37 @@ formatUnitChangePercentText = function(percentChange) {
   }
 
   paste0("about ", roundedChange, "% lower")
+}
+
+#' @keywords internal
+#' @noRd
+formatUnitChangePercentIntervalText = function(percentChangeLwr, percentChangeUpr) {
+  values = suppressWarnings(as.numeric(c(percentChangeLwr, percentChangeUpr)))
+  if (length(values) != 2L || any(!is.finite(values))) {
+    return("changed by an unavailable percentage interval")
+  }
+
+  if (all(values <= 0)) {
+    absValues = sort(abs(values))
+    return(paste0(
+      "between about ", signif(absValues[[1]], 3), "% and ",
+      signif(absValues[[2]], 3), "% lower"
+    ))
+  }
+
+  if (all(values >= 0)) {
+    sortedValues = sort(values)
+    return(paste0(
+      "between about ", signif(sortedValues[[1]], 3), "% and ",
+      signif(sortedValues[[2]], 3), "% higher"
+    ))
+  }
+
+  sortedValues = sort(values)
+  paste0(
+    "between about ", signif(abs(sortedValues[[1]]), 3),
+    "% lower and ", signif(sortedValues[[2]], 3), "% higher"
+  )
 }
 
 #' @keywords internal

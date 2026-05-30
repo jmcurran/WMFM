@@ -311,6 +311,13 @@ Confidence interval for the requested unit-change effect (95%): [{signif(ci$lwr,
             glue::glue("
 Percent-change interval for the requested unit-change effect (95%): [{signif(ci$percentChangeLwr, 6)}%, {signif(ci$percentChangeUpr, 6)}%]")
           )
+          if (!is.null(ci$percentChangeIntervalText)) {
+            ciBlock = paste0(
+              ciBlock,
+              glue::glue("
+Requested unit-change percent interval wording: {ci$percentChangeIntervalText}")
+            )
+          }
         }
       }
       percentChangeBlock = ""
@@ -328,6 +335,7 @@ WMFM deterministic requested unit-change interpretation:
 - Do not recompute, round further, or invent intervals.
 - Replace or revise the relevant one-unit slope sentence where possible.
 - For multiplicative effects, prefer the supplied percent-change wording over raw multipliers when this is clearer for students.
+- When a supplied percent-change interval is entirely negative, write it in natural low-to-high decrease order, such as between about 13% and 20% lower, not from 20% to 13% lower.
 - Do not also append a separate prediction-style follow-up paragraph.
 
 Model type: {unitChangeResult$modelType}

@@ -1,4 +1,4 @@
-displayName: Quakes 0.1 magnitude unit-change example
+displayName: Quakes-unit-change
 modelType: poisson
 formula: Freq ~ Magnitude
 data: Quakes.df.rda
