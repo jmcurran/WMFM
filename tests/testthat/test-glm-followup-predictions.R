@@ -69,11 +69,9 @@ testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnit
   testthat::expect_identical(outMagnitude$status, "ok")
   testthat::expect_equal(outMagnitude$resolvedPredictorValues$Magnitude, 5.4)
   testthat::expect_true(is.list(outMagnitude$confidenceInterval))
-  testthat::expect_match(
-    outMagnitude$predictionIntervalUnsupportedReason,
-    "not currently supported",
-    fixed = TRUE
-  )
+  testthat::expect_true(is.list(outMagnitude$predictionIntervalPolicy))
+  testthat::expect_true(outMagnitude$predictionIntervalPolicy$supported)
+  testthat::expect_null(outMagnitude$predictionInterval)
 
   fitMagnitudeLocn = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
   outMagnitudeLocn = computeGlmModelQuestionPrediction(
@@ -85,12 +83,42 @@ testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnit
   testthat::expect_equal(outMagnitudeLocn$resolvedPredictorValues$Magnitude, 5.4)
   testthat::expect_identical(outMagnitudeLocn$resolvedPredictorValues$Locn, "WA")
   testthat::expect_true(is.list(outMagnitudeLocn$confidenceInterval))
-  testthat::expect_match(
-    outMagnitudeLocn$predictionIntervalUnsupportedReason,
-    "not currently supported",
-    fixed = TRUE
-  )
+  testthat::expect_true(is.list(outMagnitudeLocn$predictionIntervalPolicy))
+  testthat::expect_true(outMagnitudeLocn$predictionIntervalPolicy$supported)
+  testthat::expect_null(outMagnitudeLocn$predictionInterval)
 })
+
+
+
+testthat::test_that("Stage 27.5 Poisson prediction-interval requests return conditional count intervals", {
+  quakePath = system.file(
+    "extdata",
+    "examples",
+    "Quakes",
+    "Quakes.df.rda",
+    package = "WMFM"
+  )
+  testthat::skip_if_not(file.exists(quakePath), "quake example data is unavailable")
+
+  loadEnv = new.env(parent = emptyenv())
+  objectNames = load(quakePath, envir = loadEnv)
+  quakeDf = loadEnv[[objectNames[[1]]]]
+
+  fitMagnitude = stats::glm(Freq ~ Magnitude, data = quakeDf, family = stats::poisson())
+  out = computeGlmModelQuestionPrediction(
+    model = fitMagnitude,
+    followupQuestion = "What prediction interval would you give for Magnitude = 5.4?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_true(is.list(out$predictionInterval))
+  testthat::expect_identical(out$predictionInterval$method, "conditional_poisson_quantile")
+  testthat::expect_identical(out$predictionInterval$distribution, "poisson")
+  testthat::expect_false(out$predictionInterval$parameterUncertaintyIncluded)
+  testthat::expect_equal(out$predictionInterval$lwr, stats::qpois(0.025, out$fittedPrediction))
+  testthat::expect_equal(out$predictionInterval$upr, stats::qpois(0.975, out$fittedPrediction))
+})
+
 
 testthat::test_that("Stage 25.3 diagnostics JSON includes generated explanation text", {
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(list(

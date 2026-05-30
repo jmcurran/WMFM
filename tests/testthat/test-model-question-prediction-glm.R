@@ -75,7 +75,9 @@ testthat::test_that("GLM confidence interval requests return deterministic respo
   testthat::expect_identical(out$glmFamily, "poisson")
   testthat::expect_true(is.list(out$confidenceInterval))
   testthat::expect_identical(out$confidenceInterval$intervalScale, "response")
-  testthat::expect_match(out$predictionIntervalUnsupportedReason, "not currently supported", fixed = TRUE)
+  testthat::expect_true(is.list(out$predictionIntervalPolicy))
+  testthat::expect_true(out$predictionIntervalPolicy$supported)
+  testthat::expect_null(out$predictionInterval)
 })
 
 testthat::test_that("GLM deterministic payload is carried in prompt, diagnostics JSON, and appended answer", {
@@ -203,17 +205,14 @@ testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy m
 
   testthat::expect_identical(poissonOut$status, "ok")
   testthat::expect_true(is.list(poissonOut$predictionIntervalPolicy))
-  testthat::expect_false(poissonOut$predictionIntervalPolicy$supported)
+  testthat::expect_true(poissonOut$predictionIntervalPolicy$supported)
   testthat::expect_identical(poissonOut$predictionIntervalPolicy$futureObservationType, "future_count")
   testthat::expect_identical(
     poissonOut$predictionIntervalPolicy$recommendedNextStage,
-    "implement_conditional_poisson_future_count_interval"
+    "consider_parameter_uncertainty_for_poisson_future_count_interval"
   )
-  testthat::expect_match(
-    poissonOut$predictionIntervalUnsupportedReason,
-    "future count",
-    fixed = TRUE
-  )
+  testthat::expect_identical(poissonOut$predictionIntervalPolicy$method, "conditional_poisson_quantile")
+  testthat::expect_null(poissonOut$predictionIntervalUnsupportedReason)
 
   binomialDf = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
   binomialModel = stats::glm(Y ~ X, data = binomialDf, family = stats::binomial())
@@ -230,9 +229,29 @@ testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy m
   )
 })
 
-testthat::test_that("Stage 27.4 explicit GLM prediction-interval requests carry policy metadata", {
+testthat::test_that("Stage 27.5 explicit Poisson prediction-interval requests return conditional count intervals", {
   df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
   model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "What is the prediction interval when X = 3?")
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$predictionType, "mean_response_prediction")
+  testthat::expect_true(is.list(out$predictionIntervalPolicy))
+  testthat::expect_true(out$predictionIntervalPolicy$supported)
+  testthat::expect_true(out$predictionIntervalPolicy$requested)
+  testthat::expect_identical(out$predictionIntervalPolicy$futureObservationType, "future_count")
+  testthat::expect_true(is.list(out$predictionInterval))
+  testthat::expect_identical(out$predictionInterval$method, "conditional_poisson_quantile")
+  testthat::expect_identical(out$predictionInterval$intervalScale, "count")
+  testthat::expect_false(out$predictionInterval$parameterUncertaintyIncluded)
+  testthat::expect_equal(out$predictionInterval$lwr, stats::qpois(0.025, out$fittedPrediction))
+  testthat::expect_equal(out$predictionInterval$upr, stats::qpois(0.975, out$fittedPrediction))
+})
+
+testthat::test_that("Stage 27.5 explicit binomial prediction-interval requests still fail safely", {
+  df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
+  model = stats::glm(Y ~ X, data = df, family = stats::binomial())
 
   out = computeGlmModelQuestionPrediction(model, "What is the prediction interval when X = 3?")
 
@@ -241,6 +260,6 @@ testthat::test_that("Stage 27.4 explicit GLM prediction-interval requests carry 
   testthat::expect_true(is.list(out$predictionIntervalPolicy))
   testthat::expect_false(out$predictionIntervalPolicy$supported)
   testthat::expect_true(out$predictionIntervalPolicy$requested)
-  testthat::expect_identical(out$predictionIntervalPolicy$futureObservationType, "future_count")
-  testthat::expect_match(out$warnings, "Stage 27.4", fixed = TRUE)
+  testthat::expect_identical(out$predictionIntervalPolicy$futureObservationType, "future_binary_outcome")
+  testthat::expect_match(out$warnings, "Stage 27.5", fixed = TRUE)
 })

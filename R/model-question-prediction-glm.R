@@ -52,7 +52,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     requestedPredictionInterval = requestsPredictionInterval
   )
 
-  if (isTRUE(requestsPredictionInterval)) {
+  if (isTRUE(requestsPredictionInterval) && !isTRUE(predictionIntervalPolicy$supported)) {
     return(c(
       list(
         status = "unsupported",
@@ -68,7 +68,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
         predictionIntervalPolicy = predictionIntervalPolicy,
         predictionIntervalUnsupportedReason = predictionIntervalPolicy$studentExplanation,
         warnings = paste(
-          "Deterministic GLM prediction intervals for a future observation are not currently supported in Stage 27.4.",
+          "Deterministic GLM prediction intervals for this future-observation type are not currently supported in Stage 27.5.",
           "Use the fitted mean-response prediction and its confidence interval instead."
         )
       )
@@ -196,6 +196,13 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     "mean_response"
   }
 
+  predictionInterval = buildGlmFutureObservationPredictionInterval(
+    familyName = familyName,
+    fittedPrediction = fittedPrediction,
+    requestedPredictionInterval = requestsPredictionInterval,
+    predictionIntervalPolicy = predictionIntervalPolicy
+  )
+
   payload = formatModelQuestionPredictionPayload(
     modelType = "glm",
     predictionType = "mean_response_prediction",
@@ -205,7 +212,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
     completedPredictorValues = newDataInfo$completedPredictorValues,
     fittedPrediction = fittedPrediction,
     confidenceInterval = confidenceInterval,
-    predictionInterval = NULL,
+    predictionInterval = predictionInterval,
     warnings = c(
       if (isTRUE(requestsOddsScale)) {
         sprintf("Computed with stats::predict(type = 'link') and exponentiated to the odds scale for %s GLM.", familyName)
@@ -225,8 +232,56 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload$extrapolationDiagnostics = extrapolationPolicy$diagnostics
   payload$extrapolationExplanation = extrapolationPolicy$explanationText
   payload$predictionIntervalPolicy = predictionIntervalPolicy
-  payload$predictionIntervalUnsupportedReason = predictionIntervalPolicy$studentExplanation
+  payload$predictionIntervalUnsupportedReason = if (isTRUE(predictionIntervalPolicy$supported)) {
+    NULL
+  } else {
+    predictionIntervalPolicy$studentExplanation
+  }
   payload
+}
+
+
+#' Build a GLM future-observation prediction interval when supported
+#'
+#' @param familyName Character scalar GLM family name.
+#' @param fittedPrediction Numeric scalar fitted response-scale prediction.
+#' @param requestedPredictionInterval Logical scalar indicating whether the user
+#'   explicitly requested a prediction interval.
+#' @param predictionIntervalPolicy Prediction-interval policy metadata.
+#'
+#' @return Named list prediction interval metadata, or NULL when no interval
+#'   should be attached to the payload.
+#' @keywords internal
+#' @noRd
+buildGlmFutureObservationPredictionInterval = function(
+    familyName,
+    fittedPrediction,
+    requestedPredictionInterval,
+    predictionIntervalPolicy) {
+  if (!isTRUE(requestedPredictionInterval) || !isTRUE(predictionIntervalPolicy$supported)) {
+    return(NULL)
+  }
+
+  familyName = tolower(as.character(familyName %||% ""))
+  fittedPrediction = suppressWarnings(as.numeric(fittedPrediction)[1])
+
+  if (!identical(familyName, "poisson") || !is.finite(fittedPrediction) || fittedPrediction < 0) {
+    return(NULL)
+  }
+
+  level = 0.95
+  alpha = 1 - level
+  list(
+    fit = fittedPrediction,
+    lwr = stats::qpois(alpha / 2, lambda = fittedPrediction),
+    upr = stats::qpois(1 - alpha / 2, lambda = fittedPrediction),
+    level = level,
+    scale = "count",
+    intervalScale = "count",
+    distribution = "poisson",
+    method = "conditional_poisson_quantile",
+    parameterUncertaintyIncluded = FALSE
+  )
 }
 
 #' Classify extrapolation for GLM follow-up prediction values

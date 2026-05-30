@@ -21,22 +21,22 @@ buildGlmPredictionIntervalPolicy = function(familyName, linkName, requestedPredi
 
   if (identical(familyName, "poisson")) {
     return(list(
-      supported = FALSE,
+      supported = TRUE,
       requested = requestedPredictionInterval,
       glmFamily = familyName,
       glmLink = linkName,
       futureObservationType = "future_count",
-      recommendedNextStage = "implement_conditional_poisson_future_count_interval",
-      method = NULL,
+      recommendedNextStage = "consider_parameter_uncertainty_for_poisson_future_count_interval",
+      method = "conditional_poisson_quantile",
       parameterUncertaintyIncluded = FALSE,
       studentExplanation = paste(
-        "Future-observation prediction intervals are not currently supported. WMFM currently reports the fitted expected count and its confidence interval.",
-        "A prediction interval for a future count is a different quantity and is not yet reported."
+        "WMFM can report a conditional prediction interval for a future Poisson count when the fitted expected count is available.",
+        "This interval uses the Poisson distribution with the fitted expected count treated as fixed, so it does not include fitted-mean parameter uncertainty."
       ),
       developerExplanation = paste(
-        "Poisson GLM future-observation intervals should be added as discrete, non-negative count intervals.",
-        "The first implementation should use a conditional Poisson quantile interval based on the fitted mean,",
-        "with method metadata that states whether fitted-mean uncertainty is included."
+        "Poisson GLM future-observation intervals are implemented as discrete, non-negative count intervals.",
+        "Stage 27.5 uses stats::qpois() with the fitted mean as the Poisson rate parameter.",
+        "The method metadata explicitly states that fitted-mean parameter uncertainty is not included."
       )
     ))
   }
