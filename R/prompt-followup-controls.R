@@ -66,10 +66,12 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- Keep the explanation tightly focused on directly answering the stored research question.",
       "- De-emphasise side details that do not materially help answer that question."
     ),
-    alternative_unit_change = c(
+    unit_change_request = c(
       "Deterministic follow-up explanation control:",
       "- Treat the request as a bounded unit-change interpretation preference and explain the model effect using the requested unit framing.",
-      "- Do not invent new computations; keep interpretation anchored to WMFM-provided model quantities and safeguards."
+      "- Use the WMFM deterministic requested unit-change interpretation when it is supplied.",
+      "- Do not invent new computations; keep interpretation anchored to WMFM-provided model quantities and safeguards.",
+      "- Prefer revising the relevant numeric-effect sentence over appending a separate prediction-style follow-up paragraph."
     ),
     prediction_request = c(
       "Deterministic follow-up explanation control:",
@@ -92,12 +94,20 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
     return("")
   }
 
-  lines = c(
-    lines,
-    "- First answer the main research question.",
-    "- If you answer this follow-up, place it in a separate paragraph after the main research-question answer.",
-    "- Keep the follow-up paragraph clearly tied to the follow-up request without adding headings unless existing style already uses headings."
-  )
+  if (identical(category, "unit_change_request")) {
+    lines = c(
+      lines,
+      "- First answer the main research question.",
+      "- Weave the requested unit-change interpretation into the main numeric-effect explanation rather than adding a separate follow-up paragraph."
+    )
+  } else {
+    lines = c(
+      lines,
+      "- First answer the main research question.",
+      "- If you answer this follow-up, place it in a separate paragraph after the main research-question answer.",
+      "- Keep the follow-up paragraph clearly tied to the follow-up request without adding headings unless existing style already uses headings."
+    )
+  }
 
   paste0("\n", paste(lines, collapse = "\n"), "\n")
 }

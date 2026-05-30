@@ -224,21 +224,33 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
 
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
+  unitChange = payload$unitChangeResult %||% list()
+  activeDeterministicPayload = if (length(unitChange) > 0) {
+    unitChange
+  } else {
+    prediction
+  }
   out = list(
     rawFollowupQuestion = payload$originalText %||% diagnostics$followupText %||% "",
     followupCategory = as.character(payload$category %||% ""),
-    deterministicStatus = as.character(prediction$status %||% "not_applicable"),
-    reason = as.character(prediction$reason %||% ""),
-    modelType = as.character(prediction$modelType %||% ""),
-    glmFamily = as.character(prediction$glmFamily %||% ""),
-    glmLink = as.character(prediction$glmLink %||% ""),
-    responseScale = as.character(prediction$responseScale %||% ""),
-    responseDescription = as.character(prediction$responseDescription %||% ""),
-    warnings = prediction$warnings %||% character(0),
+    deterministicStatus = as.character(activeDeterministicPayload$status %||% "not_applicable"),
+    reason = as.character(activeDeterministicPayload$reason %||% ""),
+    requestedPredictor = as.character(unitChange$predictorName %||% ""),
+    requestedUnitChange = unitChange$requestedUnitChange %||% NULL,
+    originalOneUnitEffect = unitChange$oneUnitEstimate %||% NULL,
+    transformedUnitChangeEffect = unitChange$transformedEstimate %||% NULL,
+    transformedUnitChangeConfidenceInterval = unitChange$transformedConfidenceInterval %||% list(),
+    modelType = as.character(activeDeterministicPayload$modelType %||% ""),
+    glmFamily = as.character(activeDeterministicPayload$glmFamily %||% ""),
+    glmLink = as.character(activeDeterministicPayload$glmLink %||% ""),
+    responseScale = as.character(prediction$responseScale %||% unitChange$effectScale %||% ""),
+    responseDescription = as.character(prediction$responseDescription %||% unitChange$effectScale %||% ""),
+    warnings = activeDeterministicPayload$warnings %||% character(0),
     suppliedPredictorValues = prediction$suppliedPredictorValues %||% list(),
     resolvedPredictorValues = prediction$resolvedPredictorValues %||% list(),
     completedPredictorValues = prediction$completedPredictorValues %||% list(),
     predictionPayload = prediction,
+    unitChangePayload = unitChange,
     generatedExplanation = coerceExplanationDiagnosticsText(
       diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% ""
     ),
