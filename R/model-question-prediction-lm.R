@@ -9,7 +9,18 @@
 #' @noRd
 enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
   payload = followupPayload
-  if (!is.list(payload) || !(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
+  if (!is.list(payload)) {
+    return(payload)
+  }
+
+  if (identical(payload$category, "unit_change_request")) {
+    return(enrichFollowupPayloadWithUnitChange(
+      model = model,
+      followupPayload = payload
+    ))
+  }
+
+  if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
     return(payload)
   }
 

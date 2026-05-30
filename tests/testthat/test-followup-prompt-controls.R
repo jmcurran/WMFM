@@ -27,10 +27,12 @@ testthat::test_that("unit-change follow-up category injects deterministic bounde
   payload = classifyModelFollowupQuestion("Explain this for a 10-unit increase in Test")
   block = buildFollowupExplanationControlPromptBlock(payload)
 
-  testthat::expect_identical(payload$category, "alternative_unit_change")
+  testthat::expect_identical(payload$category, "unit_change_request")
   testthat::expect_true(payload$supported)
   testthat::expect_match(block, "Deterministic follow-up explanation control", fixed = TRUE)
   testthat::expect_match(block, "bounded unit-change interpretation preference", fixed = TRUE)
+  testthat::expect_match(block, "Weave the requested unit-change interpretation", fixed = TRUE)
+  testthat::expect_no_match(block, "place it in a separate paragraph", fixed = TRUE)
 })
 
 testthat::test_that("unsupported follow-up category remains sandboxed", {

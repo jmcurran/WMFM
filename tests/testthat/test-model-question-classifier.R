@@ -48,17 +48,18 @@ testthat::test_that("factor comparison wording classifies as emphasis_group_comp
   testthat::expect_identical(out$category, "emphasis_group_comparison")
 })
 
-testthat::test_that("unit-change wording classifies as supported alternative_unit_change", {
+testthat::test_that("unit-change wording classifies as supported unit_change_request", {
   prompts = c(
     "Explain this for a 10-unit increase in Test",
     "Interpret the effect for a 5 unit change",
+    "Explain the Carat effect for a 0.1-unit increase",
     "Can you describe this per unit increase?",
     "What does an increase of 10 mean?"
   )
 
   for (prompt in prompts) {
     out = classifyModelFollowupQuestion(prompt)
-    testthat::expect_identical(out$category, "alternative_unit_change")
+    testthat::expect_identical(out$category, "unit_change_request")
     testthat::expect_true(out$supported)
     testthat::expect_false(identical(out$category, "unsupported_or_out_of_scope"))
   }
@@ -80,7 +81,7 @@ testthat::test_that("multi-unit wording is rejected as unsupported ambiguous req
 
 testthat::test_that("repeated same unit-change value is handled consistently", {
   out = classifyModelFollowupQuestion("Use a 10-unit change, and again explain a 10-unit increase")
-  testthat::expect_identical(out$category, "alternative_unit_change")
+  testthat::expect_identical(out$category, "unit_change_request")
   testthat::expect_true(out$supported)
   testthat::expect_equal(out$unitChangeValues, 10)
 })

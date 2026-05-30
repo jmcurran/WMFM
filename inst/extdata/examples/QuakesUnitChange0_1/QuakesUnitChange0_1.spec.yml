@@ -1,0 +1,7 @@
+displayName: Quakes-unit-change
+modelType: poisson
+formula: Freq ~ Magnitude
+data: Quakes.df.rda
+context: QuakesUnitChange0_1.Rmd
+researchQuestion: How does expected earthquake frequency change as magnitude increases?
+followupQuestion: Can you explain the magnitude effect for a 0.1 magnitude increase?

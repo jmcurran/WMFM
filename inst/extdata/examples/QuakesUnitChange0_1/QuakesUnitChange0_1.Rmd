@@ -1,0 +1,10 @@
+# Problem
+The Gutenberg-Richter law says that the expected frequency of earthquakes decreases multiplicatively as earthquake magnitude increases.
+
+The variables of interest are:
+
+* `Magnitude`: The strength of a recorded earthquake.
+* `Freq`: The number of earthquakes recorded for an interval of magnitudes.
+
+## Question of Interest
+The research question is to describe how the expected earthquake frequency changes as magnitude increases, with the effect expressed for a 0.1 magnitude increase.

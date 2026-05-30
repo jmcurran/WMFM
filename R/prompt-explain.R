@@ -297,6 +297,70 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
     "Follow-up model question from the student"
   }
 
+  unitChangeResult = payload$unitChangeResult
+  if (identical(payload$category, "unit_change_request") && is.list(unitChangeResult)) {
+    if (identical(unitChangeResult$status, "ok")) {
+      ciBlock = ""
+      if (is.list(unitChangeResult$confidenceInterval)) {
+        ci = unitChangeResult$confidenceInterval
+        ciBlock = glue::glue("
+Confidence interval for the requested unit-change effect (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+        if (!is.null(ci$percentChangeLwr) && !is.null(ci$percentChangeUpr)) {
+          ciBlock = paste0(
+            ciBlock,
+            glue::glue("
+Percent-change interval for the requested unit-change effect (95%): [{signif(ci$percentChangeLwr, 6)}%, {signif(ci$percentChangeUpr, 6)}%]")
+          )
+          if (!is.null(ci$percentChangeIntervalText)) {
+            ciBlock = paste0(
+              ciBlock,
+              glue::glue("
+Requested unit-change percent interval wording: {ci$percentChangeIntervalText}")
+            )
+          }
+        }
+      }
+      percentChangeBlock = ""
+      if (!is.null(unitChangeResult$percentChangeText)) {
+        percentChangeBlock = glue::glue("
+Requested unit-change percent interpretation: {unitChangeResult$percentChangeText}")
+      }
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic requested unit-change interpretation:
+- These unit-change values were computed deterministically by WMFM.
+- Use these values directly when explaining the relevant numeric effect.
+- Do not recompute, round further, or invent intervals.
+- Replace or revise the relevant one-unit slope sentence where possible.
+- For multiplicative effects, prefer the supplied percent-change wording over raw multipliers when this is clearer for students.
+- When a supplied percent-change interval is entirely negative, write it in natural low-to-high decrease order, such as between about 13% and 20% lower, not from 20% to 13% lower.
+- Do not also append a separate prediction-style follow-up paragraph.
+
+Model type: {unitChangeResult$modelType}
+Effect scale: {unitChangeResult$effectScale}
+Response: {unitChangeResult$responseName}
+Requested predictor: {unitChangeResult$predictorName}
+Requested unit change: {signif(unitChangeResult$requestedUnitChange, 6)}
+Original one-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
+Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}{ciBlock}
+Deterministic wording: {unitChangeResult$interpretation}
+"))
+    }
+
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the requested unit-change interpretation for this pathway.
+Do not invent the unit-change effect.
+Explain what additional fitted-model predictor information is needed, if appropriate.
+Status: {unitChangeResult$status %||% 'unsupported'}
+Reason: {unitChangeResult$reason %||% 'not_available'}
+"))
+  }
+
   predictionResult = payload$predictionResult
   if ((identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request")) && is.list(predictionResult)) {
     if (identical(predictionResult$status, "ok")) {

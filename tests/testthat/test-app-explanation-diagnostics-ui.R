@@ -133,3 +133,114 @@ testthat::test_that("diagnostics JSON sanitises ellmer output explanation object
     fixed = TRUE
   )
 })
+
+
+testthat::test_that("diagnostics UI and JSON expose unit-change payload", {
+  diagnostics = list(
+    followupText = "Explain the Carat effect for a 0.1-unit increase",
+    followupPayload = list(
+      originalText = "Explain the Carat effect for a 0.1-unit increase",
+      category = "alternative_unit_change",
+      unitChangeResult = list(
+        status = "ok",
+        modelType = "lm",
+        predictorName = "Carat",
+        requestedUnitChange = 0.1,
+        unitChangeEffect = 123.4,
+        confidenceInterval = list(lwr = 100, upr = 150)
+      )
+    ),
+    assembledPrompt = "WMFM deterministic requested unit-change interpretation"
+  )
+
+  html = paste(capture.output(print(buildExplanationPromptDiagnosticsUi(diagnostics))), collapse = "\n")
+  json = buildExplanationPromptDiagnosticsJson(diagnostics)
+
+  testthat::expect_match(html, "diag_followup_unit_change_payload", fixed = TRUE)
+  testthat::expect_match(html, "deterministic prediction or unit-change payload", fixed = TRUE)
+  testthat::expect_match(json, "unitChangePayload", fixed = TRUE)
+  testthat::expect_match(json, "requestedUnitChange", fixed = TRUE)
+  testthat::expect_match(json, "transformedUnitChangeEffect", fixed = TRUE)
+})
+
+
+testthat::test_that("diagnostics JSON exposes full unit-change debug fields", {
+  diagnostics = list(
+    followupText = "Explain the Magnitude effect for a 0.1 magnitude increase",
+    followupPayload = list(
+      originalText = "Explain the Magnitude effect for a 0.1 magnitude increase",
+      category = "unit_change_request",
+      unitChangeResult = list(
+        status = "ok",
+        modelType = "glm",
+        glmFamily = "poisson",
+        glmLink = "log",
+        effectScale = "expected_count_multiplier",
+        responseName = "Freq",
+        predictorName = "Magnitude",
+        requestedUnitChange = 0.1,
+        oneUnitEffect = -1.56,
+        transformedEstimate = 0.8559,
+        unitChangeEffect = 0.8559,
+        confidenceInterval = list(
+          level = 0.95,
+          lwr = 0.81,
+          upr = 0.91,
+          percentChangeLwr = -19,
+          percentChangeUpr = -9
+        ),
+        warnings = ""
+      )
+    ),
+    assembledPrompt = paste(
+      "WMFM deterministic requested unit-change interpretation:",
+      "Requested unit change: 0.1"
+    )
+  )
+
+  out = buildExplanationPromptDiagnosticsJson(diagnostics)
+  parsed = jsonlite::fromJSON(out, simplifyVector = FALSE)
+
+  testthat::expect_identical(parsed$rawFollowupQuestion, diagnostics$followupText)
+  testthat::expect_identical(parsed$followupCategory, "unit_change_request")
+  testthat::expect_identical(parsed$modelType, "glm")
+  testthat::expect_identical(parsed$glmFamily, "poisson")
+  testthat::expect_identical(parsed$glmLink, "log")
+  testthat::expect_identical(parsed$effectScale, "expected_count_multiplier")
+  testthat::expect_identical(parsed$requestedPredictor, "Magnitude")
+  testthat::expect_equal(parsed$requestedUnitChange, 0.1)
+  testthat::expect_equal(parsed$originalUnitChangeEffect, -1.56)
+  testthat::expect_equal(parsed$transformedUnitChangeEffect, 0.8559)
+  testthat::expect_equal(parsed$transformedUnitChangeInterval$lwr, 0.81)
+  testthat::expect_match(parsed$promptExcerpt, "Requested unit change: 0.1", fixed = TRUE)
+})
+
+
+testthat::test_that("diagnostics bundle exposes unit-change debug fields", {
+  diagnostics = list(
+    followupText = "Explain the Carat effect for a 0.1 carat increase",
+    followupPayload = list(
+      originalText = "Explain the Carat effect for a 0.1 carat increase",
+      category = "unit_change_request",
+      unitChangeResult = list(
+        status = "ok",
+        modelType = "lm",
+        effectScale = "response_difference",
+        predictorName = "Carat",
+        requestedUnitChange = 0.1,
+        oneUnitEffect = 1000,
+        transformedEstimate = 100,
+        confidenceInterval = list(lwr = 75, upr = 125)
+      )
+    ),
+    assembledPrompt = "WMFM deterministic requested unit-change interpretation"
+  )
+
+  html = paste(capture.output(print(buildExplanationPromptDiagnosticsUi(diagnostics))), collapse = "\n")
+
+  testthat::expect_match(html, "Requested unit-change predictor", fixed = TRUE)
+  testthat::expect_match(html, "Requested unit change", fixed = TRUE)
+  testthat::expect_match(html, "Original one-unit effect", fixed = TRUE)
+  testthat::expect_match(html, "Transformed unit-change effect", fixed = TRUE)
+  testthat::expect_match(html, "Transformed unit-change interval", fixed = TRUE)
+})

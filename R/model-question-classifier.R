@@ -65,6 +65,39 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  unitChangePattern = paste(
+    c(
+      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",
+      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(point|mark|carat|magnitude|unit)?\\s*(increase|change)\\b",
+      "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
+      "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
+      "\\bper\\s+unit(\\s+increase|\\s+change)?\\b",
+      "\\bfor\\s+a\\s+unit\\s+(increase|change)\\b",
+      "\\bunit[- ]change\\b"
+    ),
+    collapse = "|"
+  )
+
+  unitChangeIntentPattern = paste(
+    c(
+      "\\b(explain|interpret|describe|phrase|rephrase|express|frame)\\b",
+      "\\bwhat\\s+(does|happens|is)\\b",
+      "\\beffect\\b",
+      "\\bslope\\b"
+    ),
+    collapse = "|"
+  )
+
+  if (grepl(unitChangePattern, normalizedText, perl = TRUE) &&
+      grepl(unitChangeIntentPattern, normalizedText, perl = TRUE)) {
+    result$category = "unit_change_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Unit-change interpretation request captured for deterministic follow-up handling."
+    result$unitChangeValues = unitChangeValues
+    return(result)
+  }
+
   if (grepl("prediction interval", normalizedText, perl = TRUE)) {
     result$category = "prediction_interval_request"
     result$supported = TRUE
@@ -73,7 +106,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
-  if (grepl("\\bpredict|predicted|prediction\\b", normalizedText, perl = TRUE)) {
+  if (grepl("\\b(predict|predicted|prediction)\\b", normalizedText, perl = TRUE)) {
     result$category = "prediction_request"
     result$supported = TRUE
     result$requiresDeterministicComputation = TRUE
@@ -83,8 +116,8 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
 
   expectedPredictionPattern = paste(
     c(
-      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b.*\\b(expect|expected)\\b",
-      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b",
+      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b.*\\b(expect|expected)\\b",
+      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b",
       "\\bhow many\\b.*\\b(expect|expected)\\b",
       "\\bhow much\\b.*\\b(expect|expected)\\b"
     ),
@@ -93,6 +126,10 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   hasPredictionCondition = grepl(
     "\\b(for|when|with|where)\\b.*\\b[A-Za-z][A-Za-z0-9_.]*\\s*=",
     originalText,
+    perl = TRUE
+  ) || grepl(
+    "\\bif\\b.*\\b(score|scores|attend|attends|regularly|class|when|with)\\b",
+    normalizedText,
     perl = TRUE
   )
   if (grepl(expectedPredictionPattern, normalizedText, perl = TRUE) && isTRUE(hasPredictionCondition)) {
@@ -125,6 +162,16 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   }
 
   if (grepl("\\b(compare|comparison|difference between|focus on the comparison|versus|vs\\.?)\\b", normalizedText, perl = TRUE)) {
+    comparisonUnitChangeValues = extractRequestedUnitChangeValues(normalizedText)
+    if (length(comparisonUnitChangeValues) > 1L) {
+      result$category = "unsupported_or_out_of_scope"
+      result$supported = FALSE
+      result$reason = "ambiguous_predictor_values"
+      result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
+      result$unitChangeValues = comparisonUnitChangeValues
+      return(result)
+    }
+
     result$category = "emphasis_group_comparison"
     result$supported = TRUE
     result$message = "Group-comparison emphasis preference captured."
@@ -159,14 +206,6 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
-  if (grepl("\\b((\\d+|a)\\s*[- ]?unit\\s+(increase|change)|per\\s+unit(\\s+increase|\\s+change)?|increase\\s+of\\s+\\d+|for\\s+a?\\s*\\d+\\s*[- ]?unit\\s+(increase|change)|interpret\\s+.*\\b\\d+\\s*[- ]?unit\\s+change|use\\s+a?\\s*\\d+\\s*[- ]?unit\\s+change\\s+instead)\\b", normalizedText, perl = TRUE)) {
-    result$category = "alternative_unit_change"
-    result$supported = TRUE
-    result$message = "Alternative unit-change interpretation request captured."
-    result$unitChangeValues = unitChangeValues
-    return(result)
-  }
-
   result
 }
 
@@ -181,8 +220,10 @@ extractRequestedUnitChangeValues = function(normalizedText) {
   pattern = paste(
     c(
       "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
-      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\b(?=\\s+(?:and|or)\\s+(?:a\\s+)?\\d+(?:\\.\\d+)?\\s*[- ]?unit\\s+(?:increase|change)\\b)",
-      "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:point|mark|carat|magnitude)\\s+(?:increase|change)\\b",
+      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark|carat|magnitude)\\b",
+      "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
+      "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
     ),
     collapse = "|"
   )

@@ -1,0 +1,8 @@
+displayName: Diamonds
+modelType: lm
+formula: price ~ weight
+dataSource: package
+dataPackage: s20x
+dataObject: diamonds.df
+researchQuestion: How does the price of a diamond change as its weight in carats increases?
+followupQuestion: Can you explain the weight effect for a 0.1 carat increase?
