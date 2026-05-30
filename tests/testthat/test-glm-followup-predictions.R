@@ -1,4 +1,4 @@
-testthat::test_that("Stage 25.3 natural numeric follow-up parser extracts in-range values", {
+testthat::test_that("natural numeric GLM follow-up parser extracts in-range values", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -14,7 +14,7 @@ testthat::test_that("Stage 25.3 natural numeric follow-up parser extracts in-ran
   testthat::expect_null(assignOut$predictionIntervalUnsupportedReason)
 })
 
-testthat::test_that("Stage 25.3 logistic follow-ups keep factor and numeric values", {
+testthat::test_that("logistic GLM follow-ups keep factor and numeric values", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Attend + Test, data = course.df, family = stats::binomial())
 
@@ -30,7 +30,7 @@ testthat::test_that("Stage 25.3 logistic follow-ups keep factor and numeric valu
   testthat::expect_identical(out$responseDescription, "probability")
 })
 
-testthat::test_that("Stage 27.6.2 explicit logistic prediction interval requests return Bernoulli framing", {
+testthat::test_that("explicit logistic prediction interval requests return Bernoulli framing", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -48,7 +48,7 @@ testthat::test_that("Stage 27.6.2 explicit logistic prediction interval requests
   testthat::expect_null(out$predictionIntervalUnsupportedReason)
 })
 
-testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnitude 5.4", {
+testthat::test_that("Poisson earthquake follow-ups predict at in-range Magnitude values", {
   quakePath = system.file(
     "extdata",
     "examples",
@@ -92,7 +92,7 @@ testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnit
 
 
 
-testthat::test_that("Stage 27.5 Poisson prediction-interval requests return conditional count intervals", {
+testthat::test_that("Poisson prediction-interval requests return conditional count intervals", {
   quakePath = system.file(
     "extdata",
     "examples",
@@ -124,7 +124,7 @@ testthat::test_that("Stage 27.5 Poisson prediction-interval requests return cond
 
 
 
-testthat::test_that("Stage 27.6 logistic prediction-interval requests return Bernoulli outcome probabilities", {
+testthat::test_that("logistic prediction-interval requests return Bernoulli outcome probabilities", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -142,7 +142,7 @@ testthat::test_that("Stage 27.6 logistic prediction-interval requests return Ber
   testthat::expect_null(out$predictionIntervalUnsupportedReason)
 })
 
-testthat::test_that("Stage 25.3 diagnostics JSON includes generated explanation text", {
+testthat::test_that("GLM follow-up diagnostics JSON includes generated explanation text", {
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(list(
     followupPayload = list(
       originalText = "What is the predicted probability when Assign = 15?",
@@ -164,7 +164,7 @@ testthat::test_that("Stage 25.3 diagnostics JSON includes generated explanation 
   testthat::expect_identical(diagnostics$generatedExplanation, "Generated explanation text")
 })
 
-testthat::test_that("Stage 27.3 GLM parser handles unnamed single numeric predictor values", {
+testthat::test_that("GLM parser handles unnamed single numeric predictor values", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -178,7 +178,7 @@ testthat::test_that("Stage 27.3 GLM parser handles unnamed single numeric predic
   testthat::expect_identical(out$responseDescription, "probability")
 })
 
-testthat::test_that("Stage 27.3 GLM parser handles attendance-is-yes wording", {
+testthat::test_that("GLM parser handles attendance-is-yes wording", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Attend, data = course.df, family = stats::binomial())
 
@@ -193,7 +193,7 @@ testthat::test_that("Stage 27.3 GLM parser handles attendance-is-yes wording", {
   testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
 })
 
-testthat::test_that("Stage 27.3 GLM parser maps Washington location wording to WA", {
+testthat::test_that("GLM parser maps Washington location wording to WA", {
   quakePath = system.file(
     "extdata",
     "examples",

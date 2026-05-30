@@ -1,4 +1,4 @@
-testthat::test_that("Stage 25.6 logistic Assign follow-up can ask for odds", {
+testthat::test_that("logistic Assign follow-up can ask for odds", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -22,7 +22,7 @@ testthat::test_that("Stage 25.6 logistic Assign follow-up can ask for odds", {
   testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
 })
 
-testthat::test_that("Stage 25.6 logistic Attend and Test follow-up can ask for odds", {
+testthat::test_that("logistic Attend and Test follow-up can ask for odds", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Attend + Test, data = course.df, family = stats::binomial())
 
@@ -47,7 +47,7 @@ testthat::test_that("Stage 25.6 logistic Attend and Test follow-up can ask for o
   testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
 })
 
-testthat::test_that("Stage 25.6 deterministic appended answer names odds scale", {
+testthat::test_that("deterministic appended answer names odds scale", {
   df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
   fit = stats::glm(Y ~ X, data = df, family = stats::binomial())
   followup = "What odds for Y would you predict when X = 3?"
@@ -63,7 +63,7 @@ testthat::test_that("Stage 25.6 deterministic appended answer names odds scale",
   testthat::expect_match(answer, "predicted odds", fixed = TRUE)
 })
 
-testthat::test_that("Stage 27.3 logistic odds parser handles test-mark wording", {
+testthat::test_that("logistic odds parser handles test-mark wording", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Test, data = course.df, family = stats::binomial())
 

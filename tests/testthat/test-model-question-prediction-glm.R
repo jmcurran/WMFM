@@ -197,7 +197,7 @@ testthat::test_that("blocked GLM extrapolation diagnostics are retained without 
   testthat::expect_null(out$fittedPrediction)
 })
 
-testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy metadata", {
+testthat::test_that("GLM payload records prediction-interval policy metadata", {
   poissonDf = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
   poissonModel = stats::glm(Y ~ X, data = poissonDf, family = stats::poisson())
 
@@ -231,7 +231,7 @@ testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy m
   testthat::expect_null(binomialOut$predictionIntervalUnsupportedReason)
 })
 
-testthat::test_that("Stage 27.5 explicit Poisson prediction-interval requests return conditional count intervals", {
+testthat::test_that("explicit Poisson prediction-interval requests return conditional count intervals", {
   df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
   model = stats::glm(Y ~ X, data = df, family = stats::poisson())
 
@@ -251,7 +251,7 @@ testthat::test_that("Stage 27.5 explicit Poisson prediction-interval requests re
   testthat::expect_equal(out$predictionInterval$upr, stats::qpois(0.975, out$fittedPrediction))
 })
 
-testthat::test_that("Stage 27.6 explicit binomial prediction-interval requests return Bernoulli outcome framing", {
+testthat::test_that("explicit binomial prediction-interval requests return Bernoulli outcome framing", {
   df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
   model = stats::glm(Y ~ X, data = df, family = stats::binomial())
 
