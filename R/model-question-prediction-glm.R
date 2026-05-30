@@ -138,6 +138,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
       resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
       completedPredictorValues = newDataInfo$completedPredictorValues,
       extrapolationPolicy = extrapolationPolicy,
+      extrapolationDiagnostics = extrapolationPolicy$diagnostics,
+      extrapolationExplanation = extrapolationPolicy$explanationText,
       warnings = extrapolationPolicy$message
     ))
   }
@@ -213,6 +215,8 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   payload$glmLink = linkName
   payload$responseDescription = responseDescription
   payload$extrapolationPolicy = extrapolationPolicy
+  payload$extrapolationDiagnostics = extrapolationPolicy$diagnostics
+  payload$extrapolationExplanation = extrapolationPolicy$explanationText
   payload$predictionIntervalUnsupportedReason = "GLM follow-up prediction intervals for a future observation are not currently supported; WMFM reports a confidence interval for the fitted mean response instead."
   payload
 }
@@ -283,7 +287,21 @@ classifyGlmFollowupExtrapolation = function(model, suppliedPredictorValues, thre
       nearestBoundary = nearestBoundary,
       distanceOutside = distanceOutside,
       tolerance = tolerance,
-      classification = classification
+      classification = classification,
+      observedRange = list(
+        lower = observedMin,
+        upper = observedMax,
+        width = observedWidth
+      ),
+      explanatoryText = buildGlmExtrapolationPredictorText(
+        predictorName = predictorName,
+        requestedValue = requestedValue,
+        observedMin = observedMin,
+        observedMax = observedMax,
+        distanceOutside = distanceOutside,
+        tolerance = tolerance,
+        classification = classification
+      )
     )
   }
 
@@ -300,12 +318,114 @@ classifyGlmFollowupExtrapolation = function(model, suppliedPredictorValues, thre
   }
 
   message = buildGlmExtrapolationMessage(status = status, numericDiagnostics = numericDiagnostics)
+  diagnostics = buildGlmExtrapolationDiagnostics(
+    status = status,
+    thresholdFraction = thresholdFraction,
+    numericDiagnostics = numericDiagnostics,
+    message = message
+  )
 
   list(
     status = status,
     thresholdFraction = thresholdFraction,
     numericPredictors = numericDiagnostics,
+    diagnostics = diagnostics,
+    explanationText = diagnostics$explanationText,
     message = message
+  )
+}
+
+#' Build per-predictor GLM extrapolation explanatory text
+#'
+#' @param predictorName Character scalar predictor name.
+#' @param requestedValue Numeric scalar requested value.
+#' @param observedMin Numeric scalar observed minimum.
+#' @param observedMax Numeric scalar observed maximum.
+#' @param distanceOutside Numeric scalar distance outside the observed range.
+#' @param tolerance Numeric scalar extrapolation warning tolerance.
+#' @param classification Character scalar extrapolation classification.
+#'
+#' @return Character scalar.
+#' @keywords internal
+#' @noRd
+buildGlmExtrapolationPredictorText = function(
+    predictorName,
+    requestedValue,
+    observedMin,
+    observedMax,
+    distanceOutside,
+    tolerance,
+    classification) {
+  if (identical(classification, "in_range")) {
+    return(sprintf(
+      "%s = %.6g is inside the observed range [%.6g, %.6g].",
+      predictorName,
+      requestedValue,
+      observedMin,
+      observedMax
+    ))
+  }
+
+  policyText = if (identical(classification, "extrapolation_blocked")) {
+    "This is beyond the configured extrapolation tolerance, so WMFM suppresses the deterministic prediction."
+  } else {
+    "This is outside the observed range but within the configured extrapolation tolerance, so WMFM reports the prediction with a warning."
+  }
+
+  sprintf(
+    paste(
+      "%s = %.6g is outside the observed range [%.6g, %.6g].",
+      "It is %.6g units beyond the nearest boundary; the configured tolerance is %.6g.",
+      "%s"
+    ),
+    predictorName,
+    requestedValue,
+    observedMin,
+    observedMax,
+    distanceOutside,
+    tolerance,
+    policyText
+  )
+}
+
+#' Build machine-readable GLM extrapolation diagnostics
+#'
+#' @param status Overall extrapolation status.
+#' @param thresholdFraction Numeric scalar extrapolation threshold fraction.
+#' @param numericDiagnostics Per-predictor extrapolation diagnostics.
+#' @param message Character scalar plain-language policy message.
+#'
+#' @return Named list of stable diagnostics fields.
+#' @keywords internal
+#' @noRd
+buildGlmExtrapolationDiagnostics = function(status, thresholdFraction, numericDiagnostics, message) {
+  predictorDiagnostics = lapply(numericDiagnostics, function(x) {
+    list(
+      predictor = x$predictor,
+      observedRange = x$observedRange,
+      requestedValue = x$requestedValue,
+      nearestBoundary = x$nearestBoundary,
+      distanceOutside = x$distanceOutside,
+      tolerance = x$tolerance,
+      classification = x$classification,
+      explanatoryText = x$explanatoryText
+    )
+  })
+
+  list(
+    status = status,
+    thresholdFraction = thresholdFraction,
+    numericPredictors = predictorDiagnostics,
+    observedRanges = lapply(predictorDiagnostics, function(x) {
+      x$observedRange
+    }),
+    requestedValues = lapply(predictorDiagnostics, function(x) {
+      x$requestedValue
+    }),
+    classifications = lapply(predictorDiagnostics, function(x) {
+      x$classification
+    }),
+    explanationText = message
   )
 }
 

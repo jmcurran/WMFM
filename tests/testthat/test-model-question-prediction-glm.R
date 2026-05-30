@@ -163,3 +163,34 @@ testthat::test_that("GLM prediction is suppressed for extreme numeric extrapolat
   testthat::expect_identical(out$extrapolationPolicy$numericPredictors$X$classification, "extrapolation_blocked")
   testthat::expect_null(out$fittedPrediction)
 })
+
+testthat::test_that("GLM extrapolation diagnostics expose stable machine-readable fields", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 6.4")
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$extrapolationDiagnostics$status, "extrapolation_warning")
+  testthat::expect_equal(out$extrapolationDiagnostics$observedRanges$X$lower, 1)
+  testthat::expect_equal(out$extrapolationDiagnostics$observedRanges$X$upper, 6)
+  testthat::expect_equal(out$extrapolationDiagnostics$requestedValues$X, 6.4)
+  testthat::expect_identical(out$extrapolationDiagnostics$classifications$X, "extrapolation_warning")
+  testthat::expect_match(out$extrapolationDiagnostics$numericPredictors$X$explanatoryText, "configured tolerance", fixed = TRUE)
+  testthat::expect_match(out$extrapolationExplanation, "slight extrapolation", fixed = TRUE)
+})
+
+testthat::test_that("blocked GLM extrapolation diagnostics are retained without fitted prediction", {
+  df = data.frame(Y = c(1, 2, 4, 2, 3, 5, 6, 4), X = c(1, 2, 3, 4, 2, 5, 6, 3))
+  model = stats::glm(Y ~ X, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(model, "Predict Y when X = 8")
+
+  testthat::expect_identical(out$status, "extrapolation_blocked")
+  testthat::expect_identical(out$extrapolationDiagnostics$status, "extrapolation_blocked")
+  testthat::expect_equal(out$extrapolationDiagnostics$requestedValues$X, 8)
+  testthat::expect_identical(out$extrapolationDiagnostics$classifications$X, "extrapolation_blocked")
+  testthat::expect_match(out$extrapolationDiagnostics$numericPredictors$X$explanatoryText, "suppresses the deterministic prediction", fixed = TRUE)
+  testthat::expect_match(out$extrapolationExplanation, "suppressed", fixed = TRUE)
+  testthat::expect_null(out$fittedPrediction)
+})

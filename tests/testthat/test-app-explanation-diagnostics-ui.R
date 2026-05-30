@@ -244,3 +244,40 @@ testthat::test_that("diagnostics bundle exposes unit-change debug fields", {
   testthat::expect_match(html, "Transformed unit-change effect", fixed = TRUE)
   testthat::expect_match(html, "Transformed unit-change interval", fixed = TRUE)
 })
+
+testthat::test_that("diagnostics JSON exposes GLM extrapolation debug fields", {
+  diagnostics = list(
+    followupText = "Predict Y when X = 6.4",
+    followupPayload = list(
+      originalText = "Predict Y when X = 6.4",
+      category = "prediction_request",
+      predictionResult = list(
+        status = "ok",
+        modelType = "glm",
+        glmFamily = "poisson",
+        glmLink = "log",
+        responseScale = "response",
+        responseDescription = "expected_count",
+        extrapolationExplanation = "WMFM computed this GLM follow-up prediction, but it uses slight extrapolation.",
+        extrapolationDiagnostics = list(
+          status = "extrapolation_warning",
+          observedRanges = list(X = list(lower = 1, upper = 6, width = 5)),
+          requestedValues = list(X = 6.4),
+          classifications = list(X = "extrapolation_warning"),
+          explanationText = "WMFM computed this GLM follow-up prediction, but it uses slight extrapolation."
+        )
+      )
+    ),
+    assembledPrompt = "WMFM deterministic GLM follow-up block"
+  )
+
+  out = buildExplanationPromptDiagnosticsJson(diagnostics)
+  parsed = jsonlite::fromJSON(out, simplifyVector = FALSE)
+
+  testthat::expect_identical(parsed$extrapolationStatus, "extrapolation_warning")
+  testthat::expect_match(parsed$extrapolationExplanation, "slight extrapolation", fixed = TRUE)
+  testthat::expect_identical(parsed$extrapolationDiagnostics$status, "extrapolation_warning")
+  testthat::expect_equal(parsed$extrapolationDiagnostics$observedRanges$X$lower, 1)
+  testthat::expect_equal(parsed$extrapolationDiagnostics$requestedValues$X, 6.4)
+  testthat::expect_identical(parsed$extrapolationDiagnostics$classifications$X, "extrapolation_warning")
+})
