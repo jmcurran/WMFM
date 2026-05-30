@@ -1,4 +1,4 @@
-testthat::test_that("Stage 25.6 logistic Assign follow-up can ask for odds", {
+testthat::test_that("logistic Assign follow-up can ask for odds", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -22,7 +22,7 @@ testthat::test_that("Stage 25.6 logistic Assign follow-up can ask for odds", {
   testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
 })
 
-testthat::test_that("Stage 25.6 logistic Attend and Test follow-up can ask for odds", {
+testthat::test_that("logistic Attend and Test follow-up can ask for odds", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Attend + Test, data = course.df, family = stats::binomial())
 
@@ -47,7 +47,7 @@ testthat::test_that("Stage 25.6 logistic Attend and Test follow-up can ask for o
   testthat::expect_identical(out$confidenceInterval$intervalScale, "odds")
 })
 
-testthat::test_that("Stage 25.6 deterministic appended answer names odds scale", {
+testthat::test_that("deterministic appended answer names odds scale", {
   df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
   fit = stats::glm(Y ~ X, data = df, family = stats::binomial())
   followup = "What odds for Y would you predict when X = 3?"
@@ -61,4 +61,19 @@ testthat::test_that("Stage 25.6 deterministic appended answer names odds scale",
   testthat::expect_identical(payload$predictionResult$responseDescription, "odds")
   testthat::expect_match(answer, "WMFM predicts odds for Y", fixed = TRUE)
   testthat::expect_match(answer, "predicted odds", fixed = TRUE)
+})
+
+testthat::test_that("logistic odds parser handles test-mark wording", {
+  data(course.df, package = "s20x")
+  fit = stats::glm(Pass ~ Test, data = course.df, family = stats::binomial())
+
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What are the odds of passing for someone with a test mark of 10?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$responseScale, "odds")
+  testthat::expect_identical(out$responseDescription, "odds")
+  testthat::expect_equal(out$resolvedPredictorValues$Test, 10)
 })

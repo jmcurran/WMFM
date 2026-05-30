@@ -296,12 +296,33 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     }
   }
 
+  numericPredictors = predictorNames[vapply(predictorNames, function(predictor) {
+    is.numeric(mf[[predictor]])
+  }, logical(1))]
+  missingNumericPredictors = setdiff(numericPredictors, names(parsedPairs))
+  if (length(missingNumericPredictors) == 1L) {
+    matchedValue = extractSingleNaturalPredictionNumber(text = text)
+    if (!is.null(matchedValue)) {
+      parsedPairs[[missingNumericPredictors[[1]]]] = matchedValue
+    }
+  }
+
   unresolvedFactors = character(0)
   for (predictor in predictorNames) {
     column = mf[[predictor]]
-    if (!is.factor(column)) next
+    modelLevels = character(0)
+    if (is.factor(column)) {
+      modelLevels = levels(column)
+    } else if (!is.null(model$xlevels[[predictor]])) {
+      modelLevels = model$xlevels[[predictor]]
+    } else if (is.character(column)) {
+      modelLevels = sort(unique(stats::na.omit(as.character(column))))
+    }
 
-    modelLevels = levels(column)
+    if (length(modelLevels) == 0) {
+      next
+    }
+
     explicitValue = parsedPairs[[predictor]]
     explicitMatched = character(0)
 
@@ -318,8 +339,13 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
       modelLevels = modelLevels,
       text = text
     )
+    aliasMatched = matchSemanticNamedFactorLevel(
+      predictor = predictor,
+      modelLevels = modelLevels,
+      text = text
+    )
 
-    matched = unique(c(explicitMatched, textMatched, semanticMatched))
+    matched = unique(c(explicitMatched, textMatched, semanticMatched, aliasMatched))
 
     if (length(matched) == 1) {
       parsedPairs[[predictor]] = matched[[1]]
@@ -378,6 +404,42 @@ extractNaturalNumericPredictionValue = function(predictor, text) {
   }
 
   NULL
+}
+
+#' @keywords internal
+#' @noRd
+extractSingleNaturalPredictionNumber = function(text) {
+  textNorm = normalizePredictionText(text)
+  if (!nzchar(textNorm)) {
+    return(NULL)
+  }
+
+  predictionCuePattern = paste(
+    c(
+      "\\b(score|scored|scores|mark|marks|test mark|test score)\\b",
+      "\\bwith\\b",
+      "\\bwho\\b",
+      "\\bfor\\b"
+    ),
+    collapse = "|"
+  )
+  if (!grepl(predictionCuePattern, textNorm, perl = TRUE)) {
+    return(NULL)
+  }
+
+  numberMatches = gregexpr("-?\\d+(?:\\.\\d+)?", textNorm, perl = TRUE)
+  values = regmatches(textNorm, numberMatches)[[1]]
+  if (!length(values) || identical(values, "-1")) {
+    return(NULL)
+  }
+
+  numericValues = suppressWarnings(as.numeric(values))
+  numericValues = numericValues[is.finite(numericValues)]
+  if (length(numericValues) != 1L) {
+    return(NULL)
+  }
+
+  as.character(numericValues[[1]])
 }
 
 #' @keywords internal
@@ -447,17 +509,47 @@ matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
   }
 
   if (predictorNorm %in% c("attend", "attendance", "attended")) {
-    if (grepl("\\b(do not|does not|did not|don'?t|not)\\s+attend\\b", textNorm, perl = TRUE) ||
-        grepl("\\bwithout\\s+(regular\\s+)?attend", textNorm, perl = TRUE)) {
+    if (grepl("\\b(do not|does not|did not|don'?t|not)\\s+(attend|attendance)\\b", textNorm, perl = TRUE) ||
+        grepl("\\bwithout\\s+(regular\\s+)?(attend|attendance)", textNorm, perl = TRUE) ||
+        grepl("\\battendance\\s+(is\\s+)?no\\b", textNorm, perl = TRUE)) {
       return(modelLevels[[noIndex]])
     }
 
-    hasPositiveAttendance = grepl("\\battend(s|ed|ing)?\\b", textNorm, perl = TRUE) &&
+    hasPositiveAttendance = grepl("\\b(attend(s|ed|ing)?|attendance)\\b", textNorm, perl = TRUE) &&
       grepl("\\b(regular|regularly|yes)\\b", textNorm, perl = TRUE)
 
     if (isTRUE(hasPositiveAttendance)) {
       return(modelLevels[[yesIndex]])
     }
+  }
+
+  character(0)
+}
+
+#' @keywords internal
+#' @noRd
+matchSemanticNamedFactorLevel = function(predictor, modelLevels, text) {
+  textNorm = normalizePredictionText(text)
+  predictorNorm = normalizePredictionText(predictor)
+  levelNorms = vapply(modelLevels, normalizePredictionText, character(1))
+
+  if (!nzchar(textNorm) || !length(modelLevels)) {
+    return(character(0))
+  }
+
+  if (predictorNorm %in% c("locn", "location", "region", "state")) {
+    washingtonIndex = which(levelNorms %in% c("wa", "washington"))
+    californiaIndex = which(levelNorms %in% c("sc", "southern california", "california"))
+
+    matched = character(0)
+    if (length(washingtonIndex) == 1L && grepl("\\b(washington|wa)\\b", textNorm, perl = TRUE)) {
+      matched = c(matched, modelLevels[[washingtonIndex]])
+    }
+    if (length(californiaIndex) == 1L && grepl("\\b(southern california|california|sc)\\b", textNorm, perl = TRUE)) {
+      matched = c(matched, modelLevels[[californiaIndex]])
+    }
+
+    return(unique(matched))
   }
 
   character(0)

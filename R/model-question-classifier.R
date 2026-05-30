@@ -110,7 +110,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     result$category = "prediction_request"
     result$supported = TRUE
     result$requiresDeterministicComputation = TRUE
-    result$message = "Prediction-style request captured for a later stage."
+    result$message = "Prediction-style request captured for deterministic follow-up handling."
     return(result)
   }
 
@@ -119,7 +119,9 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
       "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b.*\\b(expect|expected)\\b",
       "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b",
       "\\bhow many\\b.*\\b(expect|expected)\\b",
-      "\\bhow much\\b.*\\b(expect|expected)\\b"
+      "\\bhow much\\b.*\\b(expect|expected)\\b",
+      "\\bwhat happens\\b.*\\b(if|when)\\b",
+      "\\bwhat would happen\\b.*\\b(if|when)\\b"
     ),
     collapse = "|"
   )
@@ -128,7 +130,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     originalText,
     perl = TRUE
   ) || grepl(
-    "\\bif\\b.*\\b(score|scores|attend|attends|regularly|class|when|with)\\b",
+    "\\b(if|for|when|with|who)\\b.*\\b(score|scored|scores|mark|marks|attendance|attend|attends|regularly|class|magnitude|washington|california)\\b",
     normalizedText,
     perl = TRUE
   )
