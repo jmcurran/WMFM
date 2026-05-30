@@ -70,3 +70,39 @@ testthat::test_that("Poisson unit-change payload scales on link scale and expone
   testthat::expect_identical(payload$unitChangeResult$effectScale, "expected_count_multiplier")
   testthat::expect_equal(payload$unitChangeResult$transformedEstimate, exp(coefX * 2))
 })
+
+testthat::test_that("binomial unit-change payload reports odds multiplier and percent wording", {
+  df = data.frame(
+    Passed = c(0, 0, 1, 0, 1, 1, 0, 1, 1, 1),
+    Hours = c(0.5, 1.0, 1.2, 1.8, 2.0, 2.4, 2.8, 3.2, 3.6, 4.0)
+  )
+  model = stats::glm(Passed ~ Hours, data = df, family = stats::binomial())
+  payload = classifyModelFollowupQuestion("Explain Hours for a 0.5-unit increase")
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+  coefHours = unname(stats::coef(model)[["Hours"]])
+
+  testthat::expect_identical(payload$unitChangeResult$status, "ok")
+  testthat::expect_identical(payload$unitChangeResult$modelType, "glm")
+  testthat::expect_identical(payload$unitChangeResult$effectScale, "odds_multiplier")
+  testthat::expect_equal(payload$unitChangeResult$transformedEstimate, exp(coefHours * 0.5))
+  testthat::expect_equal(payload$unitChangeResult$percentChange, 100 * (exp(coefHours * 0.5) - 1))
+  testthat::expect_match(payload$unitChangeResult$percentChangeText, "%")
+  testthat::expect_match(payload$unitChangeResult$interpretation, "odds")
+})
+
+testthat::test_that("multiplicative unit-change prompt includes percent-change guidance", {
+  df = data.frame(
+    Y = c(1, 2, 4, 7, 12, 20),
+    x = c(0, 1, 2, 3, 4, 5)
+  )
+  model = stats::glm(Y ~ x, data = df, family = stats::poisson())
+  payload = classifyModelFollowupQuestion("Explain x for a 0.1-unit increase")
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+  attr(model, "wmfm_model_followup_question") = payload$originalText
+
+  prompt = lmToExplanationPrompt(model)
+
+  testthat::expect_match(prompt, "Requested unit-change percent interpretation", fixed = TRUE)
+  testthat::expect_match(prompt, "prefer the supplied percent-change wording", fixed = TRUE)
+})

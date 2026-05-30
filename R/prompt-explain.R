@@ -305,6 +305,18 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
         ci = unitChangeResult$confidenceInterval
         ciBlock = glue::glue("
 Confidence interval for the requested unit-change effect (95%): [{signif(ci$lwr, 6)}, {signif(ci$upr, 6)}]")
+        if (!is.null(ci$percentChangeLwr) && !is.null(ci$percentChangeUpr)) {
+          ciBlock = paste0(
+            ciBlock,
+            glue::glue("
+Percent-change interval for the requested unit-change effect (95%): [{signif(ci$percentChangeLwr, 6)}%, {signif(ci$percentChangeUpr, 6)}%]")
+          )
+        }
+      }
+      percentChangeBlock = ""
+      if (!is.null(unitChangeResult$percentChangeText)) {
+        percentChangeBlock = glue::glue("
+Requested unit-change percent interpretation: {unitChangeResult$percentChangeText}")
       }
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
@@ -315,6 +327,7 @@ WMFM deterministic requested unit-change interpretation:
 - Use these values directly when explaining the relevant numeric effect.
 - Do not recompute, round further, or invent intervals.
 - Replace or revise the relevant one-unit slope sentence where possible.
+- For multiplicative effects, prefer the supplied percent-change wording over raw multipliers when this is clearer for students.
 - Do not also append a separate prediction-style follow-up paragraph.
 
 Model type: {unitChangeResult$modelType}
@@ -323,7 +336,7 @@ Response: {unitChangeResult$responseName}
 Requested predictor: {unitChangeResult$predictorName}
 Requested unit change: {signif(unitChangeResult$requestedUnitChange, 6)}
 Original one-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
-Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{ciBlock}
+Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}{ciBlock}
 Deterministic wording: {unitChangeResult$interpretation}
 "))
     }

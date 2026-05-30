@@ -185,17 +185,22 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
 
   linkScaleEffect = oneUnitEffect * unitChange
   transformedEstimate = exp(linkScaleEffect)
+  percentChange = 100 * (transformedEstimate - 1)
   confidenceInterval = NULL
   ciValues = extractUnitChangeConfidenceLimits(ciResult)
   if (length(ciValues) == 2L) {
     oneUnitLwr = unname(ciValues[[1]])
     oneUnitUpr = unname(ciValues[[2]])
+    lwr = exp(oneUnitLwr * unitChange)
+    upr = exp(oneUnitUpr * unitChange)
     confidenceInterval = list(
       level = 0.95,
       oneUnitLwr = oneUnitLwr,
       oneUnitUpr = oneUnitUpr,
-      lwr = exp(oneUnitLwr * unitChange),
-      upr = exp(oneUnitUpr * unitChange)
+      lwr = lwr,
+      upr = upr,
+      percentChangeLwr = 100 * (lwr - 1),
+      percentChangeUpr = 100 * (upr - 1)
     )
   }
 
@@ -212,13 +217,35 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
     linkScaleUnitChangeEffect = linkScaleEffect,
     transformedEstimate = transformedEstimate,
     unitChangeEffect = transformedEstimate,
+    percentChange = percentChange,
+    percentChangeText = formatUnitChangePercentText(percentChange),
     confidenceInterval = confidenceInterval,
     interpretation = paste0(
       "For a ", signif(unitChange, 6), "-unit increase in ", predictorName,
-      ", the ", interpretationNoun, " is multiplied by ",
-      signif(transformedEstimate, 6), "."
+      ", the ", interpretationNoun, " is ",
+      formatUnitChangePercentText(percentChange), "."
     )
   )
+}
+
+#' @keywords internal
+#' @noRd
+formatUnitChangePercentText = function(percentChange) {
+  percentChange = suppressWarnings(as.numeric(percentChange))
+  if (length(percentChange) != 1L || !is.finite(percentChange)) {
+    return("changed by an unavailable percentage")
+  }
+
+  roundedChange = signif(abs(percentChange), 3)
+  if (abs(percentChange) < .Machine$double.eps^0.5) {
+    return("changed by about 0%")
+  }
+
+  if (percentChange > 0) {
+    return(paste0("about ", roundedChange, "% higher"))
+  }
+
+  paste0("about ", roundedChange, "% lower")
 }
 
 #' @keywords internal
