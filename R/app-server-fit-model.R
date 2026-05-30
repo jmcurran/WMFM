@@ -354,6 +354,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       model = m,
       followupPayload = followupClassification
     )
+    followupClassification = enrichFollowupPayloadWithUnitChange(
+      model = m,
+      followupPayload = followupClassification
+    )
     attr(m, "wmfm_model_followup_question") = followupClassification$originalText
     attr(m, "wmfm_model_followup_payload") = followupClassification
     promptPreview = lmToExplanationPrompt(m)

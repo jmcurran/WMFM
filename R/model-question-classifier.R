@@ -162,6 +162,16 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   }
 
   if (grepl("\\b(compare|comparison|difference between|focus on the comparison|versus|vs\\.?)\\b", normalizedText, perl = TRUE)) {
+    comparisonUnitChangeValues = extractRequestedUnitChangeValues(normalizedText)
+    if (length(comparisonUnitChangeValues) > 1L) {
+      result$category = "unsupported_or_out_of_scope"
+      result$supported = FALSE
+      result$reason = "ambiguous_predictor_values"
+      result$message = "Unsupported ambiguous multi-unit follow-up request; clarification required."
+      result$unitChangeValues = comparisonUnitChangeValues
+      return(result)
+    }
+
     result$category = "emphasis_group_comparison"
     result$supported = TRUE
     result$message = "Group-comparison emphasis preference captured."

@@ -125,13 +125,14 @@ computeModelQuestionUnitChange = function(model, followupQuestion, requestedUnit
   }
 
   confidenceInterval = NULL
-  if (!is.null(ciResult)) {
+  ciValues = extractUnitChangeConfidenceLimits(ciResult)
+  if (length(ciValues) == 2L) {
     confidenceInterval = list(
       level = 0.95,
-      oneUnitLwr = unname(as.numeric(ciResult[1, 1])),
-      oneUnitUpr = unname(as.numeric(ciResult[1, 2])),
-      lwr = unname(as.numeric(ciResult[1, 1])) * unitChange,
-      upr = unname(as.numeric(ciResult[1, 2])) * unitChange
+      oneUnitLwr = unname(ciValues[[1]]),
+      oneUnitUpr = unname(ciValues[[2]]),
+      lwr = unname(ciValues[[1]]) * unitChange,
+      upr = unname(ciValues[[2]]) * unitChange
     )
   }
 
@@ -185,19 +186,17 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
   linkScaleEffect = oneUnitEffect * unitChange
   transformedEstimate = exp(linkScaleEffect)
   confidenceInterval = NULL
-  if (!is.null(ciResult)) {
-    ciValues = as.numeric(ciResult)
-    if (length(ciValues) >= 2L && all(is.finite(ciValues[1:2]))) {
-      oneUnitLwr = unname(ciValues[[1]])
-      oneUnitUpr = unname(ciValues[[2]])
-      confidenceInterval = list(
-        level = 0.95,
-        oneUnitLwr = oneUnitLwr,
-        oneUnitUpr = oneUnitUpr,
-        lwr = exp(oneUnitLwr * unitChange),
-        upr = exp(oneUnitUpr * unitChange)
-      )
-    }
+  ciValues = extractUnitChangeConfidenceLimits(ciResult)
+  if (length(ciValues) == 2L) {
+    oneUnitLwr = unname(ciValues[[1]])
+    oneUnitUpr = unname(ciValues[[2]])
+    confidenceInterval = list(
+      level = 0.95,
+      oneUnitLwr = oneUnitLwr,
+      oneUnitUpr = oneUnitUpr,
+      lwr = exp(oneUnitLwr * unitChange),
+      upr = exp(oneUnitUpr * unitChange)
+    )
   }
 
   list(
@@ -220,6 +219,22 @@ computeGlmUnitChangeResult = function(model, responseName, predictorName, unitCh
       signif(transformedEstimate, 6), "."
     )
   )
+}
+
+#' @keywords internal
+#' @noRd
+extractUnitChangeConfidenceLimits = function(ciResult = NULL) {
+  if (is.null(ciResult)) {
+    return(numeric(0))
+  }
+
+  values = suppressWarnings(as.numeric(ciResult))
+  values = values[is.finite(values)]
+  if (length(values) < 2L) {
+    return(numeric(0))
+  }
+
+  unname(values[1:2])
 }
 
 #' @keywords internal

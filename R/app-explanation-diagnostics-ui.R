@@ -15,15 +15,21 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
 
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
-  missingOrAmbiguous = prediction$warnings %||% ""
+  unitChange = payload$unitChangeResult %||% list()
+  deterministic = if (length(unitChange)) {
+    unitChange
+  } else {
+    prediction
+  }
+  missingOrAmbiguous = deterministic$warnings %||% ""
   diagnosticsBundle = paste(
     "Raw follow-up question:", payload$originalText %||% diagnostics$followupText %||% "",
     "",
     "Follow-up category:", as.character(payload$category %||% ""),
     "",
-    "Deterministic status:", as.character(prediction$status %||% "not_applicable"),
+    "Deterministic status:", as.character(deterministic$status %||% "not_applicable"),
     "",
-    "Model type:", as.character(prediction$modelType %||% "not_applicable"),
+    "Model type:", as.character(deterministic$modelType %||% "not_applicable"),
     "",
     "GLM family/link:", paste(as.character(prediction$glmFamily %||% "not_applicable"), as.character(prediction$glmLink %||% "not_applicable"), sep = "/"),
     "",
@@ -35,6 +41,8 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     "",
     "Prediction payload:", paste(capture.output(str(prediction)), collapse = "\n"),
     "",
+    "Unit-change payload:", paste(capture.output(str(unitChange)), collapse = "\n"),
+    "",
     "Assembled prompt excerpt:", substr(diagnostics$assembledPrompt %||% "", 1, 8000),
     sep = "\n"
   )
@@ -45,7 +53,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$strong("Explanation prompt diagnostics"),
     tags$p(
       class = "wmfm-explanation-helper-note",
-      "Developer-mode diagnostics for follow-up classification, deterministic prediction payload, and assembled explanation prompt. Copy the diagnostics bundle into a debugging request when follow-up answers look wrong."
+      "Developer-mode diagnostics for follow-up classification, deterministic prediction or unit-change payload, and assembled explanation prompt. Copy the diagnostics bundle into a debugging request when follow-up answers look wrong."
     ),
     tags$strong("Copyable diagnostics bundle"),
     tags$textarea(
@@ -76,13 +84,15 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     tags$strong("Follow-up classification"),
     tags$pre(id = "diag_followup_classification", as.character(payload$category %||% "")),
     tags$strong("Deterministic follow-up status"),
-    tags$pre(id = "diag_followup_deterministic_status", as.character(prediction$status %||% "not_applicable")),
+    tags$pre(id = "diag_followup_deterministic_status", as.character(deterministic$status %||% "not_applicable")),
     tags$strong("Resolved predictor values"),
     tags$pre(id = "diag_followup_resolved_values", paste(capture.output(str(prediction$resolvedPredictorValues %||% list())), collapse = "\n")),
     tags$strong("Missing or ambiguous predictor values"),
     tags$pre(id = "diag_followup_missing_values", paste(capture.output(str(missingOrAmbiguous)), collapse = "\n")),
     tags$strong("Deterministic prediction payload"),
     tags$pre(id = "diag_followup_prediction_payload", paste(capture.output(str(prediction)), collapse = "\n")),
+    tags$strong("Deterministic unit-change payload"),
+    tags$pre(id = "diag_followup_unit_change_payload", paste(capture.output(str(unitChange)), collapse = "\n")),
     tags$strong("Final assembled prompt excerpt"),
     tags$pre(id = "diag_followup_prompt_excerpt", substr(diagnostics$assembledPrompt %||% "", 1, 8000))
   )
@@ -225,7 +235,7 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   unitChange = payload$unitChangeResult %||% list()
-  activeDeterministicPayload = if (length(unitChange) > 0) {
+  deterministic = if (length(unitChange)) {
     unitChange
   } else {
     prediction
@@ -233,24 +243,23 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
   out = list(
     rawFollowupQuestion = payload$originalText %||% diagnostics$followupText %||% "",
     followupCategory = as.character(payload$category %||% ""),
-    deterministicStatus = as.character(activeDeterministicPayload$status %||% "not_applicable"),
-    reason = as.character(activeDeterministicPayload$reason %||% ""),
-    requestedPredictor = as.character(unitChange$predictorName %||% ""),
-    requestedUnitChange = unitChange$requestedUnitChange %||% NULL,
-    originalOneUnitEffect = unitChange$oneUnitEstimate %||% NULL,
-    transformedUnitChangeEffect = unitChange$transformedEstimate %||% NULL,
-    transformedUnitChangeConfidenceInterval = unitChange$transformedConfidenceInterval %||% list(),
-    modelType = as.character(activeDeterministicPayload$modelType %||% ""),
-    glmFamily = as.character(activeDeterministicPayload$glmFamily %||% ""),
-    glmLink = as.character(activeDeterministicPayload$glmLink %||% ""),
-    responseScale = as.character(prediction$responseScale %||% unitChange$effectScale %||% ""),
-    responseDescription = as.character(prediction$responseDescription %||% unitChange$effectScale %||% ""),
-    warnings = activeDeterministicPayload$warnings %||% character(0),
+    deterministicStatus = as.character(deterministic$status %||% "not_applicable"),
+    reason = as.character(deterministic$reason %||% ""),
+    modelType = as.character(deterministic$modelType %||% ""),
+    glmFamily = as.character(prediction$glmFamily %||% ""),
+    glmLink = as.character(prediction$glmLink %||% ""),
+    responseScale = as.character(prediction$responseScale %||% ""),
+    responseDescription = as.character(prediction$responseDescription %||% ""),
+    warnings = prediction$warnings %||% character(0),
     suppliedPredictorValues = prediction$suppliedPredictorValues %||% list(),
     resolvedPredictorValues = prediction$resolvedPredictorValues %||% list(),
     completedPredictorValues = prediction$completedPredictorValues %||% list(),
     predictionPayload = prediction,
     unitChangePayload = unitChange,
+    requestedPredictor = as.character(unitChange$predictorName %||% ""),
+    requestedUnitChange = unitChange$requestedUnitChange %||% NULL,
+    transformedUnitChangeEffect = unitChange$unitChangeEffect %||% NULL,
+    transformedUnitChangeInterval = unitChange$confidenceInterval %||% NULL,
     generatedExplanation = coerceExplanationDiagnosticsText(
       diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% ""
     ),

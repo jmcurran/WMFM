@@ -1,6 +1,6 @@
 testthat::test_that("lm unit-change payload scales slope and confidence interval", {
   df = data.frame(
-    Price = c(100, 132, 159, 191, 218, 252),
+    Price = c(102, 127, 164, 187, 225, 247),
     Carat = c(0.20, 0.25, 0.30, 0.35, 0.40, 0.45)
   )
   model = stats::lm(Price ~ Carat, data = df)
@@ -24,7 +24,7 @@ testthat::test_that("unit-change payload asks for clarification when multiple nu
   df = data.frame(
     Y = c(1, 3, 4, 7, 9, 12),
     X1 = c(1, 2, 3, 4, 5, 6),
-    X2 = c(2, 1, 4, 3, 6, 5)
+    X2 = c(6, 5, 4, 3, 2, 1)
   )
   model = stats::lm(Y ~ X1 + X2, data = df)
   payload = classifyModelFollowupQuestion("Explain this for a 2-unit increase")
@@ -37,7 +37,7 @@ testthat::test_that("unit-change payload asks for clarification when multiple nu
 
 testthat::test_that("unit-change prompt includes deterministic payload and avoids prediction paragraph instruction", {
   df = data.frame(
-    Price = c(100, 132, 159, 191, 218, 252),
+    Price = c(102, 127, 164, 187, 225, 247),
     Carat = c(0.20, 0.25, 0.30, 0.35, 0.40, 0.45)
   )
   model = stats::lm(Price ~ Carat, data = df)

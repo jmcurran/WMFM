@@ -133,3 +133,32 @@ testthat::test_that("diagnostics JSON sanitises ellmer output explanation object
     fixed = TRUE
   )
 })
+
+
+testthat::test_that("diagnostics UI and JSON expose unit-change payload", {
+  diagnostics = list(
+    followupText = "Explain the Carat effect for a 0.1-unit increase",
+    followupPayload = list(
+      originalText = "Explain the Carat effect for a 0.1-unit increase",
+      category = "alternative_unit_change",
+      unitChangeResult = list(
+        status = "ok",
+        modelType = "lm",
+        predictorName = "Carat",
+        requestedUnitChange = 0.1,
+        unitChangeEffect = 123.4,
+        confidenceInterval = list(lwr = 100, upr = 150)
+      )
+    ),
+    assembledPrompt = "WMFM deterministic requested unit-change interpretation"
+  )
+
+  html = paste(capture.output(print(buildExplanationPromptDiagnosticsUi(diagnostics))), collapse = "\n")
+  json = buildExplanationPromptDiagnosticsJson(diagnostics)
+
+  testthat::expect_match(html, "diag_followup_unit_change_payload", fixed = TRUE)
+  testthat::expect_match(html, "deterministic prediction or unit-change payload", fixed = TRUE)
+  testthat::expect_match(json, "unitChangePayload", fixed = TRUE)
+  testthat::expect_match(json, "requestedUnitChange", fixed = TRUE)
+  testthat::expect_match(json, "transformedUnitChangeEffect", fixed = TRUE)
+})
