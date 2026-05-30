@@ -10,11 +10,8 @@ testthat::test_that("Stage 25.3 natural numeric follow-up parser extracts in-ran
   testthat::expect_identical(assignOut$status, "ok")
   testthat::expect_equal(assignOut$resolvedPredictorValues$Assign, 15)
   testthat::expect_true(is.list(assignOut$confidenceInterval))
-  testthat::expect_match(
-    assignOut$predictionIntervalUnsupportedReason,
-    "not currently supported",
-    fixed = TRUE
-  )
+  testthat::expect_null(assignOut$predictionInterval)
+  testthat::expect_null(assignOut$predictionIntervalUnsupportedReason)
 })
 
 testthat::test_that("Stage 25.3 logistic follow-ups keep factor and numeric values", {
@@ -33,7 +30,7 @@ testthat::test_that("Stage 25.3 logistic follow-ups keep factor and numeric valu
   testthat::expect_identical(out$responseDescription, "probability")
 })
 
-testthat::test_that("Stage 25.3 explicit GLM prediction interval requests still fail safely", {
+testthat::test_that("Stage 27.6.2 explicit logistic prediction interval requests return Bernoulli framing", {
   data(course.df, package = "s20x")
   fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
 
@@ -42,8 +39,13 @@ testthat::test_that("Stage 25.3 explicit GLM prediction interval requests still 
     followupQuestion = "What is the prediction interval for a student with Assign = 15?"
   )
 
-  testthat::expect_identical(out$status, "unsupported")
-  testthat::expect_identical(out$reason, "unsupported_glm_interval_request")
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$predictionType, "mean_response_prediction")
+  testthat::expect_true(is.list(out$predictionInterval))
+  testthat::expect_identical(out$predictionInterval$method, "bernoulli_outcome_framing")
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["1"]], out$fittedPrediction)
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["0"]], 1 - out$fittedPrediction)
+  testthat::expect_null(out$predictionIntervalUnsupportedReason)
 })
 
 testthat::test_that("Stage 25.3 earthquake follow-ups predict at in-range Magnitude 5.4", {
@@ -119,6 +121,26 @@ testthat::test_that("Stage 27.5 Poisson prediction-interval requests return cond
   testthat::expect_equal(out$predictionInterval$upr, stats::qpois(0.975, out$fittedPrediction))
 })
 
+
+
+
+testthat::test_that("Stage 27.6 logistic prediction-interval requests return Bernoulli outcome probabilities", {
+  data(course.df, package = "s20x")
+  fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
+
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What prediction interval would you give for a student with Assign = 15?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_true(is.list(out$predictionInterval))
+  testthat::expect_identical(out$predictionInterval$method, "bernoulli_outcome_framing")
+  testthat::expect_identical(out$predictionInterval$distribution, "bernoulli")
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["1"]], out$fittedPrediction)
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["0"]], 1 - out$fittedPrediction)
+  testthat::expect_null(out$predictionIntervalUnsupportedReason)
+})
 
 testthat::test_that("Stage 25.3 diagnostics JSON includes generated explanation text", {
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(list(

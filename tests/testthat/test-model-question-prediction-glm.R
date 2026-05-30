@@ -221,12 +221,14 @@ testthat::test_that("Stage 27.4 GLM payload records prediction-interval policy m
 
   testthat::expect_identical(binomialOut$status, "ok")
   testthat::expect_true(is.list(binomialOut$predictionIntervalPolicy))
-  testthat::expect_false(binomialOut$predictionIntervalPolicy$supported)
+  testthat::expect_true(binomialOut$predictionIntervalPolicy$supported)
   testthat::expect_identical(binomialOut$predictionIntervalPolicy$futureObservationType, "future_binary_outcome")
   testthat::expect_identical(
     binomialOut$predictionIntervalPolicy$recommendedNextStage,
-    "add_bernoulli_future_outcome_framing"
+    "consider_parameter_uncertainty_for_logistic_probability_interval"
   )
+  testthat::expect_identical(binomialOut$predictionIntervalPolicy$method, "bernoulli_outcome_framing")
+  testthat::expect_null(binomialOut$predictionIntervalUnsupportedReason)
 })
 
 testthat::test_that("Stage 27.5 explicit Poisson prediction-interval requests return conditional count intervals", {
@@ -249,17 +251,23 @@ testthat::test_that("Stage 27.5 explicit Poisson prediction-interval requests re
   testthat::expect_equal(out$predictionInterval$upr, stats::qpois(0.975, out$fittedPrediction))
 })
 
-testthat::test_that("Stage 27.5 explicit binomial prediction-interval requests still fail safely", {
+testthat::test_that("Stage 27.6 explicit binomial prediction-interval requests return Bernoulli outcome framing", {
   df = data.frame(Y = c(0, 1, 0, 1, 1, 0, 1, 0), X = c(1, 2, 3, 4, 5, 6, 2, 5))
   model = stats::glm(Y ~ X, data = df, family = stats::binomial())
 
   out = computeGlmModelQuestionPrediction(model, "What is the prediction interval when X = 3?")
 
-  testthat::expect_identical(out$status, "unsupported")
-  testthat::expect_identical(out$predictionType, "individual_prediction_interval")
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$predictionType, "mean_response_prediction")
   testthat::expect_true(is.list(out$predictionIntervalPolicy))
-  testthat::expect_false(out$predictionIntervalPolicy$supported)
+  testthat::expect_true(out$predictionIntervalPolicy$supported)
   testthat::expect_true(out$predictionIntervalPolicy$requested)
   testthat::expect_identical(out$predictionIntervalPolicy$futureObservationType, "future_binary_outcome")
-  testthat::expect_match(out$warnings, "Stage 27.5", fixed = TRUE)
+  testthat::expect_true(is.list(out$predictionInterval))
+  testthat::expect_identical(out$predictionInterval$method, "bernoulli_outcome_framing")
+  testthat::expect_identical(out$predictionInterval$distribution, "bernoulli")
+  testthat::expect_false(out$predictionInterval$parameterUncertaintyIncluded)
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["1"]], out$fittedPrediction)
+  testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["0"]], 1 - out$fittedPrediction)
+  testthat::expect_null(out$predictionIntervalUnsupportedReason)
 })

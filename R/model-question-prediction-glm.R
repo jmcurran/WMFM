@@ -197,6 +197,7 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
   }
 
   predictionInterval = buildGlmFutureObservationPredictionInterval(
+    model = model,
     familyName = familyName,
     fittedPrediction = fittedPrediction,
     requestedPredictionInterval = requestsPredictionInterval,
@@ -241,19 +242,21 @@ computeGlmModelQuestionPrediction = function(model, followupQuestion, allowMissi
 }
 
 
-#' Build a GLM future-observation prediction interval when supported
+#' Build GLM future-observation uncertainty metadata when supported
 #'
+#' @param model Fitted GLM object.
 #' @param familyName Character scalar GLM family name.
 #' @param fittedPrediction Numeric scalar fitted response-scale prediction.
 #' @param requestedPredictionInterval Logical scalar indicating whether the user
 #'   explicitly requested a prediction interval.
 #' @param predictionIntervalPolicy Prediction-interval policy metadata.
 #'
-#' @return Named list prediction interval metadata, or NULL when no interval
-#'   should be attached to the payload.
+#' @return Named list prediction interval or future-outcome metadata, or NULL
+#'   when no metadata should be attached to the payload.
 #' @keywords internal
 #' @noRd
 buildGlmFutureObservationPredictionInterval = function(
+    model,
     familyName,
     fittedPrediction,
     requestedPredictionInterval,
@@ -265,22 +268,136 @@ buildGlmFutureObservationPredictionInterval = function(
   familyName = tolower(as.character(familyName %||% ""))
   fittedPrediction = suppressWarnings(as.numeric(fittedPrediction)[1])
 
-  if (!identical(familyName, "poisson") || !is.finite(fittedPrediction) || fittedPrediction < 0) {
+  if (identical(familyName, "poisson")) {
+    if (!is.finite(fittedPrediction) || fittedPrediction < 0) {
+      return(NULL)
+    }
+
+    level = 0.95
+    alpha = 1 - level
+    return(list(
+      fit = fittedPrediction,
+      lwr = stats::qpois(alpha / 2, lambda = fittedPrediction),
+      upr = stats::qpois(1 - alpha / 2, lambda = fittedPrediction),
+      level = level,
+      scale = "count",
+      intervalScale = "count",
+      distribution = "poisson",
+      method = "conditional_poisson_quantile",
+      parameterUncertaintyIncluded = FALSE
+    ))
+  }
+
+  if (identical(familyName, "binomial")) {
+    return(buildLogisticFutureOutcomeFraming(
+      model = model,
+      fittedProbability = fittedPrediction
+    ))
+  }
+
+  NULL
+}
+
+#' Build deterministic Bernoulli future-outcome framing for logistic GLMs
+#'
+#' @param model Fitted GLM object.
+#' @param fittedProbability Numeric scalar fitted probability for the modelled
+#'   event.
+#'
+#' @return Named list with future binary outcome probabilities.
+#' @keywords internal
+#' @noRd
+buildLogisticFutureOutcomeFraming = function(model, fittedProbability) {
+  fittedProbability = suppressWarnings(as.numeric(fittedProbability)[1])
+  if (!is.finite(fittedProbability)) {
     return(NULL)
   }
 
-  level = 0.95
-  alpha = 1 - level
+  fittedProbability = min(max(fittedProbability, 0), 1)
+  outcomeLevels = getLogisticFutureOutcomeLevels(model)
+  eventLevel = outcomeLevels$eventLevel
+  otherLevel = outcomeLevels$otherLevel
+
   list(
-    fit = fittedPrediction,
-    lwr = stats::qpois(alpha / 2, lambda = fittedPrediction),
-    upr = stats::qpois(1 - alpha / 2, lambda = fittedPrediction),
-    level = level,
-    scale = "count",
-    intervalScale = "count",
-    distribution = "poisson",
-    method = "conditional_poisson_quantile",
-    parameterUncertaintyIncluded = FALSE
+    fit = fittedProbability,
+    lwr = 0,
+    upr = 1,
+    level = NA_real_,
+    scale = "binary_outcome",
+    intervalScale = "binary_outcome",
+    distribution = "bernoulli",
+    method = "bernoulli_outcome_framing",
+    parameterUncertaintyIncluded = FALSE,
+    eventLevel = eventLevel,
+    otherLevel = otherLevel,
+    outcomeProbabilities = buildLogisticOutcomeProbabilityList(
+      fittedProbability = fittedProbability,
+      otherLevel = otherLevel,
+      eventLevel = eventLevel
+    ),
+    explanation = paste(
+      "An individual future outcome is binary, so WMFM reports the two possible outcomes and their fitted probabilities rather than a continuous prediction interval.",
+      "The fitted probability is treated as fixed in this deterministic framing."
+    )
+  )
+}
+
+#' Build named probabilities for logistic future-outcome framing
+#'
+#' @param fittedProbability Numeric scalar fitted probability for the modelled
+#'   event.
+#' @param otherLevel Character scalar display label for the non-event outcome.
+#' @param eventLevel Character scalar display label for the event outcome.
+#'
+#' @return Named list of outcome probabilities, including numeric aliases and
+#'   response-level labels when those labels differ from the numeric aliases.
+#' @keywords internal
+#' @noRd
+buildLogisticOutcomeProbabilityList = function(fittedProbability, otherLevel, eventLevel) {
+  probabilities = list(
+    "0" = 1 - fittedProbability,
+    "1" = fittedProbability
+  )
+
+  if (!identical(otherLevel, "0")) {
+    probabilities[[otherLevel]] = 1 - fittedProbability
+  }
+
+  if (!identical(eventLevel, "1")) {
+    probabilities[[eventLevel]] = fittedProbability
+  }
+
+  probabilities
+}
+
+#' Resolve display labels for logistic future-outcome framing
+#'
+#' @param model Fitted GLM object.
+#'
+#' @return Named list with `otherLevel` and `eventLevel` labels.
+#' @keywords internal
+#' @noRd
+getLogisticFutureOutcomeLevels = function(model) {
+  mf = stats::model.frame(model)
+  response = mf[[1]]
+
+  if (is.factor(response) && length(levels(response)) == 2) {
+    return(list(
+      otherLevel = levels(response)[[1]],
+      eventLevel = levels(response)[[2]]
+    ))
+  }
+
+  if (is.logical(response)) {
+    return(list(
+      otherLevel = "FALSE",
+      eventLevel = "TRUE"
+    ))
+  }
+
+  list(
+    otherLevel = "0",
+    eventLevel = "1"
   )
 }
 

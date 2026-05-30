@@ -43,21 +43,21 @@ buildGlmPredictionIntervalPolicy = function(familyName, linkName, requestedPredi
 
   if (identical(familyName, "binomial") && identical(linkName, "logit")) {
     return(list(
-      supported = FALSE,
+      supported = TRUE,
       requested = requestedPredictionInterval,
       glmFamily = familyName,
       glmLink = linkName,
       futureObservationType = "future_binary_outcome",
-      recommendedNextStage = "add_bernoulli_future_outcome_framing",
-      method = NULL,
+      recommendedNextStage = "consider_parameter_uncertainty_for_logistic_probability_interval",
+      method = "bernoulli_outcome_framing",
       parameterUncertaintyIncluded = FALSE,
       studentExplanation = paste(
-        "Future-observation prediction intervals are not currently supported. WMFM currently reports the fitted probability and its confidence interval.",
-        "For an individual future outcome, the response is one of the outcome levels rather than a continuous interval."
+        "WMFM can report deterministic Bernoulli future-outcome framing for a logistic model.",
+        "This is not a conventional continuous prediction interval: an individual future response is one of the outcome levels, with probabilities determined by the fitted probability."
       ),
       developerExplanation = paste(
-        "Logistic GLM future-observation uncertainty should not be presented as a conventional continuous prediction interval.",
-        "A later stage should add deterministic Bernoulli outcome framing if this is shown to students."
+        "Stage 27.6 represents logistic future-observation uncertainty as Bernoulli outcome probabilities rather than a continuous prediction interval.",
+        "The fitted probability is treated as fixed, so fitted-mean parameter uncertainty is not included in the future-outcome framing."
       )
     ))
   }
