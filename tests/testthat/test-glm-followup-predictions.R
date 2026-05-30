@@ -113,3 +113,57 @@ testthat::test_that("Stage 25.3 diagnostics JSON includes generated explanation 
 
   testthat::expect_identical(diagnostics$generatedExplanation, "Generated explanation text")
 })
+
+testthat::test_that("Stage 27.3 GLM parser handles unnamed single numeric predictor values", {
+  data(course.df, package = "s20x")
+  fit = stats::glm(Pass ~ Assign, data = course.df, family = stats::binomial())
+
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What would you predict for a student who scored 15?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_equal(out$resolvedPredictorValues$Assign, 15)
+  testthat::expect_identical(out$responseDescription, "probability")
+})
+
+testthat::test_that("Stage 27.3 GLM parser handles attendance-is-yes wording", {
+  data(course.df, package = "s20x")
+  fit = stats::glm(Pass ~ Attend, data = course.df, family = stats::binomial())
+
+  payload = classifyModelFollowupQuestion("What happens if attendance is yes?")
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What happens if attendance is yes?"
+  )
+
+  testthat::expect_identical(payload$category, "prediction_request")
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
+})
+
+testthat::test_that("Stage 27.3 GLM parser maps Washington location wording to WA", {
+  quakePath = system.file(
+    "extdata",
+    "examples",
+    "Quakes",
+    "Quakes.df.rda",
+    package = "WMFM"
+  )
+  testthat::skip_if_not(file.exists(quakePath), "quake example data is unavailable")
+
+  loadEnv = new.env(parent = emptyenv())
+  objectNames = load(quakePath, envir = loadEnv)
+  quakeDf = loadEnv[[objectNames[[1]]]]
+  fit = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "How many earthquakes would you expect in Washington at magnitude 5.6?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_equal(out$resolvedPredictorValues$Magnitude, 5.6)
+  testthat::expect_identical(out$resolvedPredictorValues$Locn, "WA")
+})

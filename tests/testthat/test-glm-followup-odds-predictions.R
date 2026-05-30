@@ -62,3 +62,18 @@ testthat::test_that("Stage 25.6 deterministic appended answer names odds scale",
   testthat::expect_match(answer, "WMFM predicts odds for Y", fixed = TRUE)
   testthat::expect_match(answer, "predicted odds", fixed = TRUE)
 })
+
+testthat::test_that("Stage 27.3 logistic odds parser handles test-mark wording", {
+  data(course.df, package = "s20x")
+  fit = stats::glm(Pass ~ Test, data = course.df, family = stats::binomial())
+
+  out = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What are the odds of passing for someone with a test mark of 10?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$responseScale, "odds")
+  testthat::expect_identical(out$responseDescription, "odds")
+  testthat::expect_equal(out$resolvedPredictorValues$Test, 10)
+})
