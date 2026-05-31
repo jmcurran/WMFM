@@ -150,7 +150,8 @@ readWmfmConfig = function() {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
 
   parsed[intersect(names(parsed), recognizedFields)]
@@ -172,7 +173,8 @@ writeWmfmConfig = function(config = list()) {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
   secretFieldNames = c("anthropicApiKey", "apiKey", "ANTHROPIC_API_KEY")
 
@@ -184,6 +186,30 @@ writeWmfmConfig = function(config = list()) {
   jsonlite::write_json(x = kept, path = configPath, auto_unbox = TRUE, pretty = TRUE)
 
   invisible(configPath)
+}
+
+
+#' Resolve persisted developer-mode preference
+#'
+#' @return Logical scalar indicating whether developer mode should start
+#'   unlocked for this local app session.
+#' @keywords internal
+resolveDeveloperModePreference = function() {
+  localConfig = readWmfmConfig()
+  isTRUE(localConfig$developerModeEnabled)
+}
+
+#' Persist developer-mode preference locally
+#'
+#' @param enabled Logical scalar indicating whether developer mode should be
+#'   restored as unlocked in later local app sessions.
+#'
+#' @return Invisibly returns the path that was written.
+#' @keywords internal
+saveDeveloperModePreference = function(enabled) {
+  config = readWmfmConfig()
+  config$developerModeEnabled = isTRUE(enabled)
+  writeWmfmConfig(config)
 }
 
 #' Resolve effective WMFM provider configuration

@@ -65,8 +65,12 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
 
   diagnosticsJson = buildExplanationPromptDiagnosticsJson(diagnostics = diagnostics)
 
-  tagList(
-    tags$strong("Explanation prompt diagnostics"),
+  tags$div(
+    class = "wmfm-explanation-helper-box",
+    tags$h4(
+      class = "wmfm-explanation-helper-title",
+      "Explanation prompt diagnostics"
+    ),
     tags$p(
       class = "wmfm-explanation-helper-note",
       "Developer-mode diagnostics for follow-up classification, deterministic prediction or unit-change payload, and assembled explanation prompt. Copy the diagnostics bundle into a debugging request when follow-up answers look wrong."

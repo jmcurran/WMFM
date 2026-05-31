@@ -20,8 +20,9 @@ registerStartupDataChoiceObservers = function(input, output, session) {
   packageScanStatus = reactiveVal(NULL)
   packageDatasetStatus = reactiveVal(buildPackageDatasetChoiceStatus())
   exampleChoices = reactiveVal(buildLoadingExampleChoice())
-  developerModeUnlocked = reactiveVal(FALSE)
-  developerModeStatus = reactiveVal(buildDeveloperModeStatus(FALSE))
+  initialDeveloperModeUnlocked = resolveDeveloperModePreference()
+  developerModeUnlocked = reactiveVal(initialDeveloperModeUnlocked)
+  developerModeStatus = reactiveVal(buildDeveloperModeStatus(initialDeveloperModeUnlocked))
   session$userData$developerModeUnlocked = developerModeUnlocked
   exampleLoadStatus = reactiveVal(buildInitialExampleLoadStatus())
 
@@ -77,6 +78,7 @@ registerStartupDataChoiceObservers = function(input, output, session) {
 
     if (isTRUE(passwordOk)) {
       developerModeUnlocked(TRUE)
+      saveDeveloperModePreference(TRUE)
       developerModeStatus(buildDeveloperModeStatus(TRUE))
       updateTextInput(session, "developerModePassword", value = "")
       showNotification(
@@ -87,6 +89,7 @@ registerStartupDataChoiceObservers = function(input, output, session) {
     }
 
     developerModeUnlocked(FALSE)
+    saveDeveloperModePreference(FALSE)
 
     if (!is.null(unlockError)) {
       developerModeStatus(buildDeveloperModeUnlockErrorStatus(unlockError))
@@ -103,6 +106,7 @@ registerStartupDataChoiceObservers = function(input, output, session) {
 
   observeEvent(input$lockDeveloperModeBtn, {
     developerModeUnlocked(FALSE)
+    saveDeveloperModePreference(FALSE)
     developerModeStatus(buildDeveloperModeStatus(FALSE))
     updateTextInput(session, "developerModePassword", value = "")
     showNotification(

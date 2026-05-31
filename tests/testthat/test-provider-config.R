@@ -349,3 +349,41 @@ test_that("provider profiles round-trip metadata without secret values", {
   raw = paste(readLines(wmfmConfigPath(), warn = FALSE), collapse = "\n")
   expect_false(grepl("must-not-save", raw, fixed = TRUE))
 })
+
+
+test_that("developer mode preference is persisted as non-secret local config", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  expect_false(resolveDeveloperModePreference())
+
+  saveDeveloperModePreference(TRUE)
+  expect_true(resolveDeveloperModePreference())
+  expect_true(isTRUE(readWmfmConfig()$developerModeEnabled))
+
+  saveDeveloperModePreference(FALSE)
+  expect_false(resolveDeveloperModePreference())
+  expect_false(isTRUE(readWmfmConfig()$developerModeEnabled))
+})
+
+test_that("writeWmfmConfig preserves provider preferences and developer-mode preference", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  writeWmfmConfig(list(
+    backend = "ollama",
+    ollamaBaseUrl = "http://localhost:11434",
+    ollamaModel = "manual-model",
+    ollamaThinkLow = TRUE,
+    developerModeEnabled = TRUE,
+    apiKey = "do-not-save"
+  ))
+
+  persisted = readWmfmConfig()
+
+  expect_identical(persisted$backend, "ollama")
+  expect_identical(persisted$ollamaModel, "manual-model")
+  expect_true(persisted$ollamaThinkLow)
+  expect_true(persisted$developerModeEnabled)
+  expect_null(persisted$apiKey)
+})
