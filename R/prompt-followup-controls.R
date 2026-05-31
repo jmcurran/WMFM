@@ -86,6 +86,12 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- WMFM will append the deterministic numeric follow-up answer after the main explanation.",
       "- Do not write a second, approximate, or contradictory follow-up prediction inside the main explanation.",
       "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM."
+    ),
+    adjustment_prediction_comparison = c(
+      "Deterministic follow-up explanation control:",
+      "- Treat the request as a bounded comparison between the adjusted model and a simpler weight-only log-log model.",
+      "- Use WMFM supplied fit-comparison quantities only; do not claim out-of-sample predictive improvement.",
+      "- Explain the result as in-sample fit on the log-response scale, using plain proportional-change wording where relevant."
     )
   )
 

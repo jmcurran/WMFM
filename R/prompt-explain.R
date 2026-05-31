@@ -370,6 +370,48 @@ Reason: {unitChangeResult$reason %||% 'not_available'}
 "))
   }
 
+  adjustmentComparisonResult = payload$adjustmentComparisonResult
+  if (identical(payload$category, "adjustment_prediction_comparison") && is.list(adjustmentComparisonResult)) {
+    if (identical(adjustmentComparisonResult$status, "ok")) {
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic adjustment-comparison payload:
+- These quantities compare the fitted adjusted model with a simpler log-log model using only the log-transformed weight predictor.
+- Use these values directly if answering whether the adjustment terms improve prediction.
+- Describe this as in-sample fit on the log-response scale, not as proof of better out-of-sample prediction.
+- Do not recompute, round further, or invent cross-validation results.
+
+Model type: {adjustmentComparisonResult$modelType}
+Model structure: {adjustmentComparisonResult$modelStructure}
+Response: {adjustmentComparisonResult$responseName}
+Primary predictor(s): {paste(adjustmentComparisonResult$primaryPredictors, collapse = ', ')}
+Adjustment terms: {paste(adjustmentComparisonResult$adjustmentTerms, collapse = ', ')}
+Simpler-model adjusted R-squared: {signif(adjustmentComparisonResult$reducedAdjustedR2, 6)}
+Adjusted-model adjusted R-squared: {signif(adjustmentComparisonResult$fullAdjustedR2, 6)}
+Adjusted R-squared change: {signif(adjustmentComparisonResult$adjustedR2Change, 6)}
+Simpler-model residual standard error: {signif(adjustmentComparisonResult$reducedSigma, 6)}
+Adjusted-model residual standard error: {signif(adjustmentComparisonResult$fullSigma, 6)}
+Residual standard error percent change: {signif(adjustmentComparisonResult$sigmaPercentChange, 6)}%
+Simpler-model AIC: {signif(adjustmentComparisonResult$reducedAic, 6)}
+Adjusted-model AIC: {signif(adjustmentComparisonResult$fullAic, 6)}
+AIC change: {signif(adjustmentComparisonResult$aicChange, 6)}
+Deterministic wording: {adjustmentComparisonResult$interpretation}
+"))
+    }
+
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the adjustment-comparison follow-up for this pathway.
+Do not invent model-comparison quantities.
+Status: {adjustmentComparisonResult$status %||% 'unsupported'}
+Reason: {adjustmentComparisonResult$reason %||% 'not_available'}
+"))
+  }
+
   predictionResult = payload$predictionResult
   if ((identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request")) && is.list(predictionResult)) {
     if (identical(predictionResult$status, "ok")) {

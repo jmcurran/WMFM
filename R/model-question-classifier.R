@@ -105,6 +105,22 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  adjustmentPredictionComparisonPattern = paste(
+    c(
+      "\\b(adjust|adjusting|adjusted|control|controlling)\\b",
+      "\\b(improve|better|substantial|substantially|prediction|predictions|predictive)\\b"
+    ),
+    collapse = ".*"
+  )
+
+  if (grepl(adjustmentPredictionComparisonPattern, normalizedText, perl = TRUE)) {
+    result$category = "adjustment_prediction_comparison"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Adjustment-comparison request captured for deterministic log-log model comparison."
+    return(result)
+  }
+
   unitChangePattern = paste(
     c(
       "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",

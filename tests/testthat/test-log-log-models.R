@@ -162,3 +162,41 @@ testthat::test_that("log-log proportional-change prompt block exposes percentage
   testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
   testthat::expect_false(grepl("power law", block, fixed = TRUE))
 })
+
+testthat::test_that("log-log adjustment follow-up compares adjusted and weight-only models", {
+  data = ggplot2::diamonds[seq_len(600), ]
+  model = stats::lm(log(price) ~ log(carat) + cut + color + clarity, data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "Does adjusting for cut, color, and clarity improve our predictions substantially?"
+  )
+  payload = enrichFollowupPayloadWithAdjustmentComparison(model = model, followupPayload = payload)
+  result = payload$adjustmentComparisonResult
+
+  testthat::expect_identical(payload$category, "adjustment_prediction_comparison")
+  testthat::expect_identical(result$status, "ok")
+  testthat::expect_identical(result$modelStructure, "log_log")
+  testthat::expect_identical(result$comparisonType, "adjusted_vs_weight_only_log_log")
+  testthat::expect_true(all(c("cut", "color", "clarity") %in% result$adjustmentTerms))
+  testthat::expect_true(is.finite(result$adjustedR2Change))
+  testthat::expect_true(is.finite(result$sigmaPercentChange))
+  testthat::expect_match(result$interpretation, "simpler log-log model", fixed = TRUE)
+})
+
+testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sample claims", {
+  data = ggplot2::diamonds[seq_len(600), ]
+  model = stats::lm(log(price) ~ log(carat) + cut + color + clarity, data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "Does adjusting for cut, color, and clarity improve our predictions substantially?"
+  )
+  payload = enrichFollowupPayloadWithAdjustmentComparison(model = model, followupPayload = payload)
+  block = buildModelFollowupPromptBlock(followupPayload = payload)
+
+  testthat::expect_match(block, "WMFM deterministic adjustment-comparison payload", fixed = TRUE)
+  testthat::expect_match(block, "Simpler-model adjusted R-squared", fixed = TRUE)
+  testthat::expect_match(block, "Adjusted-model residual standard error", fixed = TRUE)
+  testthat::expect_match(block, "not as proof of better out-of-sample prediction", fixed = TRUE)
+  testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
+  testthat::expect_false(grepl("power law", block, fixed = TRUE))
+})
