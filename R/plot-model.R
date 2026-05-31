@@ -170,14 +170,30 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
     modelFrame$.yPlot = yPlot
   }
 
-  xSeq = seq(
-    min(modelFrame[[xVar]], na.rm = TRUE),
-    max(modelFrame[[xVar]], na.rm = TRUE),
-    length.out = 100
-  )
+  logOriginalXVar = parseNaturalLogCall(xVar)
+
+  if (!is.null(logOriginalXVar)) {
+    originalXValues = exp(modelFrame[[xVar]])
+    xSeq = seq(
+      min(originalXValues, na.rm = TRUE),
+      max(originalXValues, na.rm = TRUE),
+      length.out = 100
+    )
+  } else {
+    xSeq = seq(
+      min(modelFrame[[xVar]], na.rm = TRUE),
+      max(modelFrame[[xVar]], na.rm = TRUE),
+      length.out = 100
+    )
+  }
 
   gridList = list()
-  gridList[[xVar]] = xSeq
+
+  if (!is.null(logOriginalXVar)) {
+    gridList[[logOriginalXVar]] = xSeq
+  } else {
+    gridList[[xVar]] = xSeq
+  }
 
   if (length(factorPreds) > 0) {
     for (v in factorPreds) {
@@ -196,6 +212,10 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
   }
 
   newData = expand.grid(gridList, stringsAsFactors = FALSE)
+
+  if (!is.null(logOriginalXVar)) {
+    newData[[xVar]] = log(newData[[logOriginalXVar]])
+  }
 
   if (isTRUE(showCi)) {
     newData = computeMeanCi(
