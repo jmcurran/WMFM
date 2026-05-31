@@ -99,6 +99,14 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
   reducedSigma = unname(reducedSummary$sigma)
   fullAic = stats::AIC(model)
   reducedAic = stats::AIC(reducedModel)
+  aicChange = fullAic - reducedAic
+  adjustedR2Change = fullAdjustedR2 - reducedAdjustedR2
+  sigmaPercentChange = 100 * (fullSigma / reducedSigma - 1)
+  predictionImprovement = classifyAdjustmentPredictionImprovement(
+    adjustedR2Change = adjustedR2Change,
+    sigmaPercentChange = sigmaPercentChange,
+    aicChange = aicChange
+  )
 
   list(
     status = "ok",
@@ -116,24 +124,26 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
     r2Change = fullR2 - reducedR2,
     fullAdjustedR2 = fullAdjustedR2,
     reducedAdjustedR2 = reducedAdjustedR2,
-    adjustedR2Change = fullAdjustedR2 - reducedAdjustedR2,
+    adjustedR2Change = adjustedR2Change,
     fullSigma = fullSigma,
     reducedSigma = reducedSigma,
     sigmaChange = fullSigma - reducedSigma,
-    sigmaPercentChange = 100 * (fullSigma / reducedSigma - 1),
+    sigmaPercentChange = sigmaPercentChange,
     fullAic = fullAic,
     reducedAic = reducedAic,
-    aicChange = fullAic - reducedAic,
+    aicChange = aicChange,
+    predictionImprovement = predictionImprovement,
     interpretation = buildAdjustmentComparisonInterpretation(
       responseName = logLog$responseVariable,
       primaryPredictors = logLog$logPredictors$originalName,
       adjustmentTerms = adjustmentTerms,
       reducedAdjustedR2 = reducedAdjustedR2,
       fullAdjustedR2 = fullAdjustedR2,
-      adjustedR2Change = fullAdjustedR2 - reducedAdjustedR2,
+      adjustedR2Change = adjustedR2Change,
       reducedSigma = reducedSigma,
       fullSigma = fullSigma,
-      sigmaPercentChange = 100 * (fullSigma / reducedSigma - 1)
+      sigmaPercentChange = sigmaPercentChange,
+      predictionImprovement = predictionImprovement
     )
   )
 }
@@ -165,7 +175,8 @@ buildAdjustmentComparisonInterpretation = function(
     adjustedR2Change,
     reducedSigma,
     fullSigma,
-    sigmaPercentChange) {
+    sigmaPercentChange,
+    predictionImprovement) {
   predictorText = paste(primaryPredictors, collapse = ", ")
   adjustmentText = paste(adjustmentTerms, collapse = ", ")
   sigmaDirection = if (is.finite(sigmaPercentChange) && sigmaPercentChange < 0) {
@@ -186,6 +197,41 @@ buildAdjustmentComparisonInterpretation = function(
     " to ", signif(fullSigma, 5),
     ". The adjusted R-squared change is ", signif(adjustedR2Change, 5),
     ", and the residual standard error is ", sigmaDirection,
-    "."
+    ". WMFM classifies this as ", predictionImprovement$label,
+    " based on deterministic in-sample fit summaries."
+  )
+}
+
+#' @keywords internal
+#' @noRd
+classifyAdjustmentPredictionImprovement = function(adjustedR2Change, sigmaPercentChange, aicChange) {
+  if (!is.finite(adjustedR2Change) || !is.finite(sigmaPercentChange)) {
+    return(list(
+      category = "not_available",
+      label = "not enough deterministic evidence to classify the improvement",
+      rule = "requires finite adjusted R-squared and residual standard error changes"
+    ))
+  }
+
+  if (adjustedR2Change >= 0.05 || sigmaPercentChange <= -10) {
+    return(list(
+      category = "substantial_in_sample_improvement",
+      label = "a substantial in-sample improvement",
+      rule = "adjusted R-squared increased by at least 0.05 or residual standard error fell by at least 10%"
+    ))
+  }
+
+  if (adjustedR2Change >= 0.01 || sigmaPercentChange <= -5 || (is.finite(aicChange) && aicChange <= -10)) {
+    return(list(
+      category = "modest_in_sample_improvement",
+      label = "a modest in-sample improvement",
+      rule = "adjusted R-squared increased by at least 0.01, residual standard error fell by at least 5%, or AIC fell by at least 10"
+    ))
+  }
+
+  list(
+    category = "little_in_sample_improvement",
+    label = "little in-sample improvement",
+    rule = "adjusted R-squared, residual standard error, and AIC changes did not meet WMFM's modest-improvement thresholds"
   )
 }

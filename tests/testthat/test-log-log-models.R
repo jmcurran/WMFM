@@ -180,7 +180,14 @@ testthat::test_that("log-log adjustment follow-up compares adjusted and weight-o
   testthat::expect_true(all(c("cut", "color", "clarity") %in% result$adjustmentTerms))
   testthat::expect_true(is.finite(result$adjustedR2Change))
   testthat::expect_true(is.finite(result$sigmaPercentChange))
+  testthat::expect_true(is.list(result$predictionImprovement))
+  testthat::expect_true(result$predictionImprovement$category %in% c(
+    "substantial_in_sample_improvement",
+    "modest_in_sample_improvement",
+    "little_in_sample_improvement"
+  ))
   testthat::expect_match(result$interpretation, "simpler log-log model", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "deterministic in-sample fit", fixed = TRUE)
 })
 
 testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sample claims", {
@@ -197,6 +204,9 @@ testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sam
   testthat::expect_match(block, "Simpler-model adjusted R-squared", fixed = TRUE)
   testthat::expect_match(block, "Adjusted-model residual standard error", fixed = TRUE)
   testthat::expect_match(block, "not as proof of better out-of-sample prediction", fixed = TRUE)
+  testthat::expect_match(block, "AIC change", fixed = TRUE)
+  testthat::expect_match(block, "Deterministic prediction improvement assessment", fixed = TRUE)
+  testthat::expect_match(block, "Deterministic assessment rule", fixed = TRUE)
   testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
   testthat::expect_false(grepl("power law", block, fixed = TRUE))
 })

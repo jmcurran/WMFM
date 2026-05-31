@@ -397,6 +397,8 @@ Residual standard error percent change: {signif(adjustmentComparisonResult$sigma
 Simpler-model AIC: {signif(adjustmentComparisonResult$reducedAic, 6)}
 Adjusted-model AIC: {signif(adjustmentComparisonResult$fullAic, 6)}
 AIC change: {signif(adjustmentComparisonResult$aicChange, 6)}
+Deterministic prediction improvement assessment: {adjustmentComparisonResult$predictionImprovement$label}
+Deterministic assessment rule: {adjustmentComparisonResult$predictionImprovement$rule}
 Deterministic wording: {adjustmentComparisonResult$interpretation}
 "))
     }

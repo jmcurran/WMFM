@@ -129,3 +129,16 @@ The deterministic payload should carry the predictor percentage change, the impl
 predictor multiplier, the response multiplier, and the response percentage change.
 This keeps log-log support aligned with the Stage 28 terminology decision: log-log
 internally, proportional-change externally.
+
+## Stage 28.7 note - deterministic adjustment assessment labels
+
+Stage 28.7 adds a small deterministic classification layer to the Diamonds IV
+adjustment-comparison follow-up. Stage 28.6 already exposed the adjusted and
+weight-only log-log model summaries, but the follow-up asks whether adjustment
+substantially improves prediction. To avoid leaving that judgement entirely to
+the LLM, WMFM now adds a conservative in-sample assessment label based on
+adjusted R-squared, residual standard error, and AIC changes.
+
+The assessment is deliberately described as an in-sample fit summary. It must not
+be presented as proof of better out-of-sample prediction, and it should continue
+to use log-log internally and proportional-change language externally.
