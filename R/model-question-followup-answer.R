@@ -43,6 +43,10 @@ buildDeterministicFollowupAnswer = function(model) {
     return("")
   }
 
+  if (identical(payload$category, "adjustment_prediction_comparison")) {
+    return(buildDeterministicAdjustmentComparisonAnswer(payload = payload))
+  }
+
   if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
     return("")
   }
@@ -125,6 +129,34 @@ buildDeterministicFollowupAnswer = function(model) {
   }
 
   paste(pieces, collapse = " ")
+}
+
+
+#' Build deterministic adjustment-comparison follow-up answer text
+#'
+#' @param payload Follow-up payload carrying an adjustment-comparison result.
+#'
+#' @return Character scalar answer text, or an empty string when unavailable.
+#' @keywords internal
+#' @noRd
+buildDeterministicAdjustmentComparisonAnswer = function(payload) {
+  comparison = payload$adjustmentComparisonResult
+  if (!is.list(comparison) || !identical(comparison$status, "ok")) {
+    return("")
+  }
+
+  conclusion = trimws(as.character(comparison$studentFacingConclusion %||% ""))
+  caution = trimws(as.character(comparison$studentFacingCaution %||% ""))
+
+  if (!nzchar(conclusion)) {
+    return("")
+  }
+
+  if (!nzchar(caution)) {
+    return(conclusion)
+  }
+
+  paste(conclusion, caution)
 }
 
 #' Remove conflicting language-model follow-up prediction text

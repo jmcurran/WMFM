@@ -237,6 +237,32 @@ testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sam
   testthat::expect_false(grepl("power law", block, fixed = TRUE))
 })
 
+
+testthat::test_that("adjustment-comparison follow-up appends deterministic student answer", {
+  data = ggplot2::diamonds[seq_len(600), ]
+  model = stats::lm(log(price) ~ log(carat) + cut + color + clarity, data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "Does adjusting for cut, color, and clarity improve our predictions substantially?"
+  )
+  payload = enrichFollowupPayloadWithAdjustmentComparison(model = model, followupPayload = payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  explanation = paste(
+    "Diamond prices increase with weight.",
+    "After adjusting for cut, color, and clarity, heavier diamonds have higher prices."
+  )
+  out = appendDeterministicFollowupAnswer(explanation = explanation, model = model)
+
+  testthat::expect_match(out, "Diamond prices increase with weight", fixed = TRUE)
+  testthat::expect_match(out, "substantially improves the in-sample predictions", fixed = TRUE)
+  testthat::expect_match(out, "compared with using weight alone", fixed = TRUE)
+  testthat::expect_match(out, "not evidence from a separate test set", fixed = TRUE)
+  testthat::expect_false(grepl("log-likelihood", out, fixed = TRUE))
+  testthat::expect_false(grepl("AIC", out, fixed = TRUE))
+  testthat::expect_false(grepl("deviance", out, fixed = TRUE))
+})
+
 testthat::test_that("log-log student-facing guidance uses proportional-change wording", {
   data = ggplot2::diamonds[seq_len(200), ]
   model = stats::lm(log(price) ~ log(carat), data = data)
