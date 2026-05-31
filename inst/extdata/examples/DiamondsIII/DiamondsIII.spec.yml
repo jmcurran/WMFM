@@ -4,5 +4,6 @@ formula: log(price) ~ log(carat)
 dataSource: package
 dataPackage: ggplot2
 dataObject: diamonds
+dataTransform: diamondsPlainFactors
 researchQuestion: Can we predict the price of diamonds on the basis of weight?
 followupQuestion: Can you express the weight effect for a 0.1 carat increase?

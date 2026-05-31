@@ -69,6 +69,17 @@ testthat::test_that("Diamonds II to IV examples load with log-log formulas", {
   testthat::expect_null(diamondsII$followupQuestion)
   testthat::expect_false(grepl("10-unit", diamondsIII$followupQuestion, fixed = TRUE))
   testthat::expect_false(grepl("10 unit", diamondsIII$followupQuestion, fixed = TRUE))
+
+  testthat::expect_false(is.ordered(diamondsII$data$cut))
+  testthat::expect_false(is.ordered(diamondsII$data$color))
+  testthat::expect_false(is.ordered(diamondsII$data$clarity))
+  testthat::expect_true(is.factor(diamondsIV$data$cut))
+  testthat::expect_true(is.factor(diamondsIV$data$color))
+  testthat::expect_true(is.factor(diamondsIV$data$clarity))
+  testthat::expect_identical(
+    diamondsIV$spec$adjustmentVariables,
+    c("cut", "color", "clarity")
+  )
 })
 
 testthat::test_that("log-log unit-change follow-ups use original-scale proportional changes", {

@@ -189,3 +189,22 @@ The derived-variable path remains an intended compatibility requirement: if a
 future example fits variables such as `logPrice ~ logCarat`, the equation display
 should make clear that these are transformed versions of `price` and `carat`
 when that metadata is available.
+
+
+## Stage 28.8.3 example-loading repair
+
+Manual testing showed that the Diamonds examples could still display an
+auto-generated ordinary formula such as `price ~ carat` after loading, even
+though the example specification stored `log(price) ~ log(carat)`. The repair
+keeps transformed example formulas out of the ordinary auto-formula replacement
+path so the explicit log-log formula remains visible in the model formula box.
+
+Diamonds II has no follow-up question. Diamonds III carries the meaningful
+0.1-carat follow-up. Diamonds IV carries the adjustment-comparison follow-up
+and pre-selects `cut`, `color`, and `clarity` as adjustment variables.
+
+The `ggplot2::diamonds` variables `cut`, `color`, and `clarity` are ordered
+factors. For these teaching examples they are converted to ordinary factors
+when the example data are loaded, so model summaries and explanation payloads
+use treatment-style categorical terms rather than orthogonal polynomial
+contrast terms.

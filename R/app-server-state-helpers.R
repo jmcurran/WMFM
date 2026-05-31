@@ -146,10 +146,21 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     )
 
     exampleFormulaText = spec$formula %||% ""
-    rv$autoFormula = exampleFormulaText
+    formulaHasTransformCall = grepl("(", exampleFormulaText, fixed = TRUE)
+
+    if (isTRUE(formulaHasTransformCall)) {
+      rv$autoFormula = ""
+    } else {
+      rv$autoFormula = exampleFormulaText
+    }
+
     updateTextInput(session, "formula_text", value = exampleFormulaText)
     session$onFlushed(function() {
-      rv$autoFormula = exampleFormulaText
+      if (isTRUE(formulaHasTransformCall)) {
+        rv$autoFormula = ""
+      } else {
+        rv$autoFormula = exampleFormulaText
+      }
       updateTextInput(session, "formula_text", value = exampleFormulaText)
     }, once = TRUE)
     updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")

@@ -405,6 +405,10 @@ applyWMFMExampleDataTransform = function(data, spec) {
     return(addCourseDfScoringGradingAliases(data))
   }
 
+  if (identical(transformName, "diamondsPlainFactors")) {
+    return(convertDiamondsOrderedFactors(data))
+  }
+
   stop(
     "Unsupported `dataTransform`: ",
     transformName,
@@ -435,6 +439,39 @@ addCourseDfScoringGradingAliases = function(data) {
 
   if ("Test" %in% names(data) && !("StudyHours" %in% names(data))) {
     data$StudyHours = data$Test
+  }
+
+  data
+}
+
+
+#' Convert ggplot2 diamonds ordered factors to ordinary factors
+#'
+#' The `ggplot2::diamonds` variables `cut`, `color`, and `clarity` are
+#' ordered factors. WMFM examples use these as ordinary categorical adjustment
+#' variables so that fitted-model summaries use treatment contrasts rather than
+#' orthogonal polynomial contrasts.
+#'
+#' @param data A data frame loaded from `ggplot2::diamonds`.
+#'
+#' @return A data frame with selected ordered factors converted to ordinary
+#'   factors.
+#'
+#' @keywords internal
+#' @noRd
+convertDiamondsOrderedFactors = function(data) {
+  if (!is.data.frame(data)) {
+    return(data)
+  }
+
+  factorNames = intersect(c("cut", "color", "clarity"), names(data))
+
+  for (factorName in factorNames) {
+    data[[factorName]] = factor(
+      data[[factorName]],
+      levels = levels(data[[factorName]]),
+      ordered = FALSE
+    )
   }
 
   data
