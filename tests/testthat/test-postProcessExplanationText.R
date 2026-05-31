@@ -502,3 +502,21 @@ testthat::test_that("diagnoseExplanationSurfaceProcessing resolves new diagnosti
   testthat::expect_true("verbalFractions" %in% out$rulesApplied)
   testthat::expect_true(nrow(out$issuesAfter) < nrow(out$issuesBefore))
 })
+
+
+testthat::test_that("postProcessExplanationText polishes log-log follow-up wording", {
+  text = paste(
+    "The question asks whether diamond weight can be used to predict diamond price.",
+    "Both price and weight were analyzed on a log scale.",
+    "The estimated change is 1.88 (95% c.i.: [1.88-1.89])."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_false(grepl("The question asks", out, fixed = TRUE))
+  testthat::expect_false(grepl("log scale", out, fixed = TRUE))
+  testthat::expect_false(grepl("c.i.", out, fixed = TRUE))
+  testthat::expect_true(grepl("We want to know whether", out, fixed = TRUE))
+  testthat::expect_true(grepl("proportional changes", out, fixed = TRUE))
+  testthat::expect_true(grepl("95% confidence interval", out, fixed = TRUE))
+})

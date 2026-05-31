@@ -45,8 +45,8 @@ testthat::test_that("post-processing standardises compact confidence interval fo
 
   out = postProcessExplanationText(input)
 
-  testthat::expect_match(out, paste0("95% c\\.i\\.: \\[53", enDash, "58\\]"), perl = TRUE)
-  testthat::expect_match(out, paste0("95% c\\.i\\.: \\[3", enDash, "4\\]"), perl = TRUE)
+  testthat::expect_match(out, paste0("95% confidence interval: \\[53", enDash, "58\\]"), perl = TRUE)
+  testthat::expect_match(out, paste0("95% confidence interval: \\[3", enDash, "4\\]"), perl = TRUE)
   testthat::expect_no_match(out, "95[[:space:]]*%[[:space:]]*CI", perl = TRUE)
 })
 
