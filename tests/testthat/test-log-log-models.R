@@ -106,3 +106,59 @@ testthat::test_that("log-log unit-change prompt block exposes deterministic refe
   testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
   testthat::expect_false(grepl("power law", block, fixed = TRUE))
 })
+
+
+testthat::test_that("log-log proportional-change follow-ups use percentage predictor changes", {
+  data = ggplot2::diamonds[seq_len(300), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "Can you express the weight effect for a 10% increase in carat?"
+  )
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+  result = payload$unitChangeResult
+
+  testthat::expect_identical(payload$category, "proportional_change_request")
+  testthat::expect_identical(result$status, "ok")
+  testthat::expect_identical(result$modelStructure, "log_log")
+  testthat::expect_identical(result$effectScale, "response_multiplier")
+  testthat::expect_identical(result$predictorName, "carat")
+  testthat::expect_equal(result$requestedPercentChange, 10)
+  testthat::expect_equal(result$proportionalPredictorChange, 1.1)
+  testthat::expect_true(is.finite(result$percentChange))
+  testthat::expect_match(result$interpretation, "10% increase in carat", fixed = TRUE)
+})
+
+testthat::test_that("log-log proportional-change follow-ups recognise doubling", {
+  data = ggplot2::diamonds[seq_len(300), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "What happens to price if carat doubles?"
+  )
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+  result = payload$unitChangeResult
+
+  testthat::expect_identical(payload$category, "proportional_change_request")
+  testthat::expect_identical(result$status, "ok")
+  testthat::expect_equal(result$requestedPercentChange, 100)
+  testthat::expect_equal(result$proportionalPredictorChange, 2)
+  testthat::expect_match(result$interpretation, "100% increase in carat", fixed = TRUE)
+})
+
+testthat::test_that("log-log proportional-change prompt block exposes percentage request", {
+  data = ggplot2::diamonds[seq_len(300), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+  payload = classifyModelFollowupQuestion(
+    "Can you explain the effect as a 10% increase in carat?"
+  )
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+
+  block = buildModelFollowupPromptBlock(followupPayload = payload)
+
+  testthat::expect_match(block, "proportional-change interpretation", fixed = TRUE)
+  testthat::expect_match(block, "Requested predictor percent change: 10", fixed = TRUE)
+  testthat::expect_match(block, "Log-log proportional predictor change: 1.1", fixed = TRUE)
+  testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
+  testthat::expect_false(grepl("power law", block, fixed = TRUE))
+})

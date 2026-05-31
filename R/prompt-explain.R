@@ -298,7 +298,7 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
   }
 
   unitChangeResult = payload$unitChangeResult
-  if (identical(payload$category, "unit_change_request") && is.list(unitChangeResult)) {
+  if (payload$category %in% c("unit_change_request", "proportional_change_request") && is.list(unitChangeResult)) {
     if (identical(unitChangeResult$status, "ok")) {
       ciBlock = ""
       if (is.list(unitChangeResult$confidenceInterval)) {
@@ -336,7 +336,7 @@ Log-log proportional predictor change: {signif(unitChangeResult$proportionalPred
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
 
-WMFM deterministic requested unit-change interpretation:
+WMFM deterministic requested unit-change or proportional-change interpretation:
 - These unit-change values were computed deterministically by WMFM.
 - Use these values directly when explaining the relevant numeric effect.
 - Do not recompute, round further, or invent intervals.
@@ -349,8 +349,9 @@ Model type: {unitChangeResult$modelType}
 Effect scale: {unitChangeResult$effectScale}
 Response: {unitChangeResult$responseName}
 Requested predictor: {unitChangeResult$predictorName}
-Requested unit change: {signif(unitChangeResult$requestedUnitChange, 6)}
-Original one-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
+Requested unit change: {signif(unitChangeResult$requestedUnitChange %||% NA_real_, 6)}
+Requested predictor percent change: {signif(unitChangeResult$requestedPercentChange %||% NA_real_, 6)}
+Original one-log-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
 Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}
 {logLogReferenceBlock}{ciBlock}
 Deterministic wording: {unitChangeResult$interpretation}

@@ -9,17 +9,32 @@
 #' @noRd
 enrichFollowupPayloadWithUnitChange = function(model, followupPayload) {
   payload = followupPayload
-  if (!is.list(payload) || !identical(payload$category, "unit_change_request")) {
+  if (!is.list(payload)) {
     return(payload)
   }
 
-  unitChange = payload$unitChangeValues %||% numeric(0)
-  payload$unitChangeResult = computeModelQuestionUnitChange(
-    model = model,
-    followupQuestion = payload$originalText %||% "",
-    requestedUnitChange = unitChange
-  )
-  payload$requiresDeterministicComputation = TRUE
+  if (identical(payload$category, "unit_change_request")) {
+    unitChange = payload$unitChangeValues %||% numeric(0)
+    payload$unitChangeResult = computeModelQuestionUnitChange(
+      model = model,
+      followupQuestion = payload$originalText %||% "",
+      requestedUnitChange = unitChange
+    )
+    payload$requiresDeterministicComputation = TRUE
+    return(payload)
+  }
+
+  if (identical(payload$category, "proportional_change_request")) {
+    proportionalChange = payload$proportionalChangeValues %||% numeric(0)
+    payload$unitChangeResult = computeModelQuestionProportionalChange(
+      model = model,
+      followupQuestion = payload$originalText %||% "",
+      requestedPercentChange = proportionalChange
+    )
+    payload$requiresDeterministicComputation = TRUE
+    return(payload)
+  }
+
   payload
 }
 
@@ -175,6 +190,183 @@ computeModelQuestionUnitChange = function(model, followupQuestion, requestedUnit
   )
 }
 
+
+#' @keywords internal
+#' @noRd
+computeModelQuestionProportionalChange = function(model, followupQuestion, requestedPercentChange = numeric(0)) {
+  if (!inherits(model, "lm") || inherits(model, "glm")) {
+    return(list(
+      status = "unsupported",
+      reason = "unsupported_model_type",
+      modelType = class(model)[[1]] %||% "unknown",
+      effectScale = "not_available",
+      warnings = "Proportional-change follow-ups currently require lm log-log model objects."
+    ))
+  }
+
+  percentChange = resolveRequestedUnitChange(requestedUnitChange = requestedPercentChange)
+  if (!is.finite(percentChange) || percentChange <= 0) {
+    return(list(
+      status = "needs_input",
+      reason = "missing_or_invalid_proportional_change",
+      modelType = "lm",
+      effectScale = "not_available",
+      warnings = "Provide one positive percentage change, such as a 10% increase or doubling."
+    ))
+  }
+
+  mf = stats::model.frame(model)
+  responseName = names(mf)[[1]]
+  logLog = getLogLogModelMetadata(model = model, modelFrame = mf)
+  if (!isTRUE(logLog$isLogLog)) {
+    return(list(
+      status = "unsupported",
+      reason = "not_log_log_model",
+      modelType = "lm",
+      effectScale = "not_available",
+      responseName = responseName,
+      requestedPercentChange = percentChange,
+      warnings = "Percentage-change follow-ups are currently deterministic only for log-log models."
+    ))
+  }
+
+  predictorNames = logLog$logPredictors$originalName
+  predictorResolution = resolveUnitChangePredictor(
+    followupQuestion = followupQuestion,
+    numericPredictors = predictorNames
+  )
+  if (!isTRUE(predictorResolution$ok)) {
+    return(c(
+      list(
+        status = predictorResolution$status,
+        reason = predictorResolution$reason,
+        modelType = "lm",
+        effectScale = "not_available",
+        requestedPercentChange = percentChange,
+        candidatePredictors = predictorNames
+      ),
+      predictorResolution[c("warnings")]
+    ))
+  }
+
+  logLogPredictor = matchLogLogUnitChangePredictor(
+    logLog = logLog,
+    predictorName = predictorResolution$predictorName
+  )
+  if (is.null(logLogPredictor)) {
+    return(list(
+      status = "unsupported",
+      reason = "unsupported_log_log_structure",
+      modelType = "lm",
+      effectScale = "not_available",
+      responseName = responseName,
+      predictorName = predictorResolution$predictorName,
+      requestedPercentChange = percentChange,
+      warnings = "The requested proportional-change effect could not be matched to one log-log predictor."
+    ))
+  }
+
+  computeLogLogProportionalChangeResult(
+    model = model,
+    responseName = logLog$responseVariable %||% responseName,
+    transformedPredictorName = logLogPredictor$transformedName,
+    originalPredictorName = logLogPredictor$originalName,
+    percentPredictorChange = percentChange
+  )
+}
+
+#' @keywords internal
+#' @noRd
+computeLogLogProportionalChangeResult = function(
+    model,
+    responseName,
+    transformedPredictorName,
+    originalPredictorName,
+    percentPredictorChange) {
+  coefValues = stats::coef(model)
+  if (!(transformedPredictorName %in% names(coefValues))) {
+    return(list(
+      status = "unsupported",
+      reason = "unsupported_log_log_structure",
+      modelType = "lm",
+      modelStructure = "log_log",
+      effectScale = "not_available",
+      responseName = responseName,
+      predictorName = originalPredictorName,
+      transformedPredictorName = transformedPredictorName,
+      requestedPercentChange = percentPredictorChange,
+      warnings = "The log-log proportional-change request does not have a simple one-coefficient log-predictor effect."
+    ))
+  }
+
+  oneUnitEffect = unname(as.numeric(coefValues[[transformedPredictorName]]))
+  proportionalPredictorChange = 1 + percentPredictorChange / 100
+  logRatio = log(proportionalPredictorChange)
+  logResponseChange = oneUnitEffect * logRatio
+  responseMultiplier = exp(logResponseChange)
+  responsePercentChange = 100 * (responseMultiplier - 1)
+
+  ciResult = tryCatch(
+    stats::confint(model, parm = transformedPredictorName),
+    error = function(e) {
+      NULL
+    }
+  )
+  confidenceInterval = NULL
+  ciValues = extractUnitChangeConfidenceLimits(ciResult)
+  if (length(ciValues) == 2L) {
+    lwr = exp(unname(ciValues[[1]]) * logRatio)
+    upr = exp(unname(ciValues[[2]]) * logRatio)
+    percentChangeLwr = 100 * (lwr - 1)
+    percentChangeUpr = 100 * (upr - 1)
+    confidenceInterval = list(
+      level = 0.95,
+      oneUnitLwr = unname(ciValues[[1]]),
+      oneUnitUpr = unname(ciValues[[2]]),
+      lwr = lwr,
+      upr = upr,
+      percentChangeLwr = percentChangeLwr,
+      percentChangeUpr = percentChangeUpr,
+      percentChangeIntervalText = formatUnitChangePercentIntervalText(
+        percentChangeLwr = percentChangeLwr,
+        percentChangeUpr = percentChangeUpr
+      )
+    )
+  }
+
+  list(
+    status = "ok",
+    modelType = "lm",
+    modelStructure = "log_log",
+    effectScale = "response_multiplier",
+    responseName = responseName,
+    predictorName = originalPredictorName,
+    transformedPredictorName = transformedPredictorName,
+    requestedUnitChange = NA_real_,
+    requestedPercentChange = percentPredictorChange,
+    referenceValue = 1,
+    comparisonValue = proportionalPredictorChange,
+    proportionalPredictorChange = proportionalPredictorChange,
+    oneUnitEffect = oneUnitEffect,
+    logRatio = logRatio,
+    logResponseChange = logResponseChange,
+    transformedEstimate = responseMultiplier,
+    unitChangeEffect = responseMultiplier,
+    percentChange = responsePercentChange,
+    percentChangeText = formatUnitChangePercentText(responsePercentChange),
+    percentChangeIntervalText = if (is.list(confidenceInterval)) {
+      confidenceInterval$percentChangeIntervalText
+    } else {
+      NULL
+    },
+    confidenceInterval = confidenceInterval,
+    interpretation = paste0(
+      "For a ", signif(percentPredictorChange, 6), "% increase in ",
+      originalPredictorName, ", the fitted ", responseName, " is ",
+      formatUnitChangePercentText(responsePercentChange), "."
+    )
+  )
+}
 
 #' @keywords internal
 #' @noRd

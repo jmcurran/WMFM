@@ -116,3 +116,16 @@ Continue to use:
 Stage 28.3 extends the log-log/proportional-change work to bounded unit-change follow-up questions. A request such as "Can you express the weight effect for a 0.1 carat increase?" cannot be answered from the slope alone, because a fixed original-scale increase corresponds to a different proportional change depending on the starting value. WMFM therefore uses a deterministic typical original-scale reference value recovered from the fitted log-predictor values, then converts the requested increase into a proportional predictor change before computing the fitted response multiplier and percentage change.
 
 Student-facing wording should continue to avoid "elasticity" and "power law". The prompt payload should describe the model as log-log internally and should explain fixed original-scale changes using the chosen reference value and proportional-change language.
+
+
+## Stage 28.5 note - proportional-change follow-ups
+
+Stage 28.5 extends the log-log pathway so bounded follow-up questions can ask for
+percentage changes directly. Student-facing explanations should prefer phrasing such as
+"a 10% increase in carat" or "doubling carat weight" rather than introducing
+econometrics-specific elasticity language or broad power-law terminology.
+
+The deterministic payload should carry the predictor percentage change, the implied
+predictor multiplier, the response multiplier, and the response percentage change.
+This keeps log-log support aligned with the Stage 28 terminology decision: log-log
+internally, proportional-change externally.
