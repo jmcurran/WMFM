@@ -208,3 +208,18 @@ factors. For these teaching examples they are converted to ordinary factors
 when the example data are loaded, so model summaries and explanation payloads
 use treatment-style categorical terms rather than orthogonal polynomial
 contrast terms.
+
+## Stage 28.8.5 note
+
+Stage 28.8.5 fixes a stale UI state issue in example loading. Examples that do not define a follow-up question, such as Diamonds II, must explicitly clear both the server-side `rv$modelFollowupQuestion` value and the visible `modelFollowupQuestion` text area. This is important when the user loads an example with a follow-up question and then loads a second example without one.
+
+The named `dataTransform: diamondsPlainFactors` mechanism is a short-term compatibility path. A future transformation/provenance workstream should support explicit example transformations, for example:
+
+```yaml
+dataTransform:
+  - cut = factor(as.character(cut))
+  - color = factor(as.character(color))
+  - clarity = factor(as.character(clarity))
+```
+
+That future design should also record how derived variables were created so that fitted equations and explanations can recover relationships such as `log.carat = log(carat)` and `log.price = log(price)`.

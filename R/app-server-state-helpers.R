@@ -163,8 +163,18 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
       }
       updateTextInput(session, "formula_text", value = exampleFormulaText)
     }, once = TRUE)
-    updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
-    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleInfo$followupQuestion %||% "")
+    exampleResearchQuestion = exampleInfo$researchQuestion %||% ""
+    exampleFollowupQuestion = exampleInfo$followupQuestion %||% ""
+
+    rv$researchQuestion = trimws(exampleResearchQuestion)
+    rv$modelFollowupQuestion = trimws(exampleFollowupQuestion)
+
+    updateTextInput(session, "researchQuestion", value = exampleResearchQuestion)
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleFollowupQuestion)
+    session$onFlushed(function() {
+      updateTextInput(session, "researchQuestion", value = exampleResearchQuestion)
+      shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleFollowupQuestion)
+    }, once = TRUE)
   }
 
   list(

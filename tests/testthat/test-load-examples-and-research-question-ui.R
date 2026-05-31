@@ -263,3 +263,40 @@ test_that("developer test example ladder contains the expected model families", 
 
   expect_true(all(expectedExamples %in% developerExamples))
 })
+
+test_that("example loading clears missing follow-up questions", {
+  skipIfExampleSourceFilesUnavailable()
+
+  stateHelperText = readProjectFileTextForExampleTests("app-server-state-helpers.R")
+  dataObserverText = readProjectFileTextForExampleTests("app-server-data-observers.R")
+
+  expect_true(grepl(
+    'exampleFollowupQuestion = exampleInfo$followupQuestion %||% ""',
+    stateHelperText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    'rv$modelFollowupQuestion = trimws(exampleFollowupQuestion)',
+    stateHelperText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    'shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleFollowupQuestion)',
+    stateHelperText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    'session$onFlushed(function() {',
+    stateHelperText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    'rv$modelFollowupQuestion = trimws(exampleInfo$followupQuestion %||% "")',
+    dataObserverText,
+    fixed = TRUE
+  ))
+})
