@@ -223,3 +223,28 @@ dataTransform:
 ```
 
 That future design should also record how derived variables were created so that fitted equations and explanations can recover relationships such as `log.carat = log(carat)` and `log.price = log(price)`.
+
+## Stage 28.8.6 prediction-parser regex fix
+
+Manual testing of Diamonds II exposed a prediction-parser bug when fitted model
+predictors contain transformation syntax. The natural-language prediction parser
+was inserting predictor names such as `log(carat)` directly into a regular
+expression, so the parentheses were interpreted as regex syntax and caused a
+PCRE compilation error.
+
+The fix treats predictor names as regex literals before building natural-language
+numeric prediction patterns. This keeps transformed terms such as `log(carat)`
+safe, and also protects future predictor labels containing punctuation or other
+regex metacharacters.
+
+## Stage 28.8.6.2 regex parser repair
+
+The second transformed-predictor parser repair keeps closing parentheses in normalized
+prediction text. The earlier normalization stripped a trailing `)` from questions
+that ended with a transformed predictor such as `log(carat)`, so patterns of the
+form `0.5 on log(carat)` did not match even though the predictor literal had been
+escaped correctly.
+
+The normalization now removes ordinary sentence-ending punctuation while preserving
+meaningful variable-name punctuation. This keeps transformed terms such as
+`log(carat)` intact before regex matching.
