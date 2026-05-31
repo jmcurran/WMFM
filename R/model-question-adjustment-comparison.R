@@ -28,13 +28,23 @@ enrichFollowupPayloadWithAdjustmentComparison = function(model, followupPayload)
 #' @keywords internal
 #' @noRd
 computeModelQuestionAdjustmentComparison = function(model, followupQuestion = "") {
-  if (!inherits(model, "lm") || inherits(model, "glm")) {
+  if (!inherits(model, "lm")) {
     return(list(
       status = "unsupported",
       reason = "unsupported_model_type",
       modelType = class(model)[[1]] %||% "unknown",
       comparisonType = "not_available",
-      warnings = "Adjustment-comparison follow-ups currently require lm model objects."
+      warnings = "Adjustment-comparison follow-ups currently require lm or glm model objects."
+    ))
+  }
+
+  if (inherits(model, "glm")) {
+    return(list(
+      status = "unsupported",
+      reason = "glm_log_log_not_yet_supported",
+      modelType = "glm",
+      comparisonType = "not_available",
+      warnings = "Adjustment-comparison follow-ups for GLMs should use likelihood and deviance diagnostics, but log-log GLM adjustment comparison is not yet implemented for this pathway."
     ))
   }
 
@@ -89,23 +99,14 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
     ))
   }
 
-  fullSummary = summary(model)
-  reducedSummary = summary(reducedModel)
-  fullR2 = unname(fullSummary$r.squared)
-  reducedR2 = unname(reducedSummary$r.squared)
-  fullAdjustedR2 = unname(fullSummary$adj.r.squared)
-  reducedAdjustedR2 = unname(reducedSummary$adj.r.squared)
-  fullSigma = unname(fullSummary$sigma)
-  reducedSigma = unname(reducedSummary$sigma)
-  fullAic = stats::AIC(model)
-  reducedAic = stats::AIC(reducedModel)
-  aicChange = fullAic - reducedAic
-  adjustedR2Change = fullAdjustedR2 - reducedAdjustedR2
-  sigmaPercentChange = 100 * (fullSigma / reducedSigma - 1)
+  comparisonStats = computeNestedModelComparisonStats(
+    reducedModel = reducedModel,
+    fullModel = model
+  )
   predictionImprovement = classifyAdjustmentPredictionImprovement(
-    adjustedR2Change = adjustedR2Change,
-    sigmaPercentChange = sigmaPercentChange,
-    aicChange = aicChange
+    likelihoodRatioPValue = comparisonStats$likelihoodRatioPValue,
+    aicChange = comparisonStats$aicChange,
+    deviancePercentChange = comparisonStats$deviancePercentChange
   )
 
   list(
@@ -113,46 +114,45 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
     modelType = "lm",
     modelStructure = "log_log",
     comparisonType = "adjusted_vs_weight_only_log_log",
+    comparisonBasis = "nested_log_likelihood_comparison",
     responseName = logLog$responseVariable,
     responseScale = "log_response",
     primaryPredictors = logLog$logPredictors$originalName,
     adjustmentTerms = adjustmentTerms,
     fullModelTerms = termLabels,
     reducedModelTerms = logTermLabels,
-    fullR2 = fullR2,
-    reducedR2 = reducedR2,
-    r2Change = fullR2 - reducedR2,
-    fullAdjustedR2 = fullAdjustedR2,
-    reducedAdjustedR2 = reducedAdjustedR2,
-    adjustedR2Change = adjustedR2Change,
-    fullSigma = fullSigma,
-    reducedSigma = reducedSigma,
-    sigmaChange = fullSigma - reducedSigma,
-    sigmaPercentChange = sigmaPercentChange,
-    fullAic = fullAic,
-    reducedAic = reducedAic,
-    aicChange = aicChange,
+    reducedLogLik = comparisonStats$reducedLogLik,
+    fullLogLik = comparisonStats$fullLogLik,
+    logLikChange = comparisonStats$logLikChange,
+    likelihoodRatioStatistic = comparisonStats$likelihoodRatioStatistic,
+    dfDifference = comparisonStats$dfDifference,
+    likelihoodRatioPValue = comparisonStats$likelihoodRatioPValue,
+    fullAic = comparisonStats$fullAic,
+    reducedAic = comparisonStats$reducedAic,
+    aicChange = comparisonStats$aicChange,
+    fullDeviance = comparisonStats$fullDeviance,
+    reducedDeviance = comparisonStats$reducedDeviance,
+    devianceChange = comparisonStats$devianceChange,
+    deviancePercentChange = comparisonStats$deviancePercentChange,
+    fullSigma = comparisonStats$fullSigma,
+    reducedSigma = comparisonStats$reducedSigma,
+    sigmaChange = comparisonStats$sigmaChange,
+    sigmaPercentChange = comparisonStats$sigmaPercentChange,
     predictionImprovement = predictionImprovement,
+    studentFacingConclusion = buildAdjustmentComparisonStudentConclusion(
+      adjustmentTerms = adjustmentTerms,
+      predictionImprovement = predictionImprovement
+    ),
+    studentFacingCaution = "This is an in-sample comparison of the fitted models, not evidence from a separate test set or cross-validation.",
     interpretation = buildAdjustmentComparisonInterpretation(
-      responseName = logLog$responseVariable,
       primaryPredictors = logLog$logPredictors$originalName,
       adjustmentTerms = adjustmentTerms,
-      reducedAdjustedR2 = reducedAdjustedR2,
-      fullAdjustedR2 = fullAdjustedR2,
-      adjustedR2Change = adjustedR2Change,
-      reducedSigma = reducedSigma,
-      fullSigma = fullSigma,
-      sigmaPercentChange = sigmaPercentChange,
+      comparisonStats = comparisonStats,
       predictionImprovement = predictionImprovement
     ),
     directAnswer = buildAdjustmentComparisonDirectAnswer(
       adjustmentTerms = adjustmentTerms,
-      reducedAdjustedR2 = reducedAdjustedR2,
-      fullAdjustedR2 = fullAdjustedR2,
-      adjustedR2Change = adjustedR2Change,
-      reducedSigma = reducedSigma,
-      fullSigma = fullSigma,
-      sigmaPercentChange = sigmaPercentChange,
+      comparisonStats = comparisonStats,
       predictionImprovement = predictionImprovement
     )
   )
@@ -176,34 +176,100 @@ quoteModelFrameName = function(x) {
 
 #' @keywords internal
 #' @noRd
+computeNestedModelComparisonStats = function(reducedModel, fullModel) {
+  reducedLogLikObj = stats::logLik(reducedModel)
+  fullLogLikObj = stats::logLik(fullModel)
+  reducedLogLik = as.numeric(reducedLogLikObj)
+  fullLogLik = as.numeric(fullLogLikObj)
+  reducedDf = attr(reducedLogLikObj, "df")
+  fullDf = attr(fullLogLikObj, "df")
+  dfDifference = fullDf - reducedDf
+  likelihoodRatioStatistic = 2 * (fullLogLik - reducedLogLik)
+  likelihoodRatioPValue = if (is.finite(likelihoodRatioStatistic) && is.finite(dfDifference) && dfDifference > 0) {
+    stats::pchisq(likelihoodRatioStatistic, df = dfDifference, lower.tail = FALSE)
+  } else {
+    NA_real_
+  }
+
+  fullAic = stats::AIC(fullModel)
+  reducedAic = stats::AIC(reducedModel)
+  fullDeviance = stats::deviance(fullModel)
+  reducedDeviance = stats::deviance(reducedModel)
+  fullSigma = extractModelSigma(fullModel)
+  reducedSigma = extractModelSigma(reducedModel)
+
+  list(
+    reducedLogLik = reducedLogLik,
+    fullLogLik = fullLogLik,
+    logLikChange = fullLogLik - reducedLogLik,
+    reducedDf = reducedDf,
+    fullDf = fullDf,
+    dfDifference = dfDifference,
+    likelihoodRatioStatistic = likelihoodRatioStatistic,
+    likelihoodRatioPValue = likelihoodRatioPValue,
+    reducedAic = reducedAic,
+    fullAic = fullAic,
+    aicChange = fullAic - reducedAic,
+    reducedDeviance = reducedDeviance,
+    fullDeviance = fullDeviance,
+    devianceChange = fullDeviance - reducedDeviance,
+    deviancePercentChange = safePercentChange(fullDeviance, reducedDeviance),
+    reducedSigma = reducedSigma,
+    fullSigma = fullSigma,
+    sigmaChange = fullSigma - reducedSigma,
+    sigmaPercentChange = safePercentChange(fullSigma, reducedSigma)
+  )
+}
+
+#' @keywords internal
+#' @noRd
+extractModelSigma = function(model) {
+  if (inherits(model, "lm") && !inherits(model, "glm")) {
+    return(unname(summary(model)$sigma))
+  }
+
+  NA_real_
+}
+
+#' @keywords internal
+#' @noRd
+safePercentChange = function(newValue, oldValue) {
+  if (!is.finite(newValue) || !is.finite(oldValue) || isTRUE(all.equal(oldValue, 0))) {
+    return(NA_real_)
+  }
+
+  100 * (newValue / oldValue - 1)
+}
+
+#' @keywords internal
+#' @noRd
 buildAdjustmentComparisonInterpretation = function(
-    responseName,
     primaryPredictors,
     adjustmentTerms,
-    reducedAdjustedR2,
-    fullAdjustedR2,
-    adjustedR2Change,
-    reducedSigma,
-    fullSigma,
-    sigmaPercentChange,
+    comparisonStats,
     predictionImprovement) {
   predictorText = paste(primaryPredictors, collapse = ", ")
   adjustmentText = paste(adjustmentTerms, collapse = ", ")
-  sigmaDirection = formatAdjustmentSigmaDirection(sigmaPercentChange = sigmaPercentChange)
-  responseScaleText = formatAdjustmentComparisonResponseScale(responseName = responseName)
+  devianceDirection = formatAdjustmentPercentDirection(
+    percentChange = comparisonStats$deviancePercentChange,
+    quantityName = "deviance"
+  )
+  aicDirection = formatAdjustmentDifferenceDirection(
+    difference = comparisonStats$aicChange,
+    quantityName = "AIC"
+  )
 
   paste0(
     "Compared with the simpler log-log model using ", predictorText,
     ", adding ", adjustmentText,
-    " changes the adjusted R-squared from ", signif(reducedAdjustedR2, 5),
-    " to ", signif(fullAdjustedR2, 5),
-    " and changes the residual standard error on the ", responseScaleText,
-    " scale from ", signif(reducedSigma, 5),
-    " to ", signif(fullSigma, 5),
-    ". The adjusted R-squared change is ", signif(adjustedR2Change, 5),
-    ", and the residual standard error is ", sigmaDirection,
+    " improves the nested-model log-likelihood by ", signif(comparisonStats$logLikChange, 5),
+    ". The likelihood-ratio statistic is ", signif(comparisonStats$likelihoodRatioStatistic, 5),
+    " on ", comparisonStats$dfDifference,
+    " degrees of freedom, with p-value ", signif(comparisonStats$likelihoodRatioPValue, 5),
+    ". The ", devianceDirection,
+    ", and the ", aicDirection,
     ". WMFM classifies this as ", predictionImprovement$label,
-    " based on deterministic in-sample fit summaries."
+    " based on deterministic nested-model fit summaries. These diagnostics support the judgement but should not be named in the student-facing explanation unless the user explicitly asks."
   )
 }
 
@@ -211,15 +277,9 @@ buildAdjustmentComparisonInterpretation = function(
 #' @noRd
 buildAdjustmentComparisonDirectAnswer = function(
     adjustmentTerms,
-    reducedAdjustedR2,
-    fullAdjustedR2,
-    adjustedR2Change,
-    reducedSigma,
-    fullSigma,
-    sigmaPercentChange,
+    comparisonStats,
     predictionImprovement) {
   adjustmentText = paste(adjustmentTerms, collapse = ", ")
-  sigmaDirection = formatAdjustmentSigmaDirection(sigmaPercentChange = sigmaPercentChange)
   conclusion = switch(
     predictionImprovement$category %||% "not_available",
     substantial_in_sample_improvement = "yes, the adjusted model fits these data substantially better",
@@ -231,68 +291,90 @@ buildAdjustmentComparisonDirectAnswer = function(
   paste0(
     "Direct answer: ", conclusion,
     " after adding ", adjustmentText,
-    ". Adjusted R-squared changes from ", signif(reducedAdjustedR2, 4),
-    " to ", signif(fullAdjustedR2, 4),
-    " (change ", signif(adjustedR2Change, 4),
-    "), and the residual standard error is ", sigmaDirection,
-    " (", signif(reducedSigma, 4), " to ", signif(fullSigma, 4),
-    "). This is an in-sample fit comparison, not evidence from a separate test set."
+    ". This judgement is based on a nested-model log-likelihood comparison",
+    " supported by AIC and deviance summaries. This is an in-sample fit comparison, not evidence from a separate test set."
   )
 }
 
 #' @keywords internal
 #' @noRd
-formatAdjustmentSigmaDirection = function(sigmaPercentChange) {
-  if (is.finite(sigmaPercentChange) && sigmaPercentChange < 0) {
-    paste0("about ", signif(abs(sigmaPercentChange), 4), "% lower")
-  } else if (is.finite(sigmaPercentChange) && sigmaPercentChange > 0) {
-    paste0("about ", signif(abs(sigmaPercentChange), 4), "% higher")
+buildAdjustmentComparisonStudentConclusion = function(adjustmentTerms, predictionImprovement) {
+  adjustmentText = paste(adjustmentTerms, collapse = ", ")
+  conclusion = switch(
+    predictionImprovement$category %||% "not_available",
+    substantial_in_sample_improvement = "Yes. For these data, accounting for the adjustment variables substantially improves the in-sample predictions compared with using weight alone.",
+    modest_in_sample_improvement = "Yes, but the improvement is modest. For these data, accounting for the adjustment variables improves the in-sample predictions compared with using weight alone.",
+    little_in_sample_improvement = "Not substantially. For these data, accounting for the adjustment variables adds little in-sample predictive improvement compared with using weight alone.",
+    "WMFM cannot make a clear deterministic judgement about whether the adjustment variables improve prediction."
+  )
+
+  gsub("the adjustment variables", adjustmentText, conclusion, fixed = TRUE)
+}
+
+#' @keywords internal
+#' @noRd
+formatAdjustmentPercentDirection = function(percentChange, quantityName) {
+  if (is.finite(percentChange) && percentChange < 0) {
+    paste0(quantityName, " is about ", signif(abs(percentChange), 4), "% lower")
+  } else if (is.finite(percentChange) && percentChange > 0) {
+    paste0(quantityName, " is about ", signif(abs(percentChange), 4), "% higher")
   } else {
-    "about the same"
+    paste0(quantityName, " is about the same")
   }
 }
 
 #' @keywords internal
 #' @noRd
-formatAdjustmentComparisonResponseScale = function(responseName) {
-  responseName = as.character(responseName %||% "response")
-  if (grepl("^log\\(", responseName)) {
-    return(responseName)
+formatAdjustmentDifferenceDirection = function(difference, quantityName) {
+  if (is.finite(difference) && difference < 0) {
+    paste0(quantityName, " is lower by ", signif(abs(difference), 5))
+  } else if (is.finite(difference) && difference > 0) {
+    paste0(quantityName, " is higher by ", signif(abs(difference), 5))
+  } else {
+    paste0(quantityName, " is about the same")
   }
-
-  paste0("log(", responseName, ")")
 }
 
 #' @keywords internal
 #' @noRd
-classifyAdjustmentPredictionImprovement = function(adjustedR2Change, sigmaPercentChange, aicChange) {
-  if (!is.finite(adjustedR2Change) || !is.finite(sigmaPercentChange)) {
+classifyAdjustmentPredictionImprovement = function(
+    likelihoodRatioPValue,
+    aicChange,
+    deviancePercentChange) {
+  hasLikelihoodSupport = is.finite(likelihoodRatioPValue)
+  hasAicSupport = is.finite(aicChange)
+  hasDevianceSupport = is.finite(deviancePercentChange)
+
+  if (!hasLikelihoodSupport && !hasAicSupport && !hasDevianceSupport) {
     return(list(
       category = "not_available",
       label = "not enough deterministic evidence to classify the improvement",
-      rule = "requires finite adjusted R-squared and residual standard error changes"
+      rule = "requires likelihood, AIC, or deviance comparison summaries"
     ))
   }
 
-  if (adjustedR2Change >= 0.05 || sigmaPercentChange <= -10) {
+  if ((hasLikelihoodSupport && likelihoodRatioPValue < 0.001 && hasAicSupport && aicChange <= -10) ||
+      (hasAicSupport && aicChange <= -20 && hasDevianceSupport && deviancePercentChange <= -10)) {
     return(list(
       category = "substantial_in_sample_improvement",
       label = "a substantial in-sample improvement",
-      rule = "adjusted R-squared increased by at least 0.05 or residual standard error fell by at least 10%"
+      rule = "nested log-likelihood comparison is very strong with AIC support, or AIC and deviance both improve substantially"
     ))
   }
 
-  if (adjustedR2Change >= 0.01 || sigmaPercentChange <= -5 || (is.finite(aicChange) && aicChange <= -10)) {
+  if ((hasLikelihoodSupport && likelihoodRatioPValue < 0.05) ||
+      (hasAicSupport && aicChange <= -2) ||
+      (hasDevianceSupport && deviancePercentChange <= -5)) {
     return(list(
       category = "modest_in_sample_improvement",
       label = "a modest in-sample improvement",
-      rule = "adjusted R-squared increased by at least 0.01, residual standard error fell by at least 5%, or AIC fell by at least 10"
+      rule = "nested log-likelihood comparison, AIC, or deviance summaries show a modest improvement"
     ))
   }
 
   list(
     category = "little_in_sample_improvement",
     label = "little in-sample improvement",
-    rule = "adjusted R-squared, residual standard error, and AIC changes did not meet WMFM's modest-improvement thresholds"
+    rule = "likelihood, AIC, and deviance summaries did not meet WMFM's modest-improvement thresholds"
   )
 }

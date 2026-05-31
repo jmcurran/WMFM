@@ -378,31 +378,42 @@ Reason: {unitChangeResult$reason %||% 'not_available'}
 {questionText}
 
 WMFM deterministic adjustment-comparison payload:
-- These quantities compare the fitted adjusted model with a simpler log-log model using only the log-transformed weight predictor.
-- You must directly answer whether the adjustment terms improve prediction, using the deterministic direct answer below.
+- These quantities compare the fitted adjusted model with a simpler weight-only log-log model.
+- WMFM has already made the model-comparison judgement using deterministic nested-model fit summaries.
+- You must directly answer whether the adjustment terms improve prediction, using the student-facing conclusion below.
 - Include the comparison between the simpler and adjusted model in the final explanation; do not only describe the adjusted model.
 - Describe this as in-sample fit on the log-response scale, not as proof of better out-of-sample prediction.
+- Do not mention log-likelihood, likelihood-ratio tests, p-values, deviance, AIC, adjusted R-squared, or residual standard error in the student-facing explanation unless the user explicitly asks for diagnostic details.
 - Do not recompute, round further, or invent cross-validation results.
 
-Direct deterministic answer to the follow-up: {adjustmentComparisonResult$directAnswer}
+Student-facing deterministic conclusion: {adjustmentComparisonResult$studentFacingConclusion}
+Student-facing caution: {adjustmentComparisonResult$studentFacingCaution}
+Direct deterministic answer for developer diagnostics: {adjustmentComparisonResult$directAnswer}
 
 Model type: {adjustmentComparisonResult$modelType}
 Model structure: {adjustmentComparisonResult$modelStructure}
+Comparison basis: {adjustmentComparisonResult$comparisonBasis}
 Response: {adjustmentComparisonResult$responseName}
 Primary predictor(s): {paste(adjustmentComparisonResult$primaryPredictors, collapse = ', ')}
 Adjustment terms: {paste(adjustmentComparisonResult$adjustmentTerms, collapse = ', ')}
-Simpler-model adjusted R-squared: {signif(adjustmentComparisonResult$reducedAdjustedR2, 6)}
-Adjusted-model adjusted R-squared: {signif(adjustmentComparisonResult$fullAdjustedR2, 6)}
-Adjusted R-squared change: {signif(adjustmentComparisonResult$adjustedR2Change, 6)}
-Simpler-model residual standard error: {signif(adjustmentComparisonResult$reducedSigma, 6)}
-Adjusted-model residual standard error: {signif(adjustmentComparisonResult$fullSigma, 6)}
-Residual standard error percent change: {signif(adjustmentComparisonResult$sigmaPercentChange, 6)}%
+Simpler-model log-likelihood: {signif(adjustmentComparisonResult$reducedLogLik, 6)}
+Adjusted-model log-likelihood: {signif(adjustmentComparisonResult$fullLogLik, 6)}
+Log-likelihood improvement: {signif(adjustmentComparisonResult$logLikChange, 6)}
+Likelihood-ratio statistic: {signif(adjustmentComparisonResult$likelihoodRatioStatistic, 6)}
+Degrees of freedom difference: {adjustmentComparisonResult$dfDifference}
+Likelihood-ratio p-value: {signif(adjustmentComparisonResult$likelihoodRatioPValue, 6)}
+Simpler-model deviance: {signif(adjustmentComparisonResult$reducedDeviance, 6)}
+Adjusted-model deviance: {signif(adjustmentComparisonResult$fullDeviance, 6)}
+Deviance percent change: {signif(adjustmentComparisonResult$deviancePercentChange, 6)}%
 Simpler-model AIC: {signif(adjustmentComparisonResult$reducedAic, 6)}
 Adjusted-model AIC: {signif(adjustmentComparisonResult$fullAic, 6)}
 AIC change: {signif(adjustmentComparisonResult$aicChange, 6)}
+Simpler-model residual standard error if available: {signif(adjustmentComparisonResult$reducedSigma, 6)}
+Adjusted-model residual standard error if available: {signif(adjustmentComparisonResult$fullSigma, 6)}
+Residual standard error percent change if available: {signif(adjustmentComparisonResult$sigmaPercentChange, 6)}%
 Deterministic prediction improvement assessment: {adjustmentComparisonResult$predictionImprovement$label}
 Deterministic assessment rule: {adjustmentComparisonResult$predictionImprovement$rule}
-Deterministic wording: {adjustmentComparisonResult$interpretation}
+Deterministic diagnostic wording for developer mode: {adjustmentComparisonResult$interpretation}
 "))
     }
 

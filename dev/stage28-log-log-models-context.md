@@ -256,3 +256,11 @@ Manual testing of Diamonds IV showed that the existing three-covariate limit blo
 Stage 28.8.8 relaxes the package and app covariate limit from three to four. The change is deliberately narrow: it allows the intended Diamonds IV model to fit, updates user-facing validation messages, and updates the model-setup predictor limiting logic so four selected predictors are retained instead of silently dropping the fourth.
 
 This does not redesign higher-dimensional fitted-means displays. Any separate UI that explicitly says it is implemented only for one to three factor predictors remains unchanged unless later testing shows it blocks the Diamonds IV workflow.
+
+## Stage 28.8.11 adjustment-comparison refinement
+
+Stage 28.8.11 changes the Diamonds IV adjustment-comparison judgement so that WMFM makes the judgement deterministically from nested-model fit summaries rather than asking the LLM to infer it.
+
+The deterministic payload now uses log-likelihood as the primary comparison basis, including a likelihood-ratio statistic, degrees-of-freedom difference, and p-value where the nested-model comparison is available. AIC and deviance are included as supporting diagnostics, and residual standard error is retained only where it is available for linear models. This is intended to generalise better to GLM pathways, where deviance is a more natural supporting summary than adjusted R-squared.
+
+The student-facing explanation should not name these diagnostics by default. The prompt receives a plain deterministic conclusion and a caution that the result is an in-sample fit comparison, not proof of better out-of-sample prediction. Technical quantities such as log-likelihood, likelihood-ratio tests, p-values, deviance, AIC, adjusted R-squared, and residual standard error should remain developer/prompt diagnostics unless the user explicitly asks for those details.
