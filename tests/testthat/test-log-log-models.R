@@ -202,6 +202,9 @@ testthat::test_that("log-log adjustment follow-up compares adjusted and weight-o
   ))
   testthat::expect_match(result$interpretation, "simpler log-log model", fixed = TRUE)
   testthat::expect_match(result$interpretation, "deterministic in-sample fit", fixed = TRUE)
+  testthat::expect_match(result$directAnswer, "Direct answer:", fixed = TRUE)
+  testthat::expect_match(result$directAnswer, "Adjusted R-squared changes", fixed = TRUE)
+  testthat::expect_match(result$directAnswer, "separate test set", fixed = TRUE)
 })
 
 testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sample claims", {
@@ -215,6 +218,9 @@ testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sam
   block = buildModelFollowupPromptBlock(followupPayload = payload)
 
   testthat::expect_match(block, "WMFM deterministic adjustment-comparison payload", fixed = TRUE)
+  testthat::expect_match(block, "You must directly answer", fixed = TRUE)
+  testthat::expect_match(block, "Direct deterministic answer to the follow-up", fixed = TRUE)
+  testthat::expect_match(block, "do not only describe the adjusted model", ignore.case = TRUE)
   testthat::expect_match(block, "Simpler-model adjusted R-squared", fixed = TRUE)
   testthat::expect_match(block, "Adjusted-model residual standard error", fixed = TRUE)
   testthat::expect_match(block, "not as proof of better out-of-sample prediction", fixed = TRUE)

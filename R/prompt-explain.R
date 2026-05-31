@@ -379,9 +379,12 @@ Reason: {unitChangeResult$reason %||% 'not_available'}
 
 WMFM deterministic adjustment-comparison payload:
 - These quantities compare the fitted adjusted model with a simpler log-log model using only the log-transformed weight predictor.
-- Use these values directly if answering whether the adjustment terms improve prediction.
+- You must directly answer whether the adjustment terms improve prediction, using the deterministic direct answer below.
+- Include the comparison between the simpler and adjusted model in the final explanation; do not only describe the adjusted model.
 - Describe this as in-sample fit on the log-response scale, not as proof of better out-of-sample prediction.
 - Do not recompute, round further, or invent cross-validation results.
+
+Direct deterministic answer to the follow-up: {adjustmentComparisonResult$directAnswer}
 
 Model type: {adjustmentComparisonResult$modelType}
 Model structure: {adjustmentComparisonResult$modelStructure}

@@ -144,6 +144,16 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
       fullSigma = fullSigma,
       sigmaPercentChange = sigmaPercentChange,
       predictionImprovement = predictionImprovement
+    ),
+    directAnswer = buildAdjustmentComparisonDirectAnswer(
+      adjustmentTerms = adjustmentTerms,
+      reducedAdjustedR2 = reducedAdjustedR2,
+      fullAdjustedR2 = fullAdjustedR2,
+      adjustedR2Change = adjustedR2Change,
+      reducedSigma = reducedSigma,
+      fullSigma = fullSigma,
+      sigmaPercentChange = sigmaPercentChange,
+      predictionImprovement = predictionImprovement
     )
   )
 }
@@ -179,27 +189,78 @@ buildAdjustmentComparisonInterpretation = function(
     predictionImprovement) {
   predictorText = paste(primaryPredictors, collapse = ", ")
   adjustmentText = paste(adjustmentTerms, collapse = ", ")
-  sigmaDirection = if (is.finite(sigmaPercentChange) && sigmaPercentChange < 0) {
-    paste0("about ", signif(abs(sigmaPercentChange), 4), "% lower")
-  } else if (is.finite(sigmaPercentChange) && sigmaPercentChange > 0) {
-    paste0("about ", signif(abs(sigmaPercentChange), 4), "% higher")
-  } else {
-    "about the same"
-  }
+  sigmaDirection = formatAdjustmentSigmaDirection(sigmaPercentChange = sigmaPercentChange)
+  responseScaleText = formatAdjustmentComparisonResponseScale(responseName = responseName)
 
   paste0(
     "Compared with the simpler log-log model using ", predictorText,
     ", adding ", adjustmentText,
     " changes the adjusted R-squared from ", signif(reducedAdjustedR2, 5),
     " to ", signif(fullAdjustedR2, 5),
-    " and changes the residual standard error on the log(", responseName,
-    ") scale from ", signif(reducedSigma, 5),
+    " and changes the residual standard error on the ", responseScaleText,
+    " scale from ", signif(reducedSigma, 5),
     " to ", signif(fullSigma, 5),
     ". The adjusted R-squared change is ", signif(adjustedR2Change, 5),
     ", and the residual standard error is ", sigmaDirection,
     ". WMFM classifies this as ", predictionImprovement$label,
     " based on deterministic in-sample fit summaries."
   )
+}
+
+#' @keywords internal
+#' @noRd
+buildAdjustmentComparisonDirectAnswer = function(
+    adjustmentTerms,
+    reducedAdjustedR2,
+    fullAdjustedR2,
+    adjustedR2Change,
+    reducedSigma,
+    fullSigma,
+    sigmaPercentChange,
+    predictionImprovement) {
+  adjustmentText = paste(adjustmentTerms, collapse = ", ")
+  sigmaDirection = formatAdjustmentSigmaDirection(sigmaPercentChange = sigmaPercentChange)
+  conclusion = switch(
+    predictionImprovement$category %||% "not_available",
+    substantial_in_sample_improvement = "yes, the adjusted model fits these data substantially better",
+    modest_in_sample_improvement = "yes, the adjusted model fits these data somewhat better",
+    little_in_sample_improvement = "not really; the adjusted model shows little in-sample improvement",
+    "WMFM cannot make a clear deterministic judgement about the improvement"
+  )
+
+  paste0(
+    "Direct answer: ", conclusion,
+    " after adding ", adjustmentText,
+    ". Adjusted R-squared changes from ", signif(reducedAdjustedR2, 4),
+    " to ", signif(fullAdjustedR2, 4),
+    " (change ", signif(adjustedR2Change, 4),
+    "), and the residual standard error is ", sigmaDirection,
+    " (", signif(reducedSigma, 4), " to ", signif(fullSigma, 4),
+    "). This is an in-sample fit comparison, not evidence from a separate test set."
+  )
+}
+
+#' @keywords internal
+#' @noRd
+formatAdjustmentSigmaDirection = function(sigmaPercentChange) {
+  if (is.finite(sigmaPercentChange) && sigmaPercentChange < 0) {
+    paste0("about ", signif(abs(sigmaPercentChange), 4), "% lower")
+  } else if (is.finite(sigmaPercentChange) && sigmaPercentChange > 0) {
+    paste0("about ", signif(abs(sigmaPercentChange), 4), "% higher")
+  } else {
+    "about the same"
+  }
+}
+
+#' @keywords internal
+#' @noRd
+formatAdjustmentComparisonResponseScale = function(responseName) {
+  responseName = as.character(responseName %||% "response")
+  if (grepl("^log\\(", responseName)) {
+    return(responseName)
+  }
+
+  paste0("log(", responseName, ")")
 }
 
 #' @keywords internal
