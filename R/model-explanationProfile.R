@@ -64,9 +64,12 @@ buildExplanationModelProfile = function(model, data = NULL, modelType = NULL) {
     hasInteractions = hasInteractions
   )
 
+  powerLaw = getPowerLawModelMetadata(model = model, modelFrame = modelFrame)
+
   interpretationScale = getExplanationProfileInterpretationScale(
     modelFamily = modelFamily,
-    transformationType = transformationType
+    transformationType = transformationType,
+    powerLaw = powerLaw
   )
 
   comparisonScope = getExplanationProfileComparisonScope(
@@ -87,6 +90,7 @@ buildExplanationModelProfile = function(model, data = NULL, modelType = NULL) {
     responseVariable = responseVariable,
     responseExpression = responseExpr,
     transformationType = transformationType,
+    powerLaw = powerLaw,
     predictorTypes = predictorTypes,
     hasInteractions = hasInteractions,
     interactionTypes = interactionTypes,
@@ -207,7 +211,13 @@ getExplanationProfilePredictorVariables = function(modelTerms, modelFrame, respo
   predictorVariables = predictorVariables[!predictorVariables %in% responseVariable]
 
   if (is.data.frame(modelFrame) && ncol(modelFrame) > 0) {
-    predictorVariables = predictorVariables[predictorVariables %in% names(modelFrame)]
+    modelFrameNames = names(modelFrame)
+    transformedTermLabels = termLabels[termLabels %in% modelFrameNames]
+    predictorVariables = c(
+      predictorVariables[predictorVariables %in% modelFrameNames],
+      transformedTermLabels
+    )
+    predictorVariables = unique(predictorVariables)
   }
 
   predictorVariables
@@ -333,7 +343,7 @@ getExplanationProfileModelScale = function(modelFamily, responseExpr, transforma
   "response"
 }
 
-getExplanationProfileInterpretationScale = function(modelFamily, transformationType) {
+getExplanationProfileInterpretationScale = function(modelFamily, transformationType, powerLaw = NULL) {
 
   if (identical(modelFamily, "logistic")) {
     return("probability")
@@ -341,6 +351,10 @@ getExplanationProfileInterpretationScale = function(modelFamily, transformationT
 
   if (identical(modelFamily, "poisson")) {
     return("expectedCount")
+  }
+
+  if (is.list(powerLaw) && isTRUE(powerLaw$isPowerLaw)) {
+    return("powerLawElasticity")
   }
 
   if (!identical(transformationType, "none")) {

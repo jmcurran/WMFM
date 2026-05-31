@@ -283,6 +283,14 @@ buildExplanationScaleGuidance = function(modelProfile) {
     return("Explain fitted values as expected counts and effects as multiplicative count changes; avoid log expected counts.")
   }
 
+  if (identical(interpretationScale, "powerLawElasticity")) {
+    return(paste(
+      "The model is fit as a straight line after taking logs of both the response and the main numeric predictor.",
+      "Explain the numeric slope as an elasticity: an approximate percentage change in the response for a percentage change in the predictor.",
+      "On the original response scale, describe the relationship as multiplicative or power-law rather than additive."
+    ))
+  }
+
   if (!identical(transformationType, "none") || identical(interpretationScale, "originalResponse")) {
     return(paste0(
       "The model is fit on ", modelScale,

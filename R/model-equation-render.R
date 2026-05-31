@@ -180,6 +180,41 @@ renderEquationCase = function(spec, case, digits = 2) {
   oddsScale = NULL
   responseScale = NULL
 
+  if (isTRUE(spec$powerLaw$isPowerLaw)) {
+    powerLawResponse = spec$powerLaw$responseVariable
+    if (!is.character(powerLawResponse) || length(powerLawResponse) != 1 || is.na(powerLawResponse)) {
+      powerLawResponse = spec$responseName
+    }
+
+    powerLawNumeric = numericNames[vapply(
+      numericNames,
+      function(numericName) {
+        !is.null(getPowerLawOriginalPredictorName(spec, numericName))
+      },
+      logical(1)
+    )]
+
+    if (length(powerLawNumeric) == 1) {
+      powerLawPredictor = getPowerLawOriginalPredictorName(spec, powerLawNumeric[[1]])
+      powerLawSlopeValues = slopeComponents[[powerLawNumeric[[1]]]]
+
+      if (length(powerLawSlopeValues) > 0) {
+        powerLawMultiplier = formatEquationNumber(exp(sum(constantComponents)), digits = digits)
+        powerLawExponent = formatEquationNumber(sum(powerLawSlopeValues), digits = digits)
+        responseScale = paste0(
+          powerLawResponse,
+          " = ",
+          powerLawMultiplier,
+          " * ",
+          powerLawPredictor,
+          "^",
+          powerLawExponent,
+          conditionSuffix
+        )
+      }
+    }
+  }
+
   if (identical(spec$family, "binomial") && identical(spec$link, "logit")) {
     oddsScale = paste0(
       spec$notation$oddsSuccess,
