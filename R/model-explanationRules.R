@@ -287,7 +287,7 @@ buildExplanationScaleGuidance = function(modelProfile) {
     return(paste(
       "The model is fit as a straight line after taking logs of both the response and the main numeric predictor.",
       "Use student-facing proportional-change language: describe percentage changes in the response for percentage changes in the predictor.",
-      "Avoid the terms elasticity and power law in student-facing explanations unless the user explicitly asks for those terms.",
+      "Avoid specialist jargon for this relationship in student-facing explanations unless the user explicitly asks for it.",
       "On the original response scale, describe the relationship as multiplicative rather than additive."
     ))
   }

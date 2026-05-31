@@ -142,3 +142,29 @@ adjusted R-squared, residual standard error, and AIC changes.
 The assessment is deliberately described as an in-sample fit summary. It must not
 be presented as proof of better out-of-sample prediction, and it should continue
 to use log-log internally and proportional-change language externally.
+
+## Stage 28.8 note - wrap-up terminology and teaching checks
+
+Stage 28.8 is the final Stage 28 polish pass. It keeps the development split
+settled during Stage 28.2:
+
+- use `log-log` for internal metadata, source files, tests, and developer notes
+- use proportional-change wording in student-facing explanation guidance
+- avoid student-facing `elasticity` language because it is strongly associated
+  with econometrics
+- avoid student-facing `power law` language because it is overloaded and can be
+  confused with claims about heavy-tailed distributions or scale-free processes
+
+The Diamonds II, III, and IV examples are intended to teach a sequence:
+
+- Diamonds II: fit `log(price) ~ log(carat)` for the main research question
+- Diamonds III: express the same relationship through a bounded 0.1-carat
+  follow-up, using a typical reference value because a fixed original-scale
+  change has different proportional meaning at different starting weights
+- Diamonds IV: compare the adjusted log-log model with the simpler weight-only
+  log-log model, describing the result as deterministic in-sample fit on the
+  log-response scale rather than proof of better future prediction
+
+This wrap-up adds regression tests for the terminology rule and the example
+questions so later prompt or example edits do not accidentally reintroduce the
+terms `elasticity` or `power law` into student-facing guidance.

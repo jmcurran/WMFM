@@ -210,3 +210,41 @@ testthat::test_that("log-log adjustment follow-up prompt block avoids out-of-sam
   testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
   testthat::expect_false(grepl("power law", block, fixed = TRUE))
 })
+
+testthat::test_that("log-log student-facing guidance uses proportional-change wording", {
+  data = ggplot2::diamonds[seq_len(200), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+
+  profile = buildExplanationModelProfile(
+    model = model,
+    data = stats::model.frame(model),
+    modelType = "lm"
+  )
+  guidance = buildExplanationScaleGuidance(profile)
+
+  testthat::expect_match(guidance, "proportional-change language", fixed = TRUE)
+  testthat::expect_match(guidance, "percentage changes", fixed = TRUE)
+  testthat::expect_false(grepl("elasticity", guidance, fixed = TRUE))
+  testthat::expect_false(grepl("power law", guidance, fixed = TRUE))
+})
+
+testthat::test_that("Diamonds log-log examples keep bounded teaching questions", {
+  diamondsII = loadExampleSpec("Diamonds II", package = "WMFM")
+  diamondsIII = loadExampleSpec("Diamonds III", package = "WMFM")
+  diamondsIV = loadExampleSpec("Diamonds IV", package = "WMFM")
+
+  exampleText = paste(
+    diamondsII$researchQuestion,
+    diamondsIII$researchQuestion,
+    diamondsIII$followupQuestion,
+    diamondsIV$researchQuestion,
+    diamondsIV$followupQuestion,
+    collapse = "\n"
+  )
+
+  testthat::expect_match(exampleText, "predict the price of diamonds", fixed = TRUE)
+  testthat::expect_match(exampleText, "0.1 carat", fixed = TRUE)
+  testthat::expect_match(exampleText, "adjusting for cut, color, and clarity", fixed = TRUE)
+  testthat::expect_false(grepl("elasticity", exampleText, fixed = TRUE))
+  testthat::expect_false(grepl("power law", exampleText, fixed = TRUE))
+})
