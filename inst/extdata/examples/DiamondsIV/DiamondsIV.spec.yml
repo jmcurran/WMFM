@@ -1,0 +1,14 @@
+displayName: Diamonds IV
+modelType: lm
+formula: log(price) ~ log(carat) + cut + color + clarity
+dataSource: package
+dataPackage: ggplot2
+dataObject: diamonds
+dataTransform: diamondsPlainFactors
+researchQuestion: Can we predict the price of diamonds on the basis of weight?
+followupQuestion: Does adjusting for cut, color, and clarity improve our predictions substantially?
+
+adjustmentVariables:
+  - cut
+  - color
+  - clarity

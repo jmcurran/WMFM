@@ -65,6 +65,62 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  proportionalChangeValues = extractRequestedProportionalChangeValues(normalizedText)
+  if (length(proportionalChangeValues) > 1L) {
+    result$category = "unsupported_or_out_of_scope"
+    result$supported = FALSE
+    result$reason = "ambiguous_proportional_change_values"
+    result$message = "Unsupported ambiguous multi-percentage follow-up request; clarification required."
+    result$proportionalChangeValues = proportionalChangeValues
+    return(result)
+  }
+
+  proportionalChangePattern = paste(
+    c(
+      "\\b(\\d+(?:\\.\\d+)?)\\s*%\\s*(increase|change|larger|higher|more)\\b",
+      "\\b(increase|change)\\s+(by\\s+)?(\\d+(?:\\.\\d+)?)\\s*%\\b",
+      "\\b(doubling|double|doubles|twice)\\b",
+      "\\b(percentage|percent|proportional|relative)\\s+(increase|change)\\b"
+    ),
+    collapse = "|"
+  )
+
+  proportionalChangeIntentPattern = paste(
+    c(
+      "\\b(explain|interpret|describe|phrase|rephrase|express|frame)\\b",
+      "\\bwhat\\s+(does|happens|is)\\b",
+      "\\beffect\\b",
+      "\\bslope\\b"
+    ),
+    collapse = "|"
+  )
+
+  if (grepl(proportionalChangePattern, normalizedText, perl = TRUE) &&
+      grepl(proportionalChangeIntentPattern, normalizedText, perl = TRUE)) {
+    result$category = "proportional_change_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Proportional-change interpretation request captured for deterministic log-log follow-up handling."
+    result$proportionalChangeValues = proportionalChangeValues
+    return(result)
+  }
+
+  adjustmentPredictionComparisonPattern = paste(
+    c(
+      "\\b(adjust|adjusting|adjusted|control|controlling)\\b",
+      "\\b(improve|better|substantial|substantially|prediction|predictions|predictive)\\b"
+    ),
+    collapse = ".*"
+  )
+
+  if (grepl(adjustmentPredictionComparisonPattern, normalizedText, perl = TRUE)) {
+    result$category = "adjustment_prediction_comparison"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$message = "Adjustment-comparison request captured for deterministic log-log model comparison."
+    return(result)
+  }
+
   unitChangePattern = paste(
     c(
       "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",
@@ -213,6 +269,45 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
 
 #' @keywords internal
 #' @noRd
+#' @keywords internal
+#' @noRd
+extractRequestedProportionalChangeValues = function(normalizedText) {
+  text = tolower(trimws(as.character(normalizedText %||% "")))
+  if (!nzchar(text)) {
+    return(numeric(0))
+  }
+
+  if (grepl("\\b(doubling|double|doubles|twice)\\b", text, perl = TRUE)) {
+    return(100)
+  }
+
+  pattern = paste(
+    c(
+      "\\b(\\d+(?:\\.\\d+)?)\\s*%\\s*(?:increase|change|larger|higher|more)\\b",
+      "\\b(?:increase|change)\\s+(?:by\\s+)?(\\d+(?:\\.\\d+)?)\\s*%\\b",
+      "\\b(\\d+(?:\\.\\d+)?)\\s*(?:percent|percentage)\\s*(?:increase|change|larger|higher|more)\\b"
+    ),
+    collapse = "|"
+  )
+  matches = gregexpr(pattern, text, perl = TRUE)
+  matchedText = regmatches(text, matches)[[1]]
+
+  if (!length(matchedText) || identical(matchedText, "-1")) {
+    return(numeric(0))
+  }
+
+  values = vapply(matchedText, function(x) {
+    numericMatch = regmatches(x, gregexpr("\\d+(?:\\.\\d+)?", x, perl = TRUE))[[1]]
+    if (!length(numericMatch)) {
+      return(NA_real_)
+    }
+    as.numeric(numericMatch[[1]])
+  }, numeric(1))
+
+  values = unique(values[is.finite(values)])
+  values[values > 0]
+}
+
 extractRequestedUnitChangeValues = function(normalizedText) {
   text = tolower(trimws(as.character(normalizedText %||% "")))
   if (!nzchar(text)) {

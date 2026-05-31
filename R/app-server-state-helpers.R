@@ -97,7 +97,8 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     responseVar = all.vars(exampleFormula[[2]])[1] %||% rv$allVars[1]
     termLabels = attr(stats::terms(exampleFormula), "term.labels") %||% character(0)
     interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-    mainEffectTerms = termLabels[!grepl(":", termLabels, fixed = TRUE)]
+    rhsVars = all.vars(exampleFormula[[3]])
+    mainEffectTerms = unique(setdiff(rhsVars, responseVar))
 
     factorVars = mainEffectTerms[vapply(mainEffectTerms, function(varName) {
       column = rv$data[[varName]]
@@ -144,10 +145,36 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
       selected = rv$adjustmentVariables
     )
 
-    rv$autoFormula = spec$formula %||% ""
-    updateTextInput(session, "formula_text", value = spec$formula %||% "")
-    updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
-    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleInfo$followupQuestion %||% "")
+    exampleFormulaText = spec$formula %||% ""
+    formulaHasTransformCall = grepl("(", exampleFormulaText, fixed = TRUE)
+
+    if (isTRUE(formulaHasTransformCall)) {
+      rv$autoFormula = ""
+    } else {
+      rv$autoFormula = exampleFormulaText
+    }
+
+    updateTextInput(session, "formula_text", value = exampleFormulaText)
+    session$onFlushed(function() {
+      if (isTRUE(formulaHasTransformCall)) {
+        rv$autoFormula = ""
+      } else {
+        rv$autoFormula = exampleFormulaText
+      }
+      updateTextInput(session, "formula_text", value = exampleFormulaText)
+    }, once = TRUE)
+    exampleResearchQuestion = exampleInfo$researchQuestion %||% ""
+    exampleFollowupQuestion = exampleInfo$followupQuestion %||% ""
+
+    rv$researchQuestion = trimws(exampleResearchQuestion)
+    rv$modelFollowupQuestion = trimws(exampleFollowupQuestion)
+
+    updateTextInput(session, "researchQuestion", value = exampleResearchQuestion)
+    shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleFollowupQuestion)
+    session$onFlushed(function() {
+      updateTextInput(session, "researchQuestion", value = exampleResearchQuestion)
+      shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleFollowupQuestion)
+    }, once = TRUE)
   }
 
   list(

@@ -449,6 +449,8 @@ postProcessConfidenceIntervalTerminology = function(text) {
     spacePattern,
     "(?:CI|C\\.I\\.|c\\.i\\.|confidence interval)",
     spacePattern,
+    "(?::)?",
+    spacePattern,
     "\\[?",
     numberPattern,
     separatorPattern,
@@ -458,7 +460,15 @@ postProcessConfidenceIntervalTerminology = function(text) {
 
   text = gsub(
     pattern = compactCiPattern,
-    replacement = paste0("\\1% c.i.: [\\2", enDash, "\\3]"),
+    replacement = paste0("\\1% confidence interval: [\\2", enDash, "\\3]"),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b95%[[:space:]]*(?:c\\.i\\.|C\\.I\\.|CI)(?=[[:space:]]*(?:[:\\[]|$))",
+    replacement = "95% confidence interval",
     x = text,
     perl = TRUE,
     ignore.case = TRUE
@@ -585,6 +595,20 @@ postProcessModelMechanismLanguage = function(text) {
     perl = TRUE
   )
 
+  text = gsub(
+    pattern = "Both ([^.]*) were analyzed on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "Both ([^.]*) were analysed on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
   text
 }
 
@@ -595,6 +619,27 @@ postProcessModelMechanismLanguage = function(text) {
 #' @keywords internal
 postProcessSentenceOpenings = function(text) {
   numberPattern = "[-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?%?"
+
+  text = gsub(
+    pattern = "^The question asks whether[[:space:]]+",
+    replacement = "We want to know whether ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "^This question is about[[:space:]]+",
+    replacement = "We want to know about ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "^The aim is to[[:space:]]+",
+    replacement = "We want to ",
+    x = text,
+    perl = TRUE
+  )
 
   text = gsub(
     pattern = "\\b[Ii]n (?:a|this|the) model that predicts [^,]+, the relationship\\b",

@@ -180,6 +180,41 @@ renderEquationCase = function(spec, case, digits = 2) {
   oddsScale = NULL
   responseScale = NULL
 
+  if (isTRUE(spec$logLog$isLogLog)) {
+    logLogResponse = spec$logLog$responseVariable
+    if (!is.character(logLogResponse) || length(logLogResponse) != 1 || is.na(logLogResponse)) {
+      logLogResponse = spec$responseName
+    }
+
+    logLogNumeric = numericNames[vapply(
+      numericNames,
+      function(numericName) {
+        !is.null(getLogLogOriginalPredictorName(spec, numericName))
+      },
+      logical(1)
+    )]
+
+    if (length(logLogNumeric) == 1) {
+      logLogPredictor = getLogLogOriginalPredictorName(spec, logLogNumeric[[1]])
+      logLogSlopeValues = slopeComponents[[logLogNumeric[[1]]]]
+
+      if (length(logLogSlopeValues) > 0) {
+        logLogMultiplier = formatEquationNumber(exp(sum(constantComponents)), digits = digits)
+        logLogExponent = formatEquationNumber(sum(logLogSlopeValues), digits = digits)
+        responseScale = paste0(
+          logLogResponse,
+          " = ",
+          logLogMultiplier,
+          " * ",
+          logLogPredictor,
+          "^",
+          logLogExponent,
+          conditionSuffix
+        )
+      }
+    }
+  }
+
   if (identical(spec$family, "binomial") && identical(spec$link, "logit")) {
     oddsScale = paste0(
       spec$notation$oddsSuccess,

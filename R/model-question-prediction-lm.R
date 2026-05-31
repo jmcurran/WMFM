@@ -228,11 +228,21 @@ isIndividualLmPredictionRequest = function(lowerText) {
 normalizePredictionText = function(x) {
   x = tolower(trimws(as.character(x %||% "")))
   x = gsub("[[:space:]]+", " ", x, perl = TRUE)
-  # Strip trailing punctuation/noise while preserving legitimate leading and
-  # internal factor punctuation such as + and / (e.g., +, /A, A+B, yes/no).
-  x = gsub("[^[:alnum:]_+/-]+$", "", x, perl = TRUE)
+  # Strip sentence-ending punctuation/noise while preserving meaningful
+  # variable-name punctuation such as parentheses in log(carat), plus signs,
+  # slashes, and closing brackets that may appear at the end of a predictor.
+  x = gsub("[[:space:]]*[.!?,;:]+$", "", x, perl = TRUE)
   trimws(x)
 }
+
+#' @keywords internal
+#' @noRd
+normalizePredictionPredictorName = function(x) {
+  x = tolower(trimws(as.character(x %||% "")))
+  x = gsub("[[:space:]]+", " ", x, perl = TRUE)
+  trimws(x)
+}
+
 
 isSimpleWordLevel = function(levelText) {
   grepl("^[a-z0-9_]+$", levelText, perl = TRUE)
@@ -366,7 +376,7 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
 #' @keywords internal
 #' @noRd
 extractNaturalNumericPredictionValue = function(predictor, text) {
-  predictorNorm = normalizePredictionText(predictor)
+  predictorNorm = normalizePredictionPredictorName(predictor)
   textNorm = normalizePredictionText(text)
   if (!nzchar(predictorNorm) || !nzchar(textNorm)) {
     return(NULL)
@@ -381,7 +391,11 @@ extractNaturalNumericPredictionValue = function(predictor, text) {
   }
 
   numberPattern = "(-?\\d+(?:\\.\\d+)?)"
-  predictorPattern = paste0("\\b", predictorNorm, "\\b")
+  predictorPattern = paste0(
+    "(?<![a-z0-9_.])",
+    escapeRegexLiteral(predictorNorm),
+    "(?![a-z0-9_.])"
+  )
   nearbyAfterPattern = paste0(
     predictorPattern,
     "(?:\\s+(?:is|of|at|mark|score|value|equal(?:s)?|=|would be))*\\s+",

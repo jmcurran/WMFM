@@ -140,12 +140,12 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     }
 
 
-    # Enforce at most 3 distinct predictor variables in the model
+    # Enforce at most 4 distinct predictor variables in the model
     allVarsInFormula = all.vars(f)
     predNames = setdiff(allVarsInFormula, respName)
     predNames = unique(predNames)
 
-    if (length(predNames) > 3) {
+    if (length(predNames) > 4) {
       showNotification(buildTooManyPredictorsMessage(predNames), type = "error")
       return(NULL)
     }
@@ -355,6 +355,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       followupPayload = followupClassification
     )
     followupClassification = enrichFollowupPayloadWithUnitChange(
+      model = m,
+      followupPayload = followupClassification
+    )
+    followupClassification = enrichFollowupPayloadWithAdjustmentComparison(
       model = m,
       followupPayload = followupClassification
     )

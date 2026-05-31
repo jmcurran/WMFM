@@ -192,10 +192,7 @@ appUI = function() {
                 value = "",
                 width = "100%",
                 rows = 3,
-                placeholder = paste(
-                  "Predict the response for x = 10\n",
-                  "Explain this for a 10-unit increase"
-                )
+                placeholder = "Optional: ask a follow-up question about this fitted model."
               )
             )
           ),

@@ -282,8 +282,12 @@ testthat::test_that("model tab groups optional follow-up question with research 
     "Ask an optional follow-up question about the fitted model, predictions, or interpretation.",
     fixed = TRUE
   )
-  testthat::expect_match(html, "Predict the response for x = 10", fixed = TRUE)
-  testthat::expect_match(html, "Explain this for a 10-unit increase", fixed = TRUE)
+  testthat::expect_match(
+    html,
+    "Optional: ask a follow-up question about this fitted model.",
+    fixed = TRUE
+  )
+  testthat::expect_no_match(html, "Explain this for a 10-unit increase", fixed = TRUE)
 
   rqPos = regexpr("Research question", html, fixed = TRUE)[1]
   followupPos = regexpr("Optional follow-up question", html, fixed = TRUE)[1]

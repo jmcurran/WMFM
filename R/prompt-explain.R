@@ -298,7 +298,7 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
   }
 
   unitChangeResult = payload$unitChangeResult
-  if (identical(payload$category, "unit_change_request") && is.list(unitChangeResult)) {
+  if (payload$category %in% c("unit_change_request", "proportional_change_request") && is.list(unitChangeResult)) {
     if (identical(unitChangeResult$status, "ok")) {
       ciBlock = ""
       if (is.list(unitChangeResult$confidenceInterval)) {
@@ -325,11 +325,18 @@ Requested unit-change percent interval wording: {ci$percentChangeIntervalText}")
         percentChangeBlock = glue::glue("
 Requested unit-change percent interpretation: {unitChangeResult$percentChangeText}")
       }
+      logLogReferenceBlock = ""
+      if (identical(unitChangeResult$modelStructure %||% "", "log_log")) {
+        logLogReferenceBlock = glue::glue("
+Log-log original-scale reference value: {signif(unitChangeResult$referenceValue, 6)}
+Log-log original-scale comparison value: {signif(unitChangeResult$comparisonValue, 6)}
+Log-log proportional predictor change: {signif(unitChangeResult$proportionalPredictorChange, 6)}")
+      }
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
 
-WMFM deterministic requested unit-change interpretation:
+WMFM deterministic requested unit-change or proportional-change interpretation:
 - These unit-change values were computed deterministically by WMFM.
 - Use these values directly when explaining the relevant numeric effect.
 - Do not recompute, round further, or invent intervals.
@@ -342,9 +349,11 @@ Model type: {unitChangeResult$modelType}
 Effect scale: {unitChangeResult$effectScale}
 Response: {unitChangeResult$responseName}
 Requested predictor: {unitChangeResult$predictorName}
-Requested unit change: {signif(unitChangeResult$requestedUnitChange, 6)}
-Original one-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
-Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}{ciBlock}
+Requested unit change: {signif(unitChangeResult$requestedUnitChange %||% NA_real_, 6)}
+Requested predictor percent change: {signif(unitChangeResult$requestedPercentChange %||% NA_real_, 6)}
+Original one-log-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
+Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}
+{logLogReferenceBlock}{ciBlock}
 Deterministic wording: {unitChangeResult$interpretation}
 "))
     }
@@ -358,6 +367,64 @@ Do not invent the unit-change effect.
 Explain what additional fitted-model predictor information is needed, if appropriate.
 Status: {unitChangeResult$status %||% 'unsupported'}
 Reason: {unitChangeResult$reason %||% 'not_available'}
+"))
+  }
+
+  adjustmentComparisonResult = payload$adjustmentComparisonResult
+  if (identical(payload$category, "adjustment_prediction_comparison") && is.list(adjustmentComparisonResult)) {
+    if (identical(adjustmentComparisonResult$status, "ok")) {
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic adjustment-comparison payload:
+- These quantities compare the fitted adjusted model with a simpler weight-only log-log model.
+- WMFM has already made the model-comparison judgement using deterministic nested-model fit summaries.
+- You must directly answer whether the adjustment terms improve prediction, using the student-facing conclusion below.
+- Include the comparison between the simpler and adjusted model in the final explanation; do not only describe the adjusted model.
+- Describe this as in-sample fit on the log-response scale, not as proof of better out-of-sample prediction.
+- Do not mention log-likelihood, likelihood-ratio tests, p-values, deviance, AIC, adjusted R-squared, or residual standard error in the student-facing explanation unless the user explicitly asks for diagnostic details.
+- Do not recompute, round further, or invent cross-validation results.
+
+Student-facing deterministic conclusion: {adjustmentComparisonResult$studentFacingConclusion}
+Student-facing caution: {adjustmentComparisonResult$studentFacingCaution}
+Direct deterministic answer for developer diagnostics: {adjustmentComparisonResult$directAnswer}
+
+Model type: {adjustmentComparisonResult$modelType}
+Model structure: {adjustmentComparisonResult$modelStructure}
+Comparison basis: {adjustmentComparisonResult$comparisonBasis}
+Response: {adjustmentComparisonResult$responseName}
+Primary predictor(s): {paste(adjustmentComparisonResult$primaryPredictors, collapse = ', ')}
+Adjustment terms: {paste(adjustmentComparisonResult$adjustmentTerms, collapse = ', ')}
+Simpler-model log-likelihood: {signif(adjustmentComparisonResult$reducedLogLik, 6)}
+Adjusted-model log-likelihood: {signif(adjustmentComparisonResult$fullLogLik, 6)}
+Log-likelihood improvement: {signif(adjustmentComparisonResult$logLikChange, 6)}
+Likelihood-ratio statistic: {signif(adjustmentComparisonResult$likelihoodRatioStatistic, 6)}
+Degrees of freedom difference: {adjustmentComparisonResult$dfDifference}
+Likelihood-ratio p-value: {signif(adjustmentComparisonResult$likelihoodRatioPValue, 6)}
+Simpler-model deviance: {signif(adjustmentComparisonResult$reducedDeviance, 6)}
+Adjusted-model deviance: {signif(adjustmentComparisonResult$fullDeviance, 6)}
+Deviance percent change: {signif(adjustmentComparisonResult$deviancePercentChange, 6)}%
+Simpler-model AIC: {signif(adjustmentComparisonResult$reducedAic, 6)}
+Adjusted-model AIC: {signif(adjustmentComparisonResult$fullAic, 6)}
+AIC change: {signif(adjustmentComparisonResult$aicChange, 6)}
+Simpler-model residual standard error if available: {signif(adjustmentComparisonResult$reducedSigma, 6)}
+Adjusted-model residual standard error if available: {signif(adjustmentComparisonResult$fullSigma, 6)}
+Residual standard error percent change if available: {signif(adjustmentComparisonResult$sigmaPercentChange, 6)}%
+Deterministic prediction improvement assessment: {adjustmentComparisonResult$predictionImprovement$label}
+Deterministic assessment rule: {adjustmentComparisonResult$predictionImprovement$rule}
+Deterministic diagnostic wording for developer mode: {adjustmentComparisonResult$interpretation}
+"))
+    }
+
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the adjustment-comparison follow-up for this pathway.
+Do not invent model-comparison quantities.
+Status: {adjustmentComparisonResult$status %||% 'unsupported'}
+Reason: {adjustmentComparisonResult$reason %||% 'not_available'}
 "))
   }
 

@@ -113,6 +113,7 @@ buildEquationSpec = function(model) {
   )
 
   notation = buildGlmTeachingNotation(model)
+  logLog = getLogLogModelMetadata(model = model, modelFrame = mf)
 
   out = list(
     family = familyName,
@@ -123,7 +124,8 @@ buildEquationSpec = function(model) {
     coefficients = coefficientTable,
     termLabels = termLabels,
     interactions = interactionInfo,
-    notation = notation
+    notation = notation,
+    logLog = logLog
   )
 
   class(out) = c("wmfmEquationSpec", class(out))

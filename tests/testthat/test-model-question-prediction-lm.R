@@ -337,3 +337,23 @@ testthat::test_that("Course Follow-Up resolves regular attendance for Yes/No fac
   testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
   testthat::expect_false(grepl("reference level 'No'", paste(out$warnings, collapse = " "), fixed = TRUE))
 })
+
+testthat::test_that("numeric prediction parsing escapes transformed predictor names", {
+  valueAfter = extractNaturalNumericPredictionValue(
+    predictor = "log(carat)",
+    text = "Predict log price when log(carat) = 0.5"
+  )
+  testthat::expect_identical(valueAfter, "0.5")
+
+  valueBefore = extractNaturalNumericPredictionValue(
+    predictor = "log(carat)",
+    text = "Predict log price for 0.5 on log(carat)"
+  )
+  testthat::expect_identical(valueBefore, "0.5")
+
+  valueBeforeWithSentencePunctuation = extractNaturalNumericPredictionValue(
+    predictor = "log(carat)",
+    text = "Predict log price for 0.5 on log(carat)."
+  )
+  testthat::expect_identical(valueBeforeWithSentencePunctuation, "0.5")
+})
