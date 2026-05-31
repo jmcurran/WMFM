@@ -97,7 +97,8 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
     responseVar = all.vars(exampleFormula[[2]])[1] %||% rv$allVars[1]
     termLabels = attr(stats::terms(exampleFormula), "term.labels") %||% character(0)
     interactionTerms = termLabels[grepl(":", termLabels, fixed = TRUE)]
-    mainEffectTerms = termLabels[!grepl(":", termLabels, fixed = TRUE)]
+    rhsVars = all.vars(exampleFormula[[3]])
+    mainEffectTerms = unique(setdiff(rhsVars, responseVar))
 
     factorVars = mainEffectTerms[vapply(mainEffectTerms, function(varName) {
       column = rv$data[[varName]]
@@ -144,8 +145,13 @@ createAppServerStateHelpers = function(input, session, rv, modelFit) {
       selected = rv$adjustmentVariables
     )
 
-    rv$autoFormula = spec$formula %||% ""
-    updateTextInput(session, "formula_text", value = spec$formula %||% "")
+    exampleFormulaText = spec$formula %||% ""
+    rv$autoFormula = exampleFormulaText
+    updateTextInput(session, "formula_text", value = exampleFormulaText)
+    session$onFlushed(function() {
+      rv$autoFormula = exampleFormulaText
+      updateTextInput(session, "formula_text", value = exampleFormulaText)
+    }, once = TRUE)
     updateTextInput(session, "researchQuestion", value = exampleInfo$researchQuestion %||% "")
     shiny::updateTextAreaInput(session, "modelFollowupQuestion", value = exampleInfo$followupQuestion %||% "")
   }

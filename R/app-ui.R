@@ -193,8 +193,8 @@ appUI = function() {
                 width = "100%",
                 rows = 3,
                 placeholder = paste(
-                  "Predict the response for x = 10\n",
-                  "Explain this for a 10-unit increase"
+                  "What is the predicted response when x = 10?\n",
+                  "How does the prediction change for a meaningful increase in x?"
                 )
               )
             )

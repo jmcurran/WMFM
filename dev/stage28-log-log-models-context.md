@@ -168,3 +168,24 @@ The Diamonds II, III, and IV examples are intended to teach a sequence:
 This wrap-up adds regression tests for the terminology rule and the example
 questions so later prompt or example edits do not accidentally reintroduce the
 terms `elasticity` or `power law` into student-facing guidance.
+
+
+## Stage 28.8.2 manual example-load fix
+
+Manual testing of Diamonds II showed two app-level regressions that were not
+caught by the earlier specification-only tests. The optional follow-up question
+placeholder still used parser-friendly examples and mentioned a 10-unit increase,
+which is not suitable for log-log teaching examples. The placeholder is now
+phrased as natural language and avoids a default 10-unit change.
+
+The same manual test also showed that loading a transformed example formula such
+as `log(price) ~ log(carat)` could be overwritten by the automatic formula builder
+after the example was loaded. The example loader now assigns buckets using the
+original variables found inside transformed formula terms, so `carat` is assigned
+as numeric, and it reapplies the exact example formula after the Shiny input
+flush so the formula text remains `log(price) ~ log(carat)`.
+
+The derived-variable path remains an intended compatibility requirement: if a
+future example fits variables such as `logPrice ~ logCarat`, the equation display
+should make clear that these are transformed versions of `price` and `carat`
+when that metadata is available.

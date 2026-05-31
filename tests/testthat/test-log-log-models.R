@@ -66,6 +66,9 @@ testthat::test_that("Diamonds II to IV examples load with log-log formulas", {
   )
   testthat::expect_match(diamondsIII$followupQuestion, "0.1 carat", fixed = TRUE)
   testthat::expect_match(diamondsIV$followupQuestion, "adjusting for cut, color, and clarity", fixed = TRUE)
+  testthat::expect_null(diamondsII$followupQuestion)
+  testthat::expect_false(grepl("10-unit", diamondsIII$followupQuestion, fixed = TRUE))
+  testthat::expect_false(grepl("10 unit", diamondsIII$followupQuestion, fixed = TRUE))
 })
 
 testthat::test_that("log-log unit-change follow-ups use original-scale proportional changes", {
