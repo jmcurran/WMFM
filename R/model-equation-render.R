@@ -180,35 +180,35 @@ renderEquationCase = function(spec, case, digits = 2) {
   oddsScale = NULL
   responseScale = NULL
 
-  if (isTRUE(spec$powerLaw$isPowerLaw)) {
-    powerLawResponse = spec$powerLaw$responseVariable
-    if (!is.character(powerLawResponse) || length(powerLawResponse) != 1 || is.na(powerLawResponse)) {
-      powerLawResponse = spec$responseName
+  if (isTRUE(spec$logLog$isLogLog)) {
+    logLogResponse = spec$logLog$responseVariable
+    if (!is.character(logLogResponse) || length(logLogResponse) != 1 || is.na(logLogResponse)) {
+      logLogResponse = spec$responseName
     }
 
-    powerLawNumeric = numericNames[vapply(
+    logLogNumeric = numericNames[vapply(
       numericNames,
       function(numericName) {
-        !is.null(getPowerLawOriginalPredictorName(spec, numericName))
+        !is.null(getLogLogOriginalPredictorName(spec, numericName))
       },
       logical(1)
     )]
 
-    if (length(powerLawNumeric) == 1) {
-      powerLawPredictor = getPowerLawOriginalPredictorName(spec, powerLawNumeric[[1]])
-      powerLawSlopeValues = slopeComponents[[powerLawNumeric[[1]]]]
+    if (length(logLogNumeric) == 1) {
+      logLogPredictor = getLogLogOriginalPredictorName(spec, logLogNumeric[[1]])
+      logLogSlopeValues = slopeComponents[[logLogNumeric[[1]]]]
 
-      if (length(powerLawSlopeValues) > 0) {
-        powerLawMultiplier = formatEquationNumber(exp(sum(constantComponents)), digits = digits)
-        powerLawExponent = formatEquationNumber(sum(powerLawSlopeValues), digits = digits)
+      if (length(logLogSlopeValues) > 0) {
+        logLogMultiplier = formatEquationNumber(exp(sum(constantComponents)), digits = digits)
+        logLogExponent = formatEquationNumber(sum(logLogSlopeValues), digits = digits)
         responseScale = paste0(
-          powerLawResponse,
+          logLogResponse,
           " = ",
-          powerLawMultiplier,
+          logLogMultiplier,
           " * ",
-          powerLawPredictor,
+          logLogPredictor,
           "^",
-          powerLawExponent,
+          logLogExponent,
           conditionSuffix
         )
       }

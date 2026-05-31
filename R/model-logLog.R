@@ -1,21 +1,21 @@
-#' Detect power-law metadata for a fitted linear model
+#' Detect log-log metadata for a fitted linear model
 #'
 #' Detects the common teaching model form `log(y) ~ log(x)`, optionally with
 #' additional additive adjustment terms. The returned metadata is intentionally
-#' conservative and only records a power-law structure when the response is a
+#' conservative and only records a log-log structure when the response is a
 #' natural-log transform and at least one predictor term is also a natural-log
 #' transform.
 #'
 #' @param model A fitted model object.
 #' @param modelFrame Optional model frame recovered from the fitted model.
 #'
-#' @return A named list containing power-law metadata.
+#' @return A named list containing log-log metadata.
 #'
 #' @keywords internal
-getPowerLawModelMetadata = function(model, modelFrame = NULL) {
+getLogLogModelMetadata = function(model, modelFrame = NULL) {
 
   empty = list(
-    isPowerLaw = FALSE,
+    isLogLog = FALSE,
     responseVariable = NA_character_,
     responseExpression = NA_character_,
     logPredictors = data.frame(
@@ -24,7 +24,7 @@ getPowerLawModelMetadata = function(model, modelFrame = NULL) {
       termLabel = character(0),
       stringsAsFactors = FALSE
     ),
-    interpretation = "notPowerLaw"
+    interpretation = "notLogLog"
   )
 
   if (missing(model) || is.null(model) || !inherits(model, "lm") || inherits(model, "glm")) {
@@ -78,11 +78,11 @@ getPowerLawModelMetadata = function(model, modelFrame = NULL) {
   logPredictors = do.call(rbind, logPredictorInfo)
 
   list(
-    isPowerLaw = TRUE,
+    isLogLog = TRUE,
     responseVariable = responseLog,
     responseExpression = responseExpression,
     logPredictors = logPredictors,
-    interpretation = "elasticity"
+    interpretation = "proportionalChange"
   )
 }
 
@@ -130,13 +130,13 @@ parseNaturalLogCall = function(expr) {
 #'
 #' @return Original variable name when available, otherwise `NULL`.
 #' @keywords internal
-getPowerLawOriginalPredictorName = function(spec, transformedName) {
+getLogLogOriginalPredictorName = function(spec, transformedName) {
 
-  if (is.null(spec$powerLaw) || !isTRUE(spec$powerLaw$isPowerLaw)) {
+  if (is.null(spec$logLog) || !isTRUE(spec$logLog$isLogLog)) {
     return(NULL)
   }
 
-  logPredictors = spec$powerLaw$logPredictors
+  logPredictors = spec$logLog$logPredictors
 
   if (!is.data.frame(logPredictors) || nrow(logPredictors) == 0) {
     return(NULL)

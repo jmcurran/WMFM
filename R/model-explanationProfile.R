@@ -64,12 +64,12 @@ buildExplanationModelProfile = function(model, data = NULL, modelType = NULL) {
     hasInteractions = hasInteractions
   )
 
-  powerLaw = getPowerLawModelMetadata(model = model, modelFrame = modelFrame)
+  logLog = getLogLogModelMetadata(model = model, modelFrame = modelFrame)
 
   interpretationScale = getExplanationProfileInterpretationScale(
     modelFamily = modelFamily,
     transformationType = transformationType,
-    powerLaw = powerLaw
+    logLog = logLog
   )
 
   comparisonScope = getExplanationProfileComparisonScope(
@@ -90,7 +90,7 @@ buildExplanationModelProfile = function(model, data = NULL, modelType = NULL) {
     responseVariable = responseVariable,
     responseExpression = responseExpr,
     transformationType = transformationType,
-    powerLaw = powerLaw,
+    logLog = logLog,
     predictorTypes = predictorTypes,
     hasInteractions = hasInteractions,
     interactionTypes = interactionTypes,
@@ -343,7 +343,7 @@ getExplanationProfileModelScale = function(modelFamily, responseExpr, transforma
   "response"
 }
 
-getExplanationProfileInterpretationScale = function(modelFamily, transformationType, powerLaw = NULL) {
+getExplanationProfileInterpretationScale = function(modelFamily, transformationType, logLog = NULL) {
 
   if (identical(modelFamily, "logistic")) {
     return("probability")
@@ -353,8 +353,8 @@ getExplanationProfileInterpretationScale = function(modelFamily, transformationT
     return("expectedCount")
   }
 
-  if (is.list(powerLaw) && isTRUE(powerLaw$isPowerLaw)) {
-    return("powerLawElasticity")
+  if (is.list(logLog) && isTRUE(logLog$isLogLog)) {
+    return("logLogProportionalChange")
   }
 
   if (!identical(transformationType, "none")) {

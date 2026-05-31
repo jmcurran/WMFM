@@ -1,16 +1,16 @@
-testthat::test_that("power-law metadata detects simple log-log models", {
+testthat::test_that("log-log metadata detects simple log-log models", {
   data = ggplot2::diamonds[seq_len(200), ]
   model = stats::lm(log(price) ~ log(carat), data = data)
 
-  out = getPowerLawModelMetadata(model = model, modelFrame = stats::model.frame(model))
+  out = getLogLogModelMetadata(model = model, modelFrame = stats::model.frame(model))
 
-  testthat::expect_true(out$isPowerLaw)
+  testthat::expect_true(out$isLogLog)
   testthat::expect_identical(out$responseVariable, "price")
   testthat::expect_equal(nrow(out$logPredictors), 1)
   testthat::expect_identical(out$logPredictors$originalName[[1]], "carat")
 })
 
-testthat::test_that("power-law profile records elasticity interpretation scale", {
+testthat::test_that("log-log profile records proportional-change interpretation scale", {
   data = ggplot2::diamonds[seq_len(200), ]
   model = stats::lm(log(price) ~ log(carat), data = data)
 
@@ -18,12 +18,12 @@ testthat::test_that("power-law profile records elasticity interpretation scale",
 
   testthat::expect_identical(out$responseVariable, "price")
   testthat::expect_identical(out$transformationType, "log")
-  testthat::expect_true(out$powerLaw$isPowerLaw)
+  testthat::expect_true(out$logLog$isLogLog)
   testthat::expect_identical(out$predictorTypes$numeric, "log(carat)")
-  testthat::expect_identical(out$interpretationScale, "powerLawElasticity")
+  testthat::expect_identical(out$interpretationScale, "logLogProportionalChange")
 })
 
-testthat::test_that("power-law equation display includes original-scale power expression", {
+testthat::test_that("log-log equation display includes original-scale multiplicative expression", {
   data = ggplot2::diamonds[seq_len(200), ]
   model = stats::lm(log(price) ~ log(carat), data = data)
 
@@ -34,7 +34,7 @@ testthat::test_that("power-law equation display includes original-scale power ex
   testthat::expect_true(any(grepl("carat\\^", out$responseScale)))
 })
 
-testthat::test_that("adjusted power-law equation display keeps factor-specific original-scale equations", {
+testthat::test_that("adjusted log-log equation display keeps factor-specific original-scale equations", {
   data = ggplot2::diamonds[seq_len(600), ]
   model = stats::lm(log(price) ~ log(carat) + cut + color + clarity, data = data)
 
@@ -47,7 +47,7 @@ testthat::test_that("adjusted power-law equation display keeps factor-specific o
   testthat::expect_true(any(grepl("clarity", out$condition, fixed = TRUE)))
 })
 
-testthat::test_that("Diamonds II to IV examples load with power-law formulas", {
+testthat::test_that("Diamonds II to IV examples load with log-log formulas", {
   examples = listWMFMExamples(package = "WMFM")
 
   testthat::expect_true("Diamonds II" %in% examples)

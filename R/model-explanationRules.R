@@ -283,11 +283,12 @@ buildExplanationScaleGuidance = function(modelProfile) {
     return("Explain fitted values as expected counts and effects as multiplicative count changes; avoid log expected counts.")
   }
 
-  if (identical(interpretationScale, "powerLawElasticity")) {
+  if (identical(interpretationScale, "logLogProportionalChange")) {
     return(paste(
       "The model is fit as a straight line after taking logs of both the response and the main numeric predictor.",
-      "Explain the numeric slope as an elasticity: an approximate percentage change in the response for a percentage change in the predictor.",
-      "On the original response scale, describe the relationship as multiplicative or power-law rather than additive."
+      "Use student-facing proportional-change language: describe percentage changes in the response for percentage changes in the predictor.",
+      "Avoid the terms elasticity and power law in student-facing explanations unless the user explicitly asks for those terms.",
+      "On the original response scale, describe the relationship as multiplicative rather than additive."
     ))
   }
 
