@@ -92,6 +92,25 @@ computeModelQuestionUnitChange = function(model, followupQuestion, requestedUnit
   }
 
   predictorName = predictorResolution$predictorName
+  logLog = getLogLogModelMetadata(model = model, modelFrame = mf)
+  if (isTRUE(logLog$isLogLog)) {
+    logLogPredictor = matchLogLogUnitChangePredictor(
+      logLog = logLog,
+      predictorName = predictorName
+    )
+
+    if (!is.null(logLogPredictor)) {
+      return(computeLogLogUnitChangeResult(
+        model = model,
+        modelFrame = mf,
+        responseName = responseName,
+        transformedPredictorName = logLogPredictor$transformedName,
+        originalPredictorName = logLogPredictor$originalName,
+        unitChange = unitChange
+      ))
+    }
+  }
+
   coefValues = stats::coef(model)
   if (!(predictorName %in% names(coefValues))) {
     return(list(
@@ -152,6 +171,159 @@ computeModelQuestionUnitChange = function(model, followupQuestion, requestedUnit
       "For a ", signif(unitChange, 6), "-unit increase in ", predictorName,
       ", the fitted mean ", responseName, " changes by ",
       signif(transformedEstimate, 6), "."
+    )
+  )
+}
+
+
+#' @keywords internal
+#' @noRd
+matchLogLogUnitChangePredictor = function(logLog, predictorName) {
+  if (!is.list(logLog) || !isTRUE(logLog$isLogLog)) {
+    return(NULL)
+  }
+
+  logPredictors = logLog$logPredictors
+  if (!is.data.frame(logPredictors) || nrow(logPredictors) == 0) {
+    return(NULL)
+  }
+
+  matches = logPredictors[
+    logPredictors$transformedName == predictorName |
+      logPredictors$termLabel == predictorName |
+      logPredictors$originalName == predictorName,
+    ,
+    drop = FALSE
+  ]
+
+  if (nrow(matches) != 1L) {
+    return(NULL)
+  }
+
+  as.list(matches[1, , drop = FALSE])
+}
+
+#' @keywords internal
+#' @noRd
+computeLogLogUnitChangeResult = function(
+    model,
+    modelFrame,
+    responseName,
+    transformedPredictorName,
+    originalPredictorName,
+    unitChange) {
+  coefValues = stats::coef(model)
+  if (!(transformedPredictorName %in% names(coefValues))) {
+    return(list(
+      status = "unsupported",
+      reason = "unsupported_log_log_structure",
+      modelType = "lm",
+      effectScale = "not_available",
+      responseName = responseName,
+      predictorName = originalPredictorName,
+      transformedPredictorName = transformedPredictorName,
+      requestedUnitChange = unitChange,
+      warnings = "The log-log unit-change request does not have a simple one-coefficient log-predictor effect."
+    ))
+  }
+
+  transformedValues = suppressWarnings(as.numeric(modelFrame[[transformedPredictorName]]))
+  transformedValues = transformedValues[is.finite(transformedValues)]
+  if (length(transformedValues) == 0) {
+    return(list(
+      status = "unsupported",
+      reason = "missing_log_predictor_values",
+      modelType = "lm",
+      effectScale = "not_available",
+      responseName = responseName,
+      predictorName = originalPredictorName,
+      transformedPredictorName = transformedPredictorName,
+      requestedUnitChange = unitChange,
+      warnings = "WMFM could not recover finite fitted log-predictor values for this log-log unit-change request."
+    ))
+  }
+
+  referenceValue = exp(mean(transformedValues))
+  comparisonValue = referenceValue + unitChange
+  if (!is.finite(referenceValue) || !is.finite(comparisonValue) || referenceValue <= 0 || comparisonValue <= 0) {
+    return(list(
+      status = "unsupported",
+      reason = "invalid_original_scale_reference",
+      modelType = "lm",
+      effectScale = "not_available",
+      responseName = responseName,
+      predictorName = originalPredictorName,
+      transformedPredictorName = transformedPredictorName,
+      requestedUnitChange = unitChange,
+      warnings = "The requested original-scale change could not be evaluated from a positive reference value."
+    ))
+  }
+
+  oneUnitEffect = unname(as.numeric(coefValues[[transformedPredictorName]]))
+  logRatio = log(comparisonValue / referenceValue)
+  logResponseChange = oneUnitEffect * logRatio
+  responseMultiplier = exp(logResponseChange)
+  percentChange = 100 * (responseMultiplier - 1)
+
+  ciResult = tryCatch(
+    stats::confint(model, parm = transformedPredictorName),
+    error = function(e) {
+      NULL
+    }
+  )
+  confidenceInterval = NULL
+  ciValues = extractUnitChangeConfidenceLimits(ciResult)
+  if (length(ciValues) == 2L) {
+    lwr = exp(unname(ciValues[[1]]) * logRatio)
+    upr = exp(unname(ciValues[[2]]) * logRatio)
+    percentChangeLwr = 100 * (lwr - 1)
+    percentChangeUpr = 100 * (upr - 1)
+    confidenceInterval = list(
+      level = 0.95,
+      oneUnitLwr = unname(ciValues[[1]]),
+      oneUnitUpr = unname(ciValues[[2]]),
+      lwr = lwr,
+      upr = upr,
+      percentChangeLwr = percentChangeLwr,
+      percentChangeUpr = percentChangeUpr,
+      percentChangeIntervalText = formatUnitChangePercentIntervalText(
+        percentChangeLwr = percentChangeLwr,
+        percentChangeUpr = percentChangeUpr
+      )
+    )
+  }
+
+  list(
+    status = "ok",
+    modelType = "lm",
+    modelStructure = "log_log",
+    effectScale = "response_multiplier",
+    responseName = responseName,
+    predictorName = originalPredictorName,
+    transformedPredictorName = transformedPredictorName,
+    requestedUnitChange = unitChange,
+    referenceValue = referenceValue,
+    comparisonValue = comparisonValue,
+    proportionalPredictorChange = comparisonValue / referenceValue,
+    oneUnitEffect = oneUnitEffect,
+    logRatio = logRatio,
+    logResponseChange = logResponseChange,
+    transformedEstimate = responseMultiplier,
+    unitChangeEffect = responseMultiplier,
+    percentChange = percentChange,
+    percentChangeText = formatUnitChangePercentText(percentChange),
+    percentChangeIntervalText = if (is.list(confidenceInterval)) {
+      confidenceInterval$percentChangeIntervalText
+    } else {
+      NULL
+    },
+    confidenceInterval = confidenceInterval,
+    interpretation = paste0(
+      "Starting from a typical ", originalPredictorName, " value of ",
+      signif(referenceValue, 6), ", a ", signif(unitChange, 6),
+      "-unit increase to ", signif(comparisonValue, 6),
+      " is associated with a fitted ", responseName, " that is ",
+      formatUnitChangePercentText(percentChange), "."
     )
   )
 }

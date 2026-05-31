@@ -110,3 +110,9 @@ Continue to use:
 - modular helper functions
 - deterministic offline tests
 - thin orchestration layers
+
+## Stage 28.3 implementation note
+
+Stage 28.3 extends the log-log/proportional-change work to bounded unit-change follow-up questions. A request such as "Can you express the weight effect for a 0.1 carat increase?" cannot be answered from the slope alone, because a fixed original-scale increase corresponds to a different proportional change depending on the starting value. WMFM therefore uses a deterministic typical original-scale reference value recovered from the fitted log-predictor values, then converts the requested increase into a proportional predictor change before computing the fitted response multiplier and percentage change.
+
+Student-facing wording should continue to avoid "elasticity" and "power law". The prompt payload should describe the model as log-log internally and should explain fixed original-scale changes using the chosen reference value and proportional-change language.

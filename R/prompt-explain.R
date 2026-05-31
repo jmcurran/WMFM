@@ -325,6 +325,13 @@ Requested unit-change percent interval wording: {ci$percentChangeIntervalText}")
         percentChangeBlock = glue::glue("
 Requested unit-change percent interpretation: {unitChangeResult$percentChangeText}")
       }
+      logLogReferenceBlock = ""
+      if (identical(unitChangeResult$modelStructure %||% "", "log_log")) {
+        logLogReferenceBlock = glue::glue("
+Log-log original-scale reference value: {signif(unitChangeResult$referenceValue, 6)}
+Log-log original-scale comparison value: {signif(unitChangeResult$comparisonValue, 6)}
+Log-log proportional predictor change: {signif(unitChangeResult$proportionalPredictorChange, 6)}")
+      }
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
@@ -344,7 +351,8 @@ Response: {unitChangeResult$responseName}
 Requested predictor: {unitChangeResult$predictorName}
 Requested unit change: {signif(unitChangeResult$requestedUnitChange, 6)}
 Original one-unit effect: {signif(unitChangeResult$oneUnitEffect, 6)}
-Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}{ciBlock}
+Requested unit-change effect: {signif(unitChangeResult$transformedEstimate %||% unitChangeResult$unitChangeEffect, 6)}{percentChangeBlock}
+{logLogReferenceBlock}{ciBlock}
 Deterministic wording: {unitChangeResult$interpretation}
 "))
     }

@@ -67,3 +67,42 @@ testthat::test_that("Diamonds II to IV examples load with log-log formulas", {
   testthat::expect_match(diamondsIII$followupQuestion, "0.1 carat", fixed = TRUE)
   testthat::expect_match(diamondsIV$followupQuestion, "adjusting for cut, color, and clarity", fixed = TRUE)
 })
+
+testthat::test_that("log-log unit-change follow-ups use original-scale proportional changes", {
+  data = ggplot2::diamonds[seq_len(300), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+
+  result = computeModelQuestionUnitChange(
+    model = model,
+    followupQuestion = "Can you express the weight effect for a 0.1 carat increase?",
+    requestedUnitChange = 0.1
+  )
+
+  testthat::expect_identical(result$status, "ok")
+  testthat::expect_identical(result$modelStructure, "log_log")
+  testthat::expect_identical(result$effectScale, "response_multiplier")
+  testthat::expect_identical(result$predictorName, "carat")
+  testthat::expect_identical(result$transformedPredictorName, "log(carat)")
+  testthat::expect_true(is.finite(result$referenceValue))
+  testthat::expect_gt(result$referenceValue, 0)
+  testthat::expect_equal(result$comparisonValue, result$referenceValue + 0.1)
+  testthat::expect_true(is.finite(result$percentChange))
+  testthat::expect_match(result$interpretation, "typical carat value", fixed = TRUE)
+})
+
+testthat::test_that("log-log unit-change prompt block exposes deterministic reference values", {
+  data = ggplot2::diamonds[seq_len(300), ]
+  model = stats::lm(log(price) ~ log(carat), data = data)
+  payload = classifyModelFollowupQuestion(
+    "Can you express the weight effect for a 0.1 carat increase?"
+  )
+  payload = enrichFollowupPayloadWithUnitChange(model = model, followupPayload = payload)
+
+  block = buildModelFollowupPromptBlock(followupPayload = payload)
+
+  testthat::expect_match(block, "Log-log original-scale reference value", fixed = TRUE)
+  testthat::expect_match(block, "Log-log proportional predictor change", fixed = TRUE)
+  testthat::expect_match(block, "Requested unit-change percent interpretation", fixed = TRUE)
+  testthat::expect_false(grepl("elasticity", block, fixed = TRUE))
+  testthat::expect_false(grepl("power law", block, fixed = TRUE))
+})
