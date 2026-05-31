@@ -152,9 +152,9 @@ runModel = function(
   responseName = allVars[1]
   predictorNames = unique(setdiff(allVars, responseName))
 
-  if (length(predictorNames) > 3) {
+  if (length(predictorNames) > 4) {
     stop(
-      "This app only allows models with at most 3 covariates. Your formula uses ",
+      "This app only allows models with at most 4 covariates. Your formula uses ",
       length(predictorNames),
       ": ",
       paste(predictorNames, collapse = ", "),

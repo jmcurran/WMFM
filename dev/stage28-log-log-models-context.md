@@ -248,3 +248,11 @@ escaped correctly.
 The normalization now removes ordinary sentence-ending punctuation while preserving
 meaningful variable-name punctuation. This keeps transformed terms such as
 `log(carat)` intact before regex matching.
+
+## Stage 28.8.8 four-covariate adjustment support
+
+Manual testing of Diamonds IV showed that the existing three-covariate limit blocked the intended adjusted log-log example. Diamonds IV requires four predictors in the fitted formula: the primary `log(carat)` term plus the adjustment variables `cut`, `color`, and `clarity`.
+
+Stage 28.8.8 relaxes the package and app covariate limit from three to four. The change is deliberately narrow: it allows the intended Diamonds IV model to fit, updates user-facing validation messages, and updates the model-setup predictor limiting logic so four selected predictors are retained instead of silently dropping the fourth.
+
+This does not redesign higher-dimensional fitted-means displays. Any separate UI that explicitly says it is implemented only for one to three factor predictors remains unchanged unless later testing shows it blocks the Diamonds IV workflow.

@@ -11,8 +11,8 @@ test_that("chat provider fit messages preserve fallback wording", {
 
 test_that("fit model validation messages preserve formula and response wording", {
   expect_identical(
-    buildTooManyPredictorsMessage(c("x1", "x2", "x3", "x4")),
-    "This app only allows models with at most 3 covariates. Your formula currently uses 4 predictors: x1, x2, x3, x4."
+    buildTooManyPredictorsMessage(c("x1", "x2", "x3", "x4", "x5")),
+    "This app only allows models with at most 4 covariates. Your formula currently uses 5 predictors: x1, x2, x3, x4, x5."
   )
 
   expect_identical(

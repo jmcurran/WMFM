@@ -36,7 +36,7 @@ buildNoLanguageModelAvailableMessage = function() {
 #' @keywords internal
 buildTooManyPredictorsMessage = function(predictorNames) {
   paste0(
-    "This app only allows models with at most 3 covariates. ",
+    "This app only allows models with at most 4 covariates. ",
     "Your formula currently uses ", length(predictorNames), " predictors: ",
     paste(predictorNames, collapse = ", "), "."
   )

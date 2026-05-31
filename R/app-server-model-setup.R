@@ -150,10 +150,10 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     # Exclude the response from predictors
     predsAll = unique(setdiff(c(factors, cont), resp))
 
-    # Hard limit: only first 3 predictors are allowed in the model
+    # Hard limit: only first 4 predictors are allowed in the model
     predsLimited = predsAll
-    if (length(predsLimited) > 3) {
-      predsLimited = predsLimited[1:3]
+    if (length(predsLimited) > 4) {
+      predsLimited = predsLimited[1:4]
     }
 
     if (length(predsLimited) < 2) {
@@ -229,13 +229,13 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     )
 
     infoText = NULL
-    if (length(predsAll) > 3) {
+    if (length(predsAll) > 4) {
       infoText = helpText(
         sprintf(
           "You have placed %d variables into the Factors/Continuous buckets. ",
           length(predsAll)
         ),
-        "Only the first 3 (",
+        "Only the first 4 (",
         paste(predsLimited, collapse = ", "),
         ") are used in the model and for interactions."
       )
@@ -300,8 +300,8 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       predsAll = unique(setdiff(c(factors, cont), resp))
 
       predsLimited = predsAll
-      if (length(predsLimited) > 3) {
-        predsLimited = predsLimited[1:3]
+      if (length(predsLimited) > 4) {
+        predsLimited = predsLimited[1:4]
       }
 
       if (length(predsLimited) < 2) {
@@ -549,7 +549,7 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
 
   # -------------------------------------------------------------------
   # Auto-populate formula from buckets + optional interactions
-  # (limit to 3 predictors; expert mode for compact notation)
+  # (limit to 4 predictors; expert mode for compact notation)
   # -------------------------------------------------------------------
   observeEvent(
     list(
@@ -584,8 +584,8 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       predsAll = unique(setdiff(c(factors, cont), resp))
 
       preds = predsAll
-      if (length(preds) > 3) {
-        preds = preds[1:3]
+      if (length(preds) > 4) {
+        preds = preds[1:4]
       }
 
       if (length(preds) == 0) {
