@@ -278,8 +278,11 @@ testthat::test_that("log-log student-facing guidance uses proportional-change wo
   )
   guidance = buildExplanationScaleGuidance(profile)
 
-  testthat::expect_match(guidance, "proportional-change language", fixed = TRUE)
-  testthat::expect_match(guidance, "percentage changes", fixed = TRUE)
+  testthat::expect_match(guidance, "percentage-change language", fixed = TRUE)
+  testthat::expect_match(guidance, "1% increase in the predictor", fixed = TRUE)
+  testthat::expect_match(guidance, "1.88% increase", fixed = TRUE)
+  testthat::expect_match(guidance, "Do not interpret the coefficient", fixed = TRUE)
+  testthat::expect_false(grepl("taking logs of both", guidance, fixed = TRUE))
   testthat::expect_false(grepl("elasticity", guidance, fixed = TRUE))
   testthat::expect_false(grepl("power law", guidance, fixed = TRUE))
 })

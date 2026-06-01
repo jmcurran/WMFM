@@ -285,8 +285,9 @@ buildExplanationScaleGuidance = function(modelProfile) {
 
   if (identical(interpretationScale, "logLogProportionalChange")) {
     return(paste(
-      "The model is fit as a straight line after taking logs of both the response and the main numeric predictor.",
-      "Use student-facing proportional-change language: describe percentage changes in the response for percentage changes in the predictor.",
+      "Use student-facing percentage-change language for this relationship.",
+      "For example, describe a coefficient of 1.88 as: a 1% increase in the predictor is associated with about a 1.88% increase in the expected response.",
+      "Do not interpret the coefficient as a one-unit increase in log-predictor or a one-unit increase in log-response.",
       "Avoid specialist jargon for this relationship in student-facing explanations unless the user explicitly asks for it.",
       "On the original response scale, describe the relationship as multiplicative rather than additive."
     ))

@@ -136,6 +136,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "logLogPercentageLanguage",
+    ruleFunction = postProcessLogLogPercentageLanguage,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "sentenceOpenings",
     ruleFunction = postProcessSentenceOpenings,
     rulesApplied = rulesApplied
@@ -618,6 +627,66 @@ postProcessModelMechanismLanguage = function(text) {
   text = gsub(
     pattern = "\\b[Tt]his (?:was|is) (?:modelled|modeled|analysed|analyzed) on a log scale\\.",
     replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
+  text
+}
+
+
+#' Replace raw log-log interpretation wording with percentage-change language
+#'
+#' @param text Character vector.
+#' @return A character vector with common student-facing log-log wording
+#'   rewritten on the percentage-change scale.
+#' @keywords internal
+postProcessLogLogPercentageLanguage = function(text) {
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*",
+      "(?:On the log scale used here, )?",
+      "this means that as log-([[:alnum:]_]+) increases by one unit, ",
+      "log-([[:alnum:]_]+) is expected to increase by about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\3% increase in expected \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*",
+      "On the log scale used here, as log-([[:alnum:]_]+) increases by one unit, ",
+      "log-([[:alnum:]_]+) is expected to increase by about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\3% increase in expected \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The analysis examined the relationship between ",
+      "([^()]+?) \\(measured in ([^,]+), on a log scale\\) and ",
+      "([^()]+?) \\(also on a log scale\\)"
+    ),
+    replacement = "The analysis examined how percentage changes in \\1 (measured in \\2) are associated with percentage changes in \\3",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The analysis examined the relationship between ",
+      "([^()]+?) \\(on a log scale\\) and ",
+      "([^()]+?) \\(also on a log scale\\)"
+    ),
+    replacement = "The analysis examined how percentage changes in \\1 are associated with percentage changes in \\2",
     x = text,
     perl = TRUE
   )

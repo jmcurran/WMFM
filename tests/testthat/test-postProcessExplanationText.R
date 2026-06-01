@@ -552,3 +552,21 @@ testthat::test_that("postProcessExplanationText polishes log-log follow-up wordi
   testthat::expect_true(grepl("proportional changes", out, fixed = TRUE))
   testthat::expect_true(grepl("95% confidence interval", out, fixed = TRUE))
 })
+
+
+testthat::test_that("postProcessExplanationText rewrites raw log-log coefficient wording", {
+  text = paste(
+    "The analysis examined the relationship between weight (measured in carats, on a log scale) and price (also on a log scale).",
+    "On the log scale used here, this means that as log-weight increases by one unit, log-price is expected to increase by about 1.88 units."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "percentage changes in weight", fixed = TRUE)
+  testthat::expect_match(out, "percentage changes in price", fixed = TRUE)
+  testthat::expect_match(out, "1% increase in weight", fixed = TRUE)
+  testthat::expect_match(out, "1.88% increase in expected price", fixed = TRUE)
+  testthat::expect_false(grepl("log scale", out, fixed = TRUE))
+  testthat::expect_false(grepl("log-weight", out, fixed = TRUE))
+  testthat::expect_false(grepl("log-price", out, fixed = TRUE))
+})

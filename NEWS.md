@@ -236,3 +236,10 @@ It is intentionally grouped by feature area rather than by exact release number.
 - Expanded deterministic tests for common compact interval labels and log-scale wording leakage.
 - Updated adjustment and contrast text to prefer 95% confidence interval over compact 95% CI wording.
 
+## Stage 32.3
+
+- Strengthened log-log guidance so student-facing explanations use percentage-change interpretations.
+- Added post-processing for recurring raw log-predictor and log-response coefficient wording.
+- Added deterministic tests for 1% percentage-change wording and log-scale leakage cleanup.
+- Kept the change scoped to log-log wording polish.
+
