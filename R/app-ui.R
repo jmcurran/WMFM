@@ -514,9 +514,13 @@ appUI = function() {
 
       tabPanel(
         "Model plots",
-        h4("Model plots"),
-        helpText(
-          "These plots help you notice whether the fitted model is missing obvious structure."
+        h4(
+          tags$span("Model plots"),
+          tags$span(
+            icon("circle-info"),
+            title = "These plots help you notice whether the fitted model is missing obvious structure",
+            style = "cursor: help; margin-left: 6px;"
+          )
         ),
         uiOutput("modelPlotTypeUi"),
         plotOutput("modelPlotsPlot", height = "360px"),

@@ -116,6 +116,7 @@ testthat::test_that("plotModelPlot draws red reference and logistic trend layers
 
   testthat::expect_equal(length(lmPlot$layers), 2)
   testthat::expect_identical(lmPlot$layers[[2]]$aes_params$colour, "red")
+  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$linewidth, 2)
 
   poissonModel = stats::glm(
     breaks ~ wool + tension,
@@ -126,6 +127,7 @@ testthat::test_that("plotModelPlot draws red reference and logistic trend layers
 
   testthat::expect_equal(length(poissonPlot$layers), 2)
   testthat::expect_identical(poissonPlot$layers[[2]]$aes_params$colour, "red")
+  testthat::expect_identical(poissonPlot$layers[[2]]$aes_params$linewidth, 2)
 
   data = mtcars
   data$amFactor = factor(data$am, levels = c(0, 1), labels = c("automatic", "manual"))
@@ -138,6 +140,7 @@ testthat::test_that("plotModelPlot draws red reference and logistic trend layers
 
   testthat::expect_equal(length(logisticPlot$layers), 2)
   testthat::expect_identical(logisticPlot$layers[[2]]$aes_params$colour, "red")
+  testthat::expect_identical(logisticPlot$layers[[2]]$aes_params$linetype, "dashed")
 })
 
 
@@ -165,4 +168,19 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   testthat::expect_no_match(uiText, "Diagnostic plots", fixed = TRUE)
   testthat::expect_no_match(uiText, "Assumption checks", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model validity", fixed = TRUE)
+})
+
+
+testthat::test_that("developer tabs appear after ordinary student tabs", {
+  uiText = paste(deparse(body(appUI)), collapse = "\n")
+  observerText = paste(deparse(body(registerDeveloperScoringGradingObservers)), collapse = "\n")
+
+  plotPosition = regexpr('"Plot"', uiText, fixed = TRUE)[1]
+  variableExplorerPosition = regexpr('"Variable Explorer"', uiText, fixed = TRUE)[1]
+  settingsPosition = regexpr('"Settings"', uiText, fixed = TRUE)[1]
+  scoringTargetPosition = regexpr('target = "Variable Explorer"', observerText, fixed = TRUE)[1]
+
+  testthat::expect_gt(variableExplorerPosition, plotPosition)
+  testthat::expect_gt(settingsPosition, variableExplorerPosition)
+  testthat::expect_gt(scoringTargetPosition, 0)
 })

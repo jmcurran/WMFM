@@ -441,6 +441,7 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
           method.args = list(family = binomial()),
           formula = y ~ x,
           se = FALSE,
+          linetype = "dashed",
           color = "red"
         ) +
         labs(title = labels$title, x = labels$x, y = labels$y) +
@@ -460,6 +461,7 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       slope = 1,
       intercept = 0,
       linetype = "dashed",
+      linewidth = 2,
       color = "red"
     )
   } else {
@@ -468,7 +470,7 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       aes(x = .data$fitted, y = .data$residual)
     ) +
       geom_point(alpha = 0.75) +
-      geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+      geom_hline(yintercept = 0, linetype = "dashed", linewidth = 2, color = "red") +
       labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
   }

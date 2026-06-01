@@ -1,5 +1,13 @@
 # WMFM development news
 
+## Stage 30.5
+
+- Add the Model plots teaching note as an information icon next to the tab heading.
+- Make linear and Poisson reference lines thicker so they remain visible over the points.
+- Use a dashed logistic trend curve on the observed-outcome versus predicted-probability plot.
+- Move the developer Scoring and Grading tab before Settings so developer tabs stay at the end.
+
+
 ## Stage 30.4
 
 - Move the Model plots tab immediately after Model Explanation and keep the existing Plot tab next to it.
