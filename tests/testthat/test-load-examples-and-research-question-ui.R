@@ -172,16 +172,14 @@ test_that("app server keeps pending example interactions available", {
   ))
 })
 
-test_that("developer mode source controls are password protected", {
+test_that("developer mode source controls are hidden unless explicitly enabled", {
   skipIfExampleSourceFilesUnavailable()
 
   uiText = readProjectFileTextForExampleTests("app-ui.R")
-  serverText = readProjectFileTextForExampleTests("app-server.R")
   startupObserverText = readProjectFileTextForExampleTests("app-server-startup.R")
   developerModeHelperText = readProjectFileTextForExampleTests("app-server-developer-mode-helpers.R")
   developerModeAuthText = readProjectFileTextForExampleTests("utils-developerModeAuth.R")
   developerModeText = paste(
-    serverText,
     startupObserverText,
     developerModeHelperText,
     developerModeAuthText,
@@ -189,30 +187,41 @@ test_that("developer mode source controls are password protected", {
   )
 
   expect_true(grepl(
-    'inputId = "developerModePassword"',
+    "isDeveloperModeUiEnabled()",
     uiText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
-    "Unlock developer mode",
+    "WMFM_SHOW_DEVELOPER_MODE",
+    readProjectFileTextForExampleTests("utils-provider-config.R"),
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    "input$developerModeToggle",
+    developerModeText,
+    fixed = TRUE
+  ))
+
+  expect_false(grepl(
+    "Developer mode exposes diagnostic controls",
     uiText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
-    "verifyDeveloperModePassword",
-    developerModeText,
+    "inputId = \"developerModePassword\"",
+    startupObserverText,
     fixed = TRUE
   ))
 
   expect_true(grepl(
-    "includeTestExamples = isTRUE(developerModeUnlocked())",
-    developerModeText,
+    "if (isDeveloperModeUiEnabled())",
+    startupObserverText,
     fixed = TRUE
   ))
 })
-
 test_that("packaged test examples are hidden unless explicitly requested", {
   visibleExamples = listWMFMExamples(package = "WMFM")
   developerExamples = listWMFMExamples(

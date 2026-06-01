@@ -35,7 +35,122 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn {\n        display: flex;\n        align-items: center;\n        min-height: 34px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-model-compact-action-btn {\n        padding: 4px 10px;\n        font-size: 12px;\n        line-height: 1.5;\n        border-radius: 3px;\n        min-height: 30px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: grid;\n        grid-template-columns: repeat(2, minmax(0, auto));\n        align-items: center;\n        justify-content: start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n        width: auto;\n      }\n\n      .wmfm-model-fit-actions {\n        margin-top: 25px;\n      }\n\n      @media (max-width: 767px) {\n        .wmfm-model-fit-buttons {\n          grid-template-columns: 1fr;\n        }\n      }\n\n      .wmfm-data-context-control {\n        display: flex;\n        align-items: flex-start;\n        min-height: 34px;\n      }\n\n      .wmfm-data-context-control .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .tab-content {\n        overflow: visible;\n      }\n    ")),
+    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      #modelFollowupQuestion::placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      #modelFollowupQuestion::-webkit-input-placeholder {\n        color: #9aa0a6;\n      }\n\n      #modelFollowupQuestion::-moz-placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn {\n        display: flex;\n        align-items: center;\n        min-height: 34px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-model-compact-action-btn {\n        padding: 4px 10px;\n        font-size: 12px;\n        line-height: 1.5;\n        border-radius: 3px;\n        min-height: 30px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: grid;\n        grid-template-columns: repeat(2, minmax(0, auto));\n        align-items: center;\n        justify-content: start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n        width: auto;\n      }\n\n      .wmfm-model-fit-actions {\n        margin-top: 25px;\n      }\n\n      @media (max-width: 767px) {\n        .wmfm-model-fit-buttons {\n          grid-template-columns: 1fr;\n        }\n      }\n\n      .wmfm-data-context-control {\n        display: flex;\n        align-items: flex-start;\n        min-height: 34px;\n      }\n\n      .wmfm-data-context-control .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-developer-mode-toggle-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-developer-mode-toggle-label {
+        font-weight: 600;
+        margin-bottom: 0;
+      }
+
+      .wmfm-developer-mode-switch {
+        position: relative;
+        display: inline-block;
+        width: 56px;
+        height: 30px;
+        margin-bottom: 0;
+      }
+
+      .wmfm-developer-mode-switch input[type=checkbox] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .wmfm-developer-mode-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #d9534f;
+        border-radius: 999px;
+        transition: background-color 0.18s ease-in-out;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20);
+      }
+
+      .wmfm-developer-mode-slider::before {
+        content: '';
+        position: absolute;
+        height: 24px;
+        width: 24px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #ffffff;
+        border-radius: 50%;
+        transition: transform 0.18s ease-in-out;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      }
+
+      .wmfm-developer-mode-switch input[type=checkbox]:checked + .wmfm-developer-mode-slider {
+        background-color: #2e7d32;
+      }
+
+      .wmfm-developer-mode-switch input[type=checkbox]:checked + .wmfm-developer-mode-slider::before {
+        transform: translateX(26px);
+      }
+
+      .wmfm-developer-mode-switch input[type=checkbox]:focus + .wmfm-developer-mode-slider {
+        outline: 2px solid #4d90fe;
+        outline-offset: 2px;
+      }
+
+      .wmfm-provider-settings-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .wmfm-provider-settings-info {
+        display: inline-block;
+        position: relative;
+        font-size: 0.75em;
+      }
+
+      .wmfm-provider-settings-info summary {
+        cursor: pointer;
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-provider-settings-info summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .wmfm-provider-settings-info-body {
+        position: absolute;
+        z-index: 1000;
+        top: 1.8em;
+        left: 0;
+        width: 360px;
+        max-width: 80vw;
+        padding: 10px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        color: #333333;
+        font-size: 0.6em;
+        font-weight: 400;
+        line-height: 1.35;
+      }
+
+      .wmfm-provider-settings-info-body p {
+        margin: 0 0 6px 0;
+      }
+
+      .wmfm-provider-settings-info-body p:last-child {
+        margin-bottom: 0;
+      }
+
+      .tab-content {\n        overflow: visible;\n      }\n    ")),
 
     tabsetPanel(
       id = "main_tabs",
@@ -410,44 +525,57 @@ appUI = function() {
 
       tabPanel(
         "Settings",
-        h4("Developer mode"),
-        passwordInput(
-          inputId = "developerModePassword",
-          label = "Developer mode password",
-          placeholder = "Enter password to unlock developer mode"
+        if (isDeveloperModeUiEnabled()) {
+          tagList(
+            h4("Developer mode"),
+            div(
+              class = "wmfm-developer-mode-toggle-row",
+              tags$span(
+                class = "wmfm-developer-mode-toggle-label",
+                "Developer mode:"
+              ),
+              tags$label(
+                class = "wmfm-developer-mode-switch",
+                tags$input(
+                  id = "developerModeToggle",
+                  type = "checkbox",
+                  `aria-label` = "Developer mode"
+                ),
+                tags$span(class = "wmfm-developer-mode-slider")
+              )
+            ),
+            tags$hr(class = "hr-tight")
+          )
+        },
+        h4(
+          class = "wmfm-provider-settings-heading",
+          tags$span("Provider settings"),
+          tags$details(
+            class = "wmfm-provider-settings-info",
+            tags$summary(
+              icon("circle-info"),
+              tags$span(class = "sr-only", "Provider settings information")
+            ),
+            tags$div(
+              class = "wmfm-provider-settings-info-body",
+              tags$p(
+                "Choose one active provider/backend. Ollama uses base URL plus model and no API key."
+              ),
+              tags$p(
+                "Claude uses the ANTHROPIC_API_KEY environment variable set in .Renviron before WMFM starts."
+              ),
+              tags$p(
+                "API keys are not shown here and are never stored in the WMFM config file."
+              )
+            )
+          )
         ),
-        actionButton(
-          inputId = "unlockDeveloperModeBtn",
-          label = "Unlock developer mode",
-          class = "btn-primary btn-sm"
-        ),
-        actionButton(
-          inputId = "lockDeveloperModeBtn",
-          label = "Lock developer mode",
-          class = "btn-secondary btn-sm"
-        ),
-        tags$br(), tags$br(),
-        textOutput("developerModeStatus"),
-        helpText(
-          "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
-        ),
-        tags$hr(class = "hr-tight"),
-        h4("Provider settings"),
-        helpText(
-          "Choose one active provider/backend. Ollama uses base URL + model and no API key. Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM."
-        ),
-        tags$p(
-          class = "wmfm-explanation-helper-note",
-          "API keys are not shown here and are never stored in the WMFM config file."
-        ),
-        textOutput("chatProviderStatus"),
-        tags$br(),
         tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
           inputId = "providerConfig_backend",
           label = "Active provider profile",
           choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
-          selected = "ollama"
+          selected = resolveWmfmProviderConfig()$backend
         ),
         helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
         textInput(
@@ -473,11 +601,6 @@ appUI = function() {
             label = "Refresh available Ollama models",
             class = "btn btn-secondary btn-sm"
           )
-        ),
-        actionButton(
-          inputId = "applyChatProviderBtn",
-          label = "Apply provider",
-          class = "btn-primary btn-sm"
         ),
         actionButton(
           inputId = "saveProviderConfigBtn",

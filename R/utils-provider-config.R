@@ -150,7 +150,8 @@ readWmfmConfig = function() {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
 
   parsed[intersect(names(parsed), recognizedFields)]
@@ -172,7 +173,8 @@ writeWmfmConfig = function(config = list()) {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
   secretFieldNames = c("anthropicApiKey", "apiKey", "ANTHROPIC_API_KEY")
 
@@ -184,6 +186,116 @@ writeWmfmConfig = function(config = list()) {
   jsonlite::write_json(x = kept, path = configPath, auto_unbox = TRUE, pretty = TRUE)
 
   invisible(configPath)
+}
+
+
+#' Test whether the developer-mode UI should be exposed
+#'
+#' Developer mode is intended for maintainers and local debugging. It is hidden
+#' unless the local environment explicitly opts in with
+#' `WMFM_SHOW_DEVELOPER_MODE=1`.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isDeveloperModeUiEnabled = function() {
+  flag = tolower(trimws(Sys.getenv("WMFM_SHOW_DEVELOPER_MODE", unset = "")))
+  flag %in% c("1", "true", "yes", "on")
+}
+
+#' Resolve developer-mode startup state
+#'
+#' Developer mode is visible only when `WMFM_SHOW_DEVELOPER_MODE=1` is set
+#' locally. When the UI is visible, the enabled/disabled state is restored from
+#' the non-secret WMFM config file so development sessions can resume with the
+#' same controls enabled.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+resolveDeveloperModePreference = function() {
+  if (!isDeveloperModeUiEnabled()) {
+    return(FALSE)
+  }
+
+  config = readWmfmConfig()
+  isTRUE(config$developerModeEnabled)
+}
+
+#' Persist developer-mode state locally
+#'
+#' @param enabled Logical scalar.
+#'
+#' @return Invisibly returns the config file path written by `writeWmfmConfig()`.
+#' @keywords internal
+saveDeveloperModePreference = function(enabled) {
+  config = readWmfmConfig()
+  config$developerModeEnabled = isTRUE(enabled)
+  writeWmfmConfig(config)
+}
+
+#' Test whether a local provider setting was explicitly supplied
+#'
+#' @return Logical scalar.
+#' @keywords internal
+hasExplicitWmfmProviderConfig = function() {
+  localConfig = readWmfmConfig()
+  explicitOption = any(vapply(
+    list(
+      getOption("wmfm.chat_backend", default = NULL),
+      getOption("wmfm.ollama_base_url", default = NULL),
+      getOption("wmfm.ollama_model", default = NULL)
+    ),
+    function(x) {
+      !is.null(x) && nzchar(trimws(as.character(x)))
+    },
+    logical(1)
+  ))
+
+  explicitLocal = any(c(
+    nzchar(trimws(as.character(localConfig$backend %||% ""))),
+    nzchar(trimws(as.character(localConfig$ollamaBaseUrl %||% ""))),
+    nzchar(trimws(as.character(localConfig$ollamaModel %||% ""))),
+    isTRUE(localConfig$developerModeEnabled),
+    is.list(localConfig$providerProfiles) && length(localConfig$providerProfiles) > 0
+  ))
+
+  isTRUE(explicitOption) || isTRUE(explicitLocal)
+}
+
+#' Test whether a provider is configured well enough for startup
+#'
+#' @param providerConfig Optional resolved provider configuration.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmProviderReadyForStartup = function(providerConfig = resolveWmfmProviderConfig()) {
+  backend = tolower(trimws(as.character(providerConfig$backend %||% "")))
+
+  if (identical(backend, "claude")) {
+    return(hasClaudeApiKey())
+  }
+
+  if (identical(backend, "ollama")) {
+    return(
+      hasExplicitWmfmProviderConfig() &&
+        nzchar(trimws(as.character(providerConfig$ollamaBaseUrl %||% ""))) &&
+        nzchar(trimws(as.character(providerConfig$ollamaModel %||% "")))
+    )
+  }
+
+  FALSE
+}
+
+#' Build startup guidance for missing provider configuration
+#'
+#' @return Character scalar.
+#' @keywords internal
+buildMissingProviderStartupMessage = function() {
+  paste(
+    "WMFM needs an AI provider before it can generate model explanations.",
+    "Set a commercial-provider API key such as ANTHROPIC_API_KEY or OPENAI_API_KEY,",
+    "or configure a local Ollama base URL and model.",
+    "See the README section on configuring an AI provider before using the app."
+  )
 }
 
 #' Resolve effective WMFM provider configuration
@@ -205,12 +317,16 @@ resolveWmfmProviderConfig = function(backend = NULL,
   defaults = wmfmProviderDefaults()
   localConfig = readWmfmConfig()
 
-  resolvedBackend = tolower(trimws(backend %||%
-    getOption("wmfm.chat_backend", default = NULL) %||%
-    localConfig$backend %||%
-    defaults$backend))
+  backendFromOption = getOption("wmfm.chat_backend", default = NULL)
+  backendFromLocal = localConfig$backend %||% NULL
+  fallbackBackend = defaults$backend
+
+  resolvedBackend = tolower(trimws(as.character(backend %||%
+    backendFromOption %||%
+    backendFromLocal %||%
+    fallbackBackend)))
   if (!nzchar(resolvedBackend)) {
-    resolvedBackend = defaults$backend
+    resolvedBackend = fallbackBackend
   }
 
   resolvedBaseUrl = trimws(as.character(ollamaBaseUrl %||%
@@ -421,14 +537,16 @@ describeWmfmProviderStatus = function() {
 
   providers = lapply(providerNames, function(providerName) {
     details = providerCredentials[[providerName]]
+    providerConfig = resolveWmfmProviderConfig(backend = details$provider)
+    providerReady = isWmfmProviderReadyForStartup(providerConfig)
     list(
       provider = details$provider,
-      configured = isTRUE(details$credentialsAvailable),
+      configured = isTRUE(providerReady),
       requiresCredentials = isTRUE(details$requiresCredentials),
       credentialsAvailable = isTRUE(details$credentialsAvailable),
       credentialSource = details$credentialSource,
       locallyAvailable = isTRUE(details$localOnly),
-      ready = isTRUE(details$credentialsAvailable) || !isTRUE(details$requiresCredentials)
+      ready = isTRUE(providerReady)
     )
   })
 

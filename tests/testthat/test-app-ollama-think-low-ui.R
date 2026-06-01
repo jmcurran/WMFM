@@ -37,3 +37,11 @@ test_that("getChatProvider sends think low through ellmer params", {
   expect_match(utilsText, "params\\(think = \"low\"\\)", perl = TRUE)
   expect_match(utilsText, "do.call\\(chat_ollama, ollamaArgs\\)", perl = TRUE)
 })
+
+
+test_that("reactive app state honours persisted non-Ollama provider", {
+  reactiveStateText = readPackageText("R", "app-server-reactive-state.R")
+
+  expect_match(reactiveStateText, "providerDefaults = resolveWmfmProviderConfig()", fixed = TRUE)
+  expect_false(grepl("providerDefaults$backend = wmfmProviderDefaults()$backend", reactiveStateText, fixed = TRUE))
+})

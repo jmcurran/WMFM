@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput
+#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog tags
 registerChatProviderObservers = function(input, output, session, rv) {
   resolveSelectedProvider = function() {
     requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
@@ -30,13 +30,56 @@ registerChatProviderObservers = function(input, output, session, rv) {
     session$sendInputMessage("refreshOllamaModelsBtn", list(disabled = !isOllama))
   }
 
-  refreshOllamaModelChoices = function(selected = NULL) {
-    activeProvider = resolveSelectedProvider()
-    if (!identical(activeProvider, "ollama")) {
-      return(invisible(rv$activeOllamaModel %||% resolveWmfmProviderConfig()$ollamaModel))
+
+  showProviderConfigurationMessage = function(provider, providerConfig) {
+    provider = tolower(trimws(as.character(provider %||% "")))
+
+    if (identical(provider, "ollama")) {
+      if (!isTRUE(isWmfmProviderReadyForStartup(providerConfig))) {
+        showModal(
+          modalDialog(
+            title = "Configure Ollama",
+            tags$p("Ollama is selected, but WMFM does not yet have enough local Ollama information to use it."),
+            tags$p("Set the Ollama base URL and model, make sure Ollama is running, then refresh the available models if needed."),
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+      }
+      return(invisible(NULL))
     }
 
+    if (!isTRUE(hasWmfmProviderCredentials(provider))) {
+      guidanceLines = buildProviderCredentialGuidance(provider)
+      showNotification(
+        paste(guidanceLines, collapse = "\n"),
+        type = "warning",
+        duration = 10
+      )
+      return(invisible(NULL))
+    }
+
+    invisible(NULL)
+  }
+
+  refreshOllamaModelChoices = function(selected = NULL) {
+    activeProvider = resolveSelectedProvider()
     providerConfig = resolveWmfmProviderConfig()
+
+    if (!identical(activeProvider, "ollama")) {
+      return(invisible(rv$activeOllamaModel %||% providerConfig$ollamaModel))
+    }
+
+    if (!isWmfmProviderReadyForStartup(providerConfig)) {
+      fallbackModel = rv$activeOllamaModel %||% providerConfig$ollamaModel %||% wmfmProviderDefaults()$ollamaModel
+      fallbackModel = fallbackModel[!is.na(fallbackModel) & nzchar(fallbackModel)]
+      if (length(fallbackModel) == 0) {
+        fallbackModel = wmfmProviderDefaults()$ollamaModel
+      }
+      rv$availableOllamaModels = unique(as.character(fallbackModel))
+      return(invisible(rv$availableOllamaModels[1]))
+    }
+
     baseUrl = providerConfig$ollamaBaseUrl
 
     modelIds = tryCatch({
@@ -91,9 +134,26 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }
 
   observe({
-    syncProviderSpecificControlState(resolveSelectedProvider())
-    refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
+    selectedProvider = resolveSelectedProvider()
+    syncProviderSpecificControlState(selectedProvider)
+    if (identical(selectedProvider, "ollama") && isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+      refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
+    }
   })
+
+  session$onFlushed(function() {
+    if (!isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+      showModal(
+        modalDialog(
+          title = "Configure an AI provider",
+          tags$p(buildMissingProviderStartupMessage()),
+          tags$p("After configuring a provider, restart WMFM or use Settings to select the provider."),
+          easyClose = TRUE,
+          footer = NULL
+        )
+      )
+    }
+  }, once = TRUE)
 
   observeEvent(input$refreshOllamaModelsBtn, {
     if (!identical(resolveSelectedProvider(), "ollama")) {
@@ -153,55 +213,62 @@ registerChatProviderObservers = function(input, output, session, rv) {
     )
   })
 
-  observeEvent(input$applyChatProviderBtn, {
-    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
 
-    if (!requested %in% c("ollama", "claude")) {
+  observeEvent(input$providerConfig_backend, {
+    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
+    if (!isWmfmProviderSupported(requested)) {
       updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
       showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
       return(NULL)
     }
 
-    if (!isTRUE(hasWmfmProviderCredentials(requested))) {
-      missingLines = buildProviderCredentialStatusLines(requested)
-      guidanceLines = buildProviderCredentialGuidance(requested)
-      showNotification(
-        paste(c("Cannot apply provider: required credentials are missing.", missingLines, guidanceLines), collapse = "\n"),
-        type = "warning",
-        duration = 8
-      )
-      return(NULL)
-    }
-
     selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
-    availableModels = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
-    if (length(availableModels) == 0) {
-      availableModels = wmfmProviderDefaults()$ollamaModel
-    }
-    if (!(selectedModel %in% availableModels)) {
-      defaultModel = wmfmProviderDefaults()$ollamaModel
-      selectedModel = if (defaultModel %in% availableModels) defaultModel else availableModels[1]
-    }
+    selectedThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    providerConfig = prepareNonSecretProviderConfig(
+      backend = requested,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = selectedModel,
+      ollamaThinkLow = selectedThinkLow
+    )
 
     rv$activeChatBackend = requested
+    syncProviderSpecificControlState(requested)
+
     if (identical(requested, "ollama")) {
       rv$activeOllamaModel = selectedModel
+      rv$activeOllamaThinkLow = selectedThinkLow
+    }
+
+    saveNonSecretProviderConfig(providerConfig)
+    showProviderConfigurationMessage(requested, providerConfig)
+
+    if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(providerConfig)) {
+      refreshOllamaModelChoices(selected = selectedModel)
+    }
+  }, ignoreInit = TRUE, priority = 90)
+
+
+  observeEvent({
+    list(
+      input$providerConfig_ollamaBaseUrl,
+      input$providerConfig_ollamaModel,
+      input$providerConfig_ollamaThinkLow
+    )
+  }, {
+    requested = resolveSelectedProvider()
+
+    if (identical(requested, "ollama")) {
+      rv$activeOllamaModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
       rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     }
 
-    msg = buildChatProviderSetMessage(
+    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
       backend = requested,
-      ollamaModel = rv$activeOllamaModel,
-      ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)
-    )
-
-    showNotification(
-      msg,
-      type = "message",
-      duration = 4
-    )
-  }, ignoreInit = TRUE)
-
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel,
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    ))
+  }, ignoreInit = TRUE, priority = 80)
 
   observeEvent(input$saveProviderConfigBtn, {
     configToSave = prepareNonSecretProviderConfig(

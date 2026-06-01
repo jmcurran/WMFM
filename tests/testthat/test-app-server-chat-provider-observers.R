@@ -10,8 +10,10 @@ test_that("chat provider observer registration is extracted from app server", {
   expect_false(grepl("verifyProviderSwitchPassword", chatProviderText, fixed = TRUE))
   expect_match(chatProviderText, "saveProviderConfigBtn", fixed = TRUE)
   expect_false(grepl("buildClaudeProviderIncorrectPasswordMessage", chatProviderText, fixed = TRUE))
-  expect_match(chatProviderText, "buildChatProviderSetMessage", fixed = TRUE)
-  expect_match(chatProviderText, "Cannot apply provider: required credentials are missing.", fixed = TRUE)
+  expect_false(grepl("observeEvent(input$applyChatProviderBtn", chatProviderText, fixed = TRUE))
+  expect_false(grepl("Cannot apply provider: required credentials are missing.", chatProviderText, fixed = TRUE))
+  expect_match(chatProviderText, "showProviderConfigurationMessage", fixed = TRUE)
+  expect_match(chatProviderText, "saveNonSecretProviderConfig(providerConfig)", fixed = TRUE)
 })
 
 
@@ -41,6 +43,8 @@ test_that("Ollama model refresh is capability-aware and keeps failure fallback",
 
   expect_match(chatProviderText, "resolveSelectedProvider = function", fixed = TRUE)
   expect_match(chatProviderText, "if (!identical(activeProvider, \"ollama\"))", fixed = TRUE)
+  expect_match(chatProviderText, "isWmfmProviderReadyForStartup", fixed = TRUE)
+  expect_match(chatProviderText, "Configure an AI provider", fixed = TRUE)
   expect_match(chatProviderText, "Model discovery is only available for Ollama.", fixed = TRUE)
   expect_match(chatProviderText, "Using current/default choices", fixed = TRUE)
   expect_match(chatProviderText, "fallback = rv$availableOllamaModels", fixed = TRUE)
