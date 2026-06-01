@@ -1,3 +1,11 @@
+## Stage 31.2
+
+- Added density-aware point transparency to student-facing model plots without adding new plot types.
+- Kept the alpha choice automatic so students do not need to tune plotting parameters.
+- Applied lighter points to larger datasets while preserving the existing red reference lines and blue smoother behaviour.
+- Added concise student-facing wording that explains lighter points for larger datasets without diagnostic framing.
+- Added deterministic tests for alpha thresholds, plot layer alpha values, and cautious wording.
+
 ## Stage 31.1
 
 - Added an optional blue smooth trend to linear-model observed-vs-fitted and residuals-vs-fitted model plots.

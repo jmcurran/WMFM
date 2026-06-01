@@ -232,3 +232,48 @@ testthat::test_that("developer tabs appear after ordinary student tabs", {
   testthat::expect_gt(settingsPosition, variableExplorerPosition)
   testthat::expect_gt(scoringTargetPosition, 0)
 })
+
+testthat::test_that("model plot point alpha is density aware", {
+  testthat::expect_equal(chooseModelPlotPointAlpha(1), 0.75)
+  testthat::expect_equal(chooseModelPlotPointAlpha(249), 0.75)
+  testthat::expect_equal(chooseModelPlotPointAlpha(250), 0.45)
+  testthat::expect_equal(chooseModelPlotPointAlpha(999), 0.45)
+  testthat::expect_equal(chooseModelPlotPointAlpha(1000), 0.25)
+  testthat::expect_equal(chooseModelPlotPointAlpha(4999), 0.25)
+  testthat::expect_equal(chooseModelPlotPointAlpha(5000), 0.12)
+  testthat::expect_equal(chooseModelPlotPointAlpha(NA_integer_), 0.75)
+})
+
+testthat::test_that("plotModelPlot uses density-aware point alpha", {
+  smallData = mtcars
+  smallModel = stats::lm(mpg ~ wt, data = smallData)
+  smallPlot = plotModelPlot(smallModel, plotType = "observedFitted")
+
+  largeData = data.frame(
+    y = seq_len(300),
+    x = seq_len(300)
+  )
+  largeModel = stats::lm(y ~ x, data = largeData)
+  largePlot = plotModelPlot(largeModel, plotType = "observedFitted")
+
+  testthat::expect_equal(smallPlot$layers[[1]]$aes_params$alpha, 0.75)
+  testthat::expect_equal(largePlot$layers[[1]]$aes_params$alpha, 0.45)
+})
+
+testthat::test_that("model plot summary explains lighter points for larger datasets", {
+  largeData = data.frame(
+    y = seq_len(300),
+    x = seq_len(300)
+  )
+  largeModel = stats::lm(y ~ x, data = largeData)
+
+  summaryText = buildModelPlotSummaryText(
+    model = largeModel,
+    plotType = "observedFitted"
+  )
+
+  testthat::expect_match(summaryText, "larger datasets", fixed = TRUE)
+  testthat::expect_match(summaryText, "points are drawn more lightly", fixed = TRUE)
+  testthat::expect_no_match(summaryText, "Diagnostic", fixed = TRUE)
+  testthat::expect_no_match(summaryText, "Assumption", fixed = TRUE)
+})
