@@ -9,7 +9,8 @@ postProcessApplyRule(
   ruleName,
   ruleFunction,
   rulesApplied,
-  previous = text
+  previous = text,
+  preserveNumericTokens = TRUE
 )
 }
 \arguments{

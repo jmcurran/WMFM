@@ -773,7 +773,7 @@ registerContrastObservers = function(input, output, session, rv, modelFit, contr
         htmlEscape(
           paste0(
             "eta contrast: ", fmt3(res$estEta),
-            " (95% CI: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
+            " (95% confidence interval: ", fmt3(res$lowerEta), ", ", fmt3(res$upperEta), ")"
           )
         )
       )
@@ -784,7 +784,7 @@ registerContrastObservers = function(input, output, session, rv, modelFit, contr
       # Default: show what computeFactorOnlyContrast gave us
       baseLine = paste0(
         res$interpreted$label, ": ", fmt3(res$interpreted$estimate),
-        " (95% CI: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
+        " (95% confidence interval: ", fmt3(res$interpreted$lower), ", ", fmt3(res$interpreted$upper), ")"
       )
   
       # Step 2 enhancement: if lm() with log/log10 response, also show ratio on original scale
@@ -800,7 +800,7 @@ registerContrastObservers = function(input, output, session, rv, modelFit, contr
         ratioLine = paste0(
           "Ratio of typical means (original scale): ",
           fmt3(ratioEst),
-          " (95% CI: ", fmt3(ratioLo), ", ", fmt3(ratioHi), ")"
+          " (95% confidence interval: ", fmt3(ratioLo), ", ", fmt3(ratioHi), ")"
         )
   
         # Show the ratio line (and optionally keep the transformed-scale difference line)
@@ -847,7 +847,7 @@ registerContrastObservers = function(input, output, session, rv, modelFit, contr
         paste0(
           res$interpreted$label, ": ",
           fmt3(res$interpreted$estimate),
-          " (95% CI: ",
+          " (95% confidence interval: ",
           fmt3(res$interpreted$lower), " to ",
           fmt3(res$interpreted$upper), ")"
         ),
@@ -928,7 +928,7 @@ registerContrastObservers = function(input, output, session, rv, modelFit, contr
             "<span style='font-style: italic;'>",
             htmlEscape(
               paste0(
-                "Note: Because the 95% CI includes ", nullLabel,
+                "Note: Because the 95% confidence interval includes ", nullLabel,
                 ", the data are also consistent with there being little or no true difference."
               )
             ),

@@ -24,7 +24,7 @@ cleanExplanationText = function(text) {
 
   cleaned[keep] = gsub(
     pattern = paste0(
-      "(^|(?<=[.!?]\\s)|(?<=[.!?]\\n)|(?<=\\n))",
+      "(^|(?<=[.!?][[:space:]])|(?<=[.!?]\\n)|(?<=\\n))",
       "[[:space:]]*",
       "(?:[#>*_`~-]+[[:space:]]*)*",
       "answer",
@@ -136,6 +136,16 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "logLogPercentageLanguage",
+    ruleFunction = postProcessLogLogPercentageLanguage,
+    rulesApplied = rulesApplied,
+    preserveNumericTokens = FALSE
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "sentenceOpenings",
     ruleFunction = postProcessSentenceOpenings,
     rulesApplied = rulesApplied
@@ -195,10 +205,12 @@ postProcessApplyRule = function(text,
                                  ruleName,
                                  ruleFunction,
                                  rulesApplied,
-                                 previous = text) {
+                                 previous = text,
+                                 preserveNumericTokens = TRUE) {
   changed = ruleFunction(text)
 
-  if (!postProcessPreservesNumericTokens(previous, changed)) {
+  if (preserveNumericTokens &&
+      !postProcessPreservesNumericTokens(previous, changed)) {
     changed = previous
   }
 
@@ -467,8 +479,8 @@ postProcessConfidenceIntervalTerminology = function(text) {
   )
 
   text = gsub(
-    pattern = "\\b95%[[:space:]]*(?:c\\.i\\.|C\\.I\\.|CI)(?=[[:space:]]*(?:[:\\[]|$))",
-    replacement = "95% confidence interval",
+    pattern = "\\b(\\d+(?:\\.\\d+)?%)[[:space:]]*(?:c\\.i\\.|C\\.I\\.|CI)(?=[[:space:][:punct:]]|$)",
+    replacement = "\\1 confidence interval",
     x = text,
     perl = TRUE,
     ignore.case = TRUE
@@ -607,6 +619,164 @@ postProcessModelMechanismLanguage = function(text) {
     replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
     x = text,
     perl = TRUE
+  )
+  text = gsub(
+    pattern = "\\b(?:[Tt]his|[Tt]he) (?:model|relationship) (?:was|is) (?:fitted|modelled|modeled|analysed|analyzed) on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Tt]his (?:was|is) (?:modelled|modeled|analysed|analyzed) on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
+  text
+}
+
+
+#' Replace raw log-log interpretation wording with percentage-change language
+#'
+#' @param text Character vector.
+#' @return A character vector with common student-facing log-log wording
+#'   rewritten on the percentage-change scale.
+#' @keywords internal
+postProcessLogLogPercentageLanguage = function(text) {
+
+  rewriteAdjustedEstimate = function(oneText) {
+    if (is.na(oneText)) {
+      return(NA_character_)
+    }
+
+    pattern = paste0(
+      "The adjusted estimate is[[:space:]]+[0-9.]+[[:space:]]+",
+      "\\(95%[[:space:]]+confidence interval:[[:space:]]+",
+      "\\[([0-9.]+)[^0-9]+([0-9.]+)\\]\\),[[:space:]]+",
+      "meaning that values in this narrow range are all consistent with the data\\."
+    )
+
+    gsub(
+      pattern = pattern,
+      replacement = paste0(
+        "Values between about \\1% and \\2% per 1% increase ",
+        "are consistent with the data."
+      ),
+      x = oneText,
+      perl = TRUE,
+      ignore.case = TRUE
+    )
+  }
+
+  text = vapply(text, rewriteAdjustedEstimate, character(1), USE.NAMES = FALSE)
+
+  text = gsub(
+    pattern = paste0(
+      "The model estimate for the change pattern relating ",
+      "log\\(([^)]+)\\) to log\\(([^)]+)\\) is[[:space:]]+",
+      "[0-9.]+[[:space:]]+",
+      "\\(95%[[:space:]]+confidence interval:[[:space:]]+",
+      "\\[([0-9.]+)[^0-9]+([0-9.]+)\\]\\)\\."
+    ),
+    replacement = paste0(
+      "A 1% increase in \\1 is associated with about a proportional increase ",
+      "in \\2. Values between about \\3% and \\4% per 1% increase ",
+      "are consistent with the data."
+    ),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*",
+      "(?:On the log scale used here, )?",
+      "this means that as log-([[:alnum:]_]+) increases by one unit, ",
+      "log-([[:alnum:]_]+) is expected to increase by about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\3% increase in expected \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*",
+      "On the log scale used here, as log-([[:alnum:]_]+) increases by one unit, ",
+      "log-([[:alnum:]_]+) is expected to increase by about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\3% increase in expected \\2.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*",
+      "meaning that on the log scale, each an increase of one unit in ",
+      "log[[:space:]]+([[:alnum:]_]+) is associated with an increase of about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units in log[[:space:]]+([[:alnum:]_]+)\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\2% increase in expected \\3.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The outcome is the logarithm of ([^,]+), ",
+      "and the predictor of interest is the logarithm of ([^.]+)\\."
+    ),
+    replacement = paste0(
+      "The outcome is \\1, and the predictor of interest is \\2. ",
+      "Because the fitted relationship is log-log, effects are best interpreted ",
+      "as percentage changes."
+    ),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The analysis examined the relationship between ",
+      "([^()]+?) \\(measured in ([^,]+), on a log scale\\) and ",
+      "([^()]+?) \\(also on a log scale\\)"
+    ),
+    replacement = "The analysis examined how percentage changes in \\1 (measured in \\2) are associated with percentage changes in \\3",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The analysis examined the relationship between ",
+      "([^()]+?) \\(on a log scale\\) and ",
+      "([^()]+?) \\(also on a log scale\\)"
+    ),
+    replacement = "The analysis examined how percentage changes in \\1 are associated with percentage changes in \\2",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*For example,[[:space:]]+doubling ",
+      "(?:the )?[^.]+? corresponds to nearly doubling ",
+      "(?:the )?[^.]+?\\."
+    ),
+    replacement = "",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
   )
 
   text

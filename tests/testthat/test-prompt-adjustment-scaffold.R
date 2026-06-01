@@ -58,7 +58,7 @@ testthat::test_that("simple adjustment workflow includes deterministic adjusted-
   testthat::expect_match(prompt, "Deterministic adjustment-aware explanation scaffold:", fixed = TRUE)
   testthat::expect_match(prompt, "after adjusting for picture", fixed = TRUE)
   testthat::expect_match(prompt, "Adjusted primary-effect summary:", fixed = TRUE)
-  testthat::expect_match(prompt, "95% CI", fixed = TRUE)
+  testthat::expect_match(prompt, "95% confidence interval", fixed = TRUE)
 
   for (levelLabel in levels(localArousalDf$picture)) {
     testthat::expect_no_match(prompt, levelLabel, fixed = TRUE)

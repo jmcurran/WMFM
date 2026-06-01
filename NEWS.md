@@ -1,3 +1,10 @@
+
+## Stage 32.1
+
+- Polished deterministic adjustment-comparison follow-up wording so student-facing answers no longer begin with a bare yes.
+- Restated the adjusted-versus-weight-only conclusion in natural language before the caution about in-sample model comparison.
+- Updated log-log tests to require the improved Diamonds IV wording and to keep technical diagnostics out of the appended student answer.
+
 ## Stage 31.3
 
 - Added a download button for the current student-facing Model plots view.
@@ -221,3 +228,41 @@ It is intentionally grouped by feature area rather than by exact release number.
 * Reorganize package source files into feature-oriented modules.
 * Improve data-context handling, loading progress feedback, UI cleanup, and
   pedagogical stability planning.
+
+## Stage 32.2
+
+- Standardised compact confidence interval labels in student-facing post-processing.
+- Rewrote additional log-scale mechanism wording toward proportional-change language.
+- Expanded deterministic tests for common compact interval labels and log-scale wording leakage.
+- Updated adjustment and contrast text to prefer 95% confidence interval over compact 95% CI wording.
+
+## Stage 32.3
+
+- Strengthened log-log guidance so student-facing explanations use percentage-change interpretations.
+- Added post-processing for recurring raw log-predictor and log-response coefficient wording.
+- Added deterministic tests for 1% percentage-change wording and log-scale leakage cleanup.
+- Kept the change scoped to log-log wording polish.
+
+
+## Stage 32.3.9
+
+- Allowed the log-log percentage-language post-processing rule to bypass numeric-token preservation while keeping the guard active for other rules.
+- Fixed the adjusted-estimate confidence interval rewrite so coefficient-scale wording can be converted to percentage-change wording.
+- Preserved existing interval dash formatting and NA handling in explanation post-processing.
+- Validated by the standard stage script workflow.
+
+## Stage 32.3.10
+
+- Refined log-log unit-change follow-up wording so fixed carat changes keep the reference point and use carat units.
+- Tightened log-log explanation guidance to avoid raw coefficient estimates and unsupported doubling examples in student-facing text.
+- Added post-processing coverage for the model-estimate sentence variant seen in Diamonds IV diagnostics.
+- Preserved interval dash formatting while keeping log-log uncertainty on the percentage-change scale.
+- Validated by the standard stage script workflow.
+## Stage 32.3.11
+
+- Reworked the log-log polishing repair so production code uses only generic log-log wording patterns.
+- Removed example-specific post-processing for particular variable names from the pending repair.
+- Added generic coverage for raw log-scale estimate sentences, unsupported doubling examples, and coefficient-scale uncertainty leakage.
+- Kept anchored fixed-unit follow-up wording while preserving percentage-change interpretation for log-log models.
+- Validated by the standard stage script workflow.
+

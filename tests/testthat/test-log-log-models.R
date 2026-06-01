@@ -101,7 +101,11 @@ testthat::test_that("log-log unit-change follow-ups use original-scale proportio
   testthat::expect_gt(result$referenceValue, 0)
   testthat::expect_equal(result$comparisonValue, result$referenceValue + 0.1)
   testthat::expect_true(is.finite(result$percentChange))
-  testthat::expect_match(result$interpretation, "typical carat value", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "Starting from a typical carat value", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "increasing to", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "0.1-carat increase", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "a fitted price", fixed = TRUE)
+  testthat::expect_false(grepl("log(price)", result$interpretation, fixed = TRUE))
 })
 
 testthat::test_that("log-log unit-change prompt block exposes deterministic reference values", {
@@ -208,6 +212,8 @@ testthat::test_that("log-log adjustment follow-up compares adjusted and weight-o
   testthat::expect_match(result$directAnswer, "Direct answer:", fixed = TRUE)
   testthat::expect_match(result$directAnswer, "nested-model log-likelihood", fixed = TRUE)
   testthat::expect_match(result$studentFacingConclusion, "in-sample predictions", fixed = TRUE)
+  testthat::expect_match(result$studentFacingConclusion, "Accounting for cut, color, and clarity", fixed = TRUE)
+  testthat::expect_false(grepl("^Yes\\.", result$studentFacingConclusion))
   testthat::expect_match(result$directAnswer, "separate test set", fixed = TRUE)
 })
 
@@ -255,9 +261,11 @@ testthat::test_that("adjustment-comparison follow-up appends deterministic stude
   out = appendDeterministicFollowupAnswer(explanation = explanation, model = model)
 
   testthat::expect_match(out, "Diamond prices increase with weight", fixed = TRUE)
+  testthat::expect_match(out, "Accounting for cut, color, and clarity", fixed = TRUE)
   testthat::expect_match(out, "substantially improves the in-sample predictions", fixed = TRUE)
   testthat::expect_match(out, "compared with using weight alone", fixed = TRUE)
-  testthat::expect_match(out, "not evidence from a separate test set", fixed = TRUE)
+  testthat::expect_match(out, "not performance on a separate test set", fixed = TRUE)
+  testthat::expect_false(grepl("^Yes\\.", out))
   testthat::expect_false(grepl("log-likelihood", out, fixed = TRUE))
   testthat::expect_false(grepl("AIC", out, fixed = TRUE))
   testthat::expect_false(grepl("deviance", out, fixed = TRUE))
@@ -274,8 +282,11 @@ testthat::test_that("log-log student-facing guidance uses proportional-change wo
   )
   guidance = buildExplanationScaleGuidance(profile)
 
-  testthat::expect_match(guidance, "proportional-change language", fixed = TRUE)
-  testthat::expect_match(guidance, "percentage changes", fixed = TRUE)
+  testthat::expect_match(guidance, "percentage-change language", fixed = TRUE)
+  testthat::expect_match(guidance, "1% increase in the predictor", fixed = TRUE)
+  testthat::expect_match(guidance, "1.88% increase", fixed = TRUE)
+  testthat::expect_match(guidance, "Do not interpret the coefficient", fixed = TRUE)
+  testthat::expect_false(grepl("taking logs of both", guidance, fixed = TRUE))
   testthat::expect_false(grepl("elasticity", guidance, fixed = TRUE))
   testthat::expect_false(grepl("power law", guidance, fixed = TRUE))
 })

@@ -512,10 +512,12 @@ computeLogLogUnitChangeResult = function(
     confidenceInterval = confidenceInterval,
     interpretation = paste0(
       "Starting from a typical ", originalPredictorName, " value of ",
-      signif(referenceValue, 6), ", a ", signif(unitChange, 6),
-      "-unit increase to ", signif(comparisonValue, 6),
-      " is associated with a fitted ", responseName, " that is ",
-      formatUnitChangePercentText(percentChange), "."
+      signif(referenceValue, 3), ", increasing to ",
+      signif(comparisonValue, 3), " ", originalPredictorName,
+      " (a ", signif(unitChange, 3), "-", originalPredictorName,
+      " increase) is associated with a fitted ",
+      parseNaturalLogCall(responseName) %||% responseName,
+      " that is ", formatUnitChangePercentText(percentChange), "."
     )
   )
 }

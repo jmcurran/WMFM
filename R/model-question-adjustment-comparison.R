@@ -143,7 +143,7 @@ computeModelQuestionAdjustmentComparison = function(model, followupQuestion = ""
       adjustmentTerms = adjustmentTerms,
       predictionImprovement = predictionImprovement
     ),
-    studentFacingCaution = "This is an in-sample comparison of the fitted models, not evidence from a separate test set or cross-validation.",
+    studentFacingCaution = "This comparison describes how well the fitted models describe these observed data, not performance on a separate test set or cross-validation.",
     interpretation = buildAdjustmentComparisonInterpretation(
       primaryPredictors = logLog$logPredictors$originalName,
       adjustmentTerms = adjustmentTerms,
@@ -248,8 +248,8 @@ buildAdjustmentComparisonInterpretation = function(
     adjustmentTerms,
     comparisonStats,
     predictionImprovement) {
-  predictorText = paste(primaryPredictors, collapse = ", ")
-  adjustmentText = paste(adjustmentTerms, collapse = ", ")
+  predictorText = collapseTeachingNames(primaryPredictors)
+  adjustmentText = collapseTeachingNames(adjustmentTerms)
   devianceDirection = formatAdjustmentPercentDirection(
     percentChange = comparisonStats$deviancePercentChange,
     quantityName = "deviance"
@@ -279,11 +279,11 @@ buildAdjustmentComparisonDirectAnswer = function(
     adjustmentTerms,
     comparisonStats,
     predictionImprovement) {
-  adjustmentText = paste(adjustmentTerms, collapse = ", ")
+  adjustmentText = collapseTeachingNames(adjustmentTerms)
   conclusion = switch(
     predictionImprovement$category %||% "not_available",
-    substantial_in_sample_improvement = "yes, the adjusted model fits these data substantially better",
-    modest_in_sample_improvement = "yes, the adjusted model fits these data somewhat better",
+    substantial_in_sample_improvement = "the adjusted model fits these data substantially better",
+    modest_in_sample_improvement = "the adjusted model fits these data somewhat better",
     little_in_sample_improvement = "not really; the adjusted model shows little in-sample improvement",
     "WMFM cannot make a clear deterministic judgement about the improvement"
   )
@@ -299,16 +299,23 @@ buildAdjustmentComparisonDirectAnswer = function(
 #' @keywords internal
 #' @noRd
 buildAdjustmentComparisonStudentConclusion = function(adjustmentTerms, predictionImprovement) {
-  adjustmentText = paste(adjustmentTerms, collapse = ", ")
-  conclusion = switch(
+  adjustmentText = collapseTeachingNames(adjustmentTerms)
+  switch(
     predictionImprovement$category %||% "not_available",
-    substantial_in_sample_improvement = "Yes. For these data, accounting for the adjustment variables substantially improves the in-sample predictions compared with using weight alone.",
-    modest_in_sample_improvement = "Yes, but the improvement is modest. For these data, accounting for the adjustment variables improves the in-sample predictions compared with using weight alone.",
-    little_in_sample_improvement = "Not substantially. For these data, accounting for the adjustment variables adds little in-sample predictive improvement compared with using weight alone.",
+    substantial_in_sample_improvement = paste0(
+      "Accounting for ", adjustmentText,
+      " substantially improves the in-sample predictions compared with using weight alone."
+    ),
+    modest_in_sample_improvement = paste0(
+      "Accounting for ", adjustmentText,
+      " improves the in-sample predictions compared with using weight alone, but the improvement is modest."
+    ),
+    little_in_sample_improvement = paste0(
+      "Accounting for ", adjustmentText,
+      " does not substantially improve the in-sample predictions compared with using weight alone."
+    ),
     "WMFM cannot make a clear deterministic judgement about whether the adjustment variables improve prediction."
   )
-
-  gsub("the adjustment variables", adjustmentText, conclusion, fixed = TRUE)
 }
 
 #' @keywords internal

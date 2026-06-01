@@ -215,6 +215,38 @@ testthat::test_that("postProcessExplanationText handles additional confidence in
 })
 
 
+testthat::test_that("postProcessExplanationText standardises compact confidence interval labels", {
+  examples = c(
+    "The estimate is 2.4 (95% c.i.).",
+    "The estimate is 2.4 (95% c.i.: 1.2 to 3.6).",
+    "The estimate is 2.4 (95% C.I.).",
+    "The estimate is 2.4 (95% CI).",
+    "The estimate is 2.4 (95% CI from 1.2 to 3.6)."
+  )
+
+  out = postProcessExplanationText(examples)
+
+  testthat::expect_true(all(grepl("95% confidence interval", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% c.i.", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% C.I.", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% CI", out, fixed = TRUE)))
+})
+
+
+testthat::test_that("postProcessExplanationText rewrites generic log-scale mechanism wording", {
+  examples = c(
+    "This model was fitted on a log scale.",
+    "The relationship was analyzed on a log scale.",
+    "This was modelled on a log scale."
+  )
+
+  out = postProcessExplanationText(examples)
+
+  testthat::expect_true(all(grepl("proportional changes", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("on a log scale", out, fixed = TRUE)))
+})
+
+
 testthat::test_that("postProcessExplanationText cleans small grammar artefacts", {
   text = "A one-unit increase in age multiplies the odds by 1.4."
 
@@ -519,4 +551,52 @@ testthat::test_that("postProcessExplanationText polishes log-log follow-up wordi
   testthat::expect_true(grepl("We want to know whether", out, fixed = TRUE))
   testthat::expect_true(grepl("proportional changes", out, fixed = TRUE))
   testthat::expect_true(grepl("95% confidence interval", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText rewrites generic raw log-log coefficient wording", {
+  text = paste(
+    "The analysis examined the relationship between bodyWeight (measured in kg, on a log scale) and metabolicRate (also on a log scale).",
+    "On the log scale used here, this means that as log-bodyWeight increases by one unit, log-metabolicRate is expected to increase by about 1.88 units."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "percentage changes in bodyWeight", fixed = TRUE)
+  testthat::expect_match(out, "percentage changes in metabolicRate", fixed = TRUE)
+  testthat::expect_match(out, "1% increase in bodyWeight", fixed = TRUE)
+  testthat::expect_match(out, "1.88% increase in expected metabolicRate", fixed = TRUE)
+  testthat::expect_false(grepl("log scale", out, fixed = TRUE))
+  testthat::expect_false(grepl("log-bodyWeight", out, fixed = TRUE))
+  testthat::expect_false(grepl("log-metabolicRate", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText keeps generic log-log uncertainty on percentage scale", {
+  text = paste(
+    "For every 1% increase in body weight, the response increases by about 1.88%.",
+    "The adjusted estimate is 1.88 (95% confidence interval: [1.88-1.89]), meaning that values in this narrow range are all consistent with the data."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "1% increase in body weight", fixed = TRUE)
+  testthat::expect_match(out, "1.88%", fixed = TRUE)
+  testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
+  testthat::expect_false(grepl("The adjusted estimate is", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText removes generic log-log estimate sentence variants", {
+  text = paste(
+    "The model estimate for the change pattern relating log(bodyWeight) to log(metabolicRate) is 1.88 (95% confidence interval: [1.88-1.89]).",
+    "Because both variables are log-transformed, this means that a 1% increase in bodyWeight is associated with roughly a 1.88% increase in metabolicRate.",
+    "For example, doubling the bodyWeight corresponds to nearly doubling the metabolicRate."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
+  testthat::expect_false(grepl("The model estimate for the change pattern", out, fixed = TRUE))
+  testthat::expect_false(grepl("doubling the bodyWeight corresponds to nearly doubling", out, fixed = TRUE))
 })

@@ -342,6 +342,7 @@ WMFM deterministic requested unit-change or proportional-change interpretation:
 - Do not recompute, round further, or invent intervals.
 - Replace or revise the relevant one-unit slope sentence where possible.
 - For multiplicative effects, prefer the supplied percent-change wording over raw multipliers when this is clearer for students.
+- For log-log fixed-unit follow-ups, always state the original-scale reference and comparison values; do not imply that a fixed unit change has the same percentage effect at all starting values.
 - When a supplied percent-change interval is entirely negative, write it in natural low-to-high decrease order, such as between about 13% and 20% lower, not from 20% to 13% lower.
 - Do not also append a separate prediction-style follow-up paragraph.
 
