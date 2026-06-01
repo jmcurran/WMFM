@@ -1,3 +1,10 @@
+
+## Stage 32.1
+
+- Polished deterministic adjustment-comparison follow-up wording so student-facing answers no longer begin with a bare yes.
+- Restated the adjusted-versus-weight-only conclusion in natural language before the caution about in-sample model comparison.
+- Updated log-log tests to require the improved Diamonds IV wording and to keep technical diagnostics out of the appended student answer.
+
 ## Stage 31.3
 
 - Added a download button for the current student-facing Model plots view.
