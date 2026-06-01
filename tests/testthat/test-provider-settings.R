@@ -129,13 +129,20 @@ test_that("provider settings UI no longer includes provider switch password inpu
 })
 
 
-test_that("provider settings UI is consolidated to one heading", {
+test_that("provider settings UI uses compact info help and no apply button", {
   html = as.character(appUI())
+  uiText = readPackageText("R", "app-ui.R")
 
   expect_match(html, "Provider settings", fixed = TRUE)
   expect_no_match(html, "Chat provider", fixed = TRUE)
   expect_no_match(html, "Provider config (local, non-secret)", fixed = TRUE)
+  expect_match(uiText, 'icon("circle-info")', fixed = TRUE)
+  expect_match(uiText, "API keys are not shown here and are never stored", fixed = TRUE)
+  expect_false(grepl("Current provider:", uiText, fixed = TRUE))
+  expect_false(grepl("applyChatProviderBtn", uiText, fixed = TRUE))
+  expect_false(grepl("Apply provider", uiText, fixed = TRUE))
 })
+
 
 test_that("explanation provenance text includes provider and hh:mm:ss time", {
   txt = buildExplanationProvenanceText(
@@ -167,11 +174,13 @@ test_that("explanation prompt diagnostics rely on accordion title styling", {
   expect_match(helperText, "wmfm-explanation-helper-box", fixed = TRUE)
 })
 
-test_that("provider observers persist provider changes and avoid non-Ollama discovery", {
+test_that("provider observers auto-save provider changes and avoid non-Ollama discovery", {
   observerText = readPackageText("R", "app-server-chat-provider.R")
 
   expect_match(observerText, "observeEvent(input$providerConfig_backend", fixed = TRUE)
-  expect_match(observerText, "saveNonSecretProviderConfig(prepareNonSecretProviderConfig", fixed = TRUE)
-  expect_match(observerText, "if (!identical(activeProvider, \"ollama\"))", fixed = TRUE)
-  expect_match(observerText, "if (identical(requested, \"ollama\") && isWmfmProviderReadyForStartup", fixed = TRUE)
+  expect_match(observerText, "saveNonSecretProviderConfig(providerConfig)", fixed = TRUE)
+  expect_match(observerText, "showProviderConfigurationMessage(requested, providerConfig)", fixed = TRUE)
+  expect_match(observerText, 'if (!identical(activeProvider, "ollama"))', fixed = TRUE)
+  expect_match(observerText, 'if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(providerConfig))', fixed = TRUE)
+  expect_false(grepl("observeEvent(input$applyChatProviderBtn", observerText, fixed = TRUE))
 })

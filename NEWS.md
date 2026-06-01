@@ -4,6 +4,18 @@ This file records user-facing and developer-facing changes reconstructed from
 completed stage notes and the Stage 29 workflow. It is a release-note summary,
 not a commit-by-commit history.
 
+## WMFM 0.2.5.016
+
+* Move provider-setting guidance into an information tooltip beside the Provider
+  settings heading so the settings page is less cluttered.
+* Remove the redundant current-provider text and rely on the active provider
+  selection box as the visible source of truth.
+* Remove the Apply provider button so changing provider selection immediately
+  updates and saves the non-secret provider preference.
+* Show configuration guidance when a selected provider is not usable: Ollama uses
+  a modal configuration prompt, while commercial providers use a warning
+  notification when the required API key is missing.
+
 ## WMFM 0.2.5.015
 
 * Restore password protection for the maintainer-only developer-mode toggle while

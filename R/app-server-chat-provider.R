@@ -30,6 +30,38 @@ registerChatProviderObservers = function(input, output, session, rv) {
     session$sendInputMessage("refreshOllamaModelsBtn", list(disabled = !isOllama))
   }
 
+
+  showProviderConfigurationMessage = function(provider, providerConfig) {
+    provider = tolower(trimws(as.character(provider %||% "")))
+
+    if (identical(provider, "ollama")) {
+      if (!isTRUE(isWmfmProviderReadyForStartup(providerConfig))) {
+        showModal(
+          modalDialog(
+            title = "Configure Ollama",
+            tags$p("Ollama is selected, but WMFM does not yet have enough local Ollama information to use it."),
+            tags$p("Set the Ollama base URL and model, make sure Ollama is running, then refresh the available models if needed."),
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+      }
+      return(invisible(NULL))
+    }
+
+    if (!isTRUE(hasWmfmProviderCredentials(provider))) {
+      guidanceLines = buildProviderCredentialGuidance(provider)
+      showNotification(
+        paste(guidanceLines, collapse = "\n"),
+        type = "warning",
+        duration = 10
+      )
+      return(invisible(NULL))
+    }
+
+    invisible(NULL)
+  }
+
   refreshOllamaModelChoices = function(selected = NULL) {
     activeProvider = resolveSelectedProvider()
     providerConfig = resolveWmfmProviderConfig()
@@ -115,7 +147,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
         modalDialog(
           title = "Configure an AI provider",
           tags$p(buildMissingProviderStartupMessage()),
-          tags$p("After configuring a provider, restart WMFM or use Settings to apply and save the provider."),
+          tags$p("After configuring a provider, restart WMFM or use Settings to select the provider."),
           easyClose = TRUE,
           footer = NULL
         )
@@ -185,28 +217,32 @@ registerChatProviderObservers = function(input, output, session, rv) {
   observeEvent(input$providerConfig_backend, {
     requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
     if (!isWmfmProviderSupported(requested)) {
+      updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
+      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
       return(NULL)
     }
 
-    rv$activeChatBackend = requested
-    syncProviderSpecificControlState(requested)
-
     selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
     selectedThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    providerConfig = prepareNonSecretProviderConfig(
+      backend = requested,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = selectedModel,
+      ollamaThinkLow = selectedThinkLow
+    )
+
+    rv$activeChatBackend = requested
+    syncProviderSpecificControlState(requested)
 
     if (identical(requested, "ollama")) {
       rv$activeOllamaModel = selectedModel
       rv$activeOllamaThinkLow = selectedThinkLow
     }
 
-    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
-      backend = requested,
-      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
-      ollamaModel = selectedModel,
-      ollamaThinkLow = selectedThinkLow
-    ))
+    saveNonSecretProviderConfig(providerConfig)
+    showProviderConfigurationMessage(requested, providerConfig)
 
-    if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+    if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(providerConfig)) {
       refreshOllamaModelChoices(selected = selectedModel)
     }
   }, ignoreInit = TRUE, priority = 90)
@@ -233,63 +269,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
       ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     ))
   }, ignoreInit = TRUE, priority = 80)
-
-  observeEvent(input$applyChatProviderBtn, {
-    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
-
-    if (!requested %in% c("ollama", "claude")) {
-      updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
-      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
-      return(NULL)
-    }
-
-    if (!isTRUE(hasWmfmProviderCredentials(requested))) {
-      missingLines = buildProviderCredentialStatusLines(requested)
-      guidanceLines = buildProviderCredentialGuidance(requested)
-      showNotification(
-        paste(c("Cannot apply provider: required credentials are missing.", missingLines, guidanceLines), collapse = "\n"),
-        type = "warning",
-        duration = 8
-      )
-      return(NULL)
-    }
-
-    selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
-    availableModels = rv$availableOllamaModels %||% wmfmProviderDefaults()$ollamaModel
-    if (length(availableModels) == 0) {
-      availableModels = wmfmProviderDefaults()$ollamaModel
-    }
-    if (!(selectedModel %in% availableModels)) {
-      defaultModel = wmfmProviderDefaults()$ollamaModel
-      selectedModel = if (defaultModel %in% availableModels) defaultModel else availableModels[1]
-    }
-
-    rv$activeChatBackend = requested
-    if (identical(requested, "ollama")) {
-      rv$activeOllamaModel = selectedModel
-      rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
-    }
-
-    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
-      backend = requested,
-      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
-      ollamaModel = selectedModel,
-      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
-    ))
-
-    msg = buildChatProviderSetMessage(
-      backend = requested,
-      ollamaModel = rv$activeOllamaModel,
-      ollamaThinkLow = isTRUE(rv$activeOllamaThinkLow)
-    )
-
-    showNotification(
-      msg,
-      type = "message",
-      duration = 4
-    )
-  }, ignoreInit = TRUE)
-
 
   observeEvent(input$saveProviderConfigBtn, {
     configToSave = prepareNonSecretProviderConfig(

@@ -10,9 +10,10 @@ test_that("chat provider observer registration is extracted from app server", {
   expect_false(grepl("verifyProviderSwitchPassword", chatProviderText, fixed = TRUE))
   expect_match(chatProviderText, "saveProviderConfigBtn", fixed = TRUE)
   expect_false(grepl("buildClaudeProviderIncorrectPasswordMessage", chatProviderText, fixed = TRUE))
-  expect_match(chatProviderText, "buildChatProviderSetMessage", fixed = TRUE)
-  expect_match(chatProviderText, "Cannot apply provider: required credentials are missing.", fixed = TRUE)
-  expect_match(chatProviderText, "saveNonSecretProviderConfig(prepareNonSecretProviderConfig", fixed = TRUE)
+  expect_false(grepl("observeEvent(input$applyChatProviderBtn", chatProviderText, fixed = TRUE))
+  expect_false(grepl("Cannot apply provider: required credentials are missing.", chatProviderText, fixed = TRUE))
+  expect_match(chatProviderText, "showProviderConfigurationMessage", fixed = TRUE)
+  expect_match(chatProviderText, "saveNonSecretProviderConfig(providerConfig)", fixed = TRUE)
 })
 
 

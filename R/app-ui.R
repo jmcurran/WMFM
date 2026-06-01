@@ -498,16 +498,19 @@ appUI = function() {
             tags$hr(class = "hr-tight")
           )
         },
-        h4("Provider settings"),
-        helpText(
-          "Choose one active provider/backend. Ollama uses base URL + model and no API key. Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM."
+        h4(
+          "Provider settings ",
+          tags$span(
+            icon("circle-info"),
+            title = paste(
+              "Choose one active provider/backend.",
+              "Ollama uses base URL plus model and no API key.",
+              "Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM.",
+              "API keys are not shown here and are never stored in the WMFM config file."
+            ),
+            style = "cursor: help;"
+          )
         ),
-        tags$p(
-          class = "wmfm-explanation-helper-note",
-          "API keys are not shown here and are never stored in the WMFM config file."
-        ),
-        textOutput("chatProviderStatus"),
-        tags$br(),
         tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
           inputId = "providerConfig_backend",
@@ -539,11 +542,6 @@ appUI = function() {
             label = "Refresh available Ollama models",
             class = "btn btn-secondary btn-sm"
           )
-        ),
-        actionButton(
-          inputId = "applyChatProviderBtn",
-          label = "Apply provider",
-          class = "btn-primary btn-sm"
         ),
         actionButton(
           inputId = "saveProviderConfigBtn",
