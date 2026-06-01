@@ -291,43 +291,22 @@ postProcessExtractNumericTokens = function(text) {
 #' @keywords internal
 postProcessUnitChangePhrasing = function(text) {
   text = gsub(
-    pattern = "\\b[Aa] one-magnitude rise multiplies the ([^.]+?) by\\b",
-    replacement = "If the magnitude increases by one, the \\1 is multiplied by",
+    pattern = "\\b[Aa] one-(?!unit\\b)([[:alnum:]_.-]+) (?:rise|increase) multiplies the ([^.]+?) by\\b",
+    replacement = "If \\1 increases by one unit, the \\2 is multiplied by",
     x = text,
     perl = TRUE
   )
 
   text = gsub(
-    pattern = "\\b[Aa] one-magnitude increase multiplies the ([^.]+?) by\\b",
-    replacement = "If the magnitude increases by one, the \\1 is multiplied by",
+    pattern = "\\b[Aa] one-(?!unit\\b)([[:alnum:]_.-]+) (?:rise|increase)\\b",
+    replacement = "If \\1 increases by one unit,",
     x = text,
     perl = TRUE
   )
 
   text = gsub(
-    pattern = "\\b[Aa] one-magnitude rise\\b",
-    replacement = "If the magnitude increases by one,",
-    x = text,
-    perl = TRUE
-  )
-
-  text = gsub(
-    pattern = "\\b[Oo]ne-magnitude rise\\b",
-    replacement = "an increase of one in magnitude",
-    x = text,
-    perl = TRUE
-  )
-
-  text = gsub(
-    pattern = "\\b[Aa] one-magnitude increase\\b",
-    replacement = "If the magnitude increases by one,",
-    x = text,
-    perl = TRUE
-  )
-
-  text = gsub(
-    pattern = "\\b[Oo]ne-magnitude increase\\b",
-    replacement = "an increase of one in magnitude",
+    pattern = "\\b[Oo]ne-(?!unit\\b)([[:alnum:]_.-]+) (?:rise|increase)\\b",
+    replacement = "an increase of one unit in \\1",
     x = text,
     perl = TRUE
   )
@@ -1105,8 +1084,8 @@ postProcessSurfaceIssueRules = function() {
     ),
     list(
       issueType = "unitChangePhrasing",
-      name = "oneMagnitudeChange",
-      pattern = "\\bone-magnitude (?:rise|increase)\\b"
+      name = "oneNamedUnitChange",
+      pattern = "\\bone-[[:alnum:]_.-]+ (?:rise|increase)\\b"
     ),
     list(
       issueType = "unitChangePhrasing",
@@ -1158,7 +1137,7 @@ postProcessSurfaceIssueRules = function() {
 #'
 #' @examples
 #' diagnoseExplanationSurfaceProcessing(
-#'   "A one-magnitude rise multiplies the expected count by 0.21."
+#'   "A one-unit rise multiplies the expected count by 0.21."
 #' )
 diagnoseExplanationSurfaceProcessing = function(text, audit = NULL) {
   if (is.null(text)) {

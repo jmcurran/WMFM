@@ -1,3 +1,10 @@
+## Stage 33.2
+
+- Remove example-specific production handling from selected follow-up classification and prediction helpers.
+- Replace magnitude-specific unit-change cleanup with predictor-agnostic unit-change phrasing.
+- Add regression tests for generic named-unit requests and model-level factor matching.
+- Preserve example-specific wording in tests and example fixtures only.
+
 
 ## Stage 32.1
 

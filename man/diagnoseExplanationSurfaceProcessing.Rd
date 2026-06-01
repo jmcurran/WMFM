@@ -25,6 +25,6 @@ pipeline and it does not make statistical claims.
 }
 \examples{
 diagnoseExplanationSurfaceProcessing(
-  "A one-magnitude rise multiplies the expected count by 0.21."
+  "A one-unit rise multiplies the expected count by 0.21."
 )
 }

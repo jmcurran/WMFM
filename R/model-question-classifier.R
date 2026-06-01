@@ -124,7 +124,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   unitChangePattern = paste(
     c(
       "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",
-      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(point|mark|carat|magnitude|unit)?\\s*(increase|change)\\b",
+      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:[[:alpha:]][[:alnum:]_.-]*\\s+)?(increase|change)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bper\\s+unit(\\s+increase|\\s+change)?\\b",
@@ -186,7 +186,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     originalText,
     perl = TRUE
   ) || grepl(
-    "\\b(if|for|when|with|who)\\b.*\\b(score|scored|scores|mark|marks|attendance|attend|attends|regularly|class|magnitude|washington|california)\\b",
+    "\\b(if|for|when|with|who)\\b.*\\b(score|scored|scores|mark|marks|attendance|attend|attends|regularly|class|level|group|category)\\b",
     normalizedText,
     perl = TRUE
   )
@@ -317,8 +317,8 @@ extractRequestedUnitChangeValues = function(normalizedText) {
   pattern = paste(
     c(
       "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
-      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:point|mark|carat|magnitude)\\s+(?:increase|change)\\b",
-      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark|carat|magnitude)\\b",
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:[[:alpha:]][[:alnum:]_.-]*\\s+)?(?:increase|change)\\b",
+      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
     ),

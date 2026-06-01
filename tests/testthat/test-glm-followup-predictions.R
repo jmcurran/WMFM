@@ -193,7 +193,7 @@ testthat::test_that("GLM parser handles attendance-is-yes wording", {
   testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
 })
 
-testthat::test_that("GLM parser maps Washington location wording to WA", {
+testthat::test_that("GLM parser requires coded factor levels rather than domain synonyms", {
   quakePath = system.file(
     "extdata",
     "examples",
@@ -208,12 +208,18 @@ testthat::test_that("GLM parser maps Washington location wording to WA", {
   quakeDf = loadEnv[[objectNames[[1]]]]
   fit = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
 
-  out = computeGlmModelQuestionPrediction(
+  exactOut = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "How many earthquakes would you expect for Locn = WA at magnitude 5.6?"
+  )
+
+  synonymOut = computeGlmModelQuestionPrediction(
     model = fit,
     followupQuestion = "How many earthquakes would you expect in Washington at magnitude 5.6?"
   )
 
-  testthat::expect_identical(out$status, "ok")
-  testthat::expect_equal(out$resolvedPredictorValues$Magnitude, 5.6)
-  testthat::expect_identical(out$resolvedPredictorValues$Locn, "WA")
+  testthat::expect_identical(exactOut$status, "ok")
+  testthat::expect_equal(exactOut$resolvedPredictorValues$Magnitude, 5.6)
+  testthat::expect_identical(exactOut$resolvedPredictorValues$Locn, "WA")
+  testthat::expect_false(identical(synonymOut$resolvedPredictorValues$Locn, "WA"))
 })

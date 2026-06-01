@@ -229,7 +229,7 @@ normalizePredictionText = function(x) {
   x = tolower(trimws(as.character(x %||% "")))
   x = gsub("[[:space:]]+", " ", x, perl = TRUE)
   # Strip sentence-ending punctuation/noise while preserving meaningful
-  # variable-name punctuation such as parentheses in log(carat), plus signs,
+  # variable-name punctuation such as parentheses in transformed predictors, plus signs,
   # slashes, and closing brackets that may appear at the end of a predictor.
   x = gsub("[[:space:]]*[.!?,;:]+$", "", x, perl = TRUE)
   trimws(x)
@@ -551,22 +551,15 @@ matchSemanticNamedFactorLevel = function(predictor, modelLevels, text) {
     return(character(0))
   }
 
-  if (predictorNorm %in% c("locn", "location", "region", "state")) {
-    washingtonIndex = which(levelNorms %in% c("wa", "washington"))
-    californiaIndex = which(levelNorms %in% c("sc", "southern california", "california"))
-
-    matched = character(0)
-    if (length(washingtonIndex) == 1L && grepl("\\b(washington|wa)\\b", textNorm, perl = TRUE)) {
-      matched = c(matched, modelLevels[[washingtonIndex]])
+  matched = character(0)
+  for (levelIndex in seq_along(levelNorms)) {
+    levelNorm = levelNorms[[levelIndex]]
+    if (nzchar(levelNorm) && grepl(paste0("\\b", escapeRegexLiteral(levelNorm), "\\b"), textNorm, perl = TRUE)) {
+      matched = c(matched, modelLevels[[levelIndex]])
     }
-    if (length(californiaIndex) == 1L && grepl("\\b(southern california|california|sc)\\b", textNorm, perl = TRUE)) {
-      matched = c(matched, modelLevels[[californiaIndex]])
-    }
-
-    return(unique(matched))
   }
 
-  character(0)
+  unique(matched)
 }
 
 #' @keywords internal

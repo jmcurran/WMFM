@@ -16,7 +16,7 @@ testthat::test_that("postProcessExplanationText standardises unit-change wording
 
   testthat::expect_identical(
     out,
-    "If the magnitude increases by one, the expected count is multiplied by 0.21."
+    "If magnitude increases by one unit, the expected count is multiplied by 0.21."
   )
   testthat::expect_false(grepl("one-magnitude rise", out, ignore.case = TRUE))
   testthat::expect_true(grepl("0.21", out, fixed = TRUE))
@@ -158,7 +158,7 @@ testthat::test_that("postProcessExplanationText debug mode reports changed rules
   testthat::expect_identical(out$original, text)
   testthat::expect_identical(
     out$processed,
-    "If the magnitude increases by one, the expected count is multiplied by 0.21."
+    "If magnitude increases by one unit, the expected count is multiplied by 0.21."
   )
   testthat::expect_true("cleanExplanationText" %in% out$rulesApplied)
   testthat::expect_true("unitChangePhrasing" %in% out$rulesApplied)
