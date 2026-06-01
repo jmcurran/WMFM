@@ -1,5 +1,14 @@
 # WMFM development news
 
+## Stage 30.1
+
+- Add a student-facing Model plots tab for fitted models.
+- Add deterministic observed-vs-fitted and residuals-vs-fitted model-plot helpers.
+- Support lm, binomial logistic glm, and poisson glm model-plot data on appropriate fitted-value scales.
+- Add short teaching notes that frame plots as visual summaries rather than assumption checks.
+- Add offline tests for model-plot data, labels, residual types, and cautious UI language.
+
+
 This file records user-facing and developer-facing changes reconstructed from
 completed stage notes and the Stage 29 workflow. It is a release-note summary,
 not a commit-by-commit history.

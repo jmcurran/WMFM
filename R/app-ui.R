@@ -150,6 +150,29 @@ appUI = function() {
         margin-bottom: 0;
       }
 
+      .wmfm-model-plot-note {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fcfcfc;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .wmfm-model-plot-note-heading {
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-model-plot-note dt {
+        margin-top: 6px;
+      }
+
+      .wmfm-model-plot-note dd {
+        margin-left: 0;
+        margin-bottom: 6px;
+      }
+
       .tab-content {\n        overflow: visible;\n      }\n    ")),
 
     tabsetPanel(
@@ -522,6 +545,16 @@ appUI = function() {
         )
       ),
 
+      tabPanel(
+        "Model plots",
+        h4("Model plots"),
+        helpText(
+          "These plots help you notice whether the fitted model is missing obvious structure."
+        ),
+        uiOutput("modelPlotTypeUi"),
+        plotOutput("modelPlotsPlot", height = "360px"),
+        uiOutput("modelPlotTeachingNoteUi")
+      ),
 
       tabPanel(
         "Settings",
