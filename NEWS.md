@@ -1,5 +1,13 @@
 # WMFM development news
 
+## Stage 30.3
+
+- Add a short deterministic summary sentence above each Model plots figure.
+- Report the number of plotted observations and the fitted-value or residual scale used by the selected plot.
+- Keep the summary text student-facing and separate from diagnostic pass/fail language.
+- Extend offline tests for the summary helper and the new UI output binding.
+
+
 ## Stage 30.2
 
 - Harden the Model plots tab for unsupported fitted model families so unavailable choices do not trigger plotting errors.

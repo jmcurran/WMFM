@@ -118,3 +118,25 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   testthat::expect_no_match(uiText, "Assumption checks", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model validity", fixed = TRUE)
 })
+
+testthat::test_that("model plot summary text reports plotted scale and observation count", {
+  lmModel = stats::lm(mpg ~ wt, data = mtcars)
+  binomialModel = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+
+  observedSummary = buildModelPlotSummaryText(lmModel, plotType = "observedFitted")
+  residualSummary = buildModelPlotSummaryText(binomialModel, plotType = "residualFitted")
+
+  testthat::expect_match(observedSummary, "Plotting 32 observations", fixed = TRUE)
+  testthat::expect_match(observedSummary, "response scale", fixed = TRUE)
+  testthat::expect_match(residualSummary, "deviance residuals", fixed = TRUE)
+  testthat::expect_match(residualSummary, "predicted probability", fixed = TRUE)
+})
+
+testthat::test_that("model plots UI includes deterministic plot summary output", {
+  uiText = paste(deparse(body(appUI)), collapse = "\n")
+  observerText = paste(deparse(body(registerModelPlotObservers)), collapse = "\n")
+
+  testthat::expect_match(uiText, "modelPlotSummaryUi", fixed = TRUE)
+  testthat::expect_match(observerText, "output$modelPlotSummaryUi", fixed = TRUE)
+  testthat::expect_match(observerText, "buildModelPlotSummaryText", fixed = TRUE)
+})

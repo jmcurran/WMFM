@@ -552,6 +552,7 @@ appUI = function() {
           "These plots help you notice whether the fitted model is missing obvious structure."
         ),
         uiOutput("modelPlotTypeUi"),
+        uiOutput("modelPlotSummaryUi"),
         plotOutput("modelPlotsPlot", height = "360px"),
         uiOutput("modelPlotTeachingNoteUi")
       ),

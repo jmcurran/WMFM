@@ -71,6 +71,17 @@ registerModelPlotObservers = function(input, output, modelFit) {
     )
   })
 
+
+  output$modelPlotSummaryUi = renderUI({
+    m = modelFit()
+    req(m)
+
+    plotType = input$modelPlotType %||% "observedFitted"
+    summaryText = buildModelPlotSummaryText(model = m, plotType = plotType)
+
+    helpText(summaryText)
+  })
+
   output$modelPlotTeachingNoteUi = renderUI({
     m = modelFit()
     req(m)

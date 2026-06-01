@@ -285,6 +285,43 @@ buildModelPlotData = function(model, plotType = c("observedFitted", "residualFit
   )
 }
 
+#' Build a short model-plot summary sentence
+#'
+#' @param model A fitted model object or \code{wmfmModel} object.
+#' @param plotType Plot type.
+#'
+#' @return A single character string for the Model plots UI.
+#' @keywords internal
+buildModelPlotSummaryText = function(model, plotType = c("observedFitted", "residualFitted", "unsupported")) {
+
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
+  plotData = buildModelPlotData(model = model, plotType = plotType)
+
+  if (!isTRUE(plotData$available)) {
+    return("Model plots are not available for this fitted model.")
+  }
+
+  observationCount = nrow(plotData$data)
+  observationWord = if (identical(observationCount, 1L)) {
+    "observation"
+  } else {
+    "observations"
+  }
+
+  if (identical(plotData$plotType, "residualFitted")) {
+    return(paste0(
+      "Plotting ", observationCount, " ", observationWord,
+      " using ", plotData$residualType,
+      " residuals against ", plotData$fittedScale, "."
+    ))
+  }
+
+  paste0(
+    "Plotting ", observationCount, " ", observationWord,
+    " with fitted values on the ", plotData$fittedScale, " scale."
+  )
+}
+
 #' Build a short teaching note for a model plot
 #'
 #' @param model A fitted model object or \code{wmfmModel} object.
