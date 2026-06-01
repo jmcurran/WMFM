@@ -69,13 +69,14 @@ registerStartupDataChoiceObservers = function(input, output, session) {
       updateCheckboxInput(
         session,
         "developerModeToggle",
-        value = FALSE
+        value = isTRUE(initialDeveloperModeUnlocked)
       )
     }, once = TRUE)
 
     observeEvent(input$developerModeToggle, {
       requestedUnlocked = isTRUE(input$developerModeToggle)
       developerModeUnlocked(requestedUnlocked)
+      saveDeveloperModePreference(requestedUnlocked)
       developerModeStatus(buildDeveloperModeStatus(requestedUnlocked))
     }, ignoreInit = TRUE, priority = 100)
   }

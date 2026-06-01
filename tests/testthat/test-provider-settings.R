@@ -162,3 +162,12 @@ test_that("explanation prompt diagnostics rely on accordion title styling", {
   expect_match(uiText, "Explanation prompt diagnostics", fixed = TRUE)
   expect_match(uiText, "wmfm-explanation-helper-box", fixed = TRUE)
 })
+
+test_that("provider observers persist provider changes and avoid non-Ollama discovery", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(observerText, "observeEvent(input$providerConfig_backend", fixed = TRUE)
+  expect_match(observerText, "saveNonSecretProviderConfig(prepareNonSecretProviderConfig", fixed = TRUE)
+  expect_match(observerText, "if (!identical(activeProvider, \"ollama\"))", fixed = TRUE)
+  expect_match(observerText, "if (identical(requested, \"ollama\") && isWmfmProviderReadyForStartup", fixed = TRUE)
+})

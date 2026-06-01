@@ -10,8 +10,9 @@ resolveDeveloperModePreference()
 Logical scalar.
 }
 \description{
-Developer mode is deliberately not persisted between app sessions. It starts
-locked each time, and the toggle is shown only when
-\code{WMFM_SHOW_DEVELOPER_MODE=1} is set locally.
+Developer mode is visible only when \code{WMFM_SHOW_DEVELOPER_MODE=1} is set
+locally. When the UI is visible, the enabled/disabled state is restored from
+the non-secret WMFM config file so development sessions can resume with the
+same controls enabled.
 }
 \keyword{internal}

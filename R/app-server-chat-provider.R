@@ -181,6 +181,59 @@ registerChatProviderObservers = function(input, output, session, rv) {
     )
   })
 
+
+  observeEvent(input$providerConfig_backend, {
+    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
+    if (!isWmfmProviderSupported(requested)) {
+      return(NULL)
+    }
+
+    rv$activeChatBackend = requested
+    syncProviderSpecificControlState(requested)
+
+    selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
+    selectedThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+
+    if (identical(requested, "ollama")) {
+      rv$activeOllamaModel = selectedModel
+      rv$activeOllamaThinkLow = selectedThinkLow
+    }
+
+    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
+      backend = requested,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = selectedModel,
+      ollamaThinkLow = selectedThinkLow
+    ))
+
+    if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+      refreshOllamaModelChoices(selected = selectedModel)
+    }
+  }, ignoreInit = TRUE, priority = 90)
+
+
+  observeEvent({
+    list(
+      input$providerConfig_ollamaBaseUrl,
+      input$providerConfig_ollamaModel,
+      input$providerConfig_ollamaThinkLow
+    )
+  }, {
+    requested = resolveSelectedProvider()
+
+    if (identical(requested, "ollama")) {
+      rv$activeOllamaModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
+      rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    }
+
+    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
+      backend = requested,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel,
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    ))
+  }, ignoreInit = TRUE, priority = 80)
+
   observeEvent(input$applyChatProviderBtn, {
     requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
 

@@ -150,7 +150,8 @@ readWmfmConfig = function() {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
 
   parsed[intersect(names(parsed), recognizedFields)]
@@ -172,7 +173,8 @@ writeWmfmConfig = function(config = list()) {
     "ollamaBaseUrl",
     "ollamaModel",
     "ollamaThinkLow",
-    "providerProfiles"
+    "providerProfiles",
+    "developerModeEnabled"
   )
   secretFieldNames = c("anthropicApiKey", "apiKey", "ANTHROPIC_API_KEY")
 
@@ -202,24 +204,32 @@ isDeveloperModeUiEnabled = function() {
 
 #' Resolve developer-mode startup state
 #'
-#' Developer mode is deliberately not persisted between app sessions. It starts
-#' locked each time, and the toggle is shown only when
-#' `WMFM_SHOW_DEVELOPER_MODE=1` is set locally.
+#' Developer mode is visible only when `WMFM_SHOW_DEVELOPER_MODE=1` is set
+#' locally. When the UI is visible, the enabled/disabled state is restored from
+#' the non-secret WMFM config file so development sessions can resume with the
+#' same controls enabled.
 #'
 #' @return Logical scalar.
 #' @keywords internal
 resolveDeveloperModePreference = function() {
-  FALSE
+  if (!isDeveloperModeUiEnabled()) {
+    return(FALSE)
+  }
+
+  config = readWmfmConfig()
+  isTRUE(config$developerModeEnabled)
 }
 
-#' Ignore legacy developer-mode persistence requests
+#' Persist developer-mode state locally
 #'
-#' @param enabled Logical scalar, ignored.
+#' @param enabled Logical scalar.
 #'
-#' @return Invisibly returns `FALSE`.
+#' @return Invisibly returns the config file path written by `writeWmfmConfig()`.
 #' @keywords internal
 saveDeveloperModePreference = function(enabled) {
-  invisible(FALSE)
+  config = readWmfmConfig()
+  config$developerModeEnabled = isTRUE(enabled)
+  writeWmfmConfig(config)
 }
 
 #' Test whether a local provider setting was explicitly supplied
@@ -243,7 +253,9 @@ hasExplicitWmfmProviderConfig = function() {
   explicitLocal = any(c(
     nzchar(trimws(as.character(localConfig$backend %||% ""))),
     nzchar(trimws(as.character(localConfig$ollamaBaseUrl %||% ""))),
-    nzchar(trimws(as.character(localConfig$ollamaModel %||% "")))
+    nzchar(trimws(as.character(localConfig$ollamaModel %||% ""))),
+    isTRUE(localConfig$developerModeEnabled),
+    is.list(localConfig$providerProfiles) && length(localConfig$providerProfiles) > 0
   ))
 
   isTRUE(explicitOption) || isTRUE(explicitLocal)
@@ -307,16 +319,12 @@ resolveWmfmProviderConfig = function(backend = NULL,
 
   backendFromOption = getOption("wmfm.chat_backend", default = NULL)
   backendFromLocal = localConfig$backend %||% NULL
-  fallbackBackend = if (hasClaudeApiKey() && !hasExplicitWmfmProviderConfig()) {
-    "claude"
-  } else {
-    defaults$backend
-  }
+  fallbackBackend = defaults$backend
 
-  resolvedBackend = tolower(trimws(backend %||%
+  resolvedBackend = tolower(trimws(as.character(backend %||%
     backendFromOption %||%
     backendFromLocal %||%
-    fallbackBackend))
+    fallbackBackend)))
   if (!nzchar(resolvedBackend)) {
     resolvedBackend = fallbackBackend
   }

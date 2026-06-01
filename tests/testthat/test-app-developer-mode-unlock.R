@@ -102,6 +102,11 @@ testthat::test_that("startup observers wire session-only developer toggle contro
   )
   testthat::expect_match(
     startupObserverText,
+    "saveDeveloperModePreference(requestedUnlocked)",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
     "developerModeStatus(buildDeveloperModeStatus(requestedUnlocked))",
     fixed = TRUE
   )

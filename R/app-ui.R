@@ -513,7 +513,7 @@ appUI = function() {
           inputId = "providerConfig_backend",
           label = "Active provider profile",
           choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
-          selected = "ollama"
+          selected = resolveWmfmProviderConfig()$backend
         ),
         helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
         textInput(

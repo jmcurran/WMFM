@@ -352,7 +352,7 @@ test_that("provider profiles round-trip metadata without secret values", {
 })
 
 
-test_that("developer mode is opt-in by environment and not persisted", {
+test_that("developer mode is opt-in by environment and persisted when exposed", {
   withr::local_tempdir() -> tmpDir
   withr::local_options(list(wmfm.config_dir = tmpDir))
   withr::local_envvar(list(WMFM_SHOW_DEVELOPER_MODE = ""), .local_envir = parent.frame())
@@ -362,14 +362,14 @@ test_that("developer mode is opt-in by environment and not persisted", {
 
   saveDeveloperModePreference(TRUE)
   expect_false(resolveDeveloperModePreference())
-  expect_null(readWmfmConfig()$developerModeEnabled)
+  expect_true(isTRUE(readWmfmConfig()$developerModeEnabled))
 
   withr::local_envvar(list(WMFM_SHOW_DEVELOPER_MODE = "1"), .local_envir = parent.frame())
   expect_true(isDeveloperModeUiEnabled())
-  expect_false(resolveDeveloperModePreference())
+  expect_true(resolveDeveloperModePreference())
 })
 
-test_that("writeWmfmConfig preserves provider preferences and excludes developer-mode state", {
+test_that("writeWmfmConfig preserves provider and developer-mode preferences", {
   withr::local_tempdir() -> tmpDir
   withr::local_options(list(wmfm.config_dir = tmpDir))
 
@@ -387,7 +387,7 @@ test_that("writeWmfmConfig preserves provider preferences and excludes developer
   expect_identical(persisted$backend, "ollama")
   expect_identical(persisted$ollamaModel, "manual-model")
   expect_true(persisted$ollamaThinkLow)
-  expect_null(persisted$developerModeEnabled)
+  expect_true(isTRUE(persisted$developerModeEnabled))
   expect_null(persisted$apiKey)
 })
 
@@ -402,7 +402,10 @@ test_that("startup provider readiness requires usable credentials or explicit Ol
   expect_match(buildMissingProviderStartupMessage(), "README", fixed = TRUE)
 
   withr::local_envvar(list(ANTHROPIC_API_KEY = "secret"), .local_envir = parent.frame())
-  expect_identical(resolveWmfmProviderConfig()$backend, "claude")
+  expect_identical(resolveWmfmProviderConfig()$backend, wmfmProviderDefaults()$backend)
+  expect_false(isWmfmProviderReadyForStartup())
+
+  writeWmfmConfig(list(backend = "claude"))
   expect_true(isWmfmProviderReadyForStartup())
 
   withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
@@ -414,4 +417,32 @@ test_that("startup provider readiness requires usable credentials or explicit Ol
   ))
   expect_true(hasExplicitWmfmProviderConfig())
   expect_true(isWmfmProviderReadyForStartup())
+})
+
+
+test_that("developer mode preference persists only when developer UI is exposed", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  withr::local_envvar(WMFM_SHOW_DEVELOPER_MODE = "")
+  saveDeveloperModePreference(TRUE)
+  expect_false(resolveDeveloperModePreference())
+  expect_true(isTRUE(readWmfmConfig()$developerModeEnabled))
+
+  withr::local_envvar(WMFM_SHOW_DEVELOPER_MODE = "1")
+  expect_true(resolveDeveloperModePreference())
+
+  saveDeveloperModePreference(FALSE)
+  expect_false(resolveDeveloperModePreference())
+  expect_false(isTRUE(readWmfmConfig()$developerModeEnabled))
+})
+
+test_that("provider resolver does not infer Claude solely from API-key presence", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+  withr::local_envvar(ANTHROPIC_API_KEY = "secret-token")
+
+  cfg = resolveWmfmProviderConfig()
+
+  expect_identical(cfg$backend, wmfmProviderDefaults()$backend)
 })

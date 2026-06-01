@@ -1,0 +1,117 @@
+# WMFM development news
+
+This file records user-facing and developer-facing changes reconstructed from
+completed stage notes and the Stage 29 workflow. It is a release-note summary,
+not a commit-by-commit history.
+
+## WMFM 0.2.5.012
+
+* Repair `NEWS.md` so every top-level news section has a version-like heading
+  that can be parsed by `R CMD check`.
+* Keep the reconstructed pre-Stage 29 history in the package news without using
+  non-version section titles.
+
+## WMFM 0.2.5.011
+
+* Persist developer-mode enabled/disabled state in the local WMFM config when the
+  maintainer-only developer-mode UI is exposed.
+* Persist provider preferences whenever the selected provider or non-secret
+  provider settings change.
+* Avoid Ollama model discovery when the active or preferred provider is not
+  Ollama.
+* Add the initial `NEWS.md` file reconstructed from completed stage notes and the
+  Stage 29 workflow.
+
+## WMFM 0.2.5.010
+
+* Hide developer-mode controls unless `WMFM_SHOW_DEVELOPER_MODE=1` is set in the
+  local R environment.
+* Document developer-mode setup in `dev/developer-mode.md` rather than in the
+  public-facing README.
+* Add README guidance for configuring an AI provider before first use.
+* Clarify that commercial API providers require paid API credits and API keys in
+  `.Renviron`; a ChatGPT Plus subscription is not sufficient for OpenAI API use.
+* Add startup guidance when no usable AI provider has been configured.
+* Repair provider-config tests so blank options fall back to package defaults.
+
+## WMFM 0.2.5.008
+
+* Replace the developer-mode lock/unlock buttons with a compact slider-style
+  toggle.
+* Make the developer toggle visually distinct when on or off, without showing a
+  checkbox tick.
+* Update tests to target the custom toggle markup rather than the previous Shiny
+  `checkboxInput()` implementation.
+* Continue separating provider settings from developer-mode state.
+
+## WMFM 0.2.5.006
+
+* Introduce the first version of the developer-mode toggle UI.
+* Keep developer mode behind a local opt-in path for maintainers.
+* Remove the unlocked developer-mode notification that became redundant once the
+  toggle showed state directly.
+* Repair tests for the new red/green toggle styling and startup observer wiring.
+
+## WMFM 0.2.5.004
+
+* Correct the Stage 29 build-number recovery path so subsequent Stage 29 work
+  resumes from the intended `0.2.5.xxx` sequence.
+
+## WMFM 0.2.5.003
+
+* Add `scripts/checkRStringEscapes.R`, a fast preflight scanner for suspicious R
+  string escapes in source and tests.
+* Add offline tests for the string-escape scanner.
+* Update generated stage runners so the escape scan runs before the slower
+  documentation, test, and check workflow.
+* Change the Stage 29 runner workflow so failed build attempts still consume the
+  next `0.2.5.xxx` build number.
+
+## WMFM 0.2.5.001
+
+* Polish Stage 28 UI details that were not specific to log-log modelling.
+* Make the optional follow-up placeholder shorter and visually lighter.
+* Make explanation prompt diagnostics look and behave like the other accordion
+  sections.
+* Begin provider-preference and developer-mode persistence work.
+* Harden Ollama discovery so failures are handled gracefully and tests do not
+  require a real Ollama service.
+* Rename lasting provider test files to remove stage numbers from durable test
+  names.
+
+## WMFM 0.2.4.9000
+
+This section reconstructs earlier development history from completed-stage notes.
+It is intentionally grouped by feature area rather than by exact release number.
+
+* Add and refine log-log model support, including power-law interpretation and
+  Diamonds II, Diamonds III, and Diamonds IV examples.
+* Improve log-log plotting and explanatory guidance for transformed predictors
+  and responses.
+* Add deterministic support for adjustment-variable follow-up questions,
+  adjustment comparisons, and follow-up scaffolding.
+* Build the structured follow-up-question architecture for predictions,
+  clarification, bounded inputs, and model-aware parsing.
+* Add deterministic linear-model and GLM follow-up prediction support.
+* Add support for unit-change questions and natural-language parsing of requested
+  predictor changes.
+* Add GLM extrapolation policy, diagnostics, and follow-up framing repairs for
+  logistic and Poisson models.
+* Add adjustment-variable model specification, prompt payloads, and explanation
+  behaviour.
+* Harden adjustment-variable regression handling and interaction guardrails.
+* Inventory and progressively refactor app-server responsibilities toward
+  smaller server helper modules and thinner orchestration in the main app server.
+* Add diagnostic reports and planning notes for explanation and scoring
+  development.
+* Continue GLM explanation work and logistic interaction prompt payload repairs.
+* Improve confidence-interval and explanation payload handling for model-specific
+  outputs.
+* Improve answer selection, explanation cleanup, and prompt validation.
+* Add prompt input audits and prompt/explanation integration refinements.
+* Add teaching-summary construction, data contracts, and validation checklists.
+* Add a developer-mode feedback system for scoring and explanation diagnostics.
+* Define the explanation-audit contract and audit inventory.
+* Reorganize package source files into feature-oriented modules.
+* Improve data-context handling, loading progress feedback, UI cleanup, and
+  pedagogical stability planning.

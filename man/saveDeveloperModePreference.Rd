@@ -2,17 +2,17 @@
 % Please edit documentation in R/utils-provider-config.R
 \name{saveDeveloperModePreference}
 \alias{saveDeveloperModePreference}
-\title{Ignore legacy developer-mode persistence requests}
+\title{Persist developer-mode state locally}
 \usage{
 saveDeveloperModePreference(enabled)
 }
 \arguments{
-\item{enabled}{Logical scalar, ignored.}
+\item{enabled}{Logical scalar.}
 }
 \value{
-Invisibly returns \code{FALSE}.
+Invisibly returns the config file path written by \code{writeWmfmConfig()}.
 }
 \description{
-Ignore legacy developer-mode persistence requests
+Persist developer-mode state locally
 }
 \keyword{internal}
