@@ -1,3 +1,37 @@
+#' Build the model explanation support accordion
+#'
+#' @param panels List of accordion panels to display.
+#' @param developerMode Logical indicating whether developer diagnostics are shown.
+#' @param diagnostics Optional explanation prompt diagnostics payload.
+#'
+#' @return A bslib accordion tag object.
+#' @keywords internal
+#' @noRd
+buildModelExplanationSupportAccordion = function(panels, developerMode = FALSE, diagnostics = NULL) {
+  if (isTRUE(developerMode)) {
+    panels = c(
+      panels,
+      list(bslib::accordion_panel(
+        title = "Explanation prompt diagnostics",
+        value = "explanation_prompt_diagnostics",
+        buildExplanationPromptDiagnosticsUi(diagnostics = diagnostics)
+      ))
+    )
+  }
+
+  do.call(
+    bslib::accordion,
+    c(
+      list(
+        id = "model_explanation_support_accordion",
+        multiple = TRUE,
+        open = if (isTRUE(developerMode)) "explanation_prompt_diagnostics" else FALSE
+      ),
+      panels
+    )
+  )
+}
+
 #' Register model explanation observers for the app server
 #'
 #' @param input Shiny input object.
@@ -194,150 +228,138 @@ registerModelExplanationObservers = function(
       if (!is.null(teachingSummary)) {
         tagList(
           tags$hr(),
-          bslib::accordion(
-            id = "model_explanation_support_accordion",
-            multiple = TRUE,
-            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
-            bslib::accordion_panel(
-              title = "How each sentence was supported",
-              tags$p(
-                class = "wmfm-explanation-helper-note",
-                "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
-              ),
-              if (!is.null(claimMap)) {
-                tagList(
-                  renderExplanationClaimEvidenceUi(
-                    claimMap = claimMap,
-                    developerMode = isTRUE(developerModeUnlocked())
-                  ),
-                  if (isTRUE(developerModeUnlocked())) {
-                    tagList(
-                      tags$hr(class = "hr-tight"),
-                      textAreaInput(
-                        inputId = "developerFeedbackOtherIssues",
-                        label = "Other debugging issues",
-                        value = "",
-                        width = "100%",
-                        rows = 3,
-                        placeholder = "Note any other issues that should be considered when debugging this explanation."
-                      ),
-                      downloadButton(
-                        outputId = "developerFeedbackReportDownload",
-                        label = "Save report to file",
-                        class = "btn btn-primary btn-sm"
-                      )
-                    )
-                  }
-                )
-              } else {
+          buildModelExplanationSupportAccordion(
+            panels = list(
+              bslib::accordion_panel(
+                title = "How each sentence was supported",
                 tags$p(
                   class = "wmfm-explanation-helper-note",
-                  "A sentence-by-sentence support map is not available for this explanation yet."
-                )
-              }
-            ),
-            bslib::accordion_panel(
-              title = "How to read this explanation",
-              tags$p(
-                class = "wmfm-explanation-helper-note",
-                "These sections explain the scale, starting point, comparison, and uncertainty choices that shaped the wording of the explanation."
-              ),
-              renderExplanationTeachingSummaryUi(teachingSummary)
-            ),
-            bslib::accordion_panel(
-              title = "Optional AI tutor",
-              tags$div(
-                class = "wmfm-explanation-helper-box",
-                tags$div(
-                  class = "wmfm-explanation-helper-note",
-                  "Want a more conversational walkthrough? You can optionally ask the app for a tutor-style explanation that stays grounded in the information already shown here."
+                  "Each card below matches one sentence from the explanation to the main pieces of model information that support it."
                 ),
-                if (!is.null(rv$chatProvider) || (is.character(tutorText) && nzchar(trimws(tutorText)))) {
+                if (!is.null(claimMap)) {
                   tagList(
-                    actionButton(
-                      inputId = "modelExplanationTutorBtn",
-                      label = "Explain this more simply with AI",
-                      class = "btn btn-secondary btn-sm"
+                    renderExplanationClaimEvidenceUi(
+                      claimMap = claimMap,
+                      developerMode = isTRUE(developerModeUnlocked())
                     ),
-                    tags$br(),
-                    tags$br()
+                    if (isTRUE(developerModeUnlocked())) {
+                      tagList(
+                        tags$hr(class = "hr-tight"),
+                        textAreaInput(
+                          inputId = "developerFeedbackOtherIssues",
+                          label = "Other debugging issues",
+                          value = "",
+                          width = "100%",
+                          rows = 3,
+                          placeholder = "Note any other issues that should be considered when debugging this explanation."
+                        ),
+                        downloadButton(
+                          outputId = "developerFeedbackReportDownload",
+                          label = "Save report to file",
+                          class = "btn btn-primary btn-sm"
+                        )
+                      )
+                    }
                   )
                 } else {
-                  tagList(
-                    tags$p(
-                      class = "wmfm-explanation-helper-note",
-                      "Turn on a chat provider in Settings if you want the optional AI tutor walkthrough."
-                    ),
-                    tags$br()
+                  tags$p(
+                    class = "wmfm-explanation-helper-note",
+                    "A sentence-by-sentence support map is not available for this explanation yet."
                   )
-                },
-                renderExplanationTutorUi(
-                  text = tutorText,
-                  available = !is.null(rv$chatProvider),
-                  researchQuestion = researchQuestionText,
-                  dataDescription = teachingSummary$dataDescription %||% NULL
+                }
+              ),
+              bslib::accordion_panel(
+                title = "How to read this explanation",
+                tags$p(
+                  class = "wmfm-explanation-helper-note",
+                  "These sections explain the scale, starting point, comparison, and uncertainty choices that shaped the wording of the explanation."
+                ),
+                renderExplanationTeachingSummaryUi(teachingSummary)
+              ),
+              bslib::accordion_panel(
+                title = "Optional AI tutor",
+                tags$div(
+                  class = "wmfm-explanation-helper-box",
+                  tags$div(
+                    class = "wmfm-explanation-helper-note",
+                    "Want a more conversational walkthrough? You can optionally ask the app for a tutor-style explanation that stays grounded in the information already shown here."
+                  ),
+                  if (!is.null(rv$chatProvider) || (is.character(tutorText) && nzchar(trimws(tutorText)))) {
+                    tagList(
+                      actionButton(
+                        inputId = "modelExplanationTutorBtn",
+                        label = "Explain this more simply with AI",
+                        class = "btn btn-secondary btn-sm"
+                      ),
+                      tags$br(),
+                      tags$br()
+                    )
+                  } else {
+                    tagList(
+                      tags$p(
+                        class = "wmfm-explanation-helper-note",
+                        "Turn on a chat provider in Settings if you want the optional AI tutor walkthrough."
+                      ),
+                      tags$br()
+                    )
+                  },
+                  renderExplanationTutorUi(
+                    text = tutorText,
+                    available = !is.null(rv$chatProvider),
+                    researchQuestion = researchQuestionText,
+                    dataDescription = teachingSummary$dataDescription %||% NULL
+                  )
                 )
               )
             ),
-            if (isTRUE(developerModeUnlocked())) {
-              bslib::accordion_panel(
-                title = "Explanation prompt diagnostics",
-                buildExplanationPromptDiagnosticsUi(diagnostics = rv$explanationPromptDiagnostics)
-              )
-            }
+            developerMode = isTRUE(developerModeUnlocked()),
+            diagnostics = rv$explanationPromptDiagnostics
           )
         )
       } else {
         tagList(
           tags$hr(),
-          bslib::accordion(
-            id = "model_explanation_support_accordion",
-            multiple = TRUE,
-            open = if (isTRUE(developerModeUnlocked())) "Explanation prompt diagnostics" else FALSE,
-            bslib::accordion_panel(
-              title = "How each sentence was supported",
-              tags$p(
-                class = "wmfm-explanation-helper-note",
-                "A sentence-by-sentence support map is not available for this explanation yet."
-              )
-            ),
-            bslib::accordion_panel(
-              title = "How to read this explanation",
-              tags$p(
-                class = "wmfm-explanation-helper-note",
-                "The app could not build the teaching guide for this model yet, so only the main explanation is shown right now."
-              )
-            ),
-            bslib::accordion_panel(
-              title = "Optional AI tutor",
-              tags$div(
-                class = "wmfm-explanation-helper-box",
-                tags$div(
-                  class = "wmfm-explanation-helper-note",
-                  "Want a more conversational walkthrough? You can optionally ask the app for a tutor-style explanation that stays grounded in the information already shown here."
-                ),
+          buildModelExplanationSupportAccordion(
+            panels = list(
+              bslib::accordion_panel(
+                title = "How each sentence was supported",
                 tags$p(
                   class = "wmfm-explanation-helper-note",
-                  "Turn on a chat provider in Settings if you want the optional AI tutor walkthrough."
-                ),
-                renderExplanationTutorUi(
-                  text = tutorText,
-                  available = !is.null(rv$chatProvider),
-                  researchQuestion = researchQuestionText,
-                  dataDescription = NULL
+                  "A sentence-by-sentence support map is not available for this explanation yet."
                 )
+              ),
+              bslib::accordion_panel(
+                title = "How to read this explanation",
+                tags$p(
+                  class = "wmfm-explanation-helper-note",
+                  "The app could not build the teaching guide for this model yet, so only the main explanation is shown right now."
+                )
+              ),
+              bslib::accordion_panel(
+                title = "Optional AI tutor",
+                tags$div(
+                  class = "wmfm-explanation-helper-box",
+                  tags$div(
+                    class = "wmfm-explanation-helper-note",
+                    "Want a more conversational walkthrough? You can optionally ask the app for a tutor-style explanation that stays grounded in the information already shown here."
+                  ),
+                  tags$p(
+                    class = "wmfm-explanation-helper-note",
+                    "Turn on a chat provider in Settings if you want the optional AI tutor walkthrough."
+                  ),
+                  renderExplanationTutorUi(
+                    text = tutorText,
+                    available = !is.null(rv$chatProvider),
+                    researchQuestion = researchQuestionText,
+                    dataDescription = NULL
+                  )
                 )
               )
             ),
-            if (isTRUE(developerModeUnlocked())) {
-              bslib::accordion_panel(
-                title = "Explanation prompt diagnostics",
-                {
-                  buildExplanationPromptDiagnosticsUi(diagnostics = rv$explanationPromptDiagnostics)
-                }
-              )
-            }
+            developerMode = isTRUE(developerModeUnlocked()),
+            diagnostics = rv$explanationPromptDiagnostics
           )
+        )
       }
     )
   })

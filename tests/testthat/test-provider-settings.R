@@ -156,11 +156,15 @@ test_that("optional follow-up placeholder is neutral and visually subdued", {
 })
 
 test_that("explanation prompt diagnostics rely on accordion title styling", {
-  uiText = readPackageText("R", "app-explanation-diagnostics-ui.R")
+  helperText = readPackageText("R", "app-explanation-diagnostics-ui.R")
+  observerText = readPackageText("R", "app-server-explanation.R")
 
-  expect_false(grepl('tags$strong("Explanation prompt diagnostics")', uiText, fixed = TRUE))
-  expect_match(uiText, "Explanation prompt diagnostics", fixed = TRUE)
-  expect_match(uiText, "wmfm-explanation-helper-box", fixed = TRUE)
+  expect_false(grepl('tags$strong("Explanation prompt diagnostics")', helperText, fixed = TRUE))
+  expect_false(grepl('tags$h4(
+      class = "wmfm-explanation-helper-title"', helperText, fixed = TRUE))
+  expect_match(observerText, "buildModelExplanationSupportAccordion", fixed = TRUE)
+  expect_match(observerText, "value = \"explanation_prompt_diagnostics\"", fixed = TRUE)
+  expect_match(helperText, "wmfm-explanation-helper-box", fixed = TRUE)
 })
 
 test_that("provider observers persist provider changes and avoid non-Ollama discovery", {

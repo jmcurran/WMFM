@@ -16,7 +16,6 @@ testthat::test_that("Developer Mode diagnostics UI includes required output IDs"
   ui = buildExplanationPromptDiagnosticsUi(diagnostics = diagnostics)
   html = as.character(ui)
 
-  testthat::expect_match(html, "Explanation prompt diagnostics", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_bundle", fixed = TRUE)
   testthat::expect_match(html, "Raw follow-up question", fixed = TRUE)
   testthat::expect_match(html, "diag_followup_raw_text", fixed = TRUE)

@@ -210,8 +210,14 @@ test_that("developer mode source controls are hidden unless explicitly enabled",
     fixed = TRUE
   ))
 
-  expect_false(grepl(
+  expect_true(grepl(
     "inputId = \"developerModePassword\"",
+    startupObserverText,
+    fixed = TRUE
+  ))
+
+  expect_true(grepl(
+    "if (isDeveloperModeUiEnabled())",
     startupObserverText,
     fixed = TRUE
   ))

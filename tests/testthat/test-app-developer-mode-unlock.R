@@ -74,7 +74,7 @@ testthat::test_that("developer mode UI uses an opt-in styled toggle", {
   ))
 })
 
-testthat::test_that("startup observers wire session-only developer toggle controls", {
+testthat::test_that("startup observers wire password-protected developer toggle controls", {
   startupObserverText = paste(
     deparse(body(registerStartupDataChoiceObservers)),
     collapse = "\n"
@@ -97,31 +97,36 @@ testthat::test_that("startup observers wire session-only developer toggle contro
   )
   testthat::expect_match(
     startupObserverText,
-    "developerModeUnlocked(requestedUnlocked)",
+    "showModal(modalDialog",
     fixed = TRUE
   )
   testthat::expect_match(
     startupObserverText,
-    "saveDeveloperModePreference(requestedUnlocked)",
+    "verifyDeveloperModePassword(password)",
     fixed = TRUE
   )
   testthat::expect_match(
     startupObserverText,
-    "developerModeStatus(buildDeveloperModeStatus(requestedUnlocked))",
+    "developerModeUnlocked(TRUE)",
     fixed = TRUE
   )
-  testthat::expect_false(grepl(
-    "showModal",
+  testthat::expect_match(
     startupObserverText,
-    fixed = TRUE
-  ))
-  testthat::expect_false(grepl(
-    "verifyDeveloperModePassword",
-    startupObserverText,
-    fixed = TRUE
-  ))
-  testthat::expect_false(grepl(
     "saveDeveloperModePreference(TRUE)",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "developerModeUnlocked(FALSE)",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "saveDeveloperModePreference(FALSE)",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl(
+    "buildDeveloperModeUnlockedMessage()",
     startupObserverText,
     fixed = TRUE
   ))

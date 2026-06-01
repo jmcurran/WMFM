@@ -4,6 +4,16 @@ This file records user-facing and developer-facing changes reconstructed from
 completed stage notes and the Stage 29 workflow. It is a release-note summary,
 not a commit-by-commit history.
 
+## WMFM 0.2.5.015
+
+* Restore password protection for the maintainer-only developer-mode toggle while
+  preserving the local developer-mode preference after a successful unlock.
+* Keep developer-mode unlock quiet by avoiding the previous success notification.
+* Render explanation prompt diagnostics through the same accordion construction as
+  the student-facing support panels.
+* Remove the duplicate standalone diagnostics heading from the diagnostics panel
+  content so the accordion heading provides the visual affordance.
+
 ## WMFM 0.2.5.012
 
 * Repair `NEWS.md` so every top-level news section has a version-like heading
