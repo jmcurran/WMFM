@@ -189,7 +189,7 @@ test_that("developer mode source controls are password protected", {
   )
 
   expect_true(grepl(
-    'inputId = "developerModeToggle"',
+    'id = "developerModeToggle"',
     uiText,
     fixed = TRUE
   ))

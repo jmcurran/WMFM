@@ -115,12 +115,22 @@ testthat::test_that("developer mode UI uses a styled toggle rather than lock but
 
   testthat::expect_match(
     uiText,
-    'inputId = "developerModeToggle"',
+    'id = "developerModeToggle"',
     fixed = TRUE
   )
   testthat::expect_match(
     uiText,
-    "wmfm-developer-mode-toggle-control",
+    "wmfm-developer-mode-toggle-row",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    uiText,
+    "wmfm-developer-mode-switch",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    uiText,
+    "wmfm-developer-mode-slider",
     fixed = TRUE
   )
   testthat::expect_match(
@@ -133,6 +143,29 @@ testthat::test_that("developer mode UI uses a styled toggle rather than lock but
     "background-color: #2e7d32",
     fixed = TRUE
   )
+  developerModeUiStart = regexpr(
+    'class = "wmfm-developer-mode-toggle-row"',
+    uiText,
+    fixed = TRUE
+  )
+  developerModeUiEnd = regexpr(
+    'h4("Provider settings")',
+    uiText,
+    fixed = TRUE
+  )
+  testthat::expect_gt(developerModeUiStart[1], 0)
+  testthat::expect_gt(developerModeUiEnd[1], developerModeUiStart[1])
+  developerModeUiText = substr(
+    uiText,
+    developerModeUiStart[1],
+    developerModeUiEnd[1]
+  )
+
+  testthat::expect_false(grepl(
+    "checkboxInput",
+    developerModeUiText,
+    fixed = TRUE
+  ))
   testthat::expect_false(grepl(
     "unlockDeveloperModeBtn",
     uiText,

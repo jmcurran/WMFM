@@ -40,8 +40,28 @@ test_that("non-secret provider config preparation and persistence exclude key-li
   ))
 
   persisted = readWmfmConfig()
-  expect_identical(names(persisted), c("backend", "ollamaBaseUrl", "ollamaModel", "ollamaThinkLow"))
+  expect_identical(persisted$backend, "claude")
+  expect_identical(persisted$ollamaBaseUrl, "http://localhost:11434")
+  expect_identical(persisted$ollamaModel, "llama3.2")
+  expect_true(persisted$ollamaThinkLow)
   expect_false(any(grepl("key", names(persisted), ignore.case = TRUE)))
+})
+
+test_that("provider config persistence preserves developer-mode preference", {
+  tmpDir = tempfile("wmfm-provider-settings-developer-mode-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  saveDeveloperModePreference(TRUE)
+  saveNonSecretProviderConfig(list(
+    backend = "claude",
+    ollamaBaseUrl = "http://custom",
+    ollamaModel = "custom-model",
+    ollamaThinkLow = FALSE
+  ))
+
+  persisted = readWmfmConfig()
+  expect_identical(persisted$backend, "claude")
+  expect_true(isTRUE(persisted$developerModeEnabled))
 })
 
 test_that("resetNonSecretProviderConfig restores defaults", {
@@ -55,8 +75,13 @@ test_that("resetNonSecretProviderConfig restores defaults", {
     ollamaThinkLow = TRUE
   ))
 
+  saveDeveloperModePreference(TRUE)
   resetNonSecretProviderConfig()
-  expect_identical(readWmfmConfig(), wmfmProviderDefaults())
+
+  persisted = readWmfmConfig()
+  expect_identical(persisted$backend, wmfmProviderDefaults()$backend)
+  expect_identical(persisted$ollamaModel, wmfmProviderDefaults()$ollamaModel)
+  expect_true(isTRUE(persisted$developerModeEnabled))
 })
 
 test_that("provider settings labels keep Ollama-specific controls explicit", {

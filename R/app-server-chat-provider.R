@@ -189,6 +189,13 @@ registerChatProviderObservers = function(input, output, session, rv) {
       rv$activeOllamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     }
 
+    saveNonSecretProviderConfig(prepareNonSecretProviderConfig(
+      backend = requested,
+      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaModel = selectedModel,
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+    ))
+
     msg = buildChatProviderSetMessage(
       backend = requested,
       ollamaModel = rv$activeOllamaModel,

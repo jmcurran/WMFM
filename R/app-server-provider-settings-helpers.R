@@ -133,7 +133,14 @@ prepareNonSecretProviderConfig = function(backend, ollamaBaseUrl, ollamaModel, o
 #' @return Invisibly returns the config file path written by `writeWmfmConfig()`.
 #' @keywords internal
 saveNonSecretProviderConfig = function(providerConfig) {
-  writeWmfmConfig(providerConfig)
+  config = readWmfmConfig()
+  providerConfig = as.list(providerConfig)
+
+  for (fieldName in names(providerConfig)) {
+    config[[fieldName]] = providerConfig[[fieldName]]
+  }
+
+  writeWmfmConfig(config)
 }
 
 #' Reset non-secret provider settings to package defaults
@@ -141,5 +148,12 @@ saveNonSecretProviderConfig = function(providerConfig) {
 #' @return Invisibly returns the config file path written by `writeWmfmConfig()`.
 #' @keywords internal
 resetNonSecretProviderConfig = function() {
-  writeWmfmConfig(wmfmProviderDefaults())
+  config = readWmfmConfig()
+  developerModeEnabled = config$developerModeEnabled
+  config = wmfmProviderDefaults()
+  if (!is.null(developerModeEnabled)) {
+    config$developerModeEnabled = isTRUE(developerModeEnabled)
+  }
+
+  writeWmfmConfig(config)
 }
