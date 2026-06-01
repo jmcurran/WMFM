@@ -101,6 +101,55 @@ appUI = function() {
         outline-offset: 2px;
       }
 
+      .wmfm-provider-settings-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .wmfm-provider-settings-info {
+        display: inline-block;
+        position: relative;
+        font-size: 0.75em;
+      }
+
+      .wmfm-provider-settings-info summary {
+        cursor: pointer;
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-provider-settings-info summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .wmfm-provider-settings-info-body {
+        position: absolute;
+        z-index: 1000;
+        top: 1.8em;
+        left: 0;
+        width: 360px;
+        max-width: 80vw;
+        padding: 10px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        color: #333333;
+        font-size: 0.6em;
+        font-weight: 400;
+        line-height: 1.35;
+      }
+
+      .wmfm-provider-settings-info-body p {
+        margin: 0 0 6px 0;
+      }
+
+      .wmfm-provider-settings-info-body p:last-child {
+        margin-bottom: 0;
+      }
+
       .tab-content {\n        overflow: visible;\n      }\n    ")),
 
     tabsetPanel(
@@ -499,16 +548,26 @@ appUI = function() {
           )
         },
         h4(
-          "Provider settings ",
-          tags$span(
-            icon("circle-info"),
-            title = paste(
-              "Choose one active provider/backend.",
-              "Ollama uses base URL plus model and no API key.",
-              "Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM.",
-              "API keys are not shown here and are never stored in the WMFM config file."
+          class = "wmfm-provider-settings-heading",
+          tags$span("Provider settings"),
+          tags$details(
+            class = "wmfm-provider-settings-info",
+            tags$summary(
+              icon("circle-info"),
+              tags$span(class = "sr-only", "Provider settings information")
             ),
-            style = "cursor: help;"
+            tags$div(
+              class = "wmfm-provider-settings-info-body",
+              tags$p(
+                "Choose one active provider/backend. Ollama uses base URL plus model and no API key."
+              ),
+              tags$p(
+                "Claude uses the ANTHROPIC_API_KEY environment variable set in .Renviron before WMFM starts."
+              ),
+              tags$p(
+                "API keys are not shown here and are never stored in the WMFM config file."
+              )
+            )
           )
         ),
         tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),

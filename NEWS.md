@@ -4,6 +4,11 @@ This file records user-facing and developer-facing changes reconstructed from
 completed stage notes and the Stage 29 workflow. It is a release-note summary,
 not a commit-by-commit history.
 
+## WMFM 0.2.5.017
+
+* Make the Provider settings information icon expandable/clickable by replacing the title-only tooltip with an inline details panel.
+* Keep provider configuration guidance close to the Provider settings heading without showing the longer text permanently on the settings page.
+
 ## WMFM 0.2.5.016
 
 * Move provider-setting guidance into an information tooltip beside the Provider
