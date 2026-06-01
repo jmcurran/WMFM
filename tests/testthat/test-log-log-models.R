@@ -103,8 +103,8 @@ testthat::test_that("log-log unit-change follow-ups use original-scale proportio
   testthat::expect_true(is.finite(result$percentChange))
   testthat::expect_match(result$interpretation, "Starting from a typical carat value", fixed = TRUE)
   testthat::expect_match(result$interpretation, "increasing to", fixed = TRUE)
-  testthat::expect_match(result$interpretation, "0.1-unit increase", fixed = TRUE)
-  testthat::expect_match(result$interpretation, "fitted price", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "0.1-carat increase", fixed = TRUE)
+  testthat::expect_match(result$interpretation, "a fitted price", fixed = TRUE)
   testthat::expect_false(grepl("log(price)", result$interpretation, fixed = TRUE))
 })
 

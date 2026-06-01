@@ -250,3 +250,11 @@ It is intentionally grouped by feature area rather than by exact release number.
 - Fixed the adjusted-estimate confidence interval rewrite so coefficient-scale wording can be converted to percentage-change wording.
 - Preserved existing interval dash formatting and NA handling in explanation post-processing.
 - Validated by the standard stage script workflow.
+
+## Stage 32.3.10
+
+- Refined log-log unit-change follow-up wording so fixed carat changes keep the reference point and use carat units.
+- Tightened log-log explanation guidance to avoid raw coefficient estimates and unsupported doubling examples in student-facing text.
+- Added post-processing coverage for the model-estimate sentence variant seen in Diamonds IV diagnostics.
+- Preserved interval dash formatting while keeping log-log uncertainty on the percentage-change scale.
+- Validated by the standard stage script workflow.

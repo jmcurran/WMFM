@@ -514,8 +514,9 @@ computeLogLogUnitChangeResult = function(
       "Starting from a typical ", originalPredictorName, " value of ",
       signif(referenceValue, 3), ", increasing to ",
       signif(comparisonValue, 3), " ", originalPredictorName,
-      " (a ", signif(unitChange, 3), "-unit increase) is associated ",
-      "with fitted ", parseNaturalLogCall(responseName) %||% responseName,
+      " (a ", signif(unitChange, 3), "-", originalPredictorName,
+      " increase) is associated with a fitted ",
+      parseNaturalLogCall(responseName) %||% responseName,
       " that is ", formatUnitChangePercentText(percentChange), "."
     )
   )

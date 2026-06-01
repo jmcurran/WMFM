@@ -671,6 +671,34 @@ postProcessLogLogPercentageLanguage = function(text) {
   }
 
   text = vapply(text, rewriteAdjustedEstimate, character(1), USE.NAMES = FALSE)
+
+  text = gsub(
+    pattern = paste0(
+      "The model estimate for the change pattern relating log\\(carat\\) ",
+      "to log\\(price\\) is[[:space:]]+[0-9.]+[[:space:]]+",
+      "\\(95%[[:space:]]+confidence interval:[[:space:]]+",
+      "\\[([0-9.]+)[^0-9]+([0-9.]+)\\]\\)\\."
+    ),
+    replacement = paste0(
+      "Values between about \\1% and \\2% per 1% increase ",
+      "are consistent with the data."
+    ),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "For example,[[:space:]]+doubling the carat weight ",
+      "corresponds to nearly doubling the price\\."
+    ),
+    replacement = "",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
   text = gsub(
     pattern = paste0(
       "[[:space:]]*",

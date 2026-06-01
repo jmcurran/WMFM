@@ -585,3 +585,18 @@ testthat::test_that("postProcessExplanationText keeps log-log uncertainty on per
   testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
   testthat::expect_false(grepl("The adjusted estimate is", out, fixed = TRUE))
 })
+
+
+testthat::test_that("postProcessExplanationText removes log-log coefficient estimate sentence variants", {
+  text = paste(
+    "The model estimate for the change pattern relating log(carat) to log(price) is 1.88 (95% confidence interval: [1.88-1.89]).",
+    "Because both variables are log-transformed, this means that a 1% increase in carat weight is associated with roughly a 1.88% increase in price.",
+    "For example, doubling the carat weight corresponds to nearly doubling the price."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
+  testthat::expect_false(grepl("The model estimate for the change pattern", out, fixed = TRUE))
+  testthat::expect_false(grepl("doubling the carat weight corresponds to nearly doubling", out, fixed = TRUE))
+})
