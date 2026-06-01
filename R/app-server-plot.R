@@ -10,7 +10,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny div helpText renderPlot renderUI req selectInput tags tagList validate need
+#' @importFrom shiny checkboxInput div helpText renderPlot renderUI req selectInput tags tagList validate need
 registerModelPlotObservers = function(input, output, modelFit) {
   output$plot_ci_controls_ui = renderUI({
     m = modelFit()
@@ -71,6 +71,30 @@ registerModelPlotObservers = function(input, output, modelFit) {
     )
   })
 
+  output$modelPlotSmoothTrendUi = renderUI({
+    m = modelFit()
+    req(m)
+
+    plotFamily = classifyModelPlotFamily(m)
+
+    if (!identical(plotFamily, "lm")) {
+      return(NULL)
+    }
+
+    tagList(
+      div(
+        class = "wmfm-model-plot-smoother-control",
+        checkboxInput(
+          inputId = "modelPlotShowSmoothTrend",
+          label = "Show smooth trend",
+          value = TRUE
+        ),
+        helpText(
+          "The blue smooth trend is chosen automatically and can help reveal broad patterns. It is not a formal test."
+        )
+      )
+    )
+  })
 
   output$modelPlotSummaryUi = renderUI({
     m = modelFit()
@@ -111,7 +135,12 @@ registerModelPlotObservers = function(input, output, modelFit) {
     req(m)
 
     plotType = input$modelPlotType %||% "observedFitted"
-    plot = plotModelPlot(model = m, plotType = plotType)
+    showSmoothTrend = isTRUE(input$modelPlotShowSmoothTrend %||% TRUE)
+    plot = plotModelPlot(
+      model = m,
+      plotType = plotType,
+      showSmoothTrend = showSmoothTrend
+    )
 
     validate(
       need(

@@ -1,3 +1,11 @@
+## Stage 31.1
+
+- Added an optional blue smooth trend to linear-model observed-vs-fitted and residuals-vs-fitted model plots.
+- Kept the smoother automatic, with no user control over the smoothing parameter.
+- Drew plot layers in the order points, blue smoother, then red reference line so the reference remains visible.
+- Kept the smoother unavailable for unsupported model families and safely ignored for GLM plots.
+- Added deterministic tests for smoother layers, UI controls, and cautious student-facing wording.
+
 # WMFM development news
 
 ## Stage 30.7

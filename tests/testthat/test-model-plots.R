@@ -110,20 +110,60 @@ testthat::test_that("plotModelPlot uses model-aware labels", {
 
 
 
-testthat::test_that("plotModelPlot draws red reference and logistic trend layers", {
+testthat::test_that("plotModelPlot draws lm smoother before red reference layers", {
   lmModel = stats::lm(mpg ~ wt, data = mtcars)
-  lmPlot = plotModelPlot(lmModel, plotType = "observedFitted")
 
-  testthat::expect_equal(length(lmPlot$layers), 2)
-  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$colour, "red")
-  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$linewidth, 2)
+  observedPlot = plotModelPlot(lmModel, plotType = "observedFitted")
 
+  testthat::expect_equal(length(observedPlot$layers), 3)
+  testthat::expect_identical(observedPlot$layers[[2]]$aes_params$colour, "blue")
+  testthat::expect_false(observedPlot$layers[[2]]$stat_params$se)
+  testthat::expect_identical(observedPlot$layers[[3]]$aes_params$colour, "red")
+  testthat::expect_identical(observedPlot$layers[[3]]$aes_params$linewidth, 2)
+
+  residualPlot = plotModelPlot(lmModel, plotType = "residualFitted")
+
+  testthat::expect_equal(length(residualPlot$layers), 3)
+  testthat::expect_identical(residualPlot$layers[[2]]$aes_params$colour, "blue")
+  testthat::expect_false(residualPlot$layers[[2]]$stat_params$se)
+  testthat::expect_identical(residualPlot$layers[[3]]$aes_params$colour, "red")
+  testthat::expect_identical(residualPlot$layers[[3]]$aes_params$linewidth, 2)
+})
+
+
+testthat::test_that("plotModelPlot can omit lm smoother when requested", {
+  lmModel = stats::lm(mpg ~ wt, data = mtcars)
+
+  observedPlot = plotModelPlot(
+    lmModel,
+    plotType = "observedFitted",
+    showSmoothTrend = FALSE
+  )
+
+  residualPlot = plotModelPlot(
+    lmModel,
+    plotType = "residualFitted",
+    showSmoothTrend = FALSE
+  )
+
+  testthat::expect_equal(length(observedPlot$layers), 2)
+  testthat::expect_identical(observedPlot$layers[[2]]$aes_params$colour, "red")
+  testthat::expect_equal(length(residualPlot$layers), 2)
+  testthat::expect_identical(residualPlot$layers[[2]]$aes_params$colour, "red")
+})
+
+
+testthat::test_that("plotModelPlot ignores lm smoother option for glm plots", {
   poissonModel = stats::glm(
     breaks ~ wool + tension,
     data = warpbreaks,
     family = stats::poisson()
   )
-  poissonPlot = plotModelPlot(poissonModel, plotType = "residualFitted")
+  poissonPlot = plotModelPlot(
+    poissonModel,
+    plotType = "residualFitted",
+    showSmoothTrend = TRUE
+  )
 
   testthat::expect_equal(length(poissonPlot$layers), 2)
   testthat::expect_identical(poissonPlot$layers[[2]]$aes_params$colour, "red")
@@ -136,7 +176,11 @@ testthat::test_that("plotModelPlot draws red reference and logistic trend layers
     data = data,
     family = stats::binomial()
   )
-  logisticPlot = plotModelPlot(logisticModel, plotType = "observedFitted")
+  logisticPlot = plotModelPlot(
+    logisticModel,
+    plotType = "observedFitted",
+    showSmoothTrend = TRUE
+  )
 
   testthat::expect_equal(length(logisticPlot$layers), 2)
   testthat::expect_identical(logisticPlot$layers[[2]]$aes_params$colour, "red")
@@ -166,6 +210,7 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   testthat::expect_match(uiText, "wmfm-model-plots-heading", fixed = TRUE)
   testthat::expect_match(uiText, "wmfm-model-plots-info", fixed = TRUE)
   testthat::expect_match(uiText, "wmfm-model-plots-info-body", fixed = TRUE)
+  testthat::expect_match(uiText, "modelPlotSmoothTrendUi", fixed = TRUE)
   testthat::expect_match(uiText, "These plots help you notice whether the fitted model is missing obvious structure.", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model checking", fixed = TRUE)
   testthat::expect_no_match(uiText, "Diagnostic plots", fixed = TRUE)

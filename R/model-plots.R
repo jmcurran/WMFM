@@ -309,17 +309,25 @@ buildModelPlotSummaryText = function(model, plotType = c("observedFitted", "resi
     "observations"
   }
 
+  smootherText = if (identical(plotData$plotFamily, "lm")) {
+    " For linear models, the optional blue smooth trend can help reveal broad patterns."
+  } else {
+    ""
+  }
+
   if (identical(plotData$plotType, "residualFitted")) {
     return(paste0(
       "Plotting ", observationCount, " ", observationWord,
       " using ", plotData$residualType,
-      " residuals against ", plotData$fittedScale, "."
+      " residuals against ", plotData$fittedScale, ".",
+      smootherText
     ))
   }
 
   paste0(
     "Plotting ", observationCount, " ", observationWord,
-    " with fitted values on the ", plotData$fittedScale, " scale."
+    " with fitted values on the ", plotData$fittedScale, " scale.",
+    smootherText
   )
 }
 
@@ -366,7 +374,7 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
     return(list(
       title = "Observed vs fitted",
       shows = "This plot shows how closely the fitted values track the observed responses.",
-      lookFor = "Points close to the reference line have fitted values close to the observed values; strong patterns away from the line may suggest missing structure.",
+      lookFor = "Points close to the red reference line have fitted values close to the observed values; a blue smooth trend that bends away from the line may suggest missing structure.",
       cannotProve = "This plot does not prove that the model is correct."
     ))
   }
@@ -392,7 +400,7 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
   list(
     title = "Residuals vs fitted",
     shows = "This plot shows what is left over after the fitted model has been used.",
-    lookFor = "Residuals scattered around zero with no obvious pattern are generally easier to reconcile with the fitted model; curves, funnels, or clusters may suggest missing structure.",
+    lookFor = "Residuals scattered around the red zero line with no obvious pattern are generally easier to reconcile with the fitted model; a blue smooth trend, funnels, or clusters may suggest missing structure.",
     cannotProve = "This plot does not identify the correct alternative model by itself."
   )
 }
@@ -401,6 +409,8 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
 #'
 #' @param model A fitted model object or \code{wmfmModel} object.
 #' @param plotType Plot type.
+#' @param showSmoothTrend Logical; if \code{TRUE}, add an automatic blue
+#'   smoother for supported linear-model plots.
 #'
 #' @return A \code{ggplot} object, or \code{NULL} for unsupported models.
 #'
@@ -409,7 +419,11 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
 #' @importFrom rlang .data
 #'
 #' @export
-plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")) {
+plotModelPlot = function(
+    model,
+    plotType = c("observedFitted", "residualFitted"),
+    showSmoothTrend = TRUE
+) {
 
   plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
   plotData = buildModelPlotData(model = model, plotType = plotType)
@@ -457,6 +471,13 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       return(plot)
     }
 
+    if (isTRUE(showSmoothTrend) && identical(plotData$plotFamily, "lm")) {
+      plot = plot + geom_smooth(
+        se = FALSE,
+        color = "blue"
+      )
+    }
+
     plot + geom_abline(
       slope = 1,
       intercept = 0,
@@ -465,13 +486,21 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       color = "red"
     )
   } else {
-    ggplot(
+    plot = ggplot(
       data,
       aes(x = .data$fitted, y = .data$residual)
     ) +
       geom_point(alpha = 0.75) +
-      geom_hline(yintercept = 0, linetype = "dashed", linewidth = 2, color = "red") +
       labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
+
+    if (isTRUE(showSmoothTrend) && identical(plotData$plotFamily, "lm")) {
+      plot = plot + geom_smooth(
+        se = FALSE,
+        color = "blue"
+      )
+    }
+
+    plot + geom_hline(yintercept = 0, linetype = "dashed", linewidth = 2, color = "red")
   }
 }

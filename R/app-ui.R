@@ -582,6 +582,7 @@ appUI = function() {
           )
         ),
         uiOutput("modelPlotTypeUi"),
+        uiOutput("modelPlotSmoothTrendUi"),
         plotOutput("modelPlotsPlot", height = "360px"),
         uiOutput("modelPlotTeachingNoteUi")
       ),
