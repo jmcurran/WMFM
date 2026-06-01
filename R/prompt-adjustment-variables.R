@@ -207,7 +207,7 @@ getAdjustedPrimaryEffectSummary = function(model, mf = NULL) {
     primaryVariable,
     ", the adjusted model estimate is ",
     sprintf("%.2f", estimate),
-    " (95% CI ",
+    " (95% confidence interval ",
     sprintf("%.2f", lower),
     " to ",
     sprintf("%.2f", upper),

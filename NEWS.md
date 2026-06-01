@@ -228,3 +228,11 @@ It is intentionally grouped by feature area rather than by exact release number.
 * Reorganize package source files into feature-oriented modules.
 * Improve data-context handling, loading progress feedback, UI cleanup, and
   pedagogical stability planning.
+
+## Stage 32.2
+
+- Standardised compact confidence interval labels in student-facing post-processing.
+- Rewrote additional log-scale mechanism wording toward proportional-change language.
+- Expanded deterministic tests for common compact interval labels and log-scale wording leakage.
+- Updated adjustment and contrast text to prefer 95% confidence interval over compact 95% CI wording.
+

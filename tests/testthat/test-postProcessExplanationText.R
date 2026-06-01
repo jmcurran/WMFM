@@ -215,6 +215,38 @@ testthat::test_that("postProcessExplanationText handles additional confidence in
 })
 
 
+testthat::test_that("postProcessExplanationText standardises compact confidence interval labels", {
+  examples = c(
+    "The estimate is 2.4 (95% c.i.).",
+    "The estimate is 2.4 (95% c.i.: 1.2 to 3.6).",
+    "The estimate is 2.4 (95% C.I.).",
+    "The estimate is 2.4 (95% CI).",
+    "The estimate is 2.4 (95% CI from 1.2 to 3.6)."
+  )
+
+  out = postProcessExplanationText(examples)
+
+  testthat::expect_true(all(grepl("95% confidence interval", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% c.i.", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% C.I.", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("95% CI", out, fixed = TRUE)))
+})
+
+
+testthat::test_that("postProcessExplanationText rewrites generic log-scale mechanism wording", {
+  examples = c(
+    "This model was fitted on a log scale.",
+    "The relationship was analyzed on a log scale.",
+    "This was modelled on a log scale."
+  )
+
+  out = postProcessExplanationText(examples)
+
+  testthat::expect_true(all(grepl("proportional changes", out, fixed = TRUE)))
+  testthat::expect_false(any(grepl("on a log scale", out, fixed = TRUE)))
+})
+
+
 testthat::test_that("postProcessExplanationText cleans small grammar artefacts", {
   text = "A one-unit increase in age multiplies the odds by 1.4."
 

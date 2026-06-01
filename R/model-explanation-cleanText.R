@@ -467,8 +467,8 @@ postProcessConfidenceIntervalTerminology = function(text) {
   )
 
   text = gsub(
-    pattern = "\\b95%[[:space:]]*(?:c\\.i\\.|C\\.I\\.|CI)(?=[[:space:]]*(?:[:\\[]|$))",
-    replacement = "95% confidence interval",
+    pattern = "\\b(\\d+(?:\\.\\d+)?%)[[:space:]]*(?:c\\.i\\.|C\\.I\\.|CI)(?=[[:space:][:punct:]]|$)",
+    replacement = "\\1 confidence interval",
     x = text,
     perl = TRUE,
     ignore.case = TRUE
@@ -604,6 +604,19 @@ postProcessModelMechanismLanguage = function(text) {
 
   text = gsub(
     pattern = "Both ([^.]*) were analysed on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+  text = gsub(
+    pattern = "\\b(?:[Tt]his|[Tt]he) (?:model|relationship) (?:was|is) (?:fitted|modelled|modeled|analysed|analyzed) on a log scale\\.",
+    replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b[Tt]his (?:was|is) (?:modelled|modeled|analysed|analyzed) on a log scale\\.",
     replacement = "This means the relationship is interpreted through proportional changes rather than ordinary unit changes.",
     x = text,
     perl = TRUE
