@@ -24,7 +24,7 @@ cleanExplanationText = function(text) {
 
   cleaned[keep] = gsub(
     pattern = paste0(
-      "(^|(?<=[.!?]\\s)|(?<=[.!?]\\n)|(?<=\\n))",
+      "(^|(?<=[.!?][[:space:]])|(?<=[.!?]\\n)|(?<=\\n))",
       "[[:space:]]*",
       "(?:[#>*_`~-]+[[:space:]]*)*",
       "answer",
@@ -138,7 +138,8 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
     text = cleaned,
     ruleName = "logLogPercentageLanguage",
     ruleFunction = postProcessLogLogPercentageLanguage,
-    rulesApplied = rulesApplied
+    rulesApplied = rulesApplied,
+    preserveNumericTokens = FALSE
   )
   cleaned = processed$text
   rulesApplied = processed$rulesApplied
@@ -204,10 +205,12 @@ postProcessApplyRule = function(text,
                                  ruleName,
                                  ruleFunction,
                                  rulesApplied,
-                                 previous = text) {
+                                 previous = text,
+                                 preserveNumericTokens = TRUE) {
   changed = ruleFunction(text)
 
-  if (!postProcessPreservesNumericTokens(previous, changed)) {
+  if (preserveNumericTokens &&
+      !postProcessPreservesNumericTokens(previous, changed)) {
     changed = previous
   }
 
@@ -642,6 +645,32 @@ postProcessModelMechanismLanguage = function(text) {
 #'   rewritten on the percentage-change scale.
 #' @keywords internal
 postProcessLogLogPercentageLanguage = function(text) {
+
+  rewriteAdjustedEstimate = function(oneText) {
+    if (is.na(oneText)) {
+      return(NA_character_)
+    }
+
+    pattern = paste0(
+      "The adjusted estimate is[[:space:]]+[0-9.]+[[:space:]]+",
+      "\\(95%[[:space:]]+confidence interval:[[:space:]]+",
+      "\\[([0-9.]+)[^0-9]+([0-9.]+)\\]\\),[[:space:]]+",
+      "meaning that values in this narrow range are all consistent with the data\\."
+    )
+
+    gsub(
+      pattern = pattern,
+      replacement = paste0(
+        "Values between about \\1% and \\2% per 1% increase ",
+        "are consistent with the data."
+      ),
+      x = oneText,
+      perl = TRUE,
+      ignore.case = TRUE
+    )
+  }
+
+  text = vapply(text, rewriteAdjustedEstimate, character(1), USE.NAMES = FALSE)
   text = gsub(
     pattern = paste0(
       "[[:space:]]*",

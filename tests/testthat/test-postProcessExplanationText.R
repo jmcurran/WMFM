@@ -570,3 +570,18 @@ testthat::test_that("postProcessExplanationText rewrites raw log-log coefficient
   testthat::expect_false(grepl("log-weight", out, fixed = TRUE))
   testthat::expect_false(grepl("log-price", out, fixed = TRUE))
 })
+
+
+testthat::test_that("postProcessExplanationText keeps log-log uncertainty on percentage scale", {
+  text = paste(
+    "For every 1% increase in carat weight, the price increases by about 1.88%.",
+    "The adjusted estimate is 1.88 (95% confidence interval: [1.88-1.89]), meaning that values in this narrow range are all consistent with the data."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "1% increase in carat weight", fixed = TRUE)
+  testthat::expect_match(out, "1.88%", fixed = TRUE)
+  testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
+  testthat::expect_false(grepl("The adjusted estimate is", out, fixed = TRUE))
+})

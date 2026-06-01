@@ -243,3 +243,10 @@ It is intentionally grouped by feature area rather than by exact release number.
 - Added deterministic tests for 1% percentage-change wording and log-scale leakage cleanup.
 - Kept the change scoped to log-log wording polish.
 
+
+## Stage 32.3.9
+
+- Allowed the log-log percentage-language post-processing rule to bypass numeric-token preservation while keeping the guard active for other rules.
+- Fixed the adjusted-estimate confidence interval rewrite so coefficient-scale wording can be converted to percentage-change wording.
+- Preserved existing interval dash formatting and NA handling in explanation post-processing.
+- Validated by the standard stage script workflow.

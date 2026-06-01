@@ -287,6 +287,8 @@ buildExplanationScaleGuidance = function(modelProfile) {
     return(paste(
       "Use student-facing percentage-change language for this relationship.",
       "For example, describe a coefficient of 1.88 as: a 1% increase in the predictor is associated with about a 1.88% increase in the expected response.",
+      "When uncertainty is described, keep it on the same percent-change scale, such as values between about 1.88% and 1.89% per 1% increase are consistent with the data.",
+      "Do not write coefficient-style sentences such as the adjusted estimate is 1.88 in student-facing explanations.",
       "Do not interpret the coefficient as a one-unit increase in log-predictor or a one-unit increase in log-response.",
       "Avoid specialist jargon for this relationship in student-facing explanations unless the user explicitly asks for it.",
       "On the original response scale, describe the relationship as multiplicative rather than additive."
