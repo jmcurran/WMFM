@@ -674,26 +674,17 @@ postProcessLogLogPercentageLanguage = function(text) {
 
   text = gsub(
     pattern = paste0(
-      "The model estimate for the change pattern relating log\\(carat\\) ",
-      "to log\\(price\\) is[[:space:]]+[0-9.]+[[:space:]]+",
+      "The model estimate for the change pattern relating ",
+      "log\\(([^)]+)\\) to log\\(([^)]+)\\) is[[:space:]]+",
+      "[0-9.]+[[:space:]]+",
       "\\(95%[[:space:]]+confidence interval:[[:space:]]+",
       "\\[([0-9.]+)[^0-9]+([0-9.]+)\\]\\)\\."
     ),
     replacement = paste0(
-      "Values between about \\1% and \\2% per 1% increase ",
+      "A 1% increase in \\1 is associated with about a proportional increase ",
+      "in \\2. Values between about \\3% and \\4% per 1% increase ",
       "are consistent with the data."
     ),
-    x = text,
-    perl = TRUE,
-    ignore.case = TRUE
-  )
-
-  text = gsub(
-    pattern = paste0(
-      "For example,[[:space:]]+doubling the carat weight ",
-      "corresponds to nearly doubling the price\\."
-    ),
-    replacement = "",
     x = text,
     perl = TRUE,
     ignore.case = TRUE
@@ -728,6 +719,34 @@ postProcessLogLogPercentageLanguage = function(text) {
 
   text = gsub(
     pattern = paste0(
+      "[[:space:]]*",
+      "meaning that on the log scale, each an increase of one unit in ",
+      "log[[:space:]]+([[:alnum:]_]+) is associated with an increase of about ",
+      "([-+]?[0-9]+(?:\\.[0-9]+)?) units in log[[:space:]]+([[:alnum:]_]+)\\."
+    ),
+    replacement = " A 1% increase in \\1 is associated with about a \\2% increase in expected \\3.",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "The outcome is the logarithm of ([^,]+), ",
+      "and the predictor of interest is the logarithm of ([^.]+)\\."
+    ),
+    replacement = paste0(
+      "The outcome is \\1, and the predictor of interest is \\2. ",
+      "Because the fitted relationship is log-log, effects are best interpreted ",
+      "as percentage changes."
+    ),
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
       "The analysis examined the relationship between ",
       "([^()]+?) \\(measured in ([^,]+), on a log scale\\) and ",
       "([^()]+?) \\(also on a log scale\\)"
@@ -746,6 +765,18 @@ postProcessLogLogPercentageLanguage = function(text) {
     replacement = "The analysis examined how percentage changes in \\1 are associated with percentage changes in \\2",
     x = text,
     perl = TRUE
+  )
+
+  text = gsub(
+    pattern = paste0(
+      "[[:space:]]*For example,[[:space:]]+doubling ",
+      "(?:the )?[^.]+? corresponds to nearly doubling ",
+      "(?:the )?[^.]+?\\."
+    ),
+    replacement = "",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
   )
 
   text

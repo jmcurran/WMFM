@@ -258,3 +258,11 @@ It is intentionally grouped by feature area rather than by exact release number.
 - Added post-processing coverage for the model-estimate sentence variant seen in Diamonds IV diagnostics.
 - Preserved interval dash formatting while keeping log-log uncertainty on the percentage-change scale.
 - Validated by the standard stage script workflow.
+## Stage 32.3.11
+
+- Reworked the log-log polishing repair so production code uses only generic log-log wording patterns.
+- Removed example-specific post-processing for particular variable names from the pending repair.
+- Added generic coverage for raw log-scale estimate sentences, unsupported doubling examples, and coefficient-scale uncertainty leakage.
+- Kept anchored fixed-unit follow-up wording while preserving percentage-change interpretation for log-log models.
+- Validated by the standard stage script workflow.
+
