@@ -1,5 +1,60 @@
 # WMFM development news
 
+## Stage 30.7
+
+- Style the Model plots information control to match the existing provider-settings help control and open as a small modeless details panel.
+- Keep the teaching note next to the Model plots heading instead of rendering it as a full-width visible block.
+- Add deterministic UI tests for the Model plots information control classes and text.
+
+
+## Stage 30.6
+
+- Replace the Model plots hover-only information icon with an expandable information control so the teaching note is visible when clicked.
+- Preserve the Stage 30.5 line styling and developer-tab ordering changes.
+- Add a deterministic UI test for the Model plots information text.
+
+
+## Stage 30.5
+
+- Add the Model plots teaching note as an information icon next to the tab heading.
+- Make linear and Poisson reference lines thicker so they remain visible over the points.
+- Use a dashed logistic trend curve on the observed-outcome versus predicted-probability plot.
+- Move the developer Scoring and Grading tab before Settings so developer tabs stay at the end.
+
+
+## Stage 30.4
+
+- Move the Model plots tab immediately after Model Explanation and keep the existing Plot tab next to it.
+- Draw red reference lines after points for linear and Poisson model plots so the guide remains visible.
+- Add a red logistic trend curve to the observed-outcome versus predicted-probability plot.
+- Extend offline tests for tab ordering and plot-layer behavior.
+
+
+## Stage 30.3
+
+- Add a short deterministic summary sentence above each Model plots figure.
+- Report the number of plotted observations and the fitted-value or residual scale used by the selected plot.
+- Keep the summary text student-facing and separate from diagnostic pass/fail language.
+- Extend offline tests for the summary helper and the new UI output binding.
+
+
+## Stage 30.2
+
+- Harden the Model plots tab for unsupported fitted model families so unavailable choices do not trigger plotting errors.
+- Add model-aware plot metadata and ggplot labels based on the fitted response variable.
+- Keep the student-facing wording focused on visual summaries and missing structure rather than assumption checking.
+- Extend offline tests for unsupported models and model-aware plot labels.
+
+
+## Stage 30.1
+
+- Add a student-facing Model plots tab for fitted models.
+- Add deterministic observed-vs-fitted and residuals-vs-fitted model-plot helpers.
+- Support lm, binomial logistic glm, and poisson glm model-plot data on appropriate fitted-value scales.
+- Add short teaching notes that frame plots as visual summaries rather than assumption checks.
+- Add offline tests for model-plot data, labels, residual types, and cautious UI language.
+
+
 This file records user-facing and developer-facing changes reconstructed from
 completed stage notes and the Stage 29 workflow. It is a release-note summary,
 not a commit-by-commit history.

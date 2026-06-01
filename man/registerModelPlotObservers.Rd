@@ -17,6 +17,6 @@ registerModelPlotObservers(input, output, modelFit)
 No return value; called for its side effects.
 }
 \description{
-Wires the model plotting outputs for the fitted model tab.
+Wires the original fitted-model plot and the student-facing Model plots tab.
 }
 \keyword{internal}

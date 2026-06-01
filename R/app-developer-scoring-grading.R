@@ -1013,7 +1013,7 @@ registerDeveloperScoringGradingObservers = function(
       if (!isTRUE(developerScoringTabInserted())) {
         shiny::insertTab(
           inputId = "main_tabs",
-          target = "Plot",
+          target = "Variable Explorer",
           position = "after",
           select = FALSE,
           tab = shiny::tabPanel(

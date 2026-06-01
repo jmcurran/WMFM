@@ -1,6 +1,6 @@
 #' Register model plot observers
 #'
-#' Wires the model plotting outputs for the fitted model tab.
+#' Wires the original fitted-model plot and the student-facing Model plots tab.
 #'
 #' @param input Shiny input object.
 #' @param output Shiny output object.
@@ -9,6 +9,8 @@
 #' @return No return value; called for its side effects.
 #'
 #' @keywords internal
+#'
+#' @importFrom shiny div helpText renderPlot renderUI req selectInput tags tagList validate need
 registerModelPlotObservers = function(input, output, modelFit) {
   output$plot_ci_controls_ui = renderUI({
     m = modelFit()
@@ -51,6 +53,74 @@ registerModelPlotObservers = function(input, output, modelFit) {
       replayPlot(res)
     }
 
+    invisible(NULL)
+  })
+
+  output$modelPlotTypeUi = renderUI({
+    m = modelFit()
+    req(m)
+
+    choices = buildModelPlotTypeChoices(m)
+
+    selectInput(
+      inputId = "modelPlotType",
+      label = "Plot type",
+      choices = choices,
+      selected = unname(choices)[1],
+      width = "360px"
+    )
+  })
+
+
+  output$modelPlotSummaryUi = renderUI({
+    m = modelFit()
+    req(m)
+
+    plotType = input$modelPlotType %||% "observedFitted"
+    summaryText = buildModelPlotSummaryText(model = m, plotType = plotType)
+
+    helpText(summaryText)
+  })
+
+  output$modelPlotTeachingNoteUi = renderUI({
+    m = modelFit()
+    req(m)
+
+    plotType = input$modelPlotType %||% "observedFitted"
+    note = buildModelPlotTeachingNote(model = m, plotType = plotType)
+
+    div(
+      class = "wmfm-model-plot-note",
+      tags$div(
+        class = "wmfm-model-plot-note-heading",
+        note$title
+      ),
+      tags$dl(
+        tags$dt("What this plot shows"),
+        tags$dd(note$shows),
+        tags$dt("What to look for"),
+        tags$dd(note$lookFor),
+        tags$dt("What this plot cannot prove"),
+        tags$dd(note$cannotProve)
+      )
+    )
+  })
+
+  output$modelPlotsPlot = renderPlot({
+    m = modelFit()
+    req(m)
+
+    plotType = input$modelPlotType %||% "observedFitted"
+    plot = plotModelPlot(model = m, plotType = plotType)
+
+    validate(
+      need(
+        !is.null(plot),
+        "Model plots are not available for this fitted model."
+      )
+    )
+
+    print(plot)
     invisible(NULL)
   })
 
