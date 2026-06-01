@@ -447,6 +447,28 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
   )
 }
 
+
+#' Build a file name for exported model plots
+#'
+#' @param plotType Plot type.
+#'
+#' @return A PNG file name for the selected model plot.
+#' @keywords internal
+buildModelPlotDownloadFilename = function(plotType = c("observedFitted", "residualFitted", "unsupported")) {
+
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
+
+  if (identical(plotType, "residualFitted")) {
+    return("wmfm-model-plot-residuals-vs-fitted.png")
+  }
+
+  if (identical(plotType, "observedFitted")) {
+    return("wmfm-model-plot-observed-vs-fitted.png")
+  }
+
+  "wmfm-model-plot.png"
+}
+
 #' Draw a student-facing model plot
 #'
 #' @param model A fitted model object or \code{wmfmModel} object.

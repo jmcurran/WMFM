@@ -1,3 +1,11 @@
+## Stage 31.3
+
+- Added a download button for the current student-facing Model plots view.
+- Exported the selected observed-vs-fitted or residuals-vs-fitted plot as a deterministic PNG file.
+- Reused the same plot helper so smoothing and density-aware point display are preserved in the downloaded plot.
+- Kept the feature separate from model explanations and avoided diagnostic or assumption-check wording.
+- Added deterministic tests for download filenames, UI wiring, and server wiring.
+
 ## Stage 31.2
 
 - Added density-aware point transparency to student-facing model plots without adding new plot types.

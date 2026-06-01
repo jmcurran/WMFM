@@ -10,7 +10,8 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny checkboxInput div helpText renderPlot renderUI req selectInput tags tagList validate need
+#' @importFrom shiny checkboxInput div downloadHandler helpText renderPlot renderUI req selectInput tags tagList validate need
+#' @importFrom ggplot2 ggsave
 registerModelPlotObservers = function(input, output, modelFit) {
   output$plot_ci_controls_ui = renderUI({
     m = modelFit()
@@ -129,6 +130,42 @@ registerModelPlotObservers = function(input, output, modelFit) {
       )
     )
   })
+
+
+  output$modelPlotsDownload = downloadHandler(
+    filename = function() {
+      plotType = input$modelPlotType %||% "observedFitted"
+      buildModelPlotDownloadFilename(plotType = plotType)
+    },
+    content = function(file) {
+      m = modelFit()
+      req(m)
+
+      plotType = input$modelPlotType %||% "observedFitted"
+      showSmoothTrend = isTRUE(input$modelPlotShowSmoothTrend %||% TRUE)
+      plot = plotModelPlot(
+        model = m,
+        plotType = plotType,
+        showSmoothTrend = showSmoothTrend
+      )
+
+      validate(
+        need(
+          !is.null(plot),
+          "Model plots are not available for this fitted model."
+        )
+      )
+
+      ggsave(
+        filename = file,
+        plot = plot,
+        width = 7,
+        height = 4.5,
+        units = "in",
+        dpi = 300
+      )
+    }
+  )
 
   output$modelPlotsPlot = renderPlot({
     m = modelFit()

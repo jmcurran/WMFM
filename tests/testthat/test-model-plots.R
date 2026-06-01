@@ -277,3 +277,32 @@ testthat::test_that("model plot summary explains lighter points for larger datas
   testthat::expect_no_match(summaryText, "Diagnostic", fixed = TRUE)
   testthat::expect_no_match(summaryText, "Assumption", fixed = TRUE)
 })
+
+testthat::test_that("model plot download filenames are deterministic", {
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("observedFitted"),
+    "wmfm-model-plot-observed-vs-fitted.png"
+  )
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("residualFitted"),
+    "wmfm-model-plot-residuals-vs-fitted.png"
+  )
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("unsupported"),
+    "wmfm-model-plot.png"
+  )
+})
+
+testthat::test_that("model plots UI includes a download control without diagnostic wording", {
+  uiText = paste(deparse(body(appUI)), collapse = "\n")
+  observerText = paste(deparse(body(registerModelPlotObservers)), collapse = "\n")
+
+  testthat::expect_match(uiText, "modelPlotsDownload", fixed = TRUE)
+  testthat::expect_match(uiText, "Download current model plot", fixed = TRUE)
+  testthat::expect_match(uiText, "wmfm-model-plot-download", fixed = TRUE)
+  testthat::expect_match(observerText, "downloadHandler", fixed = TRUE)
+  testthat::expect_match(observerText, "buildModelPlotDownloadFilename", fixed = TRUE)
+  testthat::expect_match(observerText, "ggsave", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Diagnostic", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Assumption", fixed = TRUE)
+})
