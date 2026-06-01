@@ -148,12 +148,5 @@ saveNonSecretProviderConfig = function(providerConfig) {
 #' @return Invisibly returns the config file path written by `writeWmfmConfig()`.
 #' @keywords internal
 resetNonSecretProviderConfig = function() {
-  config = readWmfmConfig()
-  developerModeEnabled = config$developerModeEnabled
-  config = wmfmProviderDefaults()
-  if (!is.null(developerModeEnabled)) {
-    config$developerModeEnabled = isTRUE(developerModeEnabled)
-  }
-
-  writeWmfmConfig(config)
+  writeWmfmConfig(wmfmProviderDefaults())
 }

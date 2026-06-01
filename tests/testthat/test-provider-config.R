@@ -8,6 +8,7 @@ test_that("wmfmProviderDefaults exposes current package defaults", {
 })
 
 test_that("resolveWmfmProviderConfig uses options and normalises blanks", {
+  withr::local_envvar(ANTHROPIC_API_KEY = "")
   withr::local_tempdir() -> tmpDir
   withr::local_options(list(wmfm.config_dir = tmpDir))
 
@@ -351,22 +352,24 @@ test_that("provider profiles round-trip metadata without secret values", {
 })
 
 
-test_that("developer mode preference is persisted as non-secret local config", {
+test_that("developer mode is opt-in by environment and not persisted", {
   withr::local_tempdir() -> tmpDir
   withr::local_options(list(wmfm.config_dir = tmpDir))
+  withr::local_envvar(list(WMFM_SHOW_DEVELOPER_MODE = ""), .local_envir = parent.frame())
 
+  expect_false(isDeveloperModeUiEnabled())
   expect_false(resolveDeveloperModePreference())
 
   saveDeveloperModePreference(TRUE)
-  expect_true(resolveDeveloperModePreference())
-  expect_true(isTRUE(readWmfmConfig()$developerModeEnabled))
-
-  saveDeveloperModePreference(FALSE)
   expect_false(resolveDeveloperModePreference())
-  expect_false(isTRUE(readWmfmConfig()$developerModeEnabled))
+  expect_null(readWmfmConfig()$developerModeEnabled)
+
+  withr::local_envvar(list(WMFM_SHOW_DEVELOPER_MODE = "1"), .local_envir = parent.frame())
+  expect_true(isDeveloperModeUiEnabled())
+  expect_false(resolveDeveloperModePreference())
 })
 
-test_that("writeWmfmConfig preserves provider preferences and developer-mode preference", {
+test_that("writeWmfmConfig preserves provider preferences and excludes developer-mode state", {
   withr::local_tempdir() -> tmpDir
   withr::local_options(list(wmfm.config_dir = tmpDir))
 
@@ -384,6 +387,31 @@ test_that("writeWmfmConfig preserves provider preferences and developer-mode pre
   expect_identical(persisted$backend, "ollama")
   expect_identical(persisted$ollamaModel, "manual-model")
   expect_true(persisted$ollamaThinkLow)
-  expect_true(persisted$developerModeEnabled)
+  expect_null(persisted$developerModeEnabled)
   expect_null(persisted$apiKey)
+})
+
+
+test_that("startup provider readiness requires usable credentials or explicit Ollama config", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+  withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
+
+  expect_false(hasExplicitWmfmProviderConfig())
+  expect_false(isWmfmProviderReadyForStartup())
+  expect_match(buildMissingProviderStartupMessage(), "README", fixed = TRUE)
+
+  withr::local_envvar(list(ANTHROPIC_API_KEY = "secret"), .local_envir = parent.frame())
+  expect_identical(resolveWmfmProviderConfig()$backend, "claude")
+  expect_true(isWmfmProviderReadyForStartup())
+
+  withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
+  saveNonSecretProviderConfig(list(
+    backend = "ollama",
+    ollamaBaseUrl = "http://localhost:11434",
+    ollamaModel = "llama3.1",
+    ollamaThinkLow = FALSE
+  ))
+  expect_true(hasExplicitWmfmProviderConfig())
+  expect_true(isWmfmProviderReadyForStartup())
 })

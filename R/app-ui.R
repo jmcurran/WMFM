@@ -476,27 +476,28 @@ appUI = function() {
 
       tabPanel(
         "Settings",
-        h4("Developer mode"),
-        div(
-          class = "wmfm-developer-mode-toggle-row",
-          tags$span(
-            class = "wmfm-developer-mode-toggle-label",
-            "Developer mode:"
-          ),
-          tags$label(
-            class = "wmfm-developer-mode-switch",
-            tags$input(
-              id = "developerModeToggle",
-              type = "checkbox",
-              `aria-label` = "Developer mode"
+        if (isDeveloperModeUiEnabled()) {
+          tagList(
+            h4("Developer mode"),
+            div(
+              class = "wmfm-developer-mode-toggle-row",
+              tags$span(
+                class = "wmfm-developer-mode-toggle-label",
+                "Developer mode:"
+              ),
+              tags$label(
+                class = "wmfm-developer-mode-switch",
+                tags$input(
+                  id = "developerModeToggle",
+                  type = "checkbox",
+                  `aria-label` = "Developer mode"
+                ),
+                tags$span(class = "wmfm-developer-mode-slider")
+              )
             ),
-            tags$span(class = "wmfm-developer-mode-slider")
+            tags$hr(class = "hr-tight")
           )
-        ),
-        helpText(
-          "Developer mode exposes diagnostic controls and examples whose names begin with test. It is locked unless WMFM_DEVELOPER_MODE_PASSWORD_HASH is set and the password is entered."
-        ),
-        tags$hr(class = "hr-tight"),
+        },
         h4("Provider settings"),
         helpText(
           "Choose one active provider/backend. Ollama uses base URL + model and no API key. Claude uses the ANTHROPIC_API_KEY environment variable set outside WMFM."

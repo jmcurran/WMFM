@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput
+#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog tags
 registerChatProviderObservers = function(input, output, session, rv) {
   resolveSelectedProvider = function() {
     requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
@@ -32,11 +32,22 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
   refreshOllamaModelChoices = function(selected = NULL) {
     activeProvider = resolveSelectedProvider()
+    providerConfig = resolveWmfmProviderConfig()
+
     if (!identical(activeProvider, "ollama")) {
-      return(invisible(rv$activeOllamaModel %||% resolveWmfmProviderConfig()$ollamaModel))
+      return(invisible(rv$activeOllamaModel %||% providerConfig$ollamaModel))
     }
 
-    providerConfig = resolveWmfmProviderConfig()
+    if (!isWmfmProviderReadyForStartup(providerConfig)) {
+      fallbackModel = rv$activeOllamaModel %||% providerConfig$ollamaModel %||% wmfmProviderDefaults()$ollamaModel
+      fallbackModel = fallbackModel[!is.na(fallbackModel) & nzchar(fallbackModel)]
+      if (length(fallbackModel) == 0) {
+        fallbackModel = wmfmProviderDefaults()$ollamaModel
+      }
+      rv$availableOllamaModels = unique(as.character(fallbackModel))
+      return(invisible(rv$availableOllamaModels[1]))
+    }
+
     baseUrl = providerConfig$ollamaBaseUrl
 
     modelIds = tryCatch({
@@ -91,9 +102,26 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }
 
   observe({
-    syncProviderSpecificControlState(resolveSelectedProvider())
-    refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
+    selectedProvider = resolveSelectedProvider()
+    syncProviderSpecificControlState(selectedProvider)
+    if (identical(selectedProvider, "ollama") && isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+      refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
+    }
   })
+
+  session$onFlushed(function() {
+    if (!isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
+      showModal(
+        modalDialog(
+          title = "Configure an AI provider",
+          tags$p(buildMissingProviderStartupMessage()),
+          tags$p("After configuring a provider, restart WMFM or use Settings to apply and save the provider."),
+          easyClose = TRUE,
+          footer = NULL
+        )
+      )
+    }
+  }, once = TRUE)
 
   observeEvent(input$refreshOllamaModelsBtn, {
     if (!identical(resolveSelectedProvider(), "ollama")) {

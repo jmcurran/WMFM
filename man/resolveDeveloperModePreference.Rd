@@ -2,15 +2,16 @@
 % Please edit documentation in R/utils-provider-config.R
 \name{resolveDeveloperModePreference}
 \alias{resolveDeveloperModePreference}
-\title{Resolve persisted developer-mode preference}
+\title{Resolve developer-mode startup state}
 \usage{
 resolveDeveloperModePreference()
 }
 \value{
-Logical scalar indicating whether developer mode should start
-unlocked for this local app session.
+Logical scalar.
 }
 \description{
-Resolve persisted developer-mode preference
+Developer mode is deliberately not persisted between app sessions. It starts
+locked each time, and the toggle is shown only when
+\code{WMFM_SHOW_DEVELOPER_MODE=1} is set locally.
 }
 \keyword{internal}

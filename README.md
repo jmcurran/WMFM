@@ -1,20 +1,59 @@
-# Stage 20.16 changes
+# What's My Fitted Model? (WMFM)
 
-This archive accompanies `run_stage20_16.sh`.
+WMFM is an R/Shiny app for fitting statistical models and generating plain-language explanations of fitted models for teaching and learning.
 
-The script applies the targeted Stage 20.16 prompt wording fix, then follows the WMFM stage workflow:
+## Configuring an AI provider
 
-1. optionally install package-relative files with `--install-files`
-2. apply the prompt wording patch
-3. configure R library paths
-4. run `devtools::document()`
-5. run strict `devtools::test(stop_on_failure = TRUE, stop_on_warning = TRUE)`
-6. run strict `devtools::check(args = c("--no-manual", "--ignore-vignettes"), error_on = "note")`
-7. bump the final DESCRIPTION version component
-8. commit controlled WMFM paths
-9. create `stage20_16_completed.zip`
-10. build the package
-11. install the exact built package
-12. create a ChatGPT bundle if the helper exists
+WMFM needs access to an AI provider before it can generate fitted-model explanations. Configure either a commercial provider or a local Ollama model before using the app.
 
-The script is fail-fast. It contains no focused testthat test_file calls.
+API keys are read from environment variables. Set these variables in `~/.Renviron`, then restart R before starting WMFM. The app does not ask for API keys in the UI and does not look for them in the WMFM config file.
+
+WMFM never stores API keys in its config file.
+
+### Commercial providers require API credits
+
+Claude and OpenAI access require provider API credentials with API billing or API credits enabled. A normal Claude subscription or ChatGPT Plus subscription does not automatically provide API access for an R package.
+
+### Claude / Anthropic
+
+Add your Anthropic API key to `~/.Renviron`:
+
+```text
+ANTHROPIC_API_KEY=your_key_here
+```
+
+Restart R after editing `~/.Renviron`. Then start WMFM, open **Settings**, choose **Claude / Anthropic**, click **Apply provider**, and click **Save provider config** if you want Claude remembered for future sessions.
+
+### OpenAI
+
+Add your OpenAI API key to `~/.Renviron`:
+
+```text
+OPENAI_API_KEY=your_key_here
+```
+
+Restart R after editing `~/.Renviron`. Then start WMFM and select the OpenAI provider in **Settings** when that provider is enabled by the app.
+
+### Local Ollama
+
+To use a local model, install and start Ollama, then pull at least one model, for example:
+
+```bash
+ollama pull llama3.1
+```
+
+In WMFM, open **Settings**, choose **Ollama (local)**, set the Ollama base URL, usually:
+
+```text
+http://localhost:11434
+```
+
+Choose the model, click **Apply provider**, and click **Save provider config** if you want the local provider remembered for future sessions.
+
+Many users will have only one local Ollama model installed. That is fine: select that model and save the provider config.
+
+WMFM only attempts Ollama model discovery when Ollama is the selected provider and a local Ollama configuration is available.
+
+### First run with no provider configured
+
+If WMFM starts without a configured commercial-provider API key and without saved Ollama settings, it displays a setup message and directs you back to this README section. Configure a provider through `~/.Renviron` or through the saved local Ollama settings before using AI-generated explanations.

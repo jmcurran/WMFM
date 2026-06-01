@@ -2,18 +2,17 @@
 % Please edit documentation in R/utils-provider-config.R
 \name{saveDeveloperModePreference}
 \alias{saveDeveloperModePreference}
-\title{Persist developer-mode preference locally}
+\title{Ignore legacy developer-mode persistence requests}
 \usage{
 saveDeveloperModePreference(enabled)
 }
 \arguments{
-\item{enabled}{Logical scalar indicating whether developer mode should be
-restored as unlocked in later local app sessions.}
+\item{enabled}{Logical scalar, ignored.}
 }
 \value{
-Invisibly returns the path that was written.
+Invisibly returns \code{FALSE}.
 }
 \description{
-Persist developer-mode preference locally
+Ignore legacy developer-mode persistence requests
 }
 \keyword{internal}

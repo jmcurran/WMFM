@@ -42,6 +42,8 @@ test_that("Ollama model refresh is capability-aware and keeps failure fallback",
 
   expect_match(chatProviderText, "resolveSelectedProvider = function", fixed = TRUE)
   expect_match(chatProviderText, "if (!identical(activeProvider, \"ollama\"))", fixed = TRUE)
+  expect_match(chatProviderText, "isWmfmProviderReadyForStartup", fixed = TRUE)
+  expect_match(chatProviderText, "Configure an AI provider", fixed = TRUE)
   expect_match(chatProviderText, "Model discovery is only available for Ollama.", fixed = TRUE)
   expect_match(chatProviderText, "Using current/default choices", fixed = TRUE)
   expect_match(chatProviderText, "fallback = rv$availableOllamaModels", fixed = TRUE)
