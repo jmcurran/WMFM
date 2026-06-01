@@ -1,5 +1,13 @@
 # WMFM development news
 
+## Stage 30.2
+
+- Harden the Model plots tab for unsupported fitted model families so unavailable choices do not trigger plotting errors.
+- Add model-aware plot metadata and ggplot labels based on the fitted response variable.
+- Keep the student-facing wording focused on visual summaries and missing structure rather than assumption checking.
+- Extend offline tests for unsupported models and model-aware plot labels.
+
+
 ## Stage 30.1
 
 - Add a student-facing Model plots tab for fitted models.

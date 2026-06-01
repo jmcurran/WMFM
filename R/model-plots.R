@@ -131,6 +131,67 @@ convertModelPlotResponse = function(response, plotFamily) {
   )
 }
 
+#' Build model-plot axis labels
+#'
+#' @param responseName Name of the response variable.
+#' @param plotFamily Model-plot family.
+#' @param plotType Plot type.
+#' @param residualType Residual type.
+#'
+#' @return A named list of plot labels.
+#' @keywords internal
+buildModelPlotLabels = function(responseName, plotFamily, plotType, residualType) {
+
+  cleanResponseName = if (length(responseName) == 1 && nzchar(responseName)) {
+    responseName
+  } else {
+    "response"
+  }
+
+  if (identical(plotType, "residualFitted")) {
+    yLabel = if (identical(residualType, "deviance")) {
+      "Deviance residual"
+    } else {
+      "Residual"
+    }
+
+    xLabel = switch(
+      plotFamily,
+      binomial = "Fitted probability",
+      poisson = "Fitted count",
+      "Fitted value"
+    )
+
+    return(list(
+      title = "Residuals vs fitted",
+      x = xLabel,
+      y = yLabel
+    ))
+  }
+
+  if (identical(plotFamily, "binomial")) {
+    return(list(
+      title = "Observed outcome vs predicted probability",
+      x = "Fitted probability",
+      y = paste0("Observed ", cleanResponseName)
+    ))
+  }
+
+  if (identical(plotFamily, "poisson")) {
+    return(list(
+      title = "Observed count vs fitted count",
+      x = "Fitted count",
+      y = paste0("Observed ", cleanResponseName)
+    ))
+  }
+
+  list(
+    title = "Observed vs fitted",
+    x = "Fitted value",
+    y = paste0("Observed ", cleanResponseName)
+  )
+}
+
 #' Build deterministic model-plot data
 #'
 #' @param model A fitted \code{lm}, binomial \code{glm}, poisson \code{glm}, or
@@ -140,28 +201,36 @@ convertModelPlotResponse = function(response, plotFamily) {
 #'
 #' @return A list containing plot metadata and a data frame.
 #'
-#' @importFrom stats complete.cases fitted model.frame model.response na.omit residuals
+#' @importFrom stats complete.cases fitted formula model.frame model.response na.omit residuals
 #'
 #' @export
 buildModelPlotData = function(model, plotType = c("observedFitted", "residualFitted")) {
 
-  plotType = match.arg(plotType)
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
   model = resolveModelPlotModel(model)
   plotFamily = classifyModelPlotFamily(model)
 
-  if (identical(plotFamily, "unsupported")) {
+  if (identical(plotFamily, "unsupported") || identical(plotType, "unsupported")) {
     return(list(
       available = FALSE,
       plotFamily = plotFamily,
       plotType = plotType,
       residualType = NA_character_,
       fittedScale = NA_character_,
+      responseName = NA_character_,
+      labels = buildModelPlotLabels(
+        responseName = NA_character_,
+        plotFamily = plotFamily,
+        plotType = "observedFitted",
+        residualType = NA_character_
+      ),
       data = data.frame()
     ))
   }
 
   modelFrame = model.frame(model)
   response = model.response(modelFrame)
+  responseName = all.vars(formula(model))[1]
   responseValues = convertModelPlotResponse(
     response = response,
     plotFamily = plotFamily
@@ -203,8 +272,15 @@ buildModelPlotData = function(model, plotType = c("observedFitted", "residualFit
     plotType = plotType,
     residualType = residualType,
     fittedScale = fittedScale,
+    responseName = responseName,
     yBreaks = responseValues$breaks,
     yLabels = responseValues$labels,
+    labels = buildModelPlotLabels(
+      responseName = responseName,
+      plotFamily = plotFamily,
+      plotType = plotType,
+      residualType = residualType
+    ),
     data = data
   )
 }
@@ -218,10 +294,10 @@ buildModelPlotData = function(model, plotType = c("observedFitted", "residualFit
 #' @keywords internal
 buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "residualFitted")) {
 
-  plotType = match.arg(plotType)
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
   plotFamily = classifyModelPlotFamily(model)
 
-  if (identical(plotFamily, "unsupported")) {
+  if (identical(plotFamily, "unsupported") || identical(plotType, "unsupported")) {
     return(list(
       title = "Model plots are not available for this fitted model.",
       shows = "This fitted model is not one of the model types currently supported by the Model plots tab.",
@@ -296,7 +372,7 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
 #' @export
 plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")) {
 
-  plotType = match.arg(plotType)
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
   plotData = buildModelPlotData(model = model, plotType = plotType)
 
   if (!isTRUE(plotData$available)) {
@@ -304,28 +380,15 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
   }
 
   data = plotData$data
+  labels = plotData$labels
 
   if (identical(plotType, "observedFitted")) {
-    yLabel = if (identical(plotData$plotFamily, "binomial")) {
-      "Observed outcome"
-    } else {
-      "Observed response"
-    }
-
-    xLabel = switch(
-      plotData$plotFamily,
-      binomial = "Fitted probability",
-      poisson = "Fitted count",
-      "Fitted value"
-    )
-
     plot = ggplot(
       data,
       aes(x = .data$fitted, y = .data$observed)
     ) +
       geom_point(alpha = 0.75) +
-      geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-      labs(x = xLabel, y = yLabel) +
+      labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
 
     if (identical(plotData$plotFamily, "binomial")) {
@@ -334,7 +397,7 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
         aes(x = .data$fitted, y = .data$observed)
       ) +
         geom_jitter(height = 0.04, width = 0, alpha = 0.75) +
-        labs(x = xLabel, y = yLabel) +
+        labs(title = labels$title, x = labels$x, y = labels$y) +
         theme_minimal()
 
       if (!is.null(plotData$yBreaks) && !is.null(plotData$yLabels)) {
@@ -343,30 +406,19 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
           labels = plotData$yLabels
         )
       }
+
+      return(plot)
     }
 
-    return(plot)
-  }
-
-  xLabel = switch(
-    plotData$plotFamily,
-    binomial = "Fitted probability",
-    poisson = "Fitted count",
-    "Fitted value"
-  )
-
-  yLabel = if (identical(plotData$residualType, "deviance")) {
-    "Deviance residual"
+    plot + geom_abline(slope = 1, intercept = 0, linetype = "dashed")
   } else {
-    "Residual"
+    ggplot(
+      data,
+      aes(x = .data$fitted, y = .data$residual)
+    ) +
+      geom_point(alpha = 0.75) +
+      geom_hline(yintercept = 0, linetype = "dashed") +
+      labs(title = labels$title, x = labels$x, y = labels$y) +
+      theme_minimal()
   }
-
-  ggplot(
-    data,
-    aes(x = .data$fitted, y = .data$residual)
-  ) +
-    geom_point(alpha = 0.75) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    labs(x = xLabel, y = yLabel) +
-    theme_minimal()
 }
