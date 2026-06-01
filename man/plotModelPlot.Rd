@@ -4,12 +4,19 @@
 \alias{plotModelPlot}
 \title{Draw a student-facing model plot}
 \usage{
-plotModelPlot(model, plotType = c("observedFitted", "residualFitted"))
+plotModelPlot(
+  model,
+  plotType = c("observedFitted", "residualFitted"),
+  showSmoothTrend = TRUE
+)
 }
 \arguments{
 \item{model}{A fitted model object or \code{wmfmModel} object.}
 
 \item{plotType}{Plot type.}
+
+\item{showSmoothTrend}{Logical; if \code{TRUE}, add an automatic blue
+smoother for supported linear-model plots.}
 }
 \value{
 A \code{ggplot} object, or \code{NULL} for unsupported models.

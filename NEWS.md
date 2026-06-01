@@ -1,3 +1,27 @@
+## Stage 31.3
+
+- Added a download button for the current student-facing Model plots view.
+- Exported the selected observed-vs-fitted or residuals-vs-fitted plot as a deterministic PNG file.
+- Reused the same plot helper so smoothing and density-aware point display are preserved in the downloaded plot.
+- Kept the feature separate from model explanations and avoided diagnostic or assumption-check wording.
+- Added deterministic tests for download filenames, UI wiring, and server wiring.
+
+## Stage 31.2
+
+- Added density-aware point transparency to student-facing model plots without adding new plot types.
+- Kept the alpha choice automatic so students do not need to tune plotting parameters.
+- Applied lighter points to larger datasets while preserving the existing red reference lines and blue smoother behaviour.
+- Added concise student-facing wording that explains lighter points for larger datasets without diagnostic framing.
+- Added deterministic tests for alpha thresholds, plot layer alpha values, and cautious wording.
+
+## Stage 31.1
+
+- Added an optional blue smooth trend to linear-model observed-vs-fitted and residuals-vs-fitted model plots.
+- Kept the smoother automatic, with no user control over the smoothing parameter.
+- Drew plot layers in the order points, blue smoother, then red reference line so the reference remains visible.
+- Kept the smoother unavailable for unsupported model families and safely ignored for GLM plots.
+- Added deterministic tests for smoother layers, UI controls, and cautious student-facing wording.
+
 # WMFM development news
 
 ## Stage 30.7

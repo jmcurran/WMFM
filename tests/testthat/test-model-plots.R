@@ -110,20 +110,60 @@ testthat::test_that("plotModelPlot uses model-aware labels", {
 
 
 
-testthat::test_that("plotModelPlot draws red reference and logistic trend layers", {
+testthat::test_that("plotModelPlot draws lm smoother before red reference layers", {
   lmModel = stats::lm(mpg ~ wt, data = mtcars)
-  lmPlot = plotModelPlot(lmModel, plotType = "observedFitted")
 
-  testthat::expect_equal(length(lmPlot$layers), 2)
-  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$colour, "red")
-  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$linewidth, 2)
+  observedPlot = plotModelPlot(lmModel, plotType = "observedFitted")
 
+  testthat::expect_equal(length(observedPlot$layers), 3)
+  testthat::expect_identical(observedPlot$layers[[2]]$aes_params$colour, "blue")
+  testthat::expect_false(observedPlot$layers[[2]]$stat_params$se)
+  testthat::expect_identical(observedPlot$layers[[3]]$aes_params$colour, "red")
+  testthat::expect_identical(observedPlot$layers[[3]]$aes_params$linewidth, 2)
+
+  residualPlot = plotModelPlot(lmModel, plotType = "residualFitted")
+
+  testthat::expect_equal(length(residualPlot$layers), 3)
+  testthat::expect_identical(residualPlot$layers[[2]]$aes_params$colour, "blue")
+  testthat::expect_false(residualPlot$layers[[2]]$stat_params$se)
+  testthat::expect_identical(residualPlot$layers[[3]]$aes_params$colour, "red")
+  testthat::expect_identical(residualPlot$layers[[3]]$aes_params$linewidth, 2)
+})
+
+
+testthat::test_that("plotModelPlot can omit lm smoother when requested", {
+  lmModel = stats::lm(mpg ~ wt, data = mtcars)
+
+  observedPlot = plotModelPlot(
+    lmModel,
+    plotType = "observedFitted",
+    showSmoothTrend = FALSE
+  )
+
+  residualPlot = plotModelPlot(
+    lmModel,
+    plotType = "residualFitted",
+    showSmoothTrend = FALSE
+  )
+
+  testthat::expect_equal(length(observedPlot$layers), 2)
+  testthat::expect_identical(observedPlot$layers[[2]]$aes_params$colour, "red")
+  testthat::expect_equal(length(residualPlot$layers), 2)
+  testthat::expect_identical(residualPlot$layers[[2]]$aes_params$colour, "red")
+})
+
+
+testthat::test_that("plotModelPlot ignores lm smoother option for glm plots", {
   poissonModel = stats::glm(
     breaks ~ wool + tension,
     data = warpbreaks,
     family = stats::poisson()
   )
-  poissonPlot = plotModelPlot(poissonModel, plotType = "residualFitted")
+  poissonPlot = plotModelPlot(
+    poissonModel,
+    plotType = "residualFitted",
+    showSmoothTrend = TRUE
+  )
 
   testthat::expect_equal(length(poissonPlot$layers), 2)
   testthat::expect_identical(poissonPlot$layers[[2]]$aes_params$colour, "red")
@@ -136,7 +176,11 @@ testthat::test_that("plotModelPlot draws red reference and logistic trend layers
     data = data,
     family = stats::binomial()
   )
-  logisticPlot = plotModelPlot(logisticModel, plotType = "observedFitted")
+  logisticPlot = plotModelPlot(
+    logisticModel,
+    plotType = "observedFitted",
+    showSmoothTrend = TRUE
+  )
 
   testthat::expect_equal(length(logisticPlot$layers), 2)
   testthat::expect_identical(logisticPlot$layers[[2]]$aes_params$colour, "red")
@@ -166,6 +210,7 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   testthat::expect_match(uiText, "wmfm-model-plots-heading", fixed = TRUE)
   testthat::expect_match(uiText, "wmfm-model-plots-info", fixed = TRUE)
   testthat::expect_match(uiText, "wmfm-model-plots-info-body", fixed = TRUE)
+  testthat::expect_match(uiText, "modelPlotSmoothTrendUi", fixed = TRUE)
   testthat::expect_match(uiText, "These plots help you notice whether the fitted model is missing obvious structure.", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model checking", fixed = TRUE)
   testthat::expect_no_match(uiText, "Diagnostic plots", fixed = TRUE)
@@ -186,4 +231,78 @@ testthat::test_that("developer tabs appear after ordinary student tabs", {
   testthat::expect_gt(variableExplorerPosition, plotPosition)
   testthat::expect_gt(settingsPosition, variableExplorerPosition)
   testthat::expect_gt(scoringTargetPosition, 0)
+})
+
+testthat::test_that("model plot point alpha is density aware", {
+  testthat::expect_equal(chooseModelPlotPointAlpha(1), 0.75)
+  testthat::expect_equal(chooseModelPlotPointAlpha(249), 0.75)
+  testthat::expect_equal(chooseModelPlotPointAlpha(250), 0.45)
+  testthat::expect_equal(chooseModelPlotPointAlpha(999), 0.45)
+  testthat::expect_equal(chooseModelPlotPointAlpha(1000), 0.25)
+  testthat::expect_equal(chooseModelPlotPointAlpha(4999), 0.25)
+  testthat::expect_equal(chooseModelPlotPointAlpha(5000), 0.12)
+  testthat::expect_equal(chooseModelPlotPointAlpha(NA_integer_), 0.75)
+})
+
+testthat::test_that("plotModelPlot uses density-aware point alpha", {
+  smallData = mtcars
+  smallModel = stats::lm(mpg ~ wt, data = smallData)
+  smallPlot = plotModelPlot(smallModel, plotType = "observedFitted")
+
+  largeData = data.frame(
+    y = seq_len(300),
+    x = seq_len(300)
+  )
+  largeModel = stats::lm(y ~ x, data = largeData)
+  largePlot = plotModelPlot(largeModel, plotType = "observedFitted")
+
+  testthat::expect_equal(smallPlot$layers[[1]]$aes_params$alpha, 0.75)
+  testthat::expect_equal(largePlot$layers[[1]]$aes_params$alpha, 0.45)
+})
+
+testthat::test_that("model plot summary explains lighter points for larger datasets", {
+  largeData = data.frame(
+    y = seq_len(300),
+    x = seq_len(300)
+  )
+  largeModel = stats::lm(y ~ x, data = largeData)
+
+  summaryText = buildModelPlotSummaryText(
+    model = largeModel,
+    plotType = "observedFitted"
+  )
+
+  testthat::expect_match(summaryText, "larger datasets", fixed = TRUE)
+  testthat::expect_match(summaryText, "points are drawn more lightly", fixed = TRUE)
+  testthat::expect_no_match(summaryText, "Diagnostic", fixed = TRUE)
+  testthat::expect_no_match(summaryText, "Assumption", fixed = TRUE)
+})
+
+testthat::test_that("model plot download filenames are deterministic", {
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("observedFitted"),
+    "wmfm-model-plot-observed-vs-fitted.png"
+  )
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("residualFitted"),
+    "wmfm-model-plot-residuals-vs-fitted.png"
+  )
+  testthat::expect_identical(
+    buildModelPlotDownloadFilename("unsupported"),
+    "wmfm-model-plot.png"
+  )
+})
+
+testthat::test_that("model plots UI includes a download control without diagnostic wording", {
+  uiText = paste(deparse(body(appUI)), collapse = "\n")
+  observerText = paste(deparse(body(registerModelPlotObservers)), collapse = "\n")
+
+  testthat::expect_match(uiText, "modelPlotsDownload", fixed = TRUE)
+  testthat::expect_match(uiText, "Download current model plot", fixed = TRUE)
+  testthat::expect_match(uiText, "wmfm-model-plot-download", fixed = TRUE)
+  testthat::expect_match(observerText, "downloadHandler", fixed = TRUE)
+  testthat::expect_match(observerText, "buildModelPlotDownloadFilename", fixed = TRUE)
+  testthat::expect_match(observerText, "ggsave", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Diagnostic", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Assumption", fixed = TRUE)
 })

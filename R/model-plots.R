@@ -42,6 +42,40 @@ classifyModelPlotFamily = function(model) {
   "unsupported"
 }
 
+
+#' Choose a point alpha for model plots
+#'
+#' @param observationCount Number of plotted observations.
+#'
+#' @return A numeric alpha value between 0 and 1.
+#' @keywords internal
+chooseModelPlotPointAlpha = function(observationCount) {
+
+  if (is.null(observationCount) || length(observationCount) != 1) {
+    return(0.75)
+  }
+
+  observationCount = as.integer(observationCount)
+
+  if (is.na(observationCount) || observationCount < 1L) {
+    return(0.75)
+  }
+
+  if (observationCount >= 5000L) {
+    return(0.12)
+  }
+
+  if (observationCount >= 1000L) {
+    return(0.25)
+  }
+
+  if (observationCount >= 250L) {
+    return(0.45)
+  }
+
+  0.75
+}
+
 #' Build available model-plot choices
 #'
 #' @param model A fitted model object or a \code{wmfmModel} object.
@@ -309,17 +343,33 @@ buildModelPlotSummaryText = function(model, plotType = c("observedFitted", "resi
     "observations"
   }
 
+  smootherText = if (identical(plotData$plotFamily, "lm")) {
+    " For linear models, the optional blue smooth trend can help reveal broad patterns."
+  } else {
+    ""
+  }
+
+  densityText = if (observationCount >= 250L) {
+    " For larger datasets, points are drawn more lightly so dense regions are easier to see."
+  } else {
+    ""
+  }
+
   if (identical(plotData$plotType, "residualFitted")) {
     return(paste0(
       "Plotting ", observationCount, " ", observationWord,
       " using ", plotData$residualType,
-      " residuals against ", plotData$fittedScale, "."
+      " residuals against ", plotData$fittedScale, ".",
+      smootherText,
+      densityText
     ))
   }
 
   paste0(
     "Plotting ", observationCount, " ", observationWord,
-    " with fitted values on the ", plotData$fittedScale, " scale."
+    " with fitted values on the ", plotData$fittedScale, " scale.",
+    smootherText,
+    densityText
   )
 }
 
@@ -366,7 +416,7 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
     return(list(
       title = "Observed vs fitted",
       shows = "This plot shows how closely the fitted values track the observed responses.",
-      lookFor = "Points close to the reference line have fitted values close to the observed values; strong patterns away from the line may suggest missing structure.",
+      lookFor = "Points close to the red reference line have fitted values close to the observed values; a blue smooth trend that bends away from the line may suggest missing structure.",
       cannotProve = "This plot does not prove that the model is correct."
     ))
   }
@@ -392,15 +442,39 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
   list(
     title = "Residuals vs fitted",
     shows = "This plot shows what is left over after the fitted model has been used.",
-    lookFor = "Residuals scattered around zero with no obvious pattern are generally easier to reconcile with the fitted model; curves, funnels, or clusters may suggest missing structure.",
+    lookFor = "Residuals scattered around the red zero line with no obvious pattern are generally easier to reconcile with the fitted model; a blue smooth trend, funnels, or clusters may suggest missing structure.",
     cannotProve = "This plot does not identify the correct alternative model by itself."
   )
+}
+
+
+#' Build a file name for exported model plots
+#'
+#' @param plotType Plot type.
+#'
+#' @return A PNG file name for the selected model plot.
+#' @keywords internal
+buildModelPlotDownloadFilename = function(plotType = c("observedFitted", "residualFitted", "unsupported")) {
+
+  plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
+
+  if (identical(plotType, "residualFitted")) {
+    return("wmfm-model-plot-residuals-vs-fitted.png")
+  }
+
+  if (identical(plotType, "observedFitted")) {
+    return("wmfm-model-plot-observed-vs-fitted.png")
+  }
+
+  "wmfm-model-plot.png"
 }
 
 #' Draw a student-facing model plot
 #'
 #' @param model A fitted model object or \code{wmfmModel} object.
 #' @param plotType Plot type.
+#' @param showSmoothTrend Logical; if \code{TRUE}, add an automatic blue
+#'   smoother for supported linear-model plots.
 #'
 #' @return A \code{ggplot} object, or \code{NULL} for unsupported models.
 #'
@@ -409,7 +483,11 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
 #' @importFrom rlang .data
 #'
 #' @export
-plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")) {
+plotModelPlot = function(
+    model,
+    plotType = c("observedFitted", "residualFitted"),
+    showSmoothTrend = TRUE
+) {
 
   plotType = match.arg(plotType, choices = c("observedFitted", "residualFitted", "unsupported"))
   plotData = buildModelPlotData(model = model, plotType = plotType)
@@ -420,13 +498,14 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
 
   data = plotData$data
   labels = plotData$labels
+  pointAlpha = chooseModelPlotPointAlpha(nrow(data))
 
   if (identical(plotType, "observedFitted")) {
     plot = ggplot(
       data,
       aes(x = .data$fitted, y = .data$observed)
     ) +
-      geom_point(alpha = 0.75) +
+      geom_point(alpha = pointAlpha) +
       labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
 
@@ -435,7 +514,7 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
         data,
         aes(x = .data$fitted, y = .data$observed)
       ) +
-        geom_jitter(height = 0.04, width = 0, alpha = 0.75) +
+        geom_jitter(height = 0.04, width = 0, alpha = pointAlpha) +
         geom_smooth(
           method = "glm",
           method.args = list(family = binomial()),
@@ -457,6 +536,13 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       return(plot)
     }
 
+    if (isTRUE(showSmoothTrend) && identical(plotData$plotFamily, "lm")) {
+      plot = plot + geom_smooth(
+        se = FALSE,
+        color = "blue"
+      )
+    }
+
     plot + geom_abline(
       slope = 1,
       intercept = 0,
@@ -465,13 +551,21 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       color = "red"
     )
   } else {
-    ggplot(
+    plot = ggplot(
       data,
       aes(x = .data$fitted, y = .data$residual)
     ) +
-      geom_point(alpha = 0.75) +
-      geom_hline(yintercept = 0, linetype = "dashed", linewidth = 2, color = "red") +
+      geom_point(alpha = pointAlpha) +
       labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
+
+    if (isTRUE(showSmoothTrend) && identical(plotData$plotFamily, "lm")) {
+      plot = plot + geom_smooth(
+        se = FALSE,
+        color = "blue"
+      )
+    }
+
+    plot + geom_hline(yintercept = 0, linetype = "dashed", linewidth = 2, color = "red")
   }
 }

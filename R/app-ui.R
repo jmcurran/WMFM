@@ -25,7 +25,7 @@
 #' @importFrom shiny tags HTML fluidRow column fileInput hr
 #' @importFrom shiny h4 h5 uiOutput tabsetPanel tabPanel
 #' @importFrom shiny textInput textAreaInput verbatimTextOutput
-#' @importFrom shiny br actionButton plotOutput helpText
+#' @importFrom shiny br actionButton downloadButton plotOutput helpText
 #' @importFrom shiny conditionalPanel selectInput div checkboxInput textOutput passwordInput
 #' @importFrom shiny sidebarLayout sidebarPanel mainPanel tableOutput
 #' @importFrom bslib accordion accordion_panel bs_theme
@@ -582,7 +582,13 @@ appUI = function() {
           )
         ),
         uiOutput("modelPlotTypeUi"),
+        uiOutput("modelPlotSmoothTrendUi"),
         plotOutput("modelPlotsPlot", height = "360px"),
+        downloadButton(
+          outputId = "modelPlotsDownload",
+          label = "Download current model plot",
+          class = "wmfm-model-plot-download"
+        ),
         uiOutput("modelPlotTeachingNoteUi")
       ),
 
