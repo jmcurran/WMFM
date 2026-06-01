@@ -1,5 +1,12 @@
 # WMFM development news
 
+## Stage 30.7
+
+- Style the Model plots information control to match the existing provider-settings help control and open as a small modeless details panel.
+- Keep the teaching note next to the Model plots heading instead of rendering it as a full-width visible block.
+- Add deterministic UI tests for the Model plots information control classes and text.
+
+
 ## Stage 30.6
 
 - Replace the Model plots hover-only information icon with an expandable information control so the teaching note is visible when clicked.

@@ -150,6 +150,56 @@ appUI = function() {
         margin-bottom: 0;
       }
 
+
+      .wmfm-model-plots-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .wmfm-model-plots-info {
+        display: inline-block;
+        position: relative;
+        font-size: 0.75em;
+      }
+
+      .wmfm-model-plots-info summary {
+        cursor: pointer;
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-model-plots-info summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .wmfm-model-plots-info-body {
+        position: absolute;
+        z-index: 1000;
+        top: 1.8em;
+        left: 0;
+        width: 360px;
+        max-width: 80vw;
+        padding: 10px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        color: #333333;
+        font-size: 0.6em;
+        font-weight: 400;
+        line-height: 1.35;
+      }
+
+      .wmfm-model-plots-info-body p {
+        margin: 0 0 6px 0;
+      }
+
+      .wmfm-model-plots-info-body p:last-child {
+        margin-bottom: 0;
+      }
+
       .wmfm-model-plot-note {
         border: 1px solid #d9d9d9;
         border-radius: 6px;
@@ -525,7 +575,9 @@ appUI = function() {
             ),
             tags$div(
               class = "wmfm-model-plots-info-body",
-              "These plots help you notice whether the fitted model is missing obvious structure."
+              tags$p(
+                "These plots help you notice whether the fitted model is missing obvious structure."
+              )
             )
           )
         ),

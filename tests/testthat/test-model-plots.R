@@ -163,7 +163,9 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   uiText = paste(deparse(body(appUI)), collapse = "\n")
 
   testthat::expect_match(uiText, "Model plots", fixed = TRUE)
+  testthat::expect_match(uiText, "wmfm-model-plots-heading", fixed = TRUE)
   testthat::expect_match(uiText, "wmfm-model-plots-info", fixed = TRUE)
+  testthat::expect_match(uiText, "wmfm-model-plots-info-body", fixed = TRUE)
   testthat::expect_match(uiText, "These plots help you notice whether the fitted model is missing obvious structure.", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model checking", fixed = TRUE)
   testthat::expect_no_match(uiText, "Diagnostic plots", fixed = TRUE)
