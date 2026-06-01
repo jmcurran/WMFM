@@ -1,5 +1,12 @@
 # WMFM development news
 
+## Stage 30.6
+
+- Replace the Model plots hover-only information icon with an expandable information control so the teaching note is visible when clicked.
+- Preserve the Stage 30.5 line styling and developer-tab ordering changes.
+- Add a deterministic UI test for the Model plots information text.
+
+
 ## Stage 30.5
 
 - Add the Model plots teaching note as an information icon next to the tab heading.

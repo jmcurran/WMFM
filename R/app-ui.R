@@ -515,11 +515,18 @@ appUI = function() {
       tabPanel(
         "Model plots",
         h4(
+          class = "wmfm-model-plots-heading",
           tags$span("Model plots"),
-          tags$span(
-            icon("circle-info"),
-            title = "These plots help you notice whether the fitted model is missing obvious structure",
-            style = "cursor: help; margin-left: 6px;"
+          tags$details(
+            class = "wmfm-model-plots-info",
+            tags$summary(
+              icon("circle-info"),
+              tags$span(class = "sr-only", "Model plots information")
+            ),
+            tags$div(
+              class = "wmfm-model-plots-info-body",
+              "These plots help you notice whether the fitted model is missing obvious structure."
+            )
           )
         ),
         uiOutput("modelPlotTypeUi"),
