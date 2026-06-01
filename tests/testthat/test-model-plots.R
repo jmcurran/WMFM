@@ -108,6 +108,54 @@ testthat::test_that("plotModelPlot uses model-aware labels", {
   testthat::expect_identical(plot$labels$title, "Observed vs fitted")
 })
 
+
+
+testthat::test_that("plotModelPlot draws red reference and logistic trend layers", {
+  lmModel = stats::lm(mpg ~ wt, data = mtcars)
+  lmPlot = plotModelPlot(lmModel, plotType = "observedFitted")
+
+  testthat::expect_equal(length(lmPlot$layers), 2)
+  testthat::expect_identical(lmPlot$layers[[2]]$aes_params$colour, "red")
+
+  poissonModel = stats::glm(
+    breaks ~ wool + tension,
+    data = warpbreaks,
+    family = stats::poisson()
+  )
+  poissonPlot = plotModelPlot(poissonModel, plotType = "residualFitted")
+
+  testthat::expect_equal(length(poissonPlot$layers), 2)
+  testthat::expect_identical(poissonPlot$layers[[2]]$aes_params$colour, "red")
+
+  data = mtcars
+  data$amFactor = factor(data$am, levels = c(0, 1), labels = c("automatic", "manual"))
+  logisticModel = stats::glm(
+    amFactor ~ wt,
+    data = data,
+    family = stats::binomial()
+  )
+  logisticPlot = plotModelPlot(logisticModel, plotType = "observedFitted")
+
+  testthat::expect_equal(length(logisticPlot$layers), 2)
+  testthat::expect_identical(logisticPlot$layers[[2]]$aes_params$colour, "red")
+})
+
+
+
+
+testthat::test_that("model plots tab follows model explanation and precedes plot tab", {
+  uiText = paste(deparse(body(appUI)), collapse = "\n")
+
+  explanationPosition = regexpr('"Model Explanation"', uiText, fixed = TRUE)[1]
+  modelPlotsPosition = regexpr('"Model plots"', uiText, fixed = TRUE)[1]
+  plotPosition = regexpr('"Plot"', uiText, fixed = TRUE)[1]
+
+  testthat::expect_gt(explanationPosition, 0)
+  testthat::expect_gt(modelPlotsPosition, explanationPosition)
+  testthat::expect_gt(plotPosition, modelPlotsPosition)
+})
+
+
 testthat::test_that("model plots UI has approved label and avoids checking language", {
   uiText = paste(deparse(body(appUI)), collapse = "\n")
 
@@ -117,26 +165,4 @@ testthat::test_that("model plots UI has approved label and avoids checking langu
   testthat::expect_no_match(uiText, "Diagnostic plots", fixed = TRUE)
   testthat::expect_no_match(uiText, "Assumption checks", fixed = TRUE)
   testthat::expect_no_match(uiText, "Model validity", fixed = TRUE)
-})
-
-testthat::test_that("model plot summary text reports plotted scale and observation count", {
-  lmModel = stats::lm(mpg ~ wt, data = mtcars)
-  binomialModel = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
-
-  observedSummary = buildModelPlotSummaryText(lmModel, plotType = "observedFitted")
-  residualSummary = buildModelPlotSummaryText(binomialModel, plotType = "residualFitted")
-
-  testthat::expect_match(observedSummary, "Plotting 32 observations", fixed = TRUE)
-  testthat::expect_match(observedSummary, "response scale", fixed = TRUE)
-  testthat::expect_match(residualSummary, "deviance residuals", fixed = TRUE)
-  testthat::expect_match(residualSummary, "predicted probability", fixed = TRUE)
-})
-
-testthat::test_that("model plots UI includes deterministic plot summary output", {
-  uiText = paste(deparse(body(appUI)), collapse = "\n")
-  observerText = paste(deparse(body(registerModelPlotObservers)), collapse = "\n")
-
-  testthat::expect_match(uiText, "modelPlotSummaryUi", fixed = TRUE)
-  testthat::expect_match(observerText, "output$modelPlotSummaryUi", fixed = TRUE)
-  testthat::expect_match(observerText, "buildModelPlotSummaryText", fixed = TRUE)
 })

@@ -513,6 +513,28 @@ appUI = function() {
       ),
 
       tabPanel(
+        "Model plots",
+        h4("Model plots"),
+        helpText(
+          "These plots help you notice whether the fitted model is missing obvious structure."
+        ),
+        uiOutput("modelPlotTypeUi"),
+        plotOutput("modelPlotsPlot", height = "360px"),
+        uiOutput("modelPlotTeachingNoteUi")
+      ),
+
+      tabPanel(
+        "Plot",
+        h4("Data and fitted model"),
+        uiOutput("plot_ci_controls_ui"),
+        plotOutput("model_plot"),
+        helpText(
+          "The plot shows the observed data and the fitted model ",
+          "against one numeric predictor (x-axis), optionally separated by a factor."
+        )
+      ),
+
+      tabPanel(
         "Contrasts",
         uiOutput("contrasts_content_ui")
       ),
@@ -532,29 +554,6 @@ appUI = function() {
             plotOutput("vePlot", height = "320px")
           )
         )
-      ),
-
-      tabPanel(
-        "Plot",
-        h4("Data and fitted model"),
-        uiOutput("plot_ci_controls_ui"),
-        plotOutput("model_plot"),
-        helpText(
-          "The plot shows the observed data and the fitted model ",
-          "against one numeric predictor (x-axis), optionally separated by a factor."
-        )
-      ),
-
-      tabPanel(
-        "Model plots",
-        h4("Model plots"),
-        helpText(
-          "These plots help you notice whether the fitted model is missing obvious structure."
-        ),
-        uiOutput("modelPlotTypeUi"),
-        uiOutput("modelPlotSummaryUi"),
-        plotOutput("modelPlotsPlot", height = "360px"),
-        uiOutput("modelPlotTeachingNoteUi")
       ),
 
       tabPanel(

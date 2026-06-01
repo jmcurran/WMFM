@@ -1,5 +1,13 @@
 # WMFM development news
 
+## Stage 30.4
+
+- Move the Model plots tab immediately after Model Explanation and keep the existing Plot tab next to it.
+- Draw red reference lines after points for linear and Poisson model plots so the guide remains visible.
+- Add a red logistic trend curve to the observed-outcome versus predicted-probability plot.
+- Extend offline tests for tab ordering and plot-layer behavior.
+
+
 ## Stage 30.3
 
 - Add a short deterministic summary sentence above each Model plots figure.

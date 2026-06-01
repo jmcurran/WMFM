@@ -285,6 +285,7 @@ buildModelPlotData = function(model, plotType = c("observedFitted", "residualFit
   )
 }
 
+
 #' Build a short model-plot summary sentence
 #'
 #' @param model A fitted model object or \code{wmfmModel} object.
@@ -403,7 +404,8 @@ buildModelPlotTeachingNote = function(model, plotType = c("observedFitted", "res
 #'
 #' @return A \code{ggplot} object, or \code{NULL} for unsupported models.
 #'
-#' @importFrom ggplot2 aes geom_abline geom_hline geom_jitter geom_point ggplot labs scale_y_continuous theme_minimal
+#' @importFrom ggplot2 aes geom_abline geom_hline geom_jitter geom_point geom_smooth ggplot labs scale_y_continuous theme_minimal
+#' @importFrom stats binomial
 #' @importFrom rlang .data
 #'
 #' @export
@@ -434,6 +436,13 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
         aes(x = .data$fitted, y = .data$observed)
       ) +
         geom_jitter(height = 0.04, width = 0, alpha = 0.75) +
+        geom_smooth(
+          method = "glm",
+          method.args = list(family = binomial()),
+          formula = y ~ x,
+          se = FALSE,
+          color = "red"
+        ) +
         labs(title = labels$title, x = labels$x, y = labels$y) +
         theme_minimal()
 
@@ -447,14 +456,19 @@ plotModelPlot = function(model, plotType = c("observedFitted", "residualFitted")
       return(plot)
     }
 
-    plot + geom_abline(slope = 1, intercept = 0, linetype = "dashed")
+    plot + geom_abline(
+      slope = 1,
+      intercept = 0,
+      linetype = "dashed",
+      color = "red"
+    )
   } else {
     ggplot(
       data,
       aes(x = .data$fitted, y = .data$residual)
     ) +
       geom_point(alpha = 0.75) +
-      geom_hline(yintercept = 0, linetype = "dashed") +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
       labs(title = labels$title, x = labels$x, y = labels$y) +
       theme_minimal()
   }
