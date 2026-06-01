@@ -14,7 +14,7 @@
 #' @keywords internal
 #'
 #' @importFrom shiny reactiveVal renderText observe observeEvent isolate req
-#' @importFrom shiny updateSelectInput updateTextInput showNotification removeNotification
+#' @importFrom shiny updateSelectInput updateTextInput updateCheckboxInput showNotification removeNotification showModal removeModal modalDialog modalButton tagList
 registerStartupDataChoiceObservers = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
@@ -64,7 +64,65 @@ registerStartupDataChoiceObservers = function(input, output, session) {
     "Developer-only controls are disabled for this session."
   })
 
-  observeEvent(input$unlockDeveloperModeBtn, {
+  session$onFlushed(function() {
+    updateCheckboxInput(
+      session,
+      "developerModeToggle",
+      value = isTRUE(initialDeveloperModeUnlocked)
+    )
+  }, once = TRUE)
+
+  observeEvent(input$developerModeToggle, {
+    requestedUnlocked = isTRUE(input$developerModeToggle)
+
+    if (identical(requestedUnlocked, isTRUE(developerModeUnlocked()))) {
+      return(NULL)
+    }
+
+    if (!isTRUE(requestedUnlocked)) {
+      developerModeUnlocked(FALSE)
+      saveDeveloperModePreference(FALSE)
+      developerModeStatus(buildDeveloperModeStatus(FALSE))
+      showNotification(
+        buildDeveloperModeLockedMessage(),
+        type = "message"
+      )
+      return(NULL)
+    }
+
+    updateCheckboxInput(session, "developerModeToggle", value = FALSE)
+    showModal(
+      modalDialog(
+        title = "Unlock developer mode",
+        passwordInput(
+          inputId = "developerModePassword",
+          label = "Developer mode password",
+          placeholder = "Enter password to unlock developer mode"
+        ),
+        footer = tagList(
+          actionButton(
+            inputId = "cancelDeveloperModeUnlockBtn",
+            label = "Cancel",
+            class = "btn-secondary"
+          ),
+          actionButton(
+            inputId = "confirmDeveloperModeUnlockBtn",
+            label = "Unlock developer mode",
+            class = "btn-primary"
+          )
+        ),
+        easyClose = FALSE
+      )
+    )
+  }, ignoreInit = TRUE, priority = 100)
+
+  observeEvent(input$cancelDeveloperModeUnlockBtn, {
+    removeModal()
+    updateCheckboxInput(session, "developerModeToggle", value = FALSE)
+    developerModeStatus(buildDeveloperModeStatus(FALSE))
+  }, ignoreInit = TRUE, priority = 100)
+
+  observeEvent(input$confirmDeveloperModeUnlockBtn, {
     password = input$developerModePassword %||% ""
     unlockError = NULL
 
@@ -80,16 +138,14 @@ registerStartupDataChoiceObservers = function(input, output, session) {
       developerModeUnlocked(TRUE)
       saveDeveloperModePreference(TRUE)
       developerModeStatus(buildDeveloperModeStatus(TRUE))
-      updateTextInput(session, "developerModePassword", value = "")
-      showNotification(
-        buildDeveloperModeUnlockedMessage(),
-        type = "message"
-      )
+      updateCheckboxInput(session, "developerModeToggle", value = TRUE)
+      removeModal()
       return(NULL)
     }
 
     developerModeUnlocked(FALSE)
     saveDeveloperModePreference(FALSE)
+    updateCheckboxInput(session, "developerModeToggle", value = FALSE)
 
     if (!is.null(unlockError)) {
       developerModeStatus(buildDeveloperModeUnlockErrorStatus(unlockError))
@@ -101,17 +157,6 @@ registerStartupDataChoiceObservers = function(input, output, session) {
     showNotification(
       buildDeveloperModeIncorrectPasswordMessage(),
       type = "error"
-    )
-  }, ignoreInit = TRUE, priority = 100)
-
-  observeEvent(input$lockDeveloperModeBtn, {
-    developerModeUnlocked(FALSE)
-    saveDeveloperModePreference(FALSE)
-    developerModeStatus(buildDeveloperModeStatus(FALSE))
-    updateTextInput(session, "developerModePassword", value = "")
-    showNotification(
-      buildDeveloperModeLockedMessage(),
-      type = "message"
     )
   }, ignoreInit = TRUE, priority = 100)
 

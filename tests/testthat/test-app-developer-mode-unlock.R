@@ -36,7 +36,22 @@ testthat::test_that("startup observers wire developer mode unlock and lock contr
   )
   testthat::expect_match(
     startupObserverText,
-    "input$unlockDeveloperModeBtn",
+    "input$developerModeToggle",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "showModal",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "confirmDeveloperModeUnlockBtn",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "cancelDeveloperModeUnlockBtn",
     fixed = TRUE
   )
   testthat::expect_match(
@@ -56,12 +71,27 @@ testthat::test_that("startup observers wire developer mode unlock and lock contr
   )
   testthat::expect_match(
     startupObserverText,
+    "updateCheckboxInput",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "developerModeToggle",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
+    "value = TRUE",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    startupObserverText,
     "buildDeveloperModeUnlockErrorStatus(unlockError)",
     fixed = TRUE
   )
   testthat::expect_match(
     startupObserverText,
-    "input$lockDeveloperModeBtn",
+    "requestedUnlocked = isTRUE(input$developerModeToggle)",
     fixed = TRUE
   )
   testthat::expect_match(
@@ -69,4 +99,48 @@ testthat::test_that("startup observers wire developer mode unlock and lock contr
     "developerModeUnlocked(FALSE)",
     fixed = TRUE
   )
+  testthat::expect_false(grepl(
+    "showNotification(buildDeveloperModeUnlockedMessage()",
+    startupObserverText,
+    fixed = TRUE
+  ))
+})
+
+
+testthat::test_that("developer mode UI uses a styled toggle rather than lock buttons", {
+  uiText = paste(
+    deparse(body(appUI)),
+    collapse = "\n"
+  )
+
+  testthat::expect_match(
+    uiText,
+    'inputId = "developerModeToggle"',
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    uiText,
+    "wmfm-developer-mode-toggle-control",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    uiText,
+    "background-color: #d9534f",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    uiText,
+    "background-color: #2e7d32",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl(
+    "unlockDeveloperModeBtn",
+    uiText,
+    fixed = TRUE
+  ))
+  testthat::expect_false(grepl(
+    "lockDeveloperModeBtn",
+    uiText,
+    fixed = TRUE
+  ))
 })
