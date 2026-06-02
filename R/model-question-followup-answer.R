@@ -239,18 +239,16 @@ isLlmFollowupPredictionSentence = function(sentence) {
     grepl("prediction interval", text, fixed = TRUE)
 
   hasFollowupCue = grepl("for the follow-up question", text, fixed = TRUE) ||
-    grepl("\\bif a student\\b", text, perl = TRUE) ||
-    grepl("\\bif you\\b", text, perl = TRUE) ||
-    grepl("\\busing attend\\s*=", text, perl = TRUE) ||
-    grepl("\\busing .*test\\s*=", text, perl = TRUE)
-
-  hasCourseCue = grepl("\\bscore", text, perl = TRUE) &&
-    grepl("\\battend", text, perl = TRUE)
+    grepl("\\bif\\b", text, perl = TRUE) ||
+    grepl("\\bwhen\\b", text, perl = TRUE) ||
+    grepl("\\bwith\\b", text, perl = TRUE) ||
+    grepl("\\busing\\b.*[A-Za-z][A-Za-z0-9_.]*\\s*=", text, perl = TRUE) ||
+    grepl("\\bfor\\b.*[A-Za-z][A-Za-z0-9_.]*\\s*=", text, perl = TRUE)
 
   hasIndividualIntervalCue = grepl("individual", text, fixed = TRUE) &&
     grepl("prediction interval", text, fixed = TRUE)
 
-  isTRUE((hasPredictionCue && (hasFollowupCue || hasCourseCue)) || hasIndividualIntervalCue)
+  isTRUE((hasPredictionCue && hasFollowupCue) || hasIndividualIntervalCue)
 }
 
 #' Detect conflicting language-model follow-up prediction paragraphs

@@ -1,4 +1,12 @@
 ## Stage 33.2
+## 0.2.8.007
+
+- Replace course-specific equation-prompt examples with neutral symbolic examples.
+- Keep the teaching data-context placeholder wording intact while avoiding new production coupling.
+- Remove course-specific follow-up detection cues from production question handling.
+- Support generic prediction requests written as variable-is-level conditions, such as what happens if group is B.
+- Extend domain-agnostic regression coverage for prompt text and generic prediction wording.
+
 ## Stage 33.3
 
 - Rename the temporary Stage 33 coupling regression test to a permanent domain-agnostic behaviour test.

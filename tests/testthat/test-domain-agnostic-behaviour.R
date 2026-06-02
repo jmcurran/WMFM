@@ -27,3 +27,19 @@ testthat::test_that("semantic factor matching uses model levels rather than doma
     character(0)
   )
 })
+
+testthat::test_that("generic prompt examples avoid course-specific outcome wording", {
+  promptText = paste(readLines(testthat::test_path("..", "..", "R", "prompt-equation.R"), warn = FALSE), collapse = "\n")
+
+  testthat::expect_no_match(promptText, "Pass", fixed = TRUE)
+  testthat::expect_no_match(promptText, "Attend", fixed = TRUE)
+  testthat::expect_no_match(promptText, "Test", fixed = TRUE)
+})
+
+
+testthat::test_that("follow-up prediction classification does not require course wording", {
+  payload = classifyModelFollowupQuestion("What expected response would you give when x = 4 and group = B?")
+
+  testthat::expect_identical(payload$category, "prediction_request")
+  testthat::expect_true(payload$supported)
+})
