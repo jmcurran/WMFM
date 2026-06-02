@@ -15,15 +15,15 @@ testthat::test_that("unit-change classifier accepts named units without hard-cod
   testthat::expect_equal(payload$unitChangeValues, 0.1)
 })
 
-testthat::test_that("semantic factor matching uses model levels rather than example locations", {
-  levels = c("SC", "WA")
+testthat::test_that("semantic factor matching uses model levels rather than domain synonyms", {
+  levels = c("GroupA", "GroupB")
 
   testthat::expect_identical(
-    matchSemanticNamedFactorLevel("Region", levels, "What would we expect for WA?"),
-    "WA"
+    matchSemanticNamedFactorLevel("Group", levels, "What would we expect for GroupB?"),
+    "GroupB"
   )
   testthat::expect_identical(
-    matchSemanticNamedFactorLevel("Region", levels, "What would we expect for Washington?"),
+    matchSemanticNamedFactorLevel("Group", levels, "What would we expect for the second group?"),
     character(0)
   )
 })

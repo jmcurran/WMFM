@@ -14,9 +14,9 @@ testthat::test_that("prediction wording classifies as prediction_request", {
 
 testthat::test_that("expected-value follow-ups with explicit predictor values classify as prediction_request", {
   prompts = c(
-    "What earthquake frequency would you expect for Magnitude = 5.4?",
-    "What earthquake frequency would you expect for Magnitude = 5.4 and Locn = WA?",
-    "What expected count would you report when X = 5.4?"
+    "What expected count would you report for X = 5.4?",
+    "What expected count would you report for X = 5.4 and Group = BB?",
+    "What expected value would you report when X = 5.4?"
   )
 
   for (prompt in prompts) {
@@ -44,7 +44,7 @@ testthat::test_that("concise wording classifies as concise_answer", {
 })
 
 testthat::test_that("factor comparison wording classifies as emphasis_group_comparison", {
-  out = classifyModelFollowupQuestion("Focus on the comparison between Washington and Southern California")
+  out = classifyModelFollowupQuestion("Focus on the comparison between Group A and Group B")
   testthat::expect_identical(out$category, "emphasis_group_comparison")
 })
 
@@ -52,7 +52,7 @@ testthat::test_that("unit-change wording classifies as supported unit_change_req
   prompts = c(
     "Explain this for a 10-unit increase in Test",
     "Interpret the effect for a 5 unit change",
-    "Explain the Carat effect for a 0.1-unit increase",
+    "Explain the Depth effect for a 0.1-unit increase",
     "Can you describe this per unit increase?",
     "What does an increase of 10 mean?"
   )

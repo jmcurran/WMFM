@@ -194,32 +194,25 @@ testthat::test_that("GLM parser handles attendance-is-yes wording", {
 })
 
 testthat::test_that("GLM parser requires coded factor levels rather than domain synonyms", {
-  quakePath = system.file(
-    "extdata",
-    "examples",
-    "Quakes",
-    "Quakes.df.rda",
-    package = "WMFM"
+  d = data.frame(
+    Count = c(10, 8, 6, 5, 7, 5, 4, 3),
+    Dose = c(1, 2, 3, 4, 1, 2, 3, 4),
+    Group = factor(c("AA", "AA", "AA", "AA", "BB", "BB", "BB", "BB"))
   )
-  testthat::skip_if_not(file.exists(quakePath), "quake example data is unavailable")
-
-  loadEnv = new.env(parent = emptyenv())
-  objectNames = load(quakePath, envir = loadEnv)
-  quakeDf = loadEnv[[objectNames[[1]]]]
-  fit = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
+  fit = stats::glm(Count ~ Dose + Group, data = d, family = stats::poisson())
 
   exactOut = computeGlmModelQuestionPrediction(
     model = fit,
-    followupQuestion = "How many earthquakes would you expect for Locn = WA at magnitude 5.6?"
+    followupQuestion = "What expected count would you report for Group = BB and Dose = 3.5?"
   )
 
   synonymOut = computeGlmModelQuestionPrediction(
     model = fit,
-    followupQuestion = "How many earthquakes would you expect in Washington at magnitude 5.6?"
+    followupQuestion = "What expected count would you report for the second group at Dose = 3.5?"
   )
 
   testthat::expect_identical(exactOut$status, "ok")
-  testthat::expect_equal(exactOut$resolvedPredictorValues$Magnitude, 5.6)
-  testthat::expect_identical(exactOut$resolvedPredictorValues$Locn, "WA")
-  testthat::expect_false(identical(synonymOut$resolvedPredictorValues$Locn, "WA"))
+  testthat::expect_equal(exactOut$resolvedPredictorValues$Dose, 3.5)
+  testthat::expect_identical(exactOut$resolvedPredictorValues$Group, "BB")
+  testthat::expect_false(identical(synonymOut$resolvedPredictorValues$Group, "BB"))
 })

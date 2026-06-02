@@ -1,4 +1,11 @@
 ## Stage 33.2
+## Stage 33.3
+
+- Rename the temporary Stage 33 coupling regression test to a permanent domain-agnostic behaviour test.
+- Replace remaining domain-specific examples in production prompt and scoring-description text with generic examples.
+- Generalize deterministic parser regression coverage so anti-coupling checks no longer depend on earthquake or diamond examples.
+- Preserve built-in example content in example fixtures and focused example tests only.
+
 
 - Remove example-specific production handling from selected follow-up classification and prediction helpers.
 - Replace magnitude-specific unit-change cleanup with predictor-agnostic unit-change phrasing.
