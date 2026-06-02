@@ -178,42 +178,44 @@ testthat::test_that("GLM parser handles unnamed single numeric predictor values"
   testthat::expect_identical(out$responseDescription, "probability")
 })
 
-testthat::test_that("GLM parser handles attendance-is-yes wording", {
-  data(course.df, package = "s20x")
-  fit = stats::glm(Pass ~ Attend, data = course.df, family = stats::binomial())
+testthat::test_that("GLM parser handles variable-is-level wording", {
+  d = data.frame(
+    Outcome = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes")),
+    Group = factor(c("control", "treated", "control", "treated", "treated", "control"), levels = c("control", "treated"))
+  )
+  fit = stats::glm(Outcome ~ Group, data = d, family = stats::binomial())
 
-  payload = classifyModelFollowupQuestion("What happens if attendance is yes?")
+  payload = classifyModelFollowupQuestion("What happens if group is treated?")
   out = computeGlmModelQuestionPrediction(
     model = fit,
-    followupQuestion = "What happens if attendance is yes?"
+    followupQuestion = "What happens if group is treated?"
   )
 
   testthat::expect_identical(payload$category, "prediction_request")
   testthat::expect_identical(out$status, "ok")
-  testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
+  testthat::expect_identical(out$resolvedPredictorValues$Group, "treated")
 })
 
-testthat::test_that("GLM parser maps Washington location wording to WA", {
-  quakePath = system.file(
-    "extdata",
-    "examples",
-    "Quakes",
-    "Quakes.df.rda",
-    package = "WMFM"
+testthat::test_that("GLM parser requires coded factor levels rather than domain synonyms", {
+  d = data.frame(
+    Count = c(10, 8, 6, 5, 7, 5, 4, 3),
+    Dose = c(1, 2, 3, 4, 1, 2, 3, 4),
+    Group = factor(c("AA", "AA", "AA", "AA", "BB", "BB", "BB", "BB"))
   )
-  testthat::skip_if_not(file.exists(quakePath), "quake example data is unavailable")
+  fit = stats::glm(Count ~ Dose + Group, data = d, family = stats::poisson())
 
-  loadEnv = new.env(parent = emptyenv())
-  objectNames = load(quakePath, envir = loadEnv)
-  quakeDf = loadEnv[[objectNames[[1]]]]
-  fit = stats::glm(Freq ~ Magnitude + Locn, data = quakeDf, family = stats::poisson())
-
-  out = computeGlmModelQuestionPrediction(
+  exactOut = computeGlmModelQuestionPrediction(
     model = fit,
-    followupQuestion = "How many earthquakes would you expect in Washington at magnitude 5.6?"
+    followupQuestion = "What expected count would you report for Group = BB and Dose = 3.5?"
   )
 
-  testthat::expect_identical(out$status, "ok")
-  testthat::expect_equal(out$resolvedPredictorValues$Magnitude, 5.6)
-  testthat::expect_identical(out$resolvedPredictorValues$Locn, "WA")
+  synonymOut = computeGlmModelQuestionPrediction(
+    model = fit,
+    followupQuestion = "What expected count would you report for the second group at Dose = 3.5?"
+  )
+
+  testthat::expect_identical(exactOut$status, "ok")
+  testthat::expect_equal(exactOut$resolvedPredictorValues$Dose, 3.5)
+  testthat::expect_identical(exactOut$resolvedPredictorValues$Group, "BB")
+  testthat::expect_false(identical(synonymOut$resolvedPredictorValues$Group, "BB"))
 })

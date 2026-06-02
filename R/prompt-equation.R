@@ -65,10 +65,10 @@ For interactions between a factor F and a numeric variable X:
   In the equations you output, you must NEVER show the letters a, b, c, or d.
 
 - For the reference level of F (where all F[level] = 0), write an equation such as
-    logit(Pr({response} = Pass)) = a + c * X    (when F = reference level)
+    logit(Pr({response} = success)) = a + c * X    (when F = reference level)
   but in the actual equation you produce, replace a and c with their numeric values,
   for example
-    logit(Pr({response} = Pass)) = -4.71 + 0.42 * Test    (when F = \"No\")
+    logit(Pr({response} = success)) = -4.71 + 0.42 * X    (when F = \"reference\")
 
 - For a non-reference level L of F, you MUST show BOTH the intercept and the slope
   as numeric combinations BEFORE simplifying, and then show the simplified numeric version.
@@ -81,7 +81,7 @@ For interactions between a factor F and a numeric variable X:
 - For example, if the coefficients imply
     (Intercept) = -4.71,  F[L] = -5.13,  X = 0.42,  F[L]:X = 0.76,
   then you should write
-    logit(Pr({response} = Pass)) = (-4.71 - 5.13) + (0.42 + 0.76) * Test = -9.84 + 1.18 * Test    (when F = \"Yes\")
+    logit(Pr({response} = success)) = (-4.71 - 5.13) + (0.42 + 0.76) * X = -9.84 + 1.18 * X    (when F = \"level L\")
 
 IMPORTANT:
 - Do NOT include symbolic patterns like (a + b) or (c + d) in the output.
@@ -99,26 +99,26 @@ The model has NO interaction terms (only main effects).
 
 VERY IMPORTANT: For every factor predictor, you MUST output one equation
 for the reference level and one equation for EACH non-reference level.
-Example (linear model): suppose the model is Exam ~ Attend + Test with coefficients
-  (Intercept) = a,  AttendYes = b,  Test = c.
+Example (linear model): suppose the model is Y ~ F + X with coefficients
+  (Intercept) = a,  FLevel = b,  X = c.
 This notation (a, b, c) is ONLY for your internal reasoning; do NOT use these letters
 in the final equations you output.
 
 In your actual equations you should plug in numeric values. For example, if
-  (Intercept) = 12.10,  AttendYes = 2.53,  Test = 3.52,
+  (Intercept) = 12.10,  FLevel = 2.53,  X = 3.52,
 then you should output BOTH of the following equations:
 
-- For the reference level (Attend = \"No\"):
-    Exam = 12.10 + 3.52 * Test    (when Attend = \"No\")
+- For the reference level (F = \"reference\"):
+    Y = 12.10 + 3.52 * X    (when F = \"reference\")
 
-- For the non-reference level (Attend = \"Yes\"):
-    Exam = (12.10 + 2.53) + 3.52 * Test = 14.63 + 3.52 * Test    (when Attend = \"Yes\")
+- For the non-reference level (F = \"level L\"):
+    Y = (12.10 + 2.53) + 3.52 * X = 14.63 + 3.52 * X    (when F = \"level L\")
 
 Exactly the SAME pattern must be followed for generalised linear models:
 - For a binomial logit model, you might write, for a non-reference level L,
-    logit(Pr({response} = Pass)) = (-7.70 + 2.14) + 0.70 * Test = -5.56 + 0.70 * Test    (when Attend = \"Yes\")
-    Odds({response} = Pass) = exp(-5.56 + 0.70 * Test)    (when Attend = \"Yes\")
-    Pr({response} = Pass) = exp(-5.56 + 0.70 * Test) / (1 + exp(-5.56 + 0.70 * Test))    (when Attend = \"Yes\")
+    logit(Pr({response} = success)) = (-7.70 + 2.14) + 0.70 * X = -5.56 + 0.70 * X    (when F = \"level L\")
+    Odds({response} = success) = exp(-5.56 + 0.70 * X)    (when F = \"level L\")
+    Pr({response} = success) = exp(-5.56 + 0.70 * X) / (1 + exp(-5.56 + 0.70 * X))    (when F = \"level L\")
 - For a Poisson log-link model, you might write
     log(E[{response}]) = (1.86 + 0.45) + 0.30 * X = 2.31 + 0.30 * X    (when F = \"High\")
     E[{response}] = exp(2.31 + 0.30 * X)    (when F = \"High\")
@@ -170,7 +170,7 @@ General rules:
 - Never show '+ (-number)' anywhere in the output.
 - Do NOT write the model in coefficient or dummy-variable form such as:
     Y = b0 + b1 * X1 + b2 * FactorLevel
-- Do NOT include any equation containing indicator variables such as AttendYes,
+- Do NOT include any equation containing indicator variables such as FLevel,
   GroupB, or similar dummy-variable names.
 - ONLY write fully expanded fitted equations for specific predictor conditions.
 - For linear regression (Gaussian, identity link):
@@ -207,7 +207,7 @@ General rules:
 Formatting:
 - Write the equations in plain text, one equation per line (or with simple wrapped lines).
 - Label each equation with the relevant condition in brackets, like
-  (when Attend = \"Yes\") or (when Colour = \"Blue\").
+  (when F = \"level L\") or (when Group = \"level B\").
 - Do NOT include any general, combined, or coefficient-form equation.
 - The output must consist ONLY of condition-specific equations.
 - Do not mention standard errors, t-values, z-values, or p-values.

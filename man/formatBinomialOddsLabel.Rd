@@ -18,7 +18,7 @@ formatBinomialOddsLabel(
 \item{indexed}{Logical. If \code{TRUE}, append \verb{_i} to the response name.}
 }
 \value{
-A character scalar such as \code{"Odds(Pass = Pass)"} or \code{"Odds(Pass_i = Pass)"}.
+A character scalar such as \code{"Odds(response = success)"}.
 }
 \description{
 Format an odds label for a binomial model

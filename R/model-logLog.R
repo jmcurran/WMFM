@@ -88,7 +88,7 @@ getLogLogModelMetadata = function(model, modelFrame = NULL) {
 
 #' Parse a natural-log call expression
 #'
-#' @param expr Character expression such as `log(price)`.
+#' @param expr Character expression such as `log(x)`.
 #'
 #' @return The variable inside the log call, or `NULL` if the expression is not
 #'   a simple natural-log call.

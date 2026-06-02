@@ -2,9 +2,8 @@
 #'
 #' For a two-level factor response, R's binomial GLM parameterisation targets the
 #' second factor level as the fitted probability. This helper extracts readable
-#' labels for the success and failure outcomes so the app can write
-#'
-#' `Pr(Pass = Pass)` and `Odds(Pass = Pass)` rather than a generic `p`.
+#' labels for the success and failure outcomes so the app can write labels
+#' using the fitted response name and outcome levels rather than a generic `p`.
 #'
 #' @param model A fitted model object.
 #'
@@ -57,7 +56,7 @@ getBinomialOutcomeLabels = function(model) {
 #' @param outcome Either `"success"` or `"failure"`.
 #' @param indexed Logical. If `TRUE`, append `_i` to the response name.
 #'
-#' @return A character scalar such as `"Pr(Pass = Pass)"` or `"Pr(Pass_i = Pass)"`.
+#' @return A character scalar such as `"Pr(response = success)"`.
 #' @keywords internal
 formatBinomialProbabilityLabel = function(model, outcome = c("success", "failure"), indexed = FALSE) {
 
@@ -79,7 +78,7 @@ formatBinomialProbabilityLabel = function(model, outcome = c("success", "failure
 #' @param outcome Either `"success"` or `"failure"`.
 #' @param indexed Logical. If `TRUE`, append `_i` to the response name.
 #'
-#' @return A character scalar such as `"Odds(Pass = Pass)"` or `"Odds(Pass_i = Pass)"`.
+#' @return A character scalar such as `"Odds(response = success)"`.
 #' @keywords internal
 formatBinomialOddsLabel = function(model, outcome = c("success", "failure"), indexed = FALSE) {
 

@@ -195,8 +195,8 @@ describeWmfmField = function(
         "was covered at all."
       ),
       examplesHigh = paste(
-        "TRUE example: 'the effect differs by group', 'the decline is steeper in",
-        "Washington', or 'this relationship depends on attendance'."
+        "TRUE example: 'the effect differs by group', 'the slope is steeper in",
+        "one group', or 'this relationship depends on the condition'."
       ),
       examplesLow = paste(
         "FALSE when the explanation treats all groups as if the same pattern",
@@ -225,7 +225,7 @@ describeWmfmField = function(
       ),
       examplesHigh = paste(
         "Cautious difference claim: 'the pattern appears to differ by group'.",
-        "Strong difference claim: 'Washington shows a clearly steeper decline'."
+        "Strong difference claim: 'one group shows a clearly steeper slope'."
       ),
       examplesLow = paste(
         "`not_mentioned` when an interaction exists but the explanation never",
@@ -410,7 +410,7 @@ describeWmfmField = function(
       description = "Whether the explanation clearly names the response or outcome being modelled.",
       values = "TRUE or FALSE",
       scoring = "Used as a light clarity/completeness signal.",
-      examplesHigh = "TRUE when the outcome is clearly named, such as 'expected earthquake count' or 'exam mark'.",
+      examplesHigh = "TRUE when the outcome is clearly named, such as 'expected event count' or 'expected score'.",
       examplesLow = "FALSE when the explanation talks about change without saying what changes.",
       aliases = character(0),
       prettyLabels = c("Outcome mention")

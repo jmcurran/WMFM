@@ -72,8 +72,8 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
 
   contractBodyLines = c(
     "Guidelines:",
-    "- If dataset documentation is provided, use it only to define variables when needed; do not guess course level, study level, or other background details from abbreviated data set names.",
-    "- Do not infer course level, study level, or other background details from abbreviated data set names such as s20x.",
+    "- If dataset documentation is provided, use it only to define variables when needed; do not guess background details from abbreviated data set names.",
+    "- Do not infer background details from abbreviated data set names such as s20x.",
     "- Briefly explain what the response represents and what the predictors represent, defining predictors in-line without bullet points.",
     "",
     getResearchQuestionGuidanceLines(context = "languageContract"),
@@ -116,7 +116,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "",
     "- Do not name the model family, regression type, link function, or transformation in the final explanation unless this is necessary to explain the interpretation scale.",
     "- Do not refer to model terms such as \"interaction\", \"main effect\", \"coefficient\", or \"parameter\".",
-    "- When effects differ between groups, describe the difference directly in plain language (e.g. \"the decline is steeper in Washington\") rather than referring to model structure.",
+    "- When effects differ between groups, describe the difference directly in plain language (e.g. \"the change is steeper in one group\") rather than referring to model structure.",
     "- Never write raw transformation expressions such as exp(-1.56), exp(0.8), or log-scale coefficients in the final explanation.",
     "- Always convert them to the interpreted scale before writing.",
     "",
@@ -126,7 +126,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- For count models with a log link, convert coefficients and confidence intervals to expected-count multipliers before explaining them.",
     "- Do not leave transformed quantities as expressions such as exp(x); always evaluate them numerically.",
     "- Round interpreted effects to about two or three significant digits.",
-    "- When describing expected values, always include a clear noun such as \"expected number\", \"expected count\", or \"expected value\" (e.g. \"expected number of oysters\").",
+    "- When describing expected values, always include a clear noun such as \"expected number\", \"expected count\", or \"expected value\" (e.g. \"expected number of events\").",
     "",
     "- When confidence intervals are provided, keep the uncertainty close to the estimate or comparison it belongs to.",
     "- Do not add a separate sentence explaining what the confidence interval is when the estimate sentence already contains the interval.",

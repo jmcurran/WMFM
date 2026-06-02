@@ -124,7 +124,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
   unitChangePattern = paste(
     c(
       "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(increase|change)\\b",
-      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(point|mark|carat|magnitude|unit)?\\s*(increase|change)\\b",
+      "\\bfor\\s+(a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:[[:alpha:]][[:alnum:]_.-]*\\s+)?(increase|change)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bper\\s+unit(\\s+increase|\\s+change)?\\b",
@@ -172,12 +172,13 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
 
   expectedPredictionPattern = paste(
     c(
-      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b.*\\b(expect|expected)\\b",
-      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score)\\b",
+      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b.*\\b(expect|expected)\\b",
+      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b",
       "\\bhow many\\b.*\\b(expect|expected)\\b",
       "\\bhow much\\b.*\\b(expect|expected)\\b",
       "\\bwhat happens\\b.*\\b(if|when)\\b",
-      "\\bwhat would happen\\b.*\\b(if|when)\\b"
+      "\\bwhat would happen\\b.*\\b(if|when)\\b",
+      "\\b(if|for|when|with|where)\\b.*\\b[[:alpha:]_][[:alnum:]_.-]*\\s+is\\s+[[:alnum:]_.-]+\\b"
     ),
     collapse = "|"
   )
@@ -186,7 +187,11 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     originalText,
     perl = TRUE
   ) || grepl(
-    "\\b(if|for|when|with|who)\\b.*\\b(score|scored|scores|mark|marks|attendance|attend|attends|regularly|class|magnitude|washington|california)\\b",
+    "\\b(if|for|when|with|where)\\b.*\\b[A-Za-z][A-Za-z0-9_.-]*\\s+is\\s+[A-Za-z0-9_.-]+\\b",
+    normalizedText,
+    perl = TRUE
+  ) || grepl(
+    "\\b(if|for|when|with|where)\\b.*\\b(value|level|group|category|setting|settings|condition|conditions|case|observation)\\b",
     normalizedText,
     perl = TRUE
   )
@@ -243,7 +248,7 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
-  if (grepl("\\b(beginner|novice|audience|for students|for a student|plain english|non-technical)\\b", normalizedText, perl = TRUE)) {
+  if (grepl("\\b(beginner|novice|audience|plain english|non-technical)\\b", normalizedText, perl = TRUE)) {
     result$category = "beginner_friendly"
     result$supported = TRUE
     result$message = "Beginner-friendly preference captured."
@@ -317,8 +322,8 @@ extractRequestedUnitChangeValues = function(normalizedText) {
   pattern = paste(
     c(
       "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?unit\\s+(?:increase|change)\\b",
-      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:point|mark|carat|magnitude)\\s+(?:increase|change)\\b",
-      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point|mark|carat|magnitude)\\b",
+      "\\b(?:for\\s+)?(?:a\\s+)?(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:[[:alpha:]][[:alnum:]_.-]*\\s+)?(?:increase|change)\\b",
+      "\\b(\\d+(?:\\.\\d+)?)\\s*[- ]?(?:unit|point)\\b",
       "\\bincrease\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b",
       "\\bchange\\s+of\\s+(\\d+(?:\\.\\d+)?)\\b"
     ),
