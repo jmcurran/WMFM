@@ -83,7 +83,7 @@ test_that("lmToExplanationPrompt includes cautious CI and non-redundant final an
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
   testthat::expect_match(prompt, "Approximate proportion of variation explained by the model: 59%", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not infer course level", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not infer background details", fixed = TRUE)
   testthat::expect_match(prompt, "Do not repeat model-fit statistics in the final paragraph", fixed = TRUE)
   testthat::expect_match(prompt, "Do not write that the true effect is likely to fall inside the confidence interval", fixed = TRUE)
 })
@@ -92,15 +92,15 @@ test_that("lmToExplanationPrompt includes cautious CI and non-redundant final an
 testthat::test_that("lmToExplanationPrompt gives inferential framing for intercept-only models", {
   df = getStats20xExamTestData()[, "Exam", drop = FALSE]
   fit = stats::lm(Exam ~ 1, data = df)
-  attr(fit, "wmfm_research_question") = "What is the average final exam mark in the course data?"
+  attr(fit, "wmfm_research_question") = "What is the average response in the sample data?"
 
   prompt = suppressWarnings(lmToExplanationPrompt(fit))
 
   testthat::expect_no_match(prompt, "Approximate proportion of variation explained", fixed = TRUE)
   testthat::expect_match(prompt, "underlying average", fixed = TRUE)
-  testthat::expect_match(prompt, "What is the average final exam mark for this course?", fixed = TRUE)
-  testthat::expect_no_match(prompt, "What is the average final exam mark in the course data?", fixed = TRUE)
-  testthat::expect_match(prompt, "do not describe it as only the average in this data set, dataset, course data, or sample", fixed = TRUE)
+  testthat::expect_match(prompt, "What is the average response for the relevant setting?", fixed = TRUE)
+  testthat::expect_no_match(prompt, "What is the average response in the sample data?", fixed = TRUE)
+  testthat::expect_match(prompt, "do not describe it as only the average in this data set, dataset, data sample, or sample", fixed = TRUE)
   testthat::expect_match(prompt, "maximum of two short paragraphs", fixed = TRUE)
   testthat::expect_match(prompt, "the sentence containing the estimate and confidence interval is the final answer", fixed = TRUE)
   testthat::expect_match(prompt, "one concise answer with the estimate and confidence interval is enough", fixed = TRUE)

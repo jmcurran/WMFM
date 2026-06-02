@@ -26,7 +26,7 @@ transformation for \code{lm()} models. Expected values include
 \code{"sqrt"}, \code{"inverse"}, or \code{"unknown"}.}
 
 \item{nounPhrase}{Optional character string naming the outcome in
-student-facing language (e.g. \code{"oyster count"}). If \code{NULL},
+student-facing language (e.g. \code{"expected count"}). If \code{NULL},
 a generic phrase ("the outcome") is used.}
 }
 \value{

@@ -23,7 +23,7 @@
 #'   \code{"sqrt"}, \code{"inverse"}, or \code{"unknown"}.
 #'
 #' @param nounPhrase Optional character string naming the outcome in
-#'   student-facing language (e.g. \code{"oyster count"}). If \code{NULL},
+#'   student-facing language (e.g. \code{"expected count"}). If \code{NULL},
 #'   a generic phrase ("the outcome") is used.
 #'
 #' @return A single character string containing bullet-point language rules.

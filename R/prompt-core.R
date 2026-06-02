@@ -72,8 +72,8 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
 
   contractBodyLines = c(
     "Guidelines:",
-    "- If dataset documentation is provided, use it only to define variables when needed; do not guess course level, study level, or other background details from abbreviated data set names.",
-    "- Do not infer course level, study level, or other background details from abbreviated data set names such as s20x.",
+    "- If dataset documentation is provided, use it only to define variables when needed; do not guess background details from abbreviated data set names.",
+    "- Do not infer background details from abbreviated data set names such as s20x.",
     "- Briefly explain what the response represents and what the predictors represent, defining predictors in-line without bullet points.",
     "",
     getResearchQuestionGuidanceLines(context = "languageContract"),

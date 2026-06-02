@@ -375,7 +375,7 @@ sentenceMatchesBaselineEvidence = function(claimText, audit) {
   text = tolower(claimText %||% "")
 
   baselineCue = grepl(
-    "\\bwhen\\b|at about|at around|at the average|at an average|at a value|at a magnitude of|at the typical|typical magnitude|holding|for a student|for someone|starting value|baseline|fitted value",
+    "\\bwhen\\b|at about|at around|at the average|at an average|at a value|at the typical|typical value|holding|for a case|for an observation|starting value|baseline|fitted value",
     text,
     perl = TRUE
   )
@@ -552,7 +552,7 @@ sentenceMentionsModelledChange = function(claimText, audit, model = NULL) {
     perl = TRUE
   )
   multiplierCue = grepl(
-    "multiplies|multiplied|1-unit|one-unit|one magnitude|one-magnitude|per unit|per one-unit",
+    "multiplies|multiplied|1-unit|one-unit|per unit|per one-unit",
     text,
     perl = TRUE
   )

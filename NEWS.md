@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.8.011
+
+- Repair intercept-only research-question normalization after the domain-specific prompt cleanup.
+- Treat sample data and data sample as generic sample-level wording before converting to relevant-setting language.
+- Preserve setting-generic wording without reintroducing course-specific prompt rules.
+- Validate the repair through the standard stage script workflow.
+
 ## WMFM 0.2.8.009
 
 - Remove attendance-specific semantic factor matching from production prediction parsing.
