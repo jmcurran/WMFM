@@ -522,21 +522,6 @@ matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
     return(character(0))
   }
 
-  if (predictorNorm %in% c("attend", "attendance", "attended")) {
-    if (grepl("\\b(do not|does not|did not|don'?t|not)\\s+(attend|attendance)\\b", textNorm, perl = TRUE) ||
-        grepl("\\bwithout\\s+(regular\\s+)?(attend|attendance)", textNorm, perl = TRUE) ||
-        grepl("\\battendance\\s+(is\\s+)?no\\b", textNorm, perl = TRUE)) {
-      return(modelLevels[[noIndex]])
-    }
-
-    hasPositiveAttendance = grepl("\\b(attend(s|ed|ing)?|attendance)\\b", textNorm, perl = TRUE) &&
-      grepl("\\b(regular|regularly|yes)\\b", textNorm, perl = TRUE)
-
-    if (isTRUE(hasPositiveAttendance)) {
-      return(modelLevels[[yesIndex]])
-    }
-  }
-
   character(0)
 }
 

@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.8.009
+
+- Remove attendance-specific semantic factor matching from production prediction parsing.
+- Keep follow-up prediction parsing based on explicit model variable names and fitted factor levels.
+- Replace example-specific binomial documentation examples with generic response-level wording.
+- Extend domain-agnostic regression coverage for prediction helpers and binomial notation helpers.
+
 ## WMFM 0.2.8.008
 
 - Rebuild `NEWS.md` with a purpose section at the top.

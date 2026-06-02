@@ -178,19 +178,22 @@ testthat::test_that("GLM parser handles unnamed single numeric predictor values"
   testthat::expect_identical(out$responseDescription, "probability")
 })
 
-testthat::test_that("GLM parser handles attendance-is-yes wording", {
-  data(course.df, package = "s20x")
-  fit = stats::glm(Pass ~ Attend, data = course.df, family = stats::binomial())
+testthat::test_that("GLM parser handles variable-is-level wording", {
+  d = data.frame(
+    Outcome = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes")),
+    Group = factor(c("control", "treated", "control", "treated", "treated", "control"), levels = c("control", "treated"))
+  )
+  fit = stats::glm(Outcome ~ Group, data = d, family = stats::binomial())
 
-  payload = classifyModelFollowupQuestion("What happens if attendance is yes?")
+  payload = classifyModelFollowupQuestion("What happens if group is treated?")
   out = computeGlmModelQuestionPrediction(
     model = fit,
-    followupQuestion = "What happens if attendance is yes?"
+    followupQuestion = "What happens if group is treated?"
   )
 
   testthat::expect_identical(payload$category, "prediction_request")
   testthat::expect_identical(out$status, "ok")
-  testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
+  testthat::expect_identical(out$resolvedPredictorValues$Group, "treated")
 })
 
 testthat::test_that("GLM parser requires coded factor levels rather than domain synonyms", {

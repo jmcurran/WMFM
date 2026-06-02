@@ -188,28 +188,28 @@ testthat::test_that("unsupported separator x:5 fails safely as missing predictor
   testthat::expect_identical(out$reason, "missing_predictor_values")
 })
 
-testthat::test_that("Course Follow-Up resolves Attend regular from model factor levels", {
+testthat::test_that("factor prediction resolves explicit coded levels from model factor levels", {
   df = data.frame(
-    Exam = c(45, 54, 62, 71, 80, 88),
-    Test = c(8, 10, 12, 14, 16, 18),
-    Attend = factor(c("not", "not", "regular", "regular", "regular", "regular"), levels = c("not", "regular"))
+    Response = c(45, 54, 62, 71, 80, 88),
+    X = c(8, 10, 12, 14, 16, 18),
+    Group = factor(c("baseline", "baseline", "target", "target", "target", "target"), levels = c("baseline", "target"))
   )
-  model = stats::lm(Exam ~ Attend + Test, data = df)
+  model = stats::lm(Response ~ Group + X, data = df)
 
   out = computeLmModelQuestionPrediction(
     model,
-    "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+    "Predict response when X = 10 and Group = target."
   )
 
   testthat::expect_identical(out$status, "ok")
-  testthat::expect_identical(out$resolvedPredictorValues$Attend, "regular")
+  testthat::expect_identical(out$resolvedPredictorValues$Group, "target")
 })
 
-testthat::test_that("models without Attend are not blocked by attendance wording", {
-  df = data.frame(Exam = c(42, 58, 81, 86, 35, 72), Test = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
-  model = stats::lm(Exam ~ Test, data = df)
+testthat::test_that("unmodelled extra wording does not block explicit prediction inputs", {
+  df = data.frame(Response = c(42, 58, 81, 86, 35, 72), X = c(9.1, 13.6, 14.5, 19.1, 8.2, 12.7))
+  model = stats::lm(Response ~ X, data = df)
 
-  out = computeLmModelQuestionPrediction(model, "I attend regularly; predict exam when Test = 10")
+  out = computeLmModelQuestionPrediction(model, "include this extra context; predict response when X = 10")
   testthat::expect_identical(out$status, "ok")
 })
 
@@ -320,21 +320,21 @@ testthat::test_that("assignment extraction keeps separate predictor assignments 
   testthat::expect_identical(out_slash$group, "yes/no")
 })
 
-testthat::test_that("Course Follow-Up resolves regular attendance for Yes/No factors", {
+testthat::test_that("binary factor prediction uses explicit coded levels", {
   df = data.frame(
-    Exam = c(45, 54, 62, 71, 80, 88),
-    Test = c(8, 10, 12, 14, 16, 18),
-    Attend = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes"))
+    Response = c(45, 54, 62, 71, 80, 88),
+    X = c(8, 10, 12, 14, 16, 18),
+    Group = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes"))
   )
-  model = stats::lm(Exam ~ Attend + Test, data = df)
+  model = stats::lm(Response ~ Group + X, data = df)
 
   out = computeLmModelQuestionPrediction(
     model,
-    "If I score 10 out of 20 on the test and I attend class regularly what is my predicted mark for the final exam?"
+    "Predict response when X = 10 and Group = Yes."
   )
 
   testthat::expect_identical(out$status, "ok")
-  testthat::expect_identical(out$resolvedPredictorValues$Attend, "Yes")
+  testthat::expect_identical(out$resolvedPredictorValues$Group, "Yes")
   testthat::expect_false(grepl("reference level 'No'", paste(out$warnings, collapse = " "), fixed = TRUE))
 })
 

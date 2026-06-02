@@ -43,3 +43,18 @@ testthat::test_that("follow-up prediction classification does not require course
   testthat::expect_identical(payload$category, "prediction_request")
   testthat::expect_true(payload$supported)
 })
+
+
+testthat::test_that("prediction helpers avoid domain-specific semantic factor synonyms", {
+  sourceText = paste(readLines(testthat::test_path("..", "..", "R", "model-question-prediction-lm.R"), warn = FALSE), collapse = "\n")
+
+  testthat::expect_no_match(sourceText, "attendance", fixed = TRUE)
+  testthat::expect_no_match(sourceText, "attend", fixed = TRUE)
+})
+
+testthat::test_that("binomial label helpers avoid example-specific outcome names in documentation", {
+  sourceText = paste(readLines(testthat::test_path("..", "..", "R", "model-binomial-outcomes.R"), warn = FALSE), collapse = "\n")
+
+  testthat::expect_no_match(sourceText, "Pr(Pass", fixed = TRUE)
+  testthat::expect_no_match(sourceText, "Odds(Pass", fixed = TRUE)
+})

@@ -15,9 +15,7 @@ A list with \code{successLabel}, \code{failureLabel}, and \code{responseName}.
 \description{
 For a two-level factor response, R's binomial GLM parameterisation targets the
 second factor level as the fitted probability. This helper extracts readable
-labels for the success and failure outcomes so the app can write
-}
-\details{
-\code{Pr(Pass = Pass)} and \code{Odds(Pass = Pass)} rather than a generic \code{p}.
+labels for the success and failure outcomes so the app can write labels
+using the fitted response name and outcome levels rather than a generic \code{p}.
 }
 \keyword{internal}
