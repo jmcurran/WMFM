@@ -19,11 +19,12 @@ interval output for common GLM families.
 \details{
 For binomial models, the helper extracts the response-variable name and the
 two observed outcome levels from the model response and returns labels such
-as \code{"Pr(Pass = Yes)"} and \code{"Odds(Pass = Yes)"}. The second level
+as \code{"Pr(outcome = success)"} and
+\code{"Odds(outcome = success)"}. The second level
 is treated as the success level to match R's usual treatment coding for a
 two-level factor response.
 
 For Poisson models, the helper returns labels based on the response-variable
-name, such as \code{"E[Freq]"}.
+name, such as \code{"E[count]"}.
 }
 \keyword{internal}

@@ -7,7 +7,7 @@
 parseNaturalLogCall(expr)
 }
 \arguments{
-\item{expr}{Character expression such as \code{log(price)}.}
+\item{expr}{Character expression such as \code{log(x)}.}
 }
 \value{
 The variable inside the log call, or \code{NULL} if the expression is not

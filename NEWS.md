@@ -6,6 +6,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.8.012
+
+- Complete the Stage 33 example-coupling close-out with low-risk documentation cleanup only.
+- Replace remaining built-in-example wording in internal helper documentation with neutral outcome and predictor examples.
+- Add a close-out note documenting the durable domain-agnostic regression coverage and final audit command.
+- Preserve production interpretation behavior while keeping NEWS entries version-numbered and newest first.
+- Validate by the standard WMFM stage workflow.
+
+
 ## WMFM 0.2.8.011
 
 - Repair intercept-only research-question normalization after the domain-specific prompt cleanup.
