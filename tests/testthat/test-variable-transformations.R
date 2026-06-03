@@ -47,3 +47,46 @@ test_that("failed derived-variable creation does not return transformation metad
   expect_false(res$ok)
   expect_null(res$transformation)
 })
+
+test_that("formula transformation selection keeps only variables used by the model", {
+  df = data.frame(price = c(10, 20, 40), carat = c(1, 2, 4))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  sqrtRes = addDerivedVariableToData(logRes$data, "sqrtPrice = sqrt(price)")
+
+  records = list(
+    logPrice = logRes$transformation,
+    sqrtPrice = sqrtRes$transformation
+  )
+
+  selected = getFormulaVariableTransformations(
+    formula = logPrice ~ carat,
+    variableTransformations = records
+  )
+
+  expect_named(selected, "logPrice")
+  expect_equal(selected$logPrice$transformationType, "log")
+})
+
+test_that("runModel preserves transformation records used by the fitted formula", {
+  df = data.frame(price = c(10, 20, 40, 80), carat = c(1, 2, 4, 8))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  sqrtRes = addDerivedVariableToData(logRes$data, "sqrtPrice = sqrt(price)")
+
+  records = list(
+    logPrice = logRes$transformation,
+    sqrtPrice = sqrtRes$transformation
+  )
+
+  fit = suppressWarnings(runModel(
+    data = sqrtRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+
+  expect_s3_class(fit, "wmfmModel")
+  expect_named(fit$variableTransformations, "logPrice")
+  expect_named(getModelVariableTransformations(fit$model), "logPrice")
+  expect_equal(fit$variableTransformations$logPrice$inverseType, "exp")
+})

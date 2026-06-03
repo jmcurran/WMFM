@@ -251,6 +251,11 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       formulaPredictors = predNames
     )
     attr(m, "wmfm_adjustment_variables") = adjustmentVariables
+    m = attachVariableTransformationsToModel(
+      model = m,
+      formula = f,
+      variableTransformations = rv$variableTransformations
+    )
 
     # If this data came from a package, attach package metadata to the model.
     if (identical(input$data_source, "package")) {

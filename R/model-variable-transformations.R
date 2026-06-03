@@ -216,3 +216,108 @@ inverseTypeForFunction = function(funName) {
 deparseOneLine = function(expr) {
   paste(deparse(expr, width.cutoff = 500L), collapse = " ")
 }
+
+#' Normalise derived-variable transformation records
+#'
+#' @param variableTransformations A list of transformation records, or NULL.
+#'
+#' @return A named list of transformation records.
+#' @keywords internal
+normaliseVariableTransformations = function(variableTransformations = NULL) {
+  if (is.null(variableTransformations)) {
+    return(list())
+  }
+
+  if (!is.list(variableTransformations)) {
+    stop("`variableTransformations` must be a list or NULL.", call. = FALSE)
+  }
+
+  if (length(variableTransformations) == 0) {
+    return(list())
+  }
+
+  recordNames = names(variableTransformations)
+
+  if (is.null(recordNames)) {
+    recordNames = rep("", length(variableTransformations))
+  }
+
+  out = list()
+
+  for (i in seq_along(variableTransformations)) {
+    record = variableTransformations[[i]]
+
+    if (!inherits(record, "wmfmVariableTransformation")) {
+      stop("All variable-transformation records must inherit from `wmfmVariableTransformation`.", call. = FALSE)
+    }
+
+    recordName = recordNames[[i]]
+
+    if (!nzchar(recordName)) {
+      recordName = record$variable %||% ""
+    }
+
+    if (!is.character(recordName) || length(recordName) != 1 || !nzchar(recordName)) {
+      stop("Each variable-transformation record must have a variable name.", call. = FALSE)
+    }
+
+    out[[recordName]] = record
+  }
+
+  out
+}
+
+#' Select transformation records used by a model formula
+#'
+#' @param formula A model formula.
+#' @param variableTransformations A list of transformation records, or NULL.
+#'
+#' @return A named list of transformation records referenced by the formula.
+#' @keywords internal
+getFormulaVariableTransformations = function(formula, variableTransformations = NULL) {
+  if (!inherits(formula, "formula")) {
+    stop("`formula` must inherit from `formula`.", call. = FALSE)
+  }
+
+  records = normaliseVariableTransformations(variableTransformations)
+
+  if (length(records) == 0) {
+    return(list())
+  }
+
+  formulaVariables = all.vars(formula)
+  usedNames = intersect(names(records), formulaVariables)
+  records[usedNames]
+}
+
+#' Attach derived-variable transformation metadata to a fitted model
+#'
+#' @param model A fitted model object.
+#' @param formula A model formula.
+#' @param variableTransformations A list of transformation records, or NULL.
+#'
+#' @return The fitted model with a `wmfm_variable_transformations` attribute.
+#' @keywords internal
+attachVariableTransformationsToModel = function(
+  model,
+  formula,
+  variableTransformations = NULL
+) {
+  attr(model, "wmfm_variable_transformations") = getFormulaVariableTransformations(
+    formula = formula,
+    variableTransformations = variableTransformations
+  )
+
+  model
+}
+
+#' Get derived-variable transformation metadata from a fitted model
+#'
+#' @param model A fitted model object.
+#'
+#' @return A named list of transformation records.
+#' @keywords internal
+getModelVariableTransformations = function(model) {
+  records = attr(model, "wmfm_variable_transformations", exact = TRUE)
+  normaliseVariableTransformations(records)
+}

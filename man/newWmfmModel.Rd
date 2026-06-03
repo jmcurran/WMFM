@@ -16,6 +16,7 @@ newWmfmModel(
   explanationAudit = NULL,
   explanationClaimEvidenceMap = NULL,
   modelProfile = NULL,
+  variableTransformations = list(),
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   meta = list()
@@ -46,6 +47,9 @@ the same top-level contract produced by \code{buildModelExplanationAudit()}.}
 \item{explanationClaimEvidenceMap}{Deterministic claim-to-evidence map, or \code{NULL}.}
 
 \item{modelProfile}{Deterministic explanation model-profile metadata, or \code{NULL}.}
+
+\item{variableTransformations}{Named list of derived-variable transformation
+records used by this fitted model.}
 
 \item{interactionTerms}{Character vector of fitted interaction-term names.}
 

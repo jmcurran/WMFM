@@ -10,6 +10,7 @@ runModel(
   modelType = c("lm", "logistic", "poisson"),
   dataContext = NULL,
   researchQuestion = NULL,
+  variableTransformations = NULL,
   ollamaBaseUrl = NULL,
   printOutput = TRUE,
   useExplanationCache = TRUE,
@@ -30,6 +31,10 @@ about the dataset, study, variables, coding, or research aim.}
 
 \item{researchQuestion}{Optional character string giving the research
 question the user wants the fitted model to help answer.}
+
+\item{variableTransformations}{Optional named list of derived-variable
+transformation records to preserve when the fitted formula uses derived
+variables.}
 
 \item{ollamaBaseUrl}{Optional character string giving the base URL for the
 language model service.}

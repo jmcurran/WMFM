@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.003
+
+- Stage 35.2 carries derived-variable transformation records from the creation registry into fitted model state.
+- Add helpers that select formula-relevant transformation records and attach them to fitted models using a dedicated WMFM attribute.
+- Extend runModel() and wmfmModel objects so command-line workflows can preserve the same transformation metadata used by the app.
+- Keep the change metadata-only: no prediction, confidence interval, explanation, or automatic back-transformation behaviour is changed yet.
+- Validate through offline transformation-registry tests and the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.002
 
 - Stage 35.1.1 repairs derived-variable transformation evaluation for the Stage 35.1 metadata registry.

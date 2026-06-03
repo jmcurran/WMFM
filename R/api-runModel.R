@@ -25,6 +25,9 @@
 #'   about the dataset, study, variables, coding, or research aim.
 #' @param researchQuestion Optional character string giving the research
 #'   question the user wants the fitted model to help answer.
+#' @param variableTransformations Optional named list of derived-variable
+#'   transformation records to preserve when the fitted formula uses derived
+#'   variables.
 #' @param ollamaBaseUrl Optional character string giving the base URL for the
 #'   language model service.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
@@ -42,6 +45,7 @@ runModel = function(
     modelType = c("lm", "logistic", "poisson"),
     dataContext = NULL,
     researchQuestion = NULL,
+    variableTransformations = NULL,
     ollamaBaseUrl = NULL,
     printOutput = TRUE,
     useExplanationCache = TRUE,
@@ -129,6 +133,8 @@ runModel = function(
       stop("`researchQuestion` must be NULL or a single non-missing character string.", call. = FALSE)
     }
   }
+
+  variableTransformations = normaliseVariableTransformations(variableTransformations)
 
   if (!is.logical(printOutput) || length(printOutput) != 1 || is.na(printOutput)) {
     stop("`printOutput` must be TRUE or FALSE.", call. = FALSE)
@@ -255,6 +261,11 @@ runModel = function(
   )
 
   attr(model, "wmfm_adjustment_variables") = character(0)
+  model = attachVariableTransformationsToModel(
+    model = model,
+    formula = formula,
+    variableTransformations = variableTransformations
+  )
 
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
@@ -441,6 +452,7 @@ runModel = function(
     explanationAudit = explanationAudit,
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     modelProfile = modelProfile,
+    variableTransformations = getModelVariableTransformations(model),
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(
