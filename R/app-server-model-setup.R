@@ -447,6 +447,7 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     }
 
     rv$data = res$data
+    rv$variableTransformations[[res$name]] = res$transformation
 
     # Refresh variable list used by the buckets + response picker
     rv$allVars = names(rv$data)

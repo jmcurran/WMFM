@@ -41,6 +41,7 @@ registerDataLoadObservers = function(
     }
 
     rv$data = df
+    rv$variableTransformations = list()
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
@@ -77,6 +78,7 @@ registerDataLoadObservers = function(
       df = e[[dfNames[1]]]
 
       rv$data = df
+      rv$variableTransformations = list()
       rv$allVars = names(df)
       rv$userDatasetContext = ""
       rv$researchQuestion = ""
@@ -203,6 +205,7 @@ registerDataLoadObservers = function(
     }
 
     rv$data = df
+    rv$variableTransformations = list()
     rv$allVars = names(df)
     rv$userDatasetContext = ""
     rv$researchQuestion = ""
@@ -238,6 +241,7 @@ registerDataLoadObservers = function(
     }
 
     rv$data = exampleInfo$data
+    rv$variableTransformations = list()
     rv$allVars = names(exampleInfo$data)
     rv$userDatasetContext = trimws(exampleInfo$dataContext %||% "")
     rv$researchQuestion = trimws(exampleInfo$researchQuestion %||% "")

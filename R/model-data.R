@@ -19,6 +19,7 @@
 #'   \item \code{msg}: character status message.
 #'   \item \code{data}: the updated data frame (if ok), otherwise the original data.
 #'   \item \code{name}: the new variable name (if ok).
+#'   \item \code{transformation}: derived-variable metadata (if ok).
 #' }
 #'
 #' @examples
@@ -74,7 +75,20 @@ addDerivedVariableToData = function(data, txt, allowOverwrite = FALSE) {
   }
 
   data[[newName]] = value
-  list(ok = TRUE, msg = paste0("Added variable: ", newName), data = data, name = newName)
+  transformation = createVariableTransformationRecord(
+    variable = newName,
+    rhs = rhs,
+    data = data,
+    expressionText = txt
+  )
+
+  list(
+    ok = TRUE,
+    msg = paste0("Added variable: ", newName),
+    data = data,
+    name = newName,
+    transformation = transformation
+  )
 }
 
 

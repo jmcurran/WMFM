@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.002
+
+- Stage 35.1.1 repairs derived-variable transformation evaluation for the Stage 35.1 metadata registry.
+- Add log10 and arithmetic operators to the safe derived-variable evaluation environment so recognised expressions can be evaluated before metadata is recorded.
+- Preserve the conservative transformation metadata design introduced in Stage 35.1 without changing model fitting, prediction, confidence interval, or back-transformation behaviour.
+- Validate through the existing offline variable-transformation tests and the standard WMFM stage workflow.
+
 ## WMFM 0.2.8.012
 
 - Recorded the June 2026 branch audit: `backup_sync` and `backup-before-sync` are retained as recovery/archive branches, and `grading-scoring-revision` was audited and tagged as archived.
