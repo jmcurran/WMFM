@@ -8,6 +8,10 @@ Some older entries were reconstructed from completed-stage notes where exact his
 
 ## WMFM 0.2.8.012
 
+- Recorded the June 2026 branch audit: `backup_sync` and `backup-before-sync` are retained as recovery/archive branches, and `grading-scoring-revision` was audited and tagged as archived.
+- Confirmed that no significant unmerged WMFM functionality was identified from the Stage 32 branch investigation.
+- No merge or cherry-pick action is required for the audited historical branches.
+
 - Complete the Stage 33 example-coupling close-out with low-risk documentation cleanup only.
 - Replace remaining built-in-example wording in internal helper documentation with neutral outcome and predictor examples.
 - Add a close-out note documenting the durable domain-agnostic regression coverage and final audit command.
