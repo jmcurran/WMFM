@@ -297,3 +297,38 @@ testthat::test_that("model tab groups optional follow-up question with research 
   testthat::expect_true(followupPos > rqPos)
   testthat::expect_true(assignPos > followupPos)
 })
+
+testthat::test_that("renderExplanationTeachingSummaryUi includes derived-variable transformation notes when present", {
+  df = data.frame(
+    price = c(10, 20, 40, 80),
+    logPrice = log(c(10, 20, 40, 80)),
+    carat = c(1, 2, 3, 4)
+  )
+
+  records = list(
+    logPrice = createVariableTransformationRecord(
+      variable = "logPrice",
+      expression = "logPrice = log(price)",
+      rhs = "log(price)",
+      sourceVariables = "price",
+      transformationType = "log",
+      inverseType = "exp"
+    )
+  )
+
+  fit = suppressWarnings(runModel(
+    formula = logPrice ~ carat,
+    data = df,
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+
+  audit = buildModelExplanationAudit(fit$model)
+  summary = buildExplanationTeachingSummary(audit = audit, model = fit$model)
+  ui = renderExplanationTeachingSummaryUi(summary)
+  html = as.character(ui)
+
+  testthat::expect_match(html, "Derived-variable transformations", fixed = TRUE)
+  testthat::expect_match(html, "`logPrice`", fixed = TRUE)
+  testthat::expect_match(html, "does not yet automatically back-transform", fixed = TRUE)
+})

@@ -7,8 +7,12 @@
 createVariableTransformationRecord(
   variable,
   rhs,
-  data,
+  data = NULL,
   expressionText = NULL,
+  sourceVariables = NULL,
+  transformationType = NULL,
+  inverseType = NULL,
+  transformationParameters = NULL,
   createdFrom = "addDerivedVariable"
 )
 }
@@ -20,6 +24,14 @@ createVariableTransformationRecord(
 \item{data}{Data frame available when the variable was created.}
 
 \item{expressionText}{Optional original assignment text entered by the user.}
+
+\item{sourceVariables}{Optional character vector of source variable names.}
+
+\item{transformationType}{Optional recognised transformation label.}
+
+\item{inverseType}{Optional inverse transformation label.}
+
+\item{transformationParameters}{Optional list of transformation parameters.}
 
 \item{createdFrom}{Character label for the source workflow.}
 }

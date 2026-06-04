@@ -120,3 +120,47 @@ test_that("buildModelExplanationAudit records fitted derived-variable transforma
     fixed = TRUE
   )
 })
+
+testthat::test_that("teaching summary describes fitted derived-variable transformations", {
+  df = data.frame(
+    price = c(10, 20, 40, 80),
+    logPrice = log(c(10, 20, 40, 80)),
+    carat = c(1, 2, 3, 4)
+  )
+
+  records = list(
+    logPrice = createVariableTransformationRecord(
+      variable = "logPrice",
+      expression = "logPrice = log(price)",
+      rhs = "log(price)",
+      sourceVariables = "price",
+      transformationType = "log",
+      inverseType = "exp"
+    )
+  )
+
+  fit = suppressWarnings(runModel(
+    formula = logPrice ~ carat,
+    data = df,
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+
+  audit = buildModelExplanationAudit(fit$model)
+  summary = buildExplanationTeachingSummary(audit = audit, model = fit$model)
+
+  testthat::expect_match(
+    summary$variableTransformationSummary,
+    "user-created derived variable",
+    fixed = TRUE
+  )
+  testthat::expect_match(summary$variableTransformationSummary, "`logPrice`", fixed = TRUE)
+  testthat::expect_match(summary$variableTransformationSummary, "`price`", fixed = TRUE)
+  testthat::expect_match(
+    summary$variableTransformationSummary,
+    "does not yet automatically back-transform fitted values or confidence intervals",
+    fixed = TRUE
+  )
+
+  testthat::expect_true("Derived variables" %in% summary$evidenceTable$section)
+})

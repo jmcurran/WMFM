@@ -99,24 +99,37 @@ renderExplanationTeachingSummaryUi = function(summary) {
     do.call(tags$ul, items)
   }
 
-  do.call(
-    accordion,
+  panels = list(
+    id = "model_explanation_teaching_summary",
+    multiple = TRUE,
+    open = FALSE,
+    accordion_panel(
+      title = "Main pieces of information used",
+      makeEvidenceList(summary$evidenceTable)
+    ),
+    accordion_panel(
+      title = "Scale used for the explanation",
+      makeParagraph(summary$interpretationScale)
+    ),
+    accordion_panel(
+      title = "Starting values and comparison groups",
+      makeParagraph(summary$baselineChoice)
+    )
+  )
+
+  variableTransformationSummary = trimws(as.character(summary$variableTransformationSummary %||% ""))
+
+  if (nzchar(variableTransformationSummary) &&
+      !grepl("No user-created derived variables", variableTransformationSummary, fixed = TRUE)) {
+    panels[[length(panels) + 1]] = accordion_panel(
+      title = "Derived-variable transformations",
+      makeParagraph(variableTransformationSummary)
+    )
+  }
+
+  panels = c(
+    panels,
     list(
-      id = "model_explanation_teaching_summary",
-      multiple = TRUE,
-      open = FALSE,
-      accordion_panel(
-        title = "Main pieces of information used",
-        makeEvidenceList(summary$evidenceTable)
-      ),
-      accordion_panel(
-        title = "Scale used for the explanation",
-        makeParagraph(summary$interpretationScale)
-      ),
-      accordion_panel(
-        title = "Starting values and comparison groups",
-        makeParagraph(summary$baselineChoice)
-      ),
       accordion_panel(
         title = "What change is being described",
         makeParagraph(summary$xChangeDescription)
@@ -135,6 +148,8 @@ renderExplanationTeachingSummaryUi = function(summary) {
       )
     )
   )
+
+  do.call(accordion, panels)
 }
 
 

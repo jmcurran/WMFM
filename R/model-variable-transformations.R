@@ -9,6 +9,10 @@
 #' @param rhs Parsed right-hand-side expression used to create the variable.
 #' @param data Data frame available when the variable was created.
 #' @param expressionText Optional original assignment text entered by the user.
+#' @param sourceVariables Optional character vector of source variable names.
+#' @param transformationType Optional recognised transformation label.
+#' @param inverseType Optional inverse transformation label.
+#' @param transformationParameters Optional list of transformation parameters.
 #' @param createdFrom Character label for the source workflow.
 #'
 #' @return A list with class \code{wmfmVariableTransformation}.
@@ -16,21 +20,52 @@
 createVariableTransformationRecord = function(
   variable,
   rhs,
-  data,
+  data = NULL,
   expressionText = NULL,
+  sourceVariables = NULL,
+  transformationType = NULL,
+  inverseType = NULL,
+  transformationParameters = NULL,
   createdFrom = "addDerivedVariable"
 ) {
-  sourceVariables = extractSourceVariables(rhs = rhs, data = data)
-  transformationInfo = inferTransformationType(rhs)
+  if (is.character(rhs) && length(rhs) == 1L) {
+    parsedRhs = parse(text = rhs)[[1]]
+    rhsText = rhs
+  } else {
+    parsedRhs = rhs
+    rhsText = deparseOneLine(rhs)
+  }
+
+  if (is.null(sourceVariables)) {
+    if (is.null(data)) {
+      sourceVariables = all.vars(parsedRhs)
+    } else {
+      sourceVariables = extractSourceVariables(rhs = parsedRhs, data = data)
+    }
+  }
+
+  transformationInfo = inferTransformationType(parsedRhs)
+
+  if (is.null(transformationType)) {
+    transformationType = transformationInfo$transformationType
+  }
+
+  if (is.null(inverseType)) {
+    inverseType = transformationInfo$inverseType
+  }
+
+  if (is.null(transformationParameters)) {
+    transformationParameters = transformationInfo$parameters
+  }
 
   out = list(
     variable = variable,
-    expression = expressionText %||% paste0(variable, " = ", deparseOneLine(rhs)),
-    rhs = deparseOneLine(rhs),
+    expression = expressionText %||% paste0(variable, " = ", rhsText),
+    rhs = rhsText,
     sourceVariables = sourceVariables,
-    transformationType = transformationInfo$transformationType,
-    inverseType = transformationInfo$inverseType,
-    transformationParameters = transformationInfo$parameters,
+    transformationType = transformationType,
+    inverseType = inverseType,
+    transformationParameters = transformationParameters,
     createdFrom = createdFrom,
     createdAt = Sys.time()
   )

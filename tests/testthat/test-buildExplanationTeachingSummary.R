@@ -16,6 +16,7 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
       "dataDescription",
       "interpretationScale",
       "baselineChoice",
+      "variableTransformationSummary",
       "xChangeDescription",
       "mainEffectDescription",
       "uncertaintySummary",
@@ -23,8 +24,8 @@ testthat::test_that("buildExplanationTeachingSummary returns a stable student-fa
       "researchQuestionLink"
     )
   )
-  testthat::expect_true(all(vapply(out[1:6], is.character, logical(1))))
-  testthat::expect_true(all(vapply(out[1:6], function(x) length(x) == 1 && !is.na(x) && nzchar(x), logical(1))))
+  testthat::expect_true(all(vapply(out[c("dataDescription", "interpretationScale", "baselineChoice", "variableTransformationSummary", "xChangeDescription", "mainEffectDescription", "uncertaintySummary")], is.character, logical(1))))
+  testthat::expect_true(all(vapply(out[c("dataDescription", "interpretationScale", "baselineChoice", "variableTransformationSummary", "xChangeDescription", "mainEffectDescription", "uncertaintySummary")], function(x) length(x) == 1 && !is.na(x) && nzchar(x), logical(1))))
   testthat::expect_true(is.data.frame(out$evidenceTable))
   testthat::expect_true(nrow(out$evidenceTable) >= 5)
   testthat::expect_true(all(c("section", "summary") %in% names(out$evidenceTable)))
