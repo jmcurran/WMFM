@@ -302,6 +302,64 @@ normaliseVariableTransformations = function(variableTransformations = NULL) {
   out
 }
 
+#' Normalise response-transformation handling mode
+#'
+#' @param responseTransformationMode Character scalar requested mode.
+#'
+#' @return One of `"both"`, `"model"`, or `"original"`.
+#' @keywords internal
+normaliseResponseTransformationMode = function(responseTransformationMode = "both") {
+  if (is.null(responseTransformationMode)) {
+    return("both")
+  }
+
+  if (!is.character(responseTransformationMode) || length(responseTransformationMode) != 1L) {
+    stop("`responseTransformationMode` must be a single character string.", call. = FALSE)
+  }
+
+  responseTransformationMode = trimws(responseTransformationMode)
+  allowedModes = c("both", "model", "original")
+
+  if (!responseTransformationMode %in% allowedModes) {
+    stop(
+      "`responseTransformationMode` must be one of: both, model, original.",
+      call. = FALSE
+    )
+  }
+
+  responseTransformationMode
+}
+
+#' Attach response-transformation handling metadata to a fitted model
+#'
+#' @param model A fitted model object.
+#' @param responseTransformationMode Character scalar requested mode.
+#'
+#' @return The fitted model with a `wmfm_response_transformation_mode` attribute.
+#' @keywords internal
+attachResponseTransformationModeToModel = function(
+  model,
+  responseTransformationMode = "both"
+) {
+  attr(model, "wmfm_response_transformation_mode") = normaliseResponseTransformationMode(
+    responseTransformationMode = responseTransformationMode
+  )
+
+  model
+}
+
+#' Get response-transformation handling metadata from a fitted model
+#'
+#' @param model A fitted model object.
+#'
+#' @return One of `"both"`, `"model"`, or `"original"`.
+#' @keywords internal
+getModelResponseTransformationMode = function(model) {
+  normaliseResponseTransformationMode(
+    attr(model, "wmfm_response_transformation_mode", exact = TRUE) %||% "both"
+  )
+}
+
 #' Select transformation records used by a model formula
 #'
 #' @param formula A model formula.

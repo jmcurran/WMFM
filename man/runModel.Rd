@@ -11,6 +11,7 @@ runModel(
   dataContext = NULL,
   researchQuestion = NULL,
   variableTransformations = NULL,
+  responseTransformationMode = "both",
   ollamaBaseUrl = NULL,
   printOutput = TRUE,
   useExplanationCache = TRUE,
@@ -35,6 +36,10 @@ question the user wants the fitted model to help answer.}
 \item{variableTransformations}{Optional named list of derived-variable
 transformation records to preserve when the fitted formula uses derived
 variables.}
+
+\item{responseTransformationMode}{Character scalar describing how later
+response-scale interpretation should handle recognised response
+transformations. One of \code{"both"}, \code{"model"}, or \code{"original"}.}
 
 \item{ollamaBaseUrl}{Optional character string giving the base URL for the
 language model service.}

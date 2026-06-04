@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.014
+
+- Stage 35.6 moves the Add derived variable button onto the same row as the Interactions optional header on the Model tab.
+- Adds a response transformation handling selector with model-scale, original-scale, and both-scales options for later response back-transformation work.
+- Stores the selected response transformation mode on fitted model metadata without changing prediction, confidence interval, or explanation calculations yet.
+- Keeps predictor-derived-variable transformations distinct from response back-transformation handling.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.013
 
 - Stage 35.5.1 repairs a stale no-transformation teaching-summary test expectation.

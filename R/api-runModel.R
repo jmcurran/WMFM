@@ -28,6 +28,9 @@
 #' @param variableTransformations Optional named list of derived-variable
 #'   transformation records to preserve when the fitted formula uses derived
 #'   variables.
+#' @param responseTransformationMode Character scalar describing how later
+#'   response-scale interpretation should handle recognised response
+#'   transformations. One of `"both"`, `"model"`, or `"original"`.
 #' @param ollamaBaseUrl Optional character string giving the base URL for the
 #'   language model service.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
@@ -46,6 +49,7 @@ runModel = function(
     dataContext = NULL,
     researchQuestion = NULL,
     variableTransformations = NULL,
+    responseTransformationMode = "both",
     ollamaBaseUrl = NULL,
     printOutput = TRUE,
     useExplanationCache = TRUE,
@@ -135,6 +139,7 @@ runModel = function(
   }
 
   variableTransformations = normaliseVariableTransformations(variableTransformations)
+  responseTransformationMode = normaliseResponseTransformationMode(responseTransformationMode)
 
   if (!is.logical(printOutput) || length(printOutput) != 1 || is.na(printOutput)) {
     stop("`printOutput` must be TRUE or FALSE.", call. = FALSE)
@@ -265,6 +270,10 @@ runModel = function(
     model = model,
     formula = formula,
     variableTransformations = variableTransformations
+  )
+  model = attachResponseTransformationModeToModel(
+    model = model,
+    responseTransformationMode = responseTransformationMode
   )
 
   if (!is.null(dataContext)) {
@@ -453,6 +462,7 @@ runModel = function(
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     modelProfile = modelProfile,
     variableTransformations = getModelVariableTransformations(model),
+    responseTransformationMode = getModelResponseTransformationMode(model),
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(
@@ -460,7 +470,8 @@ runModel = function(
       ollamaBaseUrl = ollamaBaseUrl,
       sourceFunction = "runModel",
       equationMethod = equationMethod,
-      equationMethodUsed = equationMethodUsed
+      equationMethodUsed = equationMethodUsed,
+      responseTransformationMode = getModelResponseTransformationMode(model)
     )
   )
 

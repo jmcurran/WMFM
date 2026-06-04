@@ -393,7 +393,16 @@ appUI = function() {
           fluidRow(
             class = "wmfm-optional-controls-row",
             column(
-              width = 4
+              width = 4,
+              div(
+                class = "wmfm-optional-control-btn",
+                style = "padding-left: 15px;",
+                actionButton(
+                  "addDerivedVarBtn",
+                  "Add derived variable",
+                  class = "btn btn-success wmfm-model-compact-action-btn"
+                )
+              )
             ),
             column(
               width = 8,
@@ -404,14 +413,16 @@ appUI = function() {
             class = "wmfm-optional-controls-row",
             column(
               width = 4,
-              div(
-                class = "wmfm-optional-control-btn",
-                style = "padding-left: 15px;",
-                actionButton(
-                  "addDerivedVarBtn",
-                  "Add derived variable",
-                  class = "btn btn-success wmfm-model-compact-action-btn"
-                )
+              selectInput(
+                "responseTransformationMode",
+                label = "Response transformation handling:",
+                choices = c(
+                  "Both model scale and original response scale" = "both",
+                  "Model scale only" = "model",
+                  "Original response scale when available" = "original"
+                ),
+                selected = "both",
+                width = "100%"
               )
             ),
             column(

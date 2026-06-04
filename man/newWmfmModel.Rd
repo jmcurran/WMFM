@@ -17,6 +17,7 @@ newWmfmModel(
   explanationClaimEvidenceMap = NULL,
   modelProfile = NULL,
   variableTransformations = list(),
+  responseTransformationMode = "both",
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   meta = list()
@@ -50,6 +51,10 @@ the same top-level contract produced by \code{buildModelExplanationAudit()}.}
 
 \item{variableTransformations}{Named list of derived-variable transformation
 records used by this fitted model.}
+
+\item{responseTransformationMode}{Character scalar describing how later
+response-scale interpretation should handle recognised response
+transformations. One of \code{"both"}, \code{"model"}, or \code{"original"}.}
 
 \item{interactionTerms}{Character vector of fitted interaction-term names.}
 

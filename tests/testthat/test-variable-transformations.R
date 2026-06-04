@@ -269,3 +269,33 @@ testthat::test_that("teaching summary gives a stable no-transformation note", {
   )
   testthat::expect_false("Derived variables" %in% summary$evidenceTable$section)
 })
+
+
+testthat::test_that("response-transformation handling mode is stored on fitted models", {
+  df = data.frame(price = c(10, 20, 43, 90), carat = c(1, 2, 3, 4))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "original",
+    printOutput = FALSE
+  ))
+
+  testthat::expect_equal(getModelResponseTransformationMode(fit$model), "original")
+  testthat::expect_equal(fit$responseTransformationMode, "original")
+  testthat::expect_equal(fit$meta$responseTransformationMode, "original")
+})
+
+testthat::test_that("response-transformation handling mode validates allowed values", {
+  testthat::expect_equal(normaliseResponseTransformationMode(NULL), "both")
+  testthat::expect_equal(normaliseResponseTransformationMode("model"), "model")
+  testthat::expect_error(
+    normaliseResponseTransformationMode("predictor"),
+    "must be one of",
+    fixed = TRUE
+  )
+})

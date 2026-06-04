@@ -256,6 +256,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       formula = f,
       variableTransformations = rv$variableTransformations
     )
+    m = attachResponseTransformationModeToModel(
+      model = m,
+      responseTransformationMode = input$responseTransformationMode %||% "both"
+    )
 
     # If this data came from a package, attach package metadata to the model.
     if (identical(input$data_source, "package")) {
