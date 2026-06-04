@@ -394,14 +394,28 @@ appUI = function() {
             class = "wmfm-optional-controls-row",
             column(
               width = 4,
-              div(
-                class = "wmfm-optional-control-btn",
-                style = "padding-left: 15px;",
-                actionButton(
-                  "addDerivedVarBtn",
-                  "Add derived variable",
-                  class = "btn btn-success wmfm-model-compact-action-btn"
-                )
+              selectInput(
+                "responseTransformationMode",
+                label = tags$span(
+                  "Response transformation handling ",
+                  tags$span(
+                    icon("circle-info"),
+                    title = paste(
+                      "Choose how explanations should use an invertible transformation of the response variable.",
+                      "Both keeps the model scale and adds the original response scale when available.",
+                      "Model scale uses only the scale used to fit the model.",
+                      "Original response scale uses the back-transformed scale when available."
+                    ),
+                    style = "cursor: help;"
+                  )
+                ),
+                choices = c(
+                  "Both" = "both",
+                  "Model scale" = "model",
+                  "Original response scale" = "original"
+                ),
+                selected = "both",
+                width = "100%"
               )
             ),
             column(
@@ -413,17 +427,7 @@ appUI = function() {
             class = "wmfm-optional-controls-row",
             column(
               width = 4,
-              selectInput(
-                "responseTransformationMode",
-                label = "Response transformation handling:",
-                choices = c(
-                  "Both model scale and original response scale" = "both",
-                  "Model scale only" = "model",
-                  "Original response scale when available" = "original"
-                ),
-                selected = "both",
-                width = "100%"
-              )
+              tags$span()
             ),
             column(
               width = 8,

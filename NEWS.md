@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.015
+
+- Stage 35.7 moves the Add variable button into the Variables bucket header so derived-variable creation is colocated with the variable list.
+- Shortens the response transformation selector labels and adds an info icon explaining the model-scale, original-scale, and both-scales options.
+- Moves the response transformation selector up beside the interaction header to reduce unused vertical space on the Model tab.
+- Places the data context status beside the data context button for a more compact response-selection row.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.014
 
 - Stage 35.6 moves the Add derived variable button onto the same row as the Interactions optional header on the Model tab.

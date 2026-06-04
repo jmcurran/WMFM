@@ -36,27 +36,26 @@ registerModelHelpObservers = function(input, output, session, rv) {
       } else {
         "btn btn-danger action-button wmfm-model-compact-action-btn"
       }
-      statusUi = tags$div(
-        style = "margin-top: 6px;",
-        tags$span(
-          class = if (hasUserContext) {
-            "wmfm-formula-status wmfm-formula-status-ok"
-          } else {
-            "wmfm-formula-status wmfm-formula-status-error"
-          },
-          if (hasUserContext) {
-            "Data context provided."
-          } else {
-            "No data context provided yet."
-          }
-        )
+      statusUi = tags$span(
+        class = if (hasUserContext) {
+          "wmfm-formula-status wmfm-formula-status-ok"
+        } else {
+          "wmfm-formula-status wmfm-formula-status-error"
+        },
+        style = "margin-left: 8px;",
+        if (hasUserContext) {
+          "Data context provided."
+        } else {
+          "No data context provided yet."
+        }
       )
     }
 
     tags$div(
+      class = "wmfm-data-context-inline-control",
       tags$button(
-        id    = "modelHelpBtn",
-        type  = "button",
+        id = "modelHelpBtn",
+        type = "button",
         class = btnClass,
         disabled = if (!isReady) "disabled" else NULL,
         btnLabel
