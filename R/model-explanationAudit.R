@@ -61,6 +61,8 @@ buildModelExplanationAudit = function(model) {
   numericColumns = vapply(coefficientTable, is.numeric, logical(1))
   coefficientTable[numericColumns] = lapply(coefficientTable[numericColumns], round, digits = 4)
 
+  variableTransformationTable = buildModelExplanationAuditVariableTransformations(model = model)
+
   out = list(
     transparencyNote = paste(
       "This panel shows deterministic inputs and evidence used to construct the explanation.",
@@ -90,6 +92,7 @@ buildModelExplanationAudit = function(model) {
       mf = mf,
       predictorNames = predictorNames
     ),
+    variableTransformations = variableTransformationTable,
     confidenceIntervals = buildModelExplanationAuditConfidenceIntervals(
       ciData = ciData
     ),
@@ -130,6 +133,9 @@ buildModelExplanationAudit = function(model) {
       promptValidationGuardPrompt = buildPromptValidationGuardBlock(
         model = model,
         mf = mf
+      ),
+      variableTransformationPrompt = buildVariableTransformationPromptBlock(
+        variableTransformations = variableTransformationTable
       )
     )
   )
@@ -204,6 +210,7 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     responseScaleControlIncluded = TRUE,
     comparisonControlIncluded = TRUE,
     promptValidationGuardIncluded = TRUE,
+    variableTransformationsIncluded = length(getModelVariableTransformations(model)) > 0,
     rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,

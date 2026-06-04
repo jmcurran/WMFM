@@ -90,3 +90,33 @@ test_that("runModel preserves transformation records used by the fitted formula"
   expect_named(getModelVariableTransformations(fit$model), "logPrice")
   expect_equal(fit$variableTransformations$logPrice$inverseType, "exp")
 })
+
+test_that("buildModelExplanationAudit records fitted derived-variable transformations", {
+  df = data.frame(price = c(10, 20, 40, 80), carat = c(1, 2, 4, 8))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+
+  audit = fit$explanationAudit
+
+  expect_s3_class(audit, "wmfmExplanationAudit")
+  expect_true(is.data.frame(audit$variableTransformations))
+  expect_equal(nrow(audit$variableTransformations), 1)
+  expect_equal(audit$variableTransformations$variable, "logPrice")
+  expect_equal(audit$variableTransformations$sourceVariables, "price")
+  expect_equal(audit$variableTransformations$transformationType, "log")
+  expect_equal(audit$variableTransformations$inverseType, "exp")
+  expect_true(audit$promptInputs$variableTransformationsIncluded)
+  expect_match(
+    audit$rawPromptIngredients$variableTransformationPrompt,
+    "User-created derived variables used by this fitted model",
+    fixed = TRUE
+  )
+})

@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.005
+
+- Stage 35.3.1 repairs the derived-variable transformation helper wiring used by the deterministic explanation audit.
+- Add the missing audit-table helper and variable-transformation prompt block so existing explanation-audit tests can run.
+- Preserve the Stage 35.3 metadata-only scope with no prediction, confidence interval, explanation text, or automatic back-transformation behaviour changes.
+- Validate through offline explanation-audit and variable-transformation tests plus the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.003
 
 - Stage 35.2 carries derived-variable transformation records from the creation registry into fitted model state.

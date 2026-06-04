@@ -321,3 +321,139 @@ getModelVariableTransformations = function(model) {
   records = attr(model, "wmfm_variable_transformations", exact = TRUE)
   normaliseVariableTransformations(records)
 }
+
+#' Build explanation-audit rows for derived-variable transformations
+#'
+#' Converts fitted-model transformation records into a compact data frame for the
+#' explanation audit. This is intentionally descriptive only; it does not perform
+#' numerical back-transformation.
+#'
+#' @param model A fitted model object.
+#'
+#' @return A data frame with one row per fitted derived-variable transformation.
+#' @keywords internal
+buildModelExplanationAuditVariableTransformations = function(model) {
+  records = getModelVariableTransformations(model)
+
+  if (length(records) == 0) {
+    return(emptyVariableTransformationAuditTable())
+  }
+
+  rows = lapply(records, variableTransformationAuditRow)
+  out = do.call(rbind, rows)
+  rownames(out) = NULL
+  out
+}
+
+#' Build an empty variable-transformation audit table
+#'
+#' @return A zero-row data frame with the stable audit columns.
+#' @keywords internal
+emptyVariableTransformationAuditTable = function() {
+  data.frame(
+    variable = character(0),
+    sourceVariables = character(0),
+    expression = character(0),
+    rhs = character(0),
+    transformationType = character(0),
+    inverseType = character(0),
+    transformationParameters = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Convert one variable-transformation record to an audit row
+#'
+#' @param record A `wmfmVariableTransformation` record.
+#'
+#' @return A one-row data frame.
+#' @keywords internal
+variableTransformationAuditRow = function(record) {
+  data.frame(
+    variable = record$variable %||% "",
+    sourceVariables = paste(record$sourceVariables %||% character(0), collapse = ", "),
+    expression = record$expression %||% "",
+    rhs = record$rhs %||% "",
+    transformationType = record$transformationType %||% "custom",
+    inverseType = record$inverseType %||% "unknown",
+    transformationParameters = formatVariableTransformationParameters(
+      record$transformationParameters %||% list()
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Format variable-transformation parameters for audit display
+#'
+#' @param parameters A named list of transformation parameters.
+#'
+#' @return Character scalar.
+#' @keywords internal
+formatVariableTransformationParameters = function(parameters = list()) {
+  if (length(parameters) == 0) {
+    return("")
+  }
+
+  parameterNames = names(parameters)
+
+  if (is.null(parameterNames)) {
+    parameterNames = rep("", length(parameters))
+  }
+
+  parts = character(0)
+
+  for (i in seq_along(parameters)) {
+    value = parameters[[i]]
+    valueText = paste(as.character(value), collapse = ", ")
+    nameText = parameterNames[[i]]
+
+    if (nzchar(nameText)) {
+      parts = c(parts, paste0(nameText, " = ", valueText))
+    } else {
+      parts = c(parts, valueText)
+    }
+  }
+
+  paste(parts, collapse = "; ")
+}
+
+#' Build a prompt block describing fitted derived-variable transformations
+#'
+#' @param variableTransformations A variable-transformation audit table.
+#'
+#' @return Character scalar prompt block.
+#' @keywords internal
+buildVariableTransformationPromptBlock = function(variableTransformations = NULL) {
+  if (!is.data.frame(variableTransformations) || nrow(variableTransformations) == 0) {
+    return(paste(
+      "User-created derived variables used by this fitted model: none recorded.",
+      "Do not invent back-transformations that are not supported by the fitted model metadata."
+    ))
+  }
+
+  lines = c(
+    "User-created derived variables used by this fitted model:",
+    "Use this metadata only as descriptive support. Do not perform automatic back-transformation unless a later deterministic workflow provides it."
+  )
+
+  for (i in seq_len(nrow(variableTransformations))) {
+    row = variableTransformations[i, , drop = FALSE]
+    parameterText = row$transformationParameters
+
+    details = paste0(
+      "- ", row$variable,
+      ": ", row$rhs,
+      "; source variables: ", row$sourceVariables,
+      "; transformation: ", row$transformationType,
+      "; inverse label: ", row$inverseType
+    )
+
+    if (nzchar(parameterText)) {
+      details = paste0(details, "; parameters: ", parameterText)
+    }
+
+    lines = c(lines, details)
+  }
+
+  paste(lines, collapse = "\n")
+}

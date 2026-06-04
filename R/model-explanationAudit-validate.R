@@ -12,6 +12,7 @@ getWmfmExplanationAuditRequiredFields = function() {
     "interpretationScale",
     "numericAnchor",
     "referenceLevels",
+    "variableTransformations",
     "confidenceIntervals",
     "baselineEvidence",
     "effectEvidence",
