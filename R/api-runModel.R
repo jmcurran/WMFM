@@ -33,6 +33,10 @@
 #'   transformations. One of `"both"`, `"model"`, or `"original"`.
 #' @param ollamaBaseUrl Optional character string giving the base URL for the
 #'   language model service.
+#' @param generateExplanation Logical. If `TRUE`, attempt to contact the
+#'   configured chat provider and generate model-explanation text. Set to
+#'   `FALSE` in deterministic tests or offline workflows that only need the
+#'   fitted model, equations, audit, and metadata.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
 #'   equations, and explanation to the console.
 #' @param useExplanationCache Logical. Should cached explanation text be reused
@@ -51,6 +55,7 @@ runModel = function(
     variableTransformations = NULL,
     responseTransformationMode = "both",
     ollamaBaseUrl = NULL,
+    generateExplanation = TRUE,
     printOutput = TRUE,
     useExplanationCache = TRUE,
     equationMethod = c("deterministic", "llm")
@@ -116,6 +121,13 @@ runModel = function(
 
   modelType = match.arg(modelType)
   equationMethod = match.arg(equationMethod)
+
+  if (!is.logical(generateExplanation) || length(generateExplanation) != 1 || is.na(generateExplanation)) {
+    stop(
+      "`generateExplanation` must be a single TRUE or FALSE value.",
+      call. = FALSE
+    )
+  }
 
   if (!is.data.frame(data)) {
     stop("`data` must be a data.frame.", call. = FALSE)
@@ -335,17 +347,22 @@ runModel = function(
     )
   }
 
-  chatProvider = tryCatch(
-    getChatProvider(),
-    error = function(e) {
-      warning(
-        "Could not connect to the language model server. Returning deterministic equations without an explanation. Details: ",
-        conditionMessage(e),
-        call. = FALSE
-      )
-      NULL
-    }
-  )
+  chatProvider = NULL
+  needsChatProvider = isTRUE(generateExplanation) || identical(equationMethod, "llm")
+
+  if (isTRUE(needsChatProvider)) {
+    chatProvider = tryCatch(
+      getChatProvider(),
+      error = function(e) {
+        warning(
+          "Could not connect to the language model server. Returning deterministic equations without an explanation. Details: ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+        NULL
+      }
+    )
+  }
 
   if (identical(equationMethod, "llm")) {
     if (is.null(chatProvider)) {
@@ -404,7 +421,7 @@ runModel = function(
     }
   }
 
-  if (!is.null(chatProvider)) {
+  if (isTRUE(generateExplanation) && !is.null(chatProvider)) {
     explanation = tryCatch(
       lmExplanation(
         model = model,
@@ -471,6 +488,7 @@ runModel = function(
       sourceFunction = "runModel",
       equationMethod = equationMethod,
       equationMethodUsed = equationMethodUsed,
+      generateExplanation = generateExplanation,
       responseTransformationMode = getModelResponseTransformationMode(model)
     )
   )

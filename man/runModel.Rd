@@ -13,6 +13,7 @@ runModel(
   variableTransformations = NULL,
   responseTransformationMode = "both",
   ollamaBaseUrl = NULL,
+  generateExplanation = TRUE,
   printOutput = TRUE,
   useExplanationCache = TRUE,
   equationMethod = c("deterministic", "llm")
@@ -43,6 +44,11 @@ transformations. One of \code{"both"}, \code{"model"}, or \code{"original"}.}
 
 \item{ollamaBaseUrl}{Optional character string giving the base URL for the
 language model service.}
+
+\item{generateExplanation}{Logical. If \code{TRUE}, attempt to contact the
+configured chat provider and generate model-explanation text. Set to
+\code{FALSE} in deterministic tests or offline workflows that only need the
+fitted model, equations, audit, and metadata.}
 
 \item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
 equations, and explanation to the console.}

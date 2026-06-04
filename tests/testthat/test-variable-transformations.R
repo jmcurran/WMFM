@@ -82,6 +82,7 @@ test_that("runModel preserves transformation records used by the fitted formula"
     formula = logPrice ~ carat,
     modelType = "lm",
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
 
@@ -101,6 +102,7 @@ test_that("buildModelExplanationAudit records fitted derived-variable transforma
     formula = logPrice ~ carat,
     modelType = "lm",
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
 
@@ -143,6 +145,7 @@ testthat::test_that("teaching summary describes fitted derived-variable transfor
     formula = logPrice ~ carat,
     data = df,
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
 
@@ -194,6 +197,7 @@ testthat::test_that("variable-transformation audit distinguishes response and pr
     formula = logPrice ~ carat,
     data = df,
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
   responseAudit = buildModelExplanationAudit(responseFit$model)
@@ -209,6 +213,7 @@ testthat::test_that("variable-transformation audit distinguishes response and pr
     formula = price ~ logCarat,
     data = df,
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
   predictorAudit = buildModelExplanationAudit(predictorFit$model)
@@ -271,6 +276,33 @@ testthat::test_that("teaching summary gives a stable no-transformation note", {
 })
 
 
+testthat::test_that("variable-transformation model tests can disable explanation generation", {
+  df = data.frame(price = c(10, 20, 43, 90), carat = c(1, 2, 3, 4))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  testthat::local_mocked_bindings(
+    getChatProvider = function(...) {
+      stop("variable-transformation tests must not contact a chat provider", call. = FALSE)
+    }
+  )
+
+  fit = runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  )
+
+  testthat::expect_s3_class(fit, "wmfmModel")
+  testthat::expect_null(fit$explanation)
+  testthat::expect_false(fit$meta$generateExplanation)
+  testthat::expect_named(fit$variableTransformations, "logPrice")
+})
+
+
 testthat::test_that("response-transformation handling mode is stored on fitted models", {
   df = data.frame(price = c(10, 20, 43, 90), carat = c(1, 2, 3, 4))
   logRes = addDerivedVariableToData(df, "logPrice = log(price)")
@@ -282,6 +314,7 @@ testthat::test_that("response-transformation handling mode is stored on fitted m
     modelType = "lm",
     variableTransformations = records,
     responseTransformationMode = "original",
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
 

@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.016
+
+- Stage 35.8 keeps variable-transformation tests offline by allowing runModel() to skip explanation generation.
+- Added a generateExplanation argument so deterministic tests can fit models, build audits, and inspect metadata without contacting a chat provider.
+- Updated variable-transformation tests to disable explanation generation and added a guard test that fails if a chat provider is requested.
+- Preserved normal runModel() behaviour by leaving explanation generation enabled by default for ordinary use.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.015
 
 - Stage 35.7 moves the Add variable button into the Variables bucket header so derived-variable creation is colocated with the variable list.
