@@ -425,51 +425,89 @@ buildExplanationTeachingVariableTransformationSummary = function(audit) {
     ))
   }
 
-  variableText = collapseTeachingNames(backtickNames(transformations$variable))
+  responseTransformations = transformations[transformations$role %in% "response", , drop = FALSE]
+  predictorTransformations = transformations[transformations$role %in% "predictor", , drop = FALSE]
+
+  parts = character(0)
+
+  if (nrow(responseTransformations) > 0) {
+    responseVariables = collapseTeachingNames(backtickNames(responseTransformations$variable))
+    parts = c(
+      parts,
+      paste0(
+        "The fitted response used user-created derived variable",
+        if (nrow(responseTransformations) == 1) {
+          " "
+        } else {
+          "s "
+        },
+        responseVariables,
+        ". These response-side records are the ones that may later support response-scale back-transformation."
+      )
+    )
+  }
+
+  if (nrow(predictorTransformations) > 0) {
+    predictorVariables = collapseTeachingNames(backtickNames(predictorTransformations$variable))
+    parts = c(
+      parts,
+      paste0(
+        "The fitted predictors included user-created covariate",
+        if (nrow(predictorTransformations) == 1) {
+          " "
+        } else {
+          "s "
+        },
+        predictorVariables,
+        ". These predictor-side records describe modelling inputs; they are not a reason to back-transform the response."
+      )
+    )
+  }
 
   sourceText = unique(unlist(strsplit(transformations$sourceVariables, ", ", fixed = TRUE)))
   sourceText = sourceText[nzchar(sourceText)]
 
   if (length(sourceText) > 0) {
-    sourceDescription = paste0(
-      " from ",
-      collapseTeachingNames(backtickNames(sourceText))
+    parts = c(
+      parts,
+      paste0(
+        "The recorded source variable",
+        if (length(sourceText) == 1) {
+          " was "
+        } else {
+          "s were "
+        },
+        collapseTeachingNames(backtickNames(sourceText)),
+        "."
+      )
     )
-  } else {
-    sourceDescription = ""
   }
 
   transformationTypes = unique(transformations$transformationType)
   transformationTypes = transformationTypes[nzchar(transformationTypes)]
 
   if (length(transformationTypes) > 0) {
-    typeDescription = paste0(
-      " The recorded transformation type",
-      if (length(transformationTypes) == 1) {
-        " is "
-      } else {
-        "s are "
-      },
-      collapseTeachingNames(backtickNames(transformationTypes)),
-      "."
+    parts = c(
+      parts,
+      paste0(
+        "The recorded transformation type",
+        if (length(transformationTypes) == 1) {
+          " is "
+        } else {
+          "s are "
+        },
+        collapseTeachingNames(backtickNames(transformationTypes)),
+        "."
+      )
     )
-  } else {
-    typeDescription = ""
   }
 
-  paste0(
-    "The fitted model used user-created derived variable",
-    if (nrow(transformations) == 1) {
-      " "
-    } else {
-      "s "
-    },
-    variableText,
-    sourceDescription,
-    ". The app kept this transformation record so later explanations can know how the variable was made. ",
-    "This step records the metadata only; it does not yet automatically back-transform fitted values or confidence intervals.",
-    typeDescription
+  parts = c(
+    parts,
+    "This step records the metadata only; it does not yet automatically back-transform fitted values or confidence intervals."
   )
+
+  paste(parts, collapse = " ")
 }
 
 #' Build the x-change teaching text

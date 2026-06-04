@@ -4,10 +4,12 @@
 \alias{variableTransformationAuditRow}
 \title{Convert one variable-transformation record to an audit row}
 \usage{
-variableTransformationAuditRow(record)
+variableTransformationAuditRow(record, roleMap = character(0))
 }
 \arguments{
 \item{record}{A \code{wmfmVariableTransformation} record.}
+
+\item{roleMap}{Named character vector of model roles.}
 }
 \value{
 A one-row data frame.

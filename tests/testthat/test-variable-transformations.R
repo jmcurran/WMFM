@@ -164,3 +164,108 @@ testthat::test_that("teaching summary describes fitted derived-variable transfor
 
   testthat::expect_true("Derived variables" %in% summary$evidenceTable$section)
 })
+
+testthat::test_that("variable-transformation audit distinguishes response and predictor roles", {
+  df = data.frame(
+    price = c(10, 20, 40, 80),
+    logPrice = log(c(10, 20, 40, 80)),
+    carat = c(1, 2, 3, 4),
+    logCarat = log(c(1, 2, 3, 4))
+  )
+
+  records = list(
+    logPrice = createVariableTransformationRecord(
+      variable = "logPrice",
+      rhs = "log(price)",
+      sourceVariables = "price",
+      transformationType = "log",
+      inverseType = "exp"
+    ),
+    logCarat = createVariableTransformationRecord(
+      variable = "logCarat",
+      rhs = "log(carat)",
+      sourceVariables = "carat",
+      transformationType = "log",
+      inverseType = "exp"
+    )
+  )
+
+  responseFit = suppressWarnings(runModel(
+    formula = logPrice ~ carat,
+    data = df,
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+  responseAudit = buildModelExplanationAudit(responseFit$model)
+
+  testthat::expect_equal(responseAudit$variableTransformations$role, "response")
+  testthat::expect_match(
+    buildVariableTransformationPromptBlock(responseAudit$variableTransformations),
+    "Response-variable transformations are the only records that may later support response-scale back-transformation",
+    fixed = TRUE
+  )
+
+  predictorFit = suppressWarnings(runModel(
+    formula = price ~ logCarat,
+    data = df,
+    variableTransformations = records,
+    printOutput = FALSE
+  ))
+  predictorAudit = buildModelExplanationAudit(predictorFit$model)
+  predictorSummary = buildExplanationTeachingSummary(audit = predictorAudit, model = predictorFit$model)
+
+  testthat::expect_equal(predictorAudit$variableTransformations$role, "predictor")
+  testthat::expect_match(
+    predictorSummary$variableTransformationSummary,
+    "not a reason to back-transform the response",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl(
+    "may later support response-scale back-transformation",
+    predictorSummary$variableTransformationSummary,
+    fixed = TRUE
+  ))
+})
+
+testthat::test_that("variable-transformation audit helpers use stable empty and prompt contracts", {
+  emptyTable = emptyVariableTransformationAuditTable()
+
+  testthat::expect_s3_class(emptyTable, "data.frame")
+  testthat::expect_equal(nrow(emptyTable), 0)
+  testthat::expect_named(emptyTable, c(
+    "variable",
+    "role",
+    "sourceVariables",
+    "expression",
+    "rhs",
+    "transformationType",
+    "inverseType",
+    "transformationParameters"
+  ))
+
+  prompt = buildVariableTransformationPromptBlock(emptyTable)
+  testthat::expect_match(
+    prompt,
+    "none recorded",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    prompt,
+    "Do not invent back-transformations",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("teaching summary gives a stable no-transformation note", {
+  df = data.frame(y = c(1, 2, 4, 7), x = c(1, 2, 3, 4))
+  model = stats::lm(y ~ x, data = df)
+  audit = buildModelExplanationAudit(model)
+  summary = buildExplanationTeachingSummary(audit = audit, model = model)
+
+  testthat::expect_match(
+    summary$variableTransformationSummary,
+    "No user-created derived variables were used in this fitted model",
+    fixed = TRUE
+  )
+  testthat::expect_false("Derived variables" %in% summary$evidenceTable$section)
+})

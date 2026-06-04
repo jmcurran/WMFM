@@ -374,10 +374,44 @@ buildModelExplanationAuditVariableTransformations = function(model) {
     return(emptyVariableTransformationAuditTable())
   }
 
-  rows = lapply(records, variableTransformationAuditRow)
+  roleMap = getModelVariableTransformationRoles(model = model)
+  rows = lapply(records, variableTransformationAuditRow, roleMap = roleMap)
   out = do.call(rbind, rows)
   rownames(out) = NULL
   out
+}
+
+#' Get transformation roles for fitted model variables
+#'
+#' @param model A fitted model object.
+#'
+#' @return A named character vector with values `response`, `predictor`, or
+#'   `unused`.
+#' @keywords internal
+getModelVariableTransformationRoles = function(model) {
+  mf = stats::model.frame(model)
+  modelVariables = names(mf)
+
+  if (length(modelVariables) == 0) {
+    return(character(0))
+  }
+
+  responseName = modelVariables[[1]]
+  predictorNames = modelVariables[-1]
+  records = getModelVariableTransformations(model)
+
+  roles = rep("unused", length(records))
+  names(roles) = names(records)
+
+  for (recordName in names(records)) {
+    if (identical(recordName, responseName)) {
+      roles[[recordName]] = "response"
+    } else if (recordName %in% predictorNames) {
+      roles[[recordName]] = "predictor"
+    }
+  }
+
+  roles
 }
 
 #' Build an empty variable-transformation audit table
@@ -387,6 +421,7 @@ buildModelExplanationAuditVariableTransformations = function(model) {
 emptyVariableTransformationAuditTable = function() {
   data.frame(
     variable = character(0),
+    role = character(0),
     sourceVariables = character(0),
     expression = character(0),
     rhs = character(0),
@@ -400,12 +435,17 @@ emptyVariableTransformationAuditTable = function() {
 #' Convert one variable-transformation record to an audit row
 #'
 #' @param record A `wmfmVariableTransformation` record.
+#' @param roleMap Named character vector of model roles.
 #'
 #' @return A one-row data frame.
 #' @keywords internal
-variableTransformationAuditRow = function(record) {
+variableTransformationAuditRow = function(record, roleMap = character(0)) {
+  variableName = record$variable %||% ""
+  role = roleMap[[variableName]] %||% "unused"
+
   data.frame(
-    variable = record$variable %||% "",
+    variable = variableName,
+    role = role,
     sourceVariables = paste(record$sourceVariables %||% character(0), collapse = ", "),
     expression = record$expression %||% "",
     rhs = record$rhs %||% "",
@@ -468,7 +508,7 @@ buildVariableTransformationPromptBlock = function(variableTransformations = NULL
 
   lines = c(
     "User-created derived variables used by this fitted model:",
-    "Use this metadata only as descriptive support. Do not perform automatic back-transformation unless a later deterministic workflow provides it."
+    "Use this metadata only as descriptive support. Response-variable transformations are the only records that may later support response-scale back-transformation. Predictor/covariate transformations should be described as modelling inputs, not as response back-transformations. Do not perform automatic back-transformation unless a later deterministic workflow provides it."
   )
 
   for (i in seq_len(nrow(variableTransformations))) {
@@ -478,6 +518,7 @@ buildVariableTransformationPromptBlock = function(variableTransformations = NULL
     details = paste0(
       "- ", row$variable,
       ": ", row$rhs,
+      "; role: ", row$role,
       "; source variables: ", row$sourceVariables,
       "; transformation: ", row$transformationType,
       "; inverse label: ", row$inverseType

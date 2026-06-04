@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.013
+
+- Stage 35.5.1 repairs a stale no-transformation teaching-summary test expectation.
+- Keeps the refined student-facing no-transformation wording introduced in Stage 35.5.
+- Confirms that derived-variable evidence rows remain conditional on recorded derived-variable transformations.
+- Preserves the metadata-only scope with no prediction, confidence interval, or automatic back-transformation behaviour changes.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.011
 
 - Stage 35.4.5 repairs the derived-variable teaching-summary test regressions left by the previous repair.
