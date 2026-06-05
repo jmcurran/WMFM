@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.026
+
+- Stage 35.9.9 relaxes the Model tab UI layout test so it checks durable controls rather than rendered text order.
+- Removes brittle substring-window assertions for response transformation and interaction controls.
+- Keeps the behavioural checks that the response transformation choices, interaction UI, add-variable button, and data-context status controls exist.
+- No app behaviour or public API changes are introduced in this repair.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.022
 
 - Stage 35.9.5 polishes the Model tab layout for derived variables, response-transformation controls, interactions, and data-context status.
