@@ -70,7 +70,7 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       add_rank_list(
         text = HTML(paste0(
           '<div class="wmfm-variable-bucket-header">',
-          '<span>Variables</span>',
+          '<span class="wmfm-variable-bucket-title">Variables</span>',
           '<button id="addDerivedVarBtn" ',
           'type="button" ',
           'class="btn btn-success action-button wmfm-model-compact-action-btn">',
@@ -82,13 +82,21 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
         input_id = "variables"
       ),
       add_rank_list(
-        text     = "Factors",
-        labels   = factorLabels,
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span class="wmfm-variable-bucket-title">Factors</span>',
+          '</div>'
+        )),
+        labels = factorLabels,
         input_id = "factors"
       ),
       add_rank_list(
-        text     = "Numeric",
-        labels   = continuousLabels,
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span class="wmfm-variable-bucket-title">Numeric</span>',
+          '</div>'
+        )),
+        labels = continuousLabels,
         input_id = "continuous"
       )
     )

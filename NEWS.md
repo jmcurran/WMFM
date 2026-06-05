@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.027
+
+- Stage 35.9.10 aligns the Model tab variable bucket headers by giving Variables, Factors, and Numeric the same header wrapper.
+- Keeps the Add variable button inside the Variables header while preventing it from shifting that header out of line with the other buckets.
+- Updates the UI layout test to check the shared bucket-header structure rather than exact visual coordinates.
+- Removes the stale stage-named UI test during installation if it is still present from earlier repairs.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.026
 
 - Stage 35.9.9 relaxes the Model tab UI layout test so it checks durable controls rather than rendered text order.

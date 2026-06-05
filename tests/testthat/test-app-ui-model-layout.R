@@ -15,14 +15,17 @@ testthat::test_that("model tab contains response transformation and interaction 
   testthat::expect_true(grepl("interaction_ui", appUiText, fixed = TRUE))
 })
 
-testthat::test_that("variables bucket header contains the add-variable button", {
+testthat::test_that("variable bucket headers use a shared aligned structure", {
   modelSetupText = readPackageText("R", "app-server-model-setup.R")
   appUiText = readPackageText("R", "app-ui.R")
 
   testthat::expect_true(grepl("wmfm-variable-bucket-header", modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("wmfm-variable-bucket-title", modelSetupText, fixed = TRUE))
   testthat::expect_true(grepl("addDerivedVarBtn", modelSetupText, fixed = TRUE))
   testthat::expect_true(grepl("Add variable", modelSetupText, fixed = TRUE))
-  testthat::expect_false(grepl("text = tags$div", modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("Factors</span>", modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("Numeric</span>", modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("align-items: center", appUiText, fixed = TRUE))
 })
 
 testthat::test_that("data context status is rendered beside the data context button", {
