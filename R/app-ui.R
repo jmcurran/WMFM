@@ -287,8 +287,8 @@ appUI = function() {
       .bucket-list .rank-list-container,
       .bucket-list-container .rank-list-container,
       .rank-list-container {
-        padding-top: 0 !important;
         margin-top: 0 !important;
+        padding: 2px 6px !important;
       }
 
       .wmfm-variable-bucket-header {
