@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.035
+
+- Stage 35.9.18 tightens spacing inside the variable bucket containers on the Model tab.
+- Reduced sortable bucket container padding so the variable, factor, and numeric headers sit closer to the top of their boxes.
+- Preserved the existing bucket-header alignment and did not change modelling or transformation behaviour.
+
 ## WMFM 0.2.9.034
 
 - Stage 35.9.17 tightens spacing inside the variable bucket containers on the Model tab.

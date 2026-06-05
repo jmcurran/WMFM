@@ -286,9 +286,18 @@ appUI = function() {
 
       .bucket-list .rank-list-container,
       .bucket-list-container .rank-list-container,
-      .rank-list-container {
+      .rank-list-container,
+      .default-sortable.rank-list-container {
         margin-top: 0 !important;
-        padding: 2px 6px !important;
+        padding: 0 6px !important;
+      }
+
+      .bucket-list .rank-list,
+      .bucket-list-container .rank-list,
+      .rank-list-container .rank-list,
+      .default-sortable.rank-list {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
 
       .wmfm-variable-bucket-header {
