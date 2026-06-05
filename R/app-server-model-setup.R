@@ -68,15 +68,16 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       group_name  = paste0("vars_group_", rv$bucketGroupId),
       orientation = "horizontal",
       add_rank_list(
-        text = tags$div(
-          class = "wmfm-variable-bucket-header",
-          tags$span("Variables"),
-          actionButton(
-            "addDerivedVarBtn",
-            "Add variable",
-            class = "btn btn-success wmfm-model-compact-action-btn"
-          )
-        ),
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span>Variables</span>',
+          '<button id="addDerivedVarBtn" ',
+          'type="button" ',
+          'class="btn btn-success action-button wmfm-model-compact-action-btn">',
+          'Add variable',
+          '</button>',
+          '</div>'
+        )),
         labels = vars,
         input_id = "variables"
       ),

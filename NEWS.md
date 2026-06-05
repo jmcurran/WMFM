@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.019
+
+- Stage 35.9.2 relaxes the data-context UI regression test so it checks structure rather than an exact CSS fragment.
+- Keeps the test focused on the intended layout: the data-context button and status are rendered in the same inline control container.
+- Avoids brittle expectations such as a required white-space CSS declaration, so later UI layout changes are less likely to break unrelated tests.
+- No user-facing behavior changes are intended.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.017
 
 - Stage 35.9 keeps the derived-variable teaching-summary UI test offline by disabling explanation generation for its model fixture.

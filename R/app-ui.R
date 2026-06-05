@@ -420,17 +420,7 @@ appUI = function() {
             ),
             column(
               width = 8,
-              uiOutput("interaction_label_ui")
-            )
-          ),
-          fluidRow(
-            class = "wmfm-optional-controls-row",
-            column(
-              width = 4,
-              tags$span()
-            ),
-            column(
-              width = 8,
+              uiOutput("interaction_label_ui"),
               uiOutput("interaction_ui")
             )
           ),

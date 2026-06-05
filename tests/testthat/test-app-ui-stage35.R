@@ -22,7 +22,8 @@ testthat::test_that("variables bucket header contains the add-variable button", 
 
   testthat::expect_true(grepl("wmfm-variable-bucket-header", modelSetupText, fixed = TRUE))
   testthat::expect_true(grepl("addDerivedVarBtn", modelSetupText, fixed = TRUE))
-  testthat::expect_true(grepl('"Add variable"', modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("Add variable", modelSetupText, fixed = TRUE))
+  testthat::expect_false(grepl("text = tags$div", modelSetupText, fixed = TRUE))
 })
 
 testthat::test_that("data context status is rendered beside the data context button", {
@@ -31,4 +32,17 @@ testthat::test_that("data context status is rendered beside the data context but
   testthat::expect_true(grepl("wmfm-data-context-inline-control", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("Data context provided.", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("No data context provided yet.", modelHelpText, fixed = TRUE))
+
+  inlineControlPosition = regexpr(
+    "class = \"wmfm-data-context-inline-control\"",
+    modelHelpText,
+    fixed = TRUE
+  )[[1]]
+  inlineControlText = substring(modelHelpText, inlineControlPosition)
+  buttonPosition = regexpr("id = \"modelHelpBtn\"", inlineControlText, fixed = TRUE)[[1]]
+  statusPosition = regexpr("statusUi", inlineControlText, fixed = TRUE)[[1]]
+
+  testthat::expect_true(inlineControlPosition > 0)
+  testthat::expect_true(buttonPosition > 0)
+  testthat::expect_true(statusPosition > buttonPosition)
 })
