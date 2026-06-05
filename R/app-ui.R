@@ -284,12 +284,19 @@ appUI = function() {
         padding: 2px 10px 0 10px !important;
       }
 
+      div.rank-list-container.default-sortable,
       .bucket-list .rank-list-container,
       .bucket-list-container .rank-list-container,
       .rank-list-container,
       .default-sortable.rank-list-container {
         margin-top: 0 !important;
-        padding: 0 6px !important;
+        padding: 0 2px !important;
+        padding-top: 0 !important;
+      }
+
+      div.rank-list-container.default-sortable > .wmfm-variable-bucket-header {
+        margin-top: 0 !important;
+        margin-bottom: 2px !important;
       }
 
       .bucket-list .rank-list,
