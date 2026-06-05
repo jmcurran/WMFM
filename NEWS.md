@@ -6,6 +6,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.022
+
+- Stage 35.9.5 polishes the Model tab layout for derived variables, response-transformation controls, interactions, and data-context status.
+- Shortens the data-context status labels to Provided and Not provided and keeps the status beside the edit button.
+- Aligns the variable bucket headers and keeps the Add variable button separated from the Variables heading.
+- Aligns the response-transformation and interactions controls so their headings and input boxes start on matching rows.
+- Updates UI tests to check structural layout intent rather than brittle screenshot-specific CSS details.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.021
 
 - Stage 35.9.4 polishes the Model tab layout for derived variables, response-transformation controls, interactions, and data-context status.

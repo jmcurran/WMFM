@@ -2,7 +2,7 @@ testthat::test_that("model tab places response transformation controls beside in
   appUiText = readPackageText("R", "app-ui.R")
 
   testthat::expect_true(grepl("responseTransformationMode", appUiText, fixed = TRUE))
-  testthat::expect_true(grepl("Response transformation handling", appUiText, fixed = TRUE))
+  testthat::expect_true(grepl("Response transformation", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("wmfm-optional-controls-label", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Both", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Model scale", appUiText, fixed = TRUE))
@@ -23,7 +23,7 @@ testthat::test_that("variables bucket header contains the add-variable button", 
   appUiText = readPackageText("R", "app-ui.R")
 
   testthat::expect_true(grepl("wmfm-variable-bucket-header", modelSetupText, fixed = TRUE))
-  testthat::expect_true(grepl("gap: 18px", appUiText, fixed = TRUE))
+  testthat::expect_true(grepl("gap: 28px", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("addDerivedVarBtn", modelSetupText, fixed = TRUE))
   testthat::expect_true(grepl("Add variable", modelSetupText, fixed = TRUE))
   testthat::expect_false(grepl("text = tags$div", modelSetupText, fixed = TRUE))
@@ -38,7 +38,7 @@ testthat::test_that("data context status is rendered beside the data context but
   testthat::expect_true(grepl("Provided", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("Not provided", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("wmfm-data-context-inline-control", appUiText, fixed = TRUE))
-  testthat::expect_true(grepl("flex-wrap: nowrap", appUiText, fixed = TRUE))
+  testthat::expect_true(grepl("white-space: nowrap", appUiText, fixed = TRUE))
 
   inlineControlPosition = regexpr(
     "class = \"wmfm-data-context-inline-control\"",

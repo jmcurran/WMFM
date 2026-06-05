@@ -21,34 +21,30 @@ registerModelHelpObservers = function(input, output, session, rv) {
 
   output$modelHelpBtnUi = renderUI({
     isReady = datasetLoaded()
-    source = input$data_source %||% "upload"
-
     hasUserContext = nzchar(trimws(rv$userDatasetContext %||% ""))
 
-    if (identical(source, "package")) {
-      btnLabel = "Data description"
-      btnClass = "btn btn-outline-secondary action-button"
-      statusUi = NULL
+    btnLabel = if (hasUserContext) {
+      "Edit data context"
     } else {
-      btnLabel = if (hasUserContext) "Edit data context" else "Provide data context"
-      btnClass = if (hasUserContext) {
-        "btn btn-success action-button wmfm-model-compact-action-btn"
-      } else {
-        "btn btn-danger action-button wmfm-model-compact-action-btn"
-      }
-      statusUi = tags$span(
-        class = if (hasUserContext) {
-          "wmfm-formula-status wmfm-formula-status-ok"
-        } else {
-          "wmfm-formula-status wmfm-formula-status-error"
-        },
-        if (hasUserContext) {
-          "Provided"
-        } else {
-          "Not provided"
-        }
-      )
+      "Provide data context"
     }
+    btnClass = if (hasUserContext) {
+      "btn btn-success action-button wmfm-model-compact-action-btn"
+    } else {
+      "btn btn-danger action-button wmfm-model-compact-action-btn"
+    }
+    statusUi = tags$span(
+      class = if (hasUserContext) {
+        "wmfm-formula-status wmfm-formula-status-ok"
+      } else {
+        "wmfm-formula-status wmfm-formula-status-error"
+      },
+      if (hasUserContext) {
+        "Provided"
+      } else {
+        "Not provided"
+      }
+    )
 
     tags$div(
       class = "wmfm-data-context-inline-control",
