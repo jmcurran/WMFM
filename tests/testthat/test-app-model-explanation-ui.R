@@ -320,6 +320,7 @@ testthat::test_that("renderExplanationTeachingSummaryUi includes derived-variabl
     formula = logPrice ~ carat,
     data = df,
     variableTransformations = records,
+    generateExplanation = FALSE,
     printOutput = FALSE
   ))
 
