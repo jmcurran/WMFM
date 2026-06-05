@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.028
+
+- Stage 35.9.11 tunes the vertical spacing above the Model tab variable bucket headers.
+- Keeps the shared Variables, Factors, and Numeric bucket-header alignment introduced in Stage 35.9.10.
+- Leaves variable bucket widths, button placement, response transformation controls, and data context controls unchanged.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.027
 
 - Stage 35.9.10 aligns the Model tab variable bucket headers by giving Variables, Factors, and Numeric the same header wrapper.
