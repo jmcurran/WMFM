@@ -42,11 +42,10 @@ registerModelHelpObservers = function(input, output, session, rv) {
         } else {
           "wmfm-formula-status wmfm-formula-status-error"
         },
-        style = "margin-left: 8px;",
         if (hasUserContext) {
-          "Data context provided."
+          "Provided"
         } else {
-          "No data context provided yet."
+          "Not provided"
         }
       )
     }

@@ -3,6 +3,7 @@ testthat::test_that("model tab places response transformation controls beside in
 
   testthat::expect_true(grepl("responseTransformationMode", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Response transformation handling", appUiText, fixed = TRUE))
+  testthat::expect_true(grepl("wmfm-optional-controls-label", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Both", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Model scale", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("Original response scale", appUiText, fixed = TRUE))
@@ -19,8 +20,10 @@ testthat::test_that("model tab places response transformation controls beside in
 
 testthat::test_that("variables bucket header contains the add-variable button", {
   modelSetupText = readPackageText("R", "app-server-model-setup.R")
+  appUiText = readPackageText("R", "app-ui.R")
 
   testthat::expect_true(grepl("wmfm-variable-bucket-header", modelSetupText, fixed = TRUE))
+  testthat::expect_true(grepl("gap: 18px", appUiText, fixed = TRUE))
   testthat::expect_true(grepl("addDerivedVarBtn", modelSetupText, fixed = TRUE))
   testthat::expect_true(grepl("Add variable", modelSetupText, fixed = TRUE))
   testthat::expect_false(grepl("text = tags$div", modelSetupText, fixed = TRUE))
@@ -30,8 +33,12 @@ testthat::test_that("data context status is rendered beside the data context but
   modelHelpText = readPackageText("R", "app-server-model-help.R")
 
   testthat::expect_true(grepl("wmfm-data-context-inline-control", modelHelpText, fixed = TRUE))
-  testthat::expect_true(grepl("Data context provided.", modelHelpText, fixed = TRUE))
-  testthat::expect_true(grepl("No data context provided yet.", modelHelpText, fixed = TRUE))
+  appUiText = readPackageText("R", "app-ui.R")
+
+  testthat::expect_true(grepl("Provided", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("Not provided", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("wmfm-data-context-inline-control", appUiText, fixed = TRUE))
+  testthat::expect_true(grepl("flex-wrap: nowrap", appUiText, fixed = TRUE))
 
   inlineControlPosition = regexpr(
     "class = \"wmfm-data-context-inline-control\"",
