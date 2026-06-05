@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
+## WMFM 0.2.9.031
+
+- Stage 35.9.14 keeps the Model tab CSS source readable after converting escaped newlines to real source newlines.
+- Repairs brittle UI tests so they check durable CSS selectors and properties rather than exact newline formatting.
+- Preserves the compact variable-bucket and fit-control layout changes from the preceding UI polish work.
+- Leaves model fitting, transformation handling, and public APIs unchanged.
+- Validates with the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.029
 
 - Stage 35.9.12 compacts the Model tab so the formula box is easier to see on laptop screens.

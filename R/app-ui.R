@@ -35,20 +35,234 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      #modelFollowupQuestion::placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      #modelFollowupQuestion::-webkit-input-placeholder {\n        color: #9aa0a6;\n      }\n\n      #modelFollowupQuestion::-moz-placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      #model_question_accordion .accordion-button,\n      #model_question_accordion .accordion-header button,\n      #model_question_accordion .panel-title a {\n        padding-top: 8px;\n        padding-bottom: 8px;\n        min-height: 36px;\n      }\n\n      #model_question_accordion .accordion-body,\n      #model_question_accordion .panel-body {\n        padding-top: 8px;\n        padding-bottom: 8px;\n      }\n\n      #model_question_accordion {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn {\n        display: flex;\n        align-items: center;\n        min-height: 34px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-model-compact-action-btn {\n        padding: 4px 10px;\n        font-size: 12px;\n        line-height: 1.5;\n        border-radius: 3px;\n        min-height: 30px;\n      }\n\n      .bucket-list .panel-heading {
-        padding-top: 2px;
-        padding-bottom: 4px;
+    tags$style(HTML("
+      .bucket-list .rank-list {
+        max-height: 8em;
+        overflow-y: auto;
+      }
+      html, body {
+        min-height: 100%;
+        overflow-y: auto;
+      }
+      body {
+        font-size: 90%;
+      }
+      .container-fluid {
+        padding-bottom: 18px;
+      }
+      .shiny-input-container { font-size: 90%; }
+      .nav-tabs > li > a { font-size: 90%; }
+      pre, code { font-size: 90%; }
+
+      h4 {
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
+
+      h5 {
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      hr {
+        margin: 8px 0;
+      }
+
+      .hr-tight {
+        margin: 6px 0;
+      }
+
+      .form-group {
+        margin-bottom: 8px;
+      }
+
+      .radio {
+        margin-top: 3px;
+        margin-bottom: 3px;
+      }
+
+      .shiny-html-output,
+      .shiny-text-output {
+        margin-bottom: 6px;
+      }
+
+      .wmfm-ci-section-label {
+        font-weight: 600;
+        margin-top: 10px;
+        margin-bottom: 4px;
+      }
+
+      .wmfm-ci-drilldown-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fcfcfc;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .wmfm-ci-secondary-note {
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-ci-collapsible-block {
+        margin-top: 10px;
+      }
+
+      .wmfm-explanation-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fcfcfc;
+        margin-top: 8px;
+        white-space: normal;
+      }
+
+      .wmfm-explanation-box p {
+        margin: 0 0 0.8em 0;
+      }
+
+      .wmfm-explanation-box p:last-child {
+        margin-bottom: 0;
+      }
+
+      .wmfm-explanation-helper-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #f8f9fb;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .wmfm-explanation-helper-note {
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-model-tab h5 {
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab {
+        padding-bottom: 16px;
+      }
+
+      .wmfm-model-tab .help-block {
+        margin-bottom: 6px;
+      }
+
+      #modelFollowupQuestion::placeholder {
+        color: #9aa0a6;
+        opacity: 1;
+      }
+
+      #modelFollowupQuestion::-webkit-input-placeholder {
+        color: #9aa0a6;
+      }
+
+      #modelFollowupQuestion::-moz-placeholder {
+        color: #9aa0a6;
+        opacity: 1;
+      }
+
+      #model_question_accordion .accordion-button,
+      #model_question_accordion .accordion-header button,
+      #model_question_accordion .panel-title a {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        min-height: 36px;
+      }
+
+      #model_question_accordion .accordion-body,
+      #model_question_accordion .panel-body {
+        padding-top: 8px;
+        padding-bottom: 8px;
+      }
+
+      #model_question_accordion {
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab .form-group {
+        margin-bottom: 8px;
+      }
+
+      .wmfm-model-tab .hr-tight {
+        margin: 6px 0;
+      }
+
+      .wmfm-model-tab #formula_text {
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab #formula_status {
+        margin-top: 4px;
+        margin-bottom: 0;
+        min-height: 1.4em;
+      }
+
+      .wmfm-formula-status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.9em;
+        font-weight: 600;
+      }
+
+      .wmfm-formula-status-ok {
+        background-color: #e8f5e9;
+        color: #1b5e20;
+        border: 1px solid #c8e6c9;
+      }
+
+      .wmfm-formula-status-error {
+        background-color: #ffebee;
+        color: #b71c1c;
+        border: 1px solid #ffcdd2;
+      }
+
+      .wmfm-model-tab .checkbox {
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      .wmfm-optional-controls-row .wmfm-optional-control-btn {
+        display: flex;
+        align-items: center;
+        min-height: 34px;
+      }
+
+      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-model-compact-action-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+        line-height: 1.5;
+        border-radius: 3px;
+        min-height: 30px;
+      }
+
+      .bucket-list .panel-heading {
+        padding-top: 0;
+        padding-bottom: 2px;
       }
 
       .bucket-list .panel-body {
-        padding-top: 6px;
+        padding-top: 2px;
       }
 
       .wmfm-variable-bucket-header {
         display: flex;
         align-items: center;
         gap: 34px;
-        min-height: 30px;
+        min-height: 26px;
         line-height: 1.2;
         white-space: nowrap;
         overflow: visible;
@@ -57,7 +271,7 @@ appUI = function() {
       .wmfm-variable-bucket-title {
         display: inline-flex;
         align-items: center;
-        min-height: 24px;
+        min-height: 22px;
       }
 
       .wmfm-variable-bucket-header .btn {
@@ -94,7 +308,30 @@ appUI = function() {
         margin-bottom: 0;
       }
 
-      .wmfm-model-fit-buttons {\n        display: grid;\n        grid-template-columns: repeat(2, minmax(0, auto));\n        align-items: center;\n        justify-content: start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n        width: auto;\n      }\n\n      .wmfm-model-fit-actions {\n        margin-top: 25px;\n      }\n\n      @media (max-width: 767px) {\n        .wmfm-model-fit-buttons {\n          grid-template-columns: 1fr;\n        }\n      }\n\n      .wmfm-data-context-control {
+      .wmfm-model-fit-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, auto));
+        align-items: center;
+        justify-content: start;
+        gap: 8px;
+      }
+
+      .wmfm-model-fit-buttons .btn {
+        margin-bottom: 0;
+        width: auto;
+      }
+
+      .wmfm-model-fit-actions {
+        margin-top: 25px;
+      }
+
+      @media (max-width: 767px) {
+        .wmfm-model-fit-buttons {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .wmfm-data-context-control {
         display: flex;
         align-items: center;
         justify-content: flex-end;
@@ -314,7 +551,10 @@ appUI = function() {
         margin-bottom: 6px;
       }
 
-      .tab-content {\n        overflow: visible;\n      }\n    ")),
+      .tab-content {
+        overflow: visible;
+      }
+        ")),
 
     tabsetPanel(
       id = "main_tabs",
