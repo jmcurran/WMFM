@@ -1,5 +1,5 @@
 testthat::test_that("README documents provider setup for new users", {
-  readmeText = paste(readLines(testthat::test_path("..", "..", "README.md"), warn = FALSE), collapse = "\n")
+  readmeText = paste(readLines(findWmfmProjectFile("README.md"), warn = FALSE), collapse = "\n")
 
   testthat::expect_match(readmeText, "Configuring an AI provider", fixed = TRUE)
   testthat::expect_match(readmeText, "ANTHROPIC_API_KEY", fixed = TRUE)

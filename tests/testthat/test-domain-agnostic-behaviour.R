@@ -29,7 +29,7 @@ testthat::test_that("semantic factor matching uses model levels rather than doma
 })
 
 testthat::test_that("generic prompt examples avoid course-specific outcome wording", {
-  promptText = paste(readLines(testthat::test_path("..", "..", "R", "prompt-equation.R"), warn = FALSE), collapse = "\n")
+  promptText = paste(readLines(findWmfmProjectFile("R", "prompt-equation.R"), warn = FALSE), collapse = "\n")
 
   testthat::expect_no_match(promptText, "Pass", fixed = TRUE)
   testthat::expect_no_match(promptText, "Attend", fixed = TRUE)
@@ -46,14 +46,14 @@ testthat::test_that("follow-up prediction classification does not require course
 
 
 testthat::test_that("prediction helpers avoid domain-specific semantic factor synonyms", {
-  sourceText = paste(readLines(testthat::test_path("..", "..", "R", "model-question-prediction-lm.R"), warn = FALSE), collapse = "\n")
+  sourceText = paste(readLines(findWmfmProjectFile("R", "model-question-prediction-lm.R"), warn = FALSE), collapse = "\n")
 
   testthat::expect_no_match(sourceText, "attendance", fixed = TRUE)
   testthat::expect_no_match(sourceText, "attend", fixed = TRUE)
 })
 
 testthat::test_that("binomial label helpers avoid example-specific outcome names in documentation", {
-  sourceText = paste(readLines(testthat::test_path("..", "..", "R", "model-binomial-outcomes.R"), warn = FALSE), collapse = "\n")
+  sourceText = paste(readLines(findWmfmProjectFile("R", "model-binomial-outcomes.R"), warn = FALSE), collapse = "\n")
 
   testthat::expect_no_match(sourceText, "Pr(Pass", fixed = TRUE)
   testthat::expect_no_match(sourceText, "Odds(Pass", fixed = TRUE)

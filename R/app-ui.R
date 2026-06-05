@@ -36,9 +36,13 @@ appUI = function() {
     titlePanel("What's My Fitted Model?"),
 
     tags$style(HTML("
-      .bucket-list .rank-list {
+      .bucket-list .rank-list,
+      .bucket-list-container .rank-list,
+      .rank-list-container .rank-list {
         max-height: 8em;
         overflow-y: auto;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
       html, body {
         min-height: 100%;
@@ -249,21 +253,52 @@ appUI = function() {
         min-height: 30px;
       }
 
-      .bucket-list .panel-heading {
-        padding-top: 0;
-        padding-bottom: 2px;
+      .bucket-list .panel,
+      .bucket-list .card,
+      .bucket-list-container .panel,
+      .bucket-list-container .card,
+      .rank-list-container .panel,
+      .rank-list-container .card {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
 
-      .bucket-list .panel-body {
-        padding-top: 2px;
+      .bucket-list .panel-heading,
+      .bucket-list .card-header,
+      .bucket-list-container .panel-heading,
+      .bucket-list-container .card-header,
+      .rank-list-container .panel-heading,
+      .rank-list-container .card-header {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 2px 10px 0 10px !important;
+      }
+
+      .bucket-list .panel-body,
+      .bucket-list .card-body,
+      .bucket-list-container .panel-body,
+      .bucket-list-container .card-body,
+      .rank-list-container .panel-body,
+      .rank-list-container .card-body {
+        margin-top: 0 !important;
+        padding: 2px 10px 0 10px !important;
+      }
+
+      .bucket-list .rank-list-container,
+      .bucket-list-container .rank-list-container,
+      .rank-list-container {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
       }
 
       .wmfm-variable-bucket-header {
         display: flex;
         align-items: center;
         gap: 34px;
-        min-height: 26px;
+        min-height: 24px;
         line-height: 1.2;
+        margin: 0;
+        padding: 0;
         white-space: nowrap;
         overflow: visible;
       }

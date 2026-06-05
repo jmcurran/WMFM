@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.033
+
+- Stage 35.9.16 fixes source-tree path lookups in tests so strict tests and R CMD check can run from different working directories.
+- Added a test helper for locating project files without relying on brittle ../../ relative paths.
+- Updated source-file and README guard tests to use the shared helper while keeping tests offline and deterministic.
+
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
 
 ## WMFM 0.2.9.031
