@@ -22,24 +22,30 @@ registerModelHelpObservers = function(input, output, session, rv) {
   output$modelHelpBtnUi = renderUI({
     isReady = datasetLoaded()
     hasUserContext = nzchar(trimws(rv$userDatasetContext %||% ""))
+    hasPackageContext = hasPackageDatasetContext(
+      dataSource = input$data_source %||% "",
+      packageName = input$data_package %||% "",
+      datasetName = input$package_dataset %||% ""
+    )
+    hasDataContext = hasUserContext || hasPackageContext
 
-    btnLabel = if (hasUserContext) {
+    btnLabel = if (hasDataContext) {
       "Edit data context"
     } else {
       "Provide data context"
     }
-    btnClass = if (hasUserContext) {
+    btnClass = if (hasDataContext) {
       "btn btn-success action-button wmfm-model-compact-action-btn"
     } else {
       "btn btn-danger action-button wmfm-model-compact-action-btn"
     }
     statusUi = tags$span(
-      class = if (hasUserContext) {
+      class = if (hasDataContext) {
         "wmfm-formula-status wmfm-formula-status-ok"
       } else {
         "wmfm-formula-status wmfm-formula-status-error"
       },
-      if (hasUserContext) {
+      if (hasDataContext) {
         "Provided"
       } else {
         "Not provided"

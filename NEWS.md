@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.038
+
+- Stage 35.10 marks documented s20x package data sets as having data context on the Model tab.
+- Treats s20x help files as built-in data context so package data sets display the green Provided status.
+- Keeps uploaded-data context behaviour unchanged and preserves the existing data description modal for package data.
+
 ## WMFM 0.2.9.037
 
 - Stage 35.9.20 removes the empty sortable title gap from the Model tab variable buckets.

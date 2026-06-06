@@ -26,6 +26,7 @@ testthat::test_that("model help UI includes data context status-aware button mar
   testthat::expect_false(grepl("Data description", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("Provided", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("Not provided", modelHelpText, fixed = TRUE))
+  testthat::expect_true(grepl("hasPackageDatasetContext", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("wmfm-formula-status wmfm-formula-status-ok", modelHelpText, fixed = TRUE))
   testthat::expect_true(grepl("wmfm-formula-status wmfm-formula-status-error", modelHelpText, fixed = TRUE))
 })

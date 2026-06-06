@@ -89,6 +89,34 @@ buildLoadDataFirstMessage = function() {
   "Load a data set first."
 }
 
+
+#' Determine whether a package data set has built-in context.
+#'
+#' @param dataSource Character scalar identifying the active data source.
+#' @param packageName Character scalar package name.
+#' @param datasetName Character scalar data set name.
+#'
+#' @return `TRUE` when WMFM can use package documentation as data context.
+#'
+#' @keywords internal
+hasPackageDatasetContext = function(dataSource, packageName, datasetName) {
+  if (!identical(dataSource %||% "", "package")) {
+    return(FALSE)
+  }
+
+  if (!identical(packageName %||% "", "s20x")) {
+    return(FALSE)
+  }
+
+  datasetName = trimws(datasetName %||% "")
+
+  if (!nzchar(datasetName)) {
+    return(FALSE)
+  }
+
+  !is.null(getS20xDocText(datasetName))
+}
+
 #' Build title for the package data description modal.
 #'
 #' @param datasetName Character scalar dataset name.

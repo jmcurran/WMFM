@@ -91,3 +91,32 @@ test_that("data load helper messages preserve data context wording", {
     "Data context cleared."
   )
 })
+
+
+test_that("package data context detection uses s20x help files", {
+  skip_if_not_installed("s20x")
+
+  expect_true(
+    hasPackageDatasetContext(
+      dataSource = "package",
+      packageName = "s20x",
+      datasetName = "course.df"
+    )
+  )
+
+  expect_false(
+    hasPackageDatasetContext(
+      dataSource = "upload",
+      packageName = "s20x",
+      datasetName = "course.df"
+    )
+  )
+
+  expect_false(
+    hasPackageDatasetContext(
+      dataSource = "package",
+      packageName = "other",
+      datasetName = "course.df"
+    )
+  )
+})
