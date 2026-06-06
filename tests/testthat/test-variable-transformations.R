@@ -450,6 +450,7 @@ testthat::test_that("response back-transformation prompt keeps both mode on orig
   responsePrompt = fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt
   formattedPrompt = fit$explanationAudit$rawPromptIngredients$formattedQuantityPrompt
   scalePrompt = fit$explanationAudit$rawPromptIngredients$responseScaleControlPrompt
+  fullPrompt = lmToExplanationPrompt(fit$model)
 
   testthat::expect_match(
     responsePrompt,
@@ -465,6 +466,16 @@ testthat::test_that("response back-transformation prompt keeps both mode on orig
   testthat::expect_match(
     scalePrompt,
     "Use the response back-transformation payload for substantive fitted values and effects",
+    fixed = TRUE
+  )
+  testthat::expect_no_match(
+    fullPrompt,
+    "Approximate proportion of variation explained by the model",
+    fixed = TRUE
+  )
+  testthat::expect_no_match(
+    fullPrompt,
+    "briefly explain what it says about how well",
     fixed = TRUE
   )
 })
@@ -489,6 +500,7 @@ testthat::test_that("response back-transformation prompt respects original-scale
 
   responsePrompt = fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt
   formattedPrompt = fit$explanationAudit$rawPromptIngredients$formattedQuantityPrompt
+  fullPrompt = lmToExplanationPrompt(fit$model)
 
   testthat::expect_match(
     responsePrompt,
@@ -501,4 +513,37 @@ testthat::test_that("response back-transformation prompt respects original-scale
     fixed = TRUE
   )
   testthat::expect_identical(formattedPrompt, "")
+  testthat::expect_no_match(
+    fullPrompt,
+    "Approximate proportion of variation explained by the model",
+    fixed = TRUE
+  )
+})
+
+
+testthat::test_that("response back-transformation prompt keeps R-squared on model scale mode", {
+  df = data.frame(
+    price = c(10, 20, 45, 90, 180),
+    carat = c(1, 2, 3, 4, 5)
+  )
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "model",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  fullPrompt = lmToExplanationPrompt(fit$model)
+
+  testthat::expect_match(
+    fullPrompt,
+    "Approximate proportion of variation explained by the model",
+    fixed = TRUE
+  )
 })

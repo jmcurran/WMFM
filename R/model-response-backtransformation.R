@@ -494,6 +494,18 @@ buildResponseBackTransformationModeGuidance = function(payload) {
   character(0)
 }
 
+#' Check whether original response scale should drive interpretation
+#'
+#' @param payload Response back-transformation payload.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+responseBackTransformationUsesOriginalScale = function(payload) {
+  is.list(payload) &&
+    identical(payload$status, "available") &&
+    (payload$mode %in% c("both", "original"))
+}
+
 #' Build a response back-transformation availability note
 #'
 #' @param responseRecord Response transformation record.
@@ -519,19 +531,23 @@ buildResponseBackTransformationAvailabilityNote = function(responseRecord, rows)
 #' @param model A fitted model object.
 #' @param mf Optional model frame.
 #' @param predictorNames Optional predictor names.
+#' @param payload Optional precomputed response back-transformation payload.
 #'
 #' @return Character scalar prompt block.
 #' @keywords internal
 buildResponseBackTransformationPromptBlock = function(
   model,
   mf = NULL,
-  predictorNames = NULL
+  predictorNames = NULL,
+  payload = NULL
 ) {
-  payload = buildResponseBackTransformationPayload(
-    model = model,
-    mf = mf,
-    predictorNames = predictorNames
-  )
+  if (is.null(payload)) {
+    payload = buildResponseBackTransformationPayload(
+      model = model,
+      mf = mf,
+      predictorNames = predictorNames
+    )
+  }
 
   if (!identical(payload$status, "available")) {
     if (identical(payload$mode, "model")) {
