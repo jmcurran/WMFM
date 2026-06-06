@@ -299,6 +299,16 @@ appUI = function() {
         margin-bottom: 2px !important;
       }
 
+      .rank-list-container > .rank-list-title,
+      .default-sortable.rank-list-container > .rank-list-title,
+      .bucket-list .rank-list-title,
+      .bucket-list-container .rank-list-title {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       .bucket-list .rank-list,
       .bucket-list-container .rank-list,
       .rank-list-container .rank-list,
