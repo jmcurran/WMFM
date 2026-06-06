@@ -49,16 +49,44 @@ buildResponseScaleControlPromptBlock = function(model, mf = NULL) {
   interpretationScale = modelProfile$interpretationScale %||% "response"
   transformationType = modelProfile$transformationType %||% "none"
 
+  responseBackTransformationPayload = tryCatch(
+    buildResponseBackTransformationPayload(
+      model = model,
+      mf = mf,
+      predictorNames = names(mf)[-1]
+    ),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  hasOriginalResponsePayload = is.list(responseBackTransformationPayload) &&
+    identical(responseBackTransformationPayload$status, "available") &&
+    responseBackTransformationPayload$mode %in% c("both", "original")
+
+  quantityInstruction = if (isTRUE(hasOriginalResponsePayload)) {
+    "- Use the response back-transformation payload for substantive fitted values and effects; do not use transformed-scale model quantities for the main interpretation."
+  } else {
+    "- Use the formatted model quantities above whenever they are available."
+  }
+
   lines = c(
     "Response-scale control:",
     paste0("- Model scale: ", modelScale, "."),
     paste0("- Student-facing interpretation scale: ", interpretationScale, "."),
     paste0("- Response transformation type: ", transformationType, "."),
     paste0("- ", ruleProfile$scaleGuidance),
-    "- Use the formatted model quantities above whenever they are available.",
+    quantityInstruction,
     "- Do not describe raw coefficients as the substantive effects.",
     "- Do not ask the reader to mentally convert from the coefficient or link-function scale."
   )
+
+  if (isTRUE(hasOriginalResponsePayload)) {
+    lines = c(
+      lines,
+      "- When original-response-scale quantities are available, avoid transformed-response phrases such as expected log response or effect on the log scale in the student-facing explanation."
+    )
+  }
 
   lines = c(lines, buildResponseScaleFamilyRules(modelFamily))
   lines = c(lines, buildResponseScaleTransformationRules(transformationType))

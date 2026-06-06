@@ -25,6 +25,23 @@ buildFormattedPromptQuantityBlock = function(
     predictorNames = names(mf)[-1]
   }
 
+  responseBackTransformationPayload = tryCatch(
+    buildResponseBackTransformationPayload(
+      model = model,
+      mf = mf,
+      predictorNames = predictorNames
+    ),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.list(responseBackTransformationPayload) &&
+      identical(responseBackTransformationPayload$status, "available") &&
+      responseBackTransformationPayload$mode %in% c("both", "original")) {
+    return("")
+  }
+
   numericReference = chooseModelNumericReference(
     model = model,
     mf = mf,

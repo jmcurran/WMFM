@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.040
+
+- Stage 35.12 tightens response back-transformation prompt control for derived response variables.
+- Keeps Both mode focused on original-response-scale fitted values and effects while retaining only brief model-scale context.
+- Suppresses transformed-scale formatted quantity blocks when deterministic original-response-scale quantities are available.
+- Adds prompt guidance to avoid expected-log-response and log-scale effect wording in student-facing explanations.
+- Adds offline tests for Both and Original response-scale prompt behaviour.
+
 ## WMFM 0.2.9.039
 
 - Stage 35.11 adds deterministic response back-transformation payloads for derived response variables.

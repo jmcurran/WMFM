@@ -428,3 +428,77 @@ testthat::test_that("response back-transformation is unavailable for predictor-o
     fixed = TRUE
   )
 })
+
+testthat::test_that("response back-transformation prompt keeps both mode on original response scale", {
+  df = data.frame(
+    price = c(10, 20, 45, 90, 180),
+    carat = c(1, 2, 3, 4, 5)
+  )
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "both",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  responsePrompt = fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt
+  formattedPrompt = fit$explanationAudit$rawPromptIngredients$formattedQuantityPrompt
+  scalePrompt = fit$explanationAudit$rawPromptIngredients$responseScaleControlPrompt
+
+  testthat::expect_match(
+    responsePrompt,
+    "Use the original `price` scale for all substantive fitted values and effect interpretations.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    responsePrompt,
+    "Do not report numeric fitted values or effect sizes for `logPrice`",
+    fixed = TRUE
+  )
+  testthat::expect_identical(formattedPrompt, "")
+  testthat::expect_match(
+    scalePrompt,
+    "Use the response back-transformation payload for substantive fitted values and effects",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("response back-transformation prompt respects original-scale-only mode", {
+  df = data.frame(
+    price = c(10, 20, 45, 90, 180),
+    carat = c(1, 2, 3, 4, 5)
+  )
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "original",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  responsePrompt = fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt
+  formattedPrompt = fit$explanationAudit$rawPromptIngredients$formattedQuantityPrompt
+
+  testthat::expect_match(
+    responsePrompt,
+    "Explain fitted values and effects on the original `price` scale only.",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    responsePrompt,
+    "Do not describe expected values or effects for `logPrice`",
+    fixed = TRUE
+  )
+  testthat::expect_identical(formattedPrompt, "")
+})

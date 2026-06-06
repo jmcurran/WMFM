@@ -462,6 +462,38 @@ backTransformResponseDifferenceValues = function(values, inverseType) {
   rep(NA_real_, length(values))
 }
 
+
+#' Build response back-transformation mode guidance
+#'
+#' @param payload Response back-transformation payload.
+#'
+#' @return Character vector of prompt guidance lines.
+#' @keywords internal
+buildResponseBackTransformationModeGuidance = function(payload) {
+  mode = payload$mode %||% "both"
+  responseVariable = payload$responseVariable %||% "the fitted response"
+  originalVariable = payload$originalVariable %||% "the original response"
+
+  if (identical(mode, "original")) {
+    return(c(
+      paste0("- Explain fitted values and effects on the original `", originalVariable, "` scale only."),
+      paste0("- Do not describe expected values or effects for `", responseVariable, "` in the final explanation."),
+      "- Mention the transformation only if needed to explain why the original response scale is being used."
+    ))
+  }
+
+  if (identical(mode, "both")) {
+    return(c(
+      paste0("- Briefly acknowledge that the model was fitted to `", responseVariable, "` if this helps orient the reader."),
+      paste0("- Use the original `", originalVariable, "` scale for all substantive fitted values and effect interpretations."),
+      paste0("- Do not report numeric fitted values or effect sizes for `", responseVariable, "` in the final explanation."),
+      "- In this mode, both means: keep the model-scale context available, but write the substantive interpretation on the original response scale."
+    ))
+  }
+
+  character(0)
+}
+
 #' Build a response back-transformation availability note
 #'
 #' @param responseRecord Response transformation record.
@@ -514,15 +546,19 @@ buildResponseBackTransformationPromptBlock = function(
     ), collapse = "\n"))
   }
 
+  modeGuidance = buildResponseBackTransformationModeGuidance(payload = payload)
+
   lines = c(
     "Response back-transformation payload:",
     paste0("- Response modelled by WMFM: `", payload$responseVariable, "`."),
     paste0("- Original response variable: `", payload$originalVariable, "`."),
     paste0("- Transformation: ", payload$transformationType, "; inverse: ", payload$inverseType, "."),
     paste0("- Requested response transformation mode: ", payload$mode, "."),
+    modeGuidance,
     "- Use these deterministic original-response-scale quantities directly when the selected response-transformation mode calls for original scale or both scales.",
     "- Do not recompute, round again, or invent additional back-transformed quantities.",
-    "- If a row is labelled as an original response multiplier, describe it as a multiplicative change, not an additive difference."
+    "- If a row is labelled as an original response multiplier, describe it as a multiplicative change, not an additive difference.",
+    "- Do not report expected values or effects on the transformed model scale when original-response-scale rows are supplied, unless the selected mode is model scale only."
   )
 
   for (i in seq_len(nrow(payload$table))) {
