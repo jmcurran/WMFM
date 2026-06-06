@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.039
+
+- Stage 35.11 adds deterministic response back-transformation payloads for derived response variables.
+- Supplies original-response-scale fitted values and safe multiplicative effects to the explanation prompt when an invertible response transformation is available.
+- Respects the response-transformation mode selector so model-scale-only explanations do not include original-scale payloads.
+- Keeps predictor-only transformations as metadata without treating them as response back-transformations.
+- Adds offline tests for available, not-requested, and predictor-only response transformation paths.
+
 ## WMFM 0.2.9.038
 
 - Stage 35.10 marks documented s20x package data sets as having data context on the Model tab.

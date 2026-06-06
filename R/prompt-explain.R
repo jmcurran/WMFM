@@ -62,6 +62,11 @@ lmToExplanationPrompt = function(model) {
     mf = modelFrame,
     predictorNames = predictors
   )
+  responseBackTransformationBlock = buildResponseBackTransformationPromptBlock(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors
+  )
   explanationSkeletonBlock = buildExplanationSkeletonPromptBlock(
     model = model,
     mf = modelFrame
@@ -237,6 +242,8 @@ Interpretation rules for numeric predictors:
 {adjustmentVariableBlock}
 
 {formattedQuantityBlock}
+
+{responseBackTransformationBlock}
 
 {responseScaleControlBlock}
 

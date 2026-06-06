@@ -62,6 +62,11 @@ buildModelExplanationAudit = function(model) {
   coefficientTable[numericColumns] = lapply(coefficientTable[numericColumns], round, digits = 4)
 
   variableTransformationTable = buildModelExplanationAuditVariableTransformations(model = model)
+  responseBackTransformationPayload = buildResponseBackTransformationPayload(
+    model = model,
+    mf = mf,
+    predictorNames = predictorNames
+  )
 
   out = list(
     transparencyNote = paste(
@@ -93,6 +98,7 @@ buildModelExplanationAudit = function(model) {
       predictorNames = predictorNames
     ),
     variableTransformations = variableTransformationTable,
+    responseBackTransformations = responseBackTransformationPayload,
     confidenceIntervals = buildModelExplanationAuditConfidenceIntervals(
       ciData = ciData
     ),
@@ -114,6 +120,11 @@ buildModelExplanationAudit = function(model) {
         predictorNames = predictorNames
       ),
       formattedQuantityPrompt = buildFormattedPromptQuantityBlock(
+        model = model,
+        mf = mf,
+        predictorNames = predictorNames
+      ),
+      responseBackTransformationPrompt = buildResponseBackTransformationPromptBlock(
         model = model,
         mf = mf,
         predictorNames = predictorNames
@@ -208,6 +219,10 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     formattedQuantitiesIncluded = TRUE,
     explanationSkeletonIncluded = TRUE,
     responseScaleControlIncluded = TRUE,
+    responseBackTransformationIncluded = identical(
+      buildResponseBackTransformationPayload(model = model)$status,
+      "available"
+    ),
     comparisonControlIncluded = TRUE,
     promptValidationGuardIncluded = TRUE,
     variableTransformationsIncluded = length(getModelVariableTransformations(model)) > 0,

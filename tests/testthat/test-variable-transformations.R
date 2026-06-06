@@ -332,3 +332,99 @@ testthat::test_that("response-transformation handling mode validates allowed val
     fixed = TRUE
   )
 })
+
+testthat::test_that("response back-transformation payload supplies original response quantities", {
+  df = data.frame(
+    price = c(10, 20, 45, 90, 180),
+    carat = c(1, 2, 3, 4, 5)
+  )
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "both",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  payload = fit$explanationAudit$responseBackTransformations
+
+  testthat::expect_equal(payload$status, "available")
+  testthat::expect_equal(payload$responseVariable, "logPrice")
+  testthat::expect_equal(payload$originalVariable, "price")
+  testthat::expect_equal(payload$inverseType, "exp")
+  testthat::expect_true(is.data.frame(payload$table))
+  testthat::expect_true(nrow(payload$table) > 0)
+  testthat::expect_true(any(payload$table$meaning %in% "original response fitted value"))
+  testthat::expect_true(any(payload$table$meaning %in% "original response multiplier"))
+  testthat::expect_true(all(payload$table$estimate > 0))
+
+  testthat::expect_match(
+    fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt,
+    "Response back-transformation payload",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt,
+    "Original response variable: `price`",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("response back-transformation payload respects model-scale-only mode", {
+  df = data.frame(price = c(10, 20, 45, 90), carat = c(1, 2, 3, 4))
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = logPrice ~ carat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "model",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  payload = fit$explanationAudit$responseBackTransformations
+
+  testthat::expect_equal(payload$status, "not_requested")
+  testthat::expect_equal(nrow(payload$table), 0)
+  testthat::expect_identical(
+    fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt,
+    ""
+  )
+})
+
+testthat::test_that("response back-transformation is unavailable for predictor-only transformations", {
+  df = data.frame(
+    price = c(10, 20, 45, 90),
+    carat = c(1, 2, 3, 4)
+  )
+  logRes = addDerivedVariableToData(df, "logCarat = log(carat)")
+  records = list(logCarat = logRes$transformation)
+
+  fit = suppressWarnings(runModel(
+    data = logRes$data,
+    formula = price ~ logCarat,
+    modelType = "lm",
+    variableTransformations = records,
+    responseTransformationMode = "both",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  ))
+
+  payload = fit$explanationAudit$responseBackTransformations
+
+  testthat::expect_equal(payload$status, "not_available")
+  testthat::expect_equal(payload$note, "The fitted response is not a recorded user-created derived variable.")
+  testthat::expect_match(
+    fit$explanationAudit$rawPromptIngredients$responseBackTransformationPrompt,
+    "Do not invent original-response-scale fitted values",
+    fixed = TRUE
+  )
+})
