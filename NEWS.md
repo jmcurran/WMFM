@@ -4,6 +4,22 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.048
+
+- Stage 35.16.2 repairs response-transformation wording and interval formatting regressions.
+- Allows prompt formatting to keep working when anchored baseline confidence interval bounds are unavailable.
+- Omits unavailable interval bounds from prompt lines instead of failing validation.
+- Repairs malformed unit-change text such as `Each an increase of one unit...` into natural phrasing such as `Each additional carat...`.
+- Keeps the narrow-confidence-interval precision behavior introduced in Stage 35.16.
+
+## WMFM 0.2.9.043
+
+- Stage 35.16.1 repairs response-scale formatting after Stage 35.16.
+- Allows prompt quantity formatting to handle missing confidence interval bounds without failing model-prompt construction.
+- Fixes malformed each-increase wording cleanup so phrases such as "Each an increase of one unit" are rewritten for student-facing explanations.
+- Keeps the response back-transformation and interval precision changes from Stage 35.16.
+
+
 ## WMFM 0.2.9.045
 
 - Stage 35.15 keeps stored derived response variables synchronized with the model formula.

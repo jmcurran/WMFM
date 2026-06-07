@@ -56,3 +56,26 @@ test_that("formatExplanationQuantity validates impossible values", {
   expect_error(formatExplanationOdds(-0.5), "non-negative", fixed = TRUE)
   expect_error(formatExplanationNumber("x"), "must be numeric", fixed = TRUE)
 })
+
+test_that("formatExplanationQuantityInterval increases precision for narrow intervals", {
+  out = formatExplanationQuantityInterval(
+    estimate = 1.882,
+    lower = 1.874,
+    upper = 1.883,
+    quantityType = "multiplier"
+  )
+
+  expect_identical(out$estimate, "1.882")
+  expect_identical(out$lower, "1.874")
+  expect_identical(out$upper, "1.883")
+
+  collapsed = formatExplanationQuantityInterval(
+    estimate = 1.882,
+    lower = 1.881,
+    upper = 1.883,
+    quantityType = "multiplier"
+  )
+
+  expect_identical(collapsed$lower, "1.881")
+  expect_identical(collapsed$upper, "1.883")
+})

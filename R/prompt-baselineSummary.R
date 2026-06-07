@@ -98,21 +98,37 @@ buildAnchoredBaselinePromptBlock = function(
   for (i in seq_len(nrow(baselineRows))) {
     label = baselineRows$quantity[[i]]
     quantityType = getAnchoredBaselinePromptQuantityType(baselineRows[i, , drop = FALSE])
-    estimateText = formatExplanationQuantity(baselineRows$estimate[[i]], quantityType = quantityType)
-    lowerText = formatExplanationQuantity(baselineRows$lower[[i]], quantityType = quantityType)
-    upperText = formatExplanationQuantity(baselineRows$upper[[i]], quantityType = quantityType)
-
-    line = paste0(
-      "- ",
-      label,
-      ": estimate = ",
-      estimateText,
-      " (95% confidence interval ",
-      lowerText,
-      " to ",
-      upperText,
-      ")"
+    formattedInterval = formatExplanationQuantityInterval(
+      estimate = baselineRows$estimate[[i]],
+      lower = baselineRows$lower[[i]],
+      upper = baselineRows$upper[[i]],
+      quantityType = quantityType
     )
+    estimateText = formattedInterval$estimate
+    lowerText = formattedInterval$lower
+    upperText = formattedInterval$upper
+
+    if (isTRUE(formattedInterval$hasInterval)) {
+      line = paste0(
+        "- ",
+        label,
+        ": estimate = ",
+        estimateText,
+        " (95% confidence interval ",
+        lowerText,
+        " to ",
+        upperText,
+        ")"
+      )
+    } else {
+      line = paste0(
+        "- ",
+        label,
+        ": estimate = ",
+        estimateText,
+        " (confidence interval not available)"
+      )
+    }
 
     settings = detailSettings[[label]]
 

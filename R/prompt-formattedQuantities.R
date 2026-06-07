@@ -223,22 +223,40 @@ buildFormattedPromptQuantityLine = function(row, detailSettings) {
   upper = row$upper[[1]]
 
   quantityType = getFormattedPromptQuantityType(row)
-  estimateText = formatExplanationQuantity(estimate, quantityType = quantityType)
-  lowerText = formatExplanationQuantity(lower, quantityType = quantityType)
-  upperText = formatExplanationQuantity(upper, quantityType = quantityType)
-
-  line = paste0(
-    "- ",
-    label,
-    " on the ",
-    scale,
-    " scale: estimate = ",
-    estimateText,
-    "; 95% confidence interval = ",
-    lowerText,
-    " to ",
-    upperText
+  formattedInterval = formatExplanationQuantityInterval(
+    estimate = estimate,
+    lower = lower,
+    upper = upper,
+    quantityType = quantityType
   )
+  estimateText = formattedInterval$estimate
+  lowerText = formattedInterval$lower
+  upperText = formattedInterval$upper
+
+  if (isTRUE(formattedInterval$hasInterval)) {
+    line = paste0(
+      "- ",
+      label,
+      " on the ",
+      scale,
+      " scale: estimate = ",
+      estimateText,
+      "; 95% confidence interval = ",
+      lowerText,
+      " to ",
+      upperText
+    )
+  } else {
+    line = paste0(
+      "- ",
+      label,
+      " on the ",
+      scale,
+      " scale: estimate = ",
+      estimateText,
+      "; confidence interval not available"
+    )
+  }
 
   settings = detailSettings[[label]]
 

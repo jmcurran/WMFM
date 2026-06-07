@@ -588,24 +588,44 @@ buildResponseBackTransformationPromptBlock = function(
       "number"
     }
 
-    estimateText = formatExplanationQuantity(row$estimate[[1]], quantityType = quantityType)
-    lowerText = formatExplanationQuantity(row$lower[[1]], quantityType = quantityType)
-    upperText = formatExplanationQuantity(row$upper[[1]], quantityType = quantityType)
+    formattedInterval = formatExplanationQuantityInterval(
+      estimate = row$estimate[[1]],
+      lower = row$lower[[1]],
+      upper = row$upper[[1]],
+      quantityType = quantityType
+    )
+    estimateText = formattedInterval$estimate
+    lowerText = formattedInterval$lower
+    upperText = formattedInterval$upper
 
-    lines = c(lines, paste0(
-      "- ",
-      row$quantity[[1]],
-      " on original `",
-      row$originalScale[[1]],
-      "` scale (",
-      row$meaning[[1]],
-      "): estimate = ",
-      estimateText,
-      "; 95% confidence interval = ",
-      lowerText,
-      " to ",
-      upperText
-    ))
+    if (isTRUE(formattedInterval$hasInterval)) {
+      lines = c(lines, paste0(
+        "- ",
+        row$quantity[[1]],
+        " on original `",
+        row$originalScale[[1]],
+        "` scale (",
+        row$meaning[[1]],
+        "): estimate = ",
+        estimateText,
+        "; 95% confidence interval = ",
+        lowerText,
+        " to ",
+        upperText
+      ))
+    } else {
+      lines = c(lines, paste0(
+        "- ",
+        row$quantity[[1]],
+        " on original `",
+        row$originalScale[[1]],
+        "` scale (",
+        row$meaning[[1]],
+        "): estimate = ",
+        estimateText,
+        "; confidence interval not available"
+      ))
+    }
   }
 
   paste(lines, collapse = "\n")

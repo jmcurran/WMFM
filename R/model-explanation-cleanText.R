@@ -972,6 +972,22 @@ postProcessGrammarCleanup = function(text) {
   )
 
   text = gsub(
+    pattern = "\\bEach an increase of one unit in ([[:alnum:]_.]+) in ([[:alpha:]_ .-]+?) is associated with\\b",
+    replacement = "Each additional \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bEach an increase of one unit in ([[:alnum:]_.]+) is associated with\\b",
+    replacement = "Each additional \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
     pattern = "\\bthe odds is multiplied by\\b",
     replacement = "the odds are multiplied by",
     x = text,

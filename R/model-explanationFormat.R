@@ -59,9 +59,16 @@ formatExplanationConfidenceInterval = function(
   }
 
   levelText = paste0(round(confidenceLevel * 100), "%")
-  estimateText = formatExplanationNumber(estimate, sigDigits = sigDigits)
-  lowerText = formatExplanationNumber(lower, sigDigits = sigDigits)
-  upperText = formatExplanationNumber(upper, sigDigits = sigDigits)
+  formattedInterval = formatExplanationQuantityInterval(
+    estimate = estimate,
+    lower = lower,
+    upper = upper,
+    quantityType = "number",
+    sigDigits = sigDigits
+  )
+  estimateText = formattedInterval$estimate
+  lowerText = formattedInterval$lower
+  upperText = formattedInterval$upper
 
   list(
     estimate = estimateText,
@@ -206,6 +213,102 @@ formatExplanationQuantity = function(
     multiplier = formatExplanationMultiplier(value, sigDigits = sigDigits),
     anchor = formatExplanationAnchor(value, sigDigits = max(sigDigits, 3))
   )
+}
+
+#' Format an estimate and confidence interval with enough displayed precision
+#'
+#' Starts with the usual explanation-quantity formatter, then increases the
+#' number of significant figures when rounding would make the estimate equal to
+#' an interval bound, or make both interval bounds display identically. This keeps
+#' narrow intervals informative without making ordinary intervals unnecessarily
+#' precise.
+#'
+#' @param estimate Numeric scalar estimate.
+#' @param lower Numeric scalar lower interval bound.
+#' @param upper Numeric scalar upper interval bound.
+#' @param quantityType Character scalar passed to \code{formatExplanationQuantity()}.
+#' @param sigDigits Starting number of significant figures. Defaults to 2.
+#' @param maxSigDigits Maximum number of significant figures to try. Defaults to 4.
+#'
+#' @return A named list with formatted estimate, lower, and upper values.
+#'
+#' @keywords internal
+formatExplanationQuantityInterval = function(
+    estimate,
+    lower,
+    upper,
+    quantityType = c("number", "probability", "odds", "multiplier", "anchor"),
+    sigDigits = 2,
+    maxSigDigits = 4) {
+
+  quantityType = match.arg(quantityType)
+  validateExplanationNumericScalar(estimate, "estimate")
+  validateExplanationSigDigits(sigDigits)
+  validateExplanationSigDigits(maxSigDigits)
+
+  hasInterval = is.numeric(lower) &&
+    length(lower) == 1L &&
+    !is.na(lower) &&
+    is.numeric(upper) &&
+    length(upper) == 1L &&
+    !is.na(upper)
+
+  if (!isTRUE(hasInterval)) {
+    return(list(
+      estimate = formatExplanationQuantity(
+        estimate,
+        quantityType = quantityType,
+        sigDigits = sigDigits
+      ),
+      lower = NA_character_,
+      upper = NA_character_,
+      sigDigits = sigDigits,
+      hasInterval = FALSE
+    ))
+  }
+
+  validateExplanationNumericScalar(lower, "lower")
+  validateExplanationNumericScalar(upper, "upper")
+
+  if (maxSigDigits < sigDigits) {
+    maxSigDigits = sigDigits
+  }
+
+  currentSigDigits = sigDigits
+
+  repeat {
+    estimateText = formatExplanationQuantity(
+      estimate,
+      quantityType = quantityType,
+      sigDigits = currentSigDigits
+    )
+    lowerText = formatExplanationQuantity(
+      lower,
+      quantityType = quantityType,
+      sigDigits = currentSigDigits
+    )
+    upperText = formatExplanationQuantity(
+      upper,
+      quantityType = quantityType,
+      sigDigits = currentSigDigits
+    )
+
+    needsMorePrecision = identical(lowerText, upperText) ||
+      identical(estimateText, lowerText) ||
+      identical(estimateText, upperText)
+
+    if (!isTRUE(needsMorePrecision) || currentSigDigits >= maxSigDigits) {
+      return(list(
+        estimate = estimateText,
+        lower = lowerText,
+        upper = upperText,
+        sigDigits = currentSigDigits,
+        hasInterval = TRUE
+      ))
+    }
+
+    currentSigDigits = currentSigDigits + 1L
+  }
 }
 
 formatExplanationNumberScalar = function(x, sigDigits = 2) {
