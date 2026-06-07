@@ -574,6 +574,9 @@ buildResponseBackTransformationPromptBlock = function(
     "- Use these deterministic original-response-scale quantities directly when the selected response-transformation mode calls for original scale or both scales.",
     "- Do not recompute, round again, or invent additional back-transformed quantities.",
     "- If a row is labelled as an original response multiplier, describe it as a multiplicative change, not an additive difference.",
+    "- For original response multipliers, prefer wording such as `the expected response is multiplied by X` or `the expected response is about X times as high`.",
+    "- Do not write that the expected response `multiplies by` a value; the response is not the thing doing the multiplying.",
+    "- Do not give both a multiplier and the equivalent percentage change unless the research question specifically asks for percentages.",
     "- Do not report expected values or effects on the transformed model scale when original-response-scale rows are supplied, unless the selected mode is model scale only."
   )
 

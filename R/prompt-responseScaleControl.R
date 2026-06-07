@@ -84,7 +84,9 @@ buildResponseScaleControlPromptBlock = function(model, mf = NULL) {
   if (isTRUE(hasOriginalResponsePayload)) {
     lines = c(
       lines,
-      "- When original-response-scale quantities are available, avoid transformed-response phrases such as expected log response or effect on the log scale in the student-facing explanation."
+      "- When original-response-scale quantities are available, avoid transformed-response phrases such as expected log response or effect on the log scale in the student-facing explanation.",
+      "- For original-response-scale multiplicative effects, avoid `multiplies by`; prefer `is multiplied by` or `is about X times as high`.",
+      "- Do not include both multiplier wording and equivalent percentage-change wording unless the research question specifically asks for percentages."
     )
   }
 

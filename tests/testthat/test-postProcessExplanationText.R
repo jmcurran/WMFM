@@ -600,3 +600,26 @@ testthat::test_that("postProcessExplanationText removes generic log-log estimate
   testthat::expect_false(grepl("The model estimate for the change pattern", out, fixed = TRUE))
   testthat::expect_false(grepl("doubling the bodyWeight corresponds to nearly doubling", out, fixed = TRUE))
 })
+
+
+testthat::test_that("postProcessExplanationText repairs awkward multiplicative wording", {
+  text = paste(
+    "For each additional carat, the expected price multiplies by about 7.2.",
+    "This means If carat increases by one unit, is associated with price rising."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(
+    out,
+    "the expected price is multiplied by about 7.2",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    out,
+    "This means this is associated with price rising",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl("multiplies by", out, fixed = TRUE))
+  testthat::expect_false(grepl("If carat increases by one unit, is associated", out, fixed = TRUE))
+})

@@ -924,6 +924,54 @@ postProcessLongSentencePatterns = function(text) {
 #' @keywords internal
 postProcessGrammarCleanup = function(text) {
   text = gsub(
+    pattern = "\\b(the expected [[:alpha:]_ .-]+) multiplies by\\b",
+    replacement = "\\1 is multiplied by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b(the [[:alpha:]_ .-]+) multiplies by\\b",
+    replacement = "\\1 is multiplied by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\bThis means If ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "This means this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bThis means if ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "This means this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bmeaning If ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "meaning this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bmeaning if ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "meaning this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
     pattern = "\\bthe odds is multiplied by\\b",
     replacement = "the odds are multiplied by",
     x = text,

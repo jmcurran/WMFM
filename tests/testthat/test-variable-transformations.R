@@ -468,6 +468,16 @@ testthat::test_that("response back-transformation prompt keeps both mode on orig
     "Use the response back-transformation payload for substantive fitted values and effects",
     fixed = TRUE
   )
+  testthat::expect_match(
+    scalePrompt,
+    "avoid `multiplies by`",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    responsePrompt,
+    "Do not write that the expected response `multiplies by` a value",
+    fixed = TRUE
+  )
   testthat::expect_no_match(
     fullPrompt,
     "Approximate proportion of variation explained by the model",

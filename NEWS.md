@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.044
+
+- Stage 35.14.1 polishes multiplicative wording for response back-transformation explanations.
+- Steers original-response-scale multiplier phrasing away from awkward `multiplies by` wording and toward `is multiplied by` or `times as high` wording.
+- Adds deterministic cleanup for malformed inserted fragments such as `meaning If ... is associated with`.
+- Avoids prompting the LLM to state both multiplier and equivalent percentage-change wording unless percentages are specifically requested.
+- Adds offline tests for the prompt guidance and post-processing cleanup.
+
 ## WMFM 0.2.9.042
 
 - Stage 35.13 tightens response back-transformation prompt control for derived response variables.
