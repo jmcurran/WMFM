@@ -748,5 +748,21 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
   observeEvent(input$response_var, {
     newResp         = input$response_var
     rv$lastResponse = newResp
+
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
+
+    currentFormula = trimws(input$formula_text %||% "")
+    derivedResponseFormula = substituteDerivedResponseInFormula(
+      formulaText = currentFormula,
+      responseVar = newResp,
+      variableTransformations = rv$variableTransformations
+    )
+
+    if (!identical(derivedResponseFormula, currentFormula)) {
+      rv$autoFormula = derivedResponseFormula
+      updateTextInput(session, "formula_text", value = derivedResponseFormula)
+    }
   })
 }

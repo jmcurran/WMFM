@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.049
+
+- Stage 35.16.3 repairs derived-response formula synchronization after response selection.
+- Resynchronises the model formula when a user selects a stored derived response variable such as `logPrice`.
+- Replaces matching inline left-hand-side transformations such as `log(price)` with the recorded derived variable name.
+- Keeps existing derived-variable metadata connected to the fitted model and back-transformation payload.
+- Adds an offline regression check for the response-selection observer.
+
 ## WMFM 0.2.9.048
 
 - Stage 35.16.2 repairs response-transformation wording and interval formatting regressions.
