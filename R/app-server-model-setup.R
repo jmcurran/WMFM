@@ -591,6 +591,19 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
         return(NULL)
       }
 
+      currentFormula = trimws(input$formula_text %||% "")
+      derivedResponseFormula = substituteDerivedResponseInFormula(
+        formulaText = currentFormula,
+        responseVar = resp,
+        variableTransformations = rv$variableTransformations
+      )
+
+      if (!identical(derivedResponseFormula, currentFormula)) {
+        rv$autoFormula = derivedResponseFormula
+        updateTextInput(session, "formula_text", value = derivedResponseFormula)
+        return(NULL)
+      }
+
       buckets = getCurrentBuckets()
       factors = buckets$factors
       cont = buckets$continuous

@@ -557,3 +557,39 @@ testthat::test_that("response back-transformation prompt keeps R-squared on mode
     fixed = TRUE
   )
 })
+
+testthat::test_that("derived response selection replaces matching inline formula lhs", {
+  df = data.frame(
+    price = c(10, 20, 40, 80),
+    carat = c(0.5, 0.7, 0.9, 1.1)
+  )
+
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  out = substituteDerivedResponseInFormula(
+    formulaText = "log(price) ~ log(carat)",
+    responseVar = "logPrice",
+    variableTransformations = records
+  )
+
+  testthat::expect_identical(out, "logPrice ~ log(carat)")
+})
+
+testthat::test_that("derived response formula substitution only changes matching lhs", {
+  df = data.frame(
+    price = c(10, 20, 40, 80),
+    carat = c(0.5, 0.7, 0.9, 1.1)
+  )
+
+  logRes = addDerivedVariableToData(df, "logPrice = log(price)")
+  records = list(logPrice = logRes$transformation)
+
+  out = substituteDerivedResponseInFormula(
+    formulaText = "price ~ log(carat)",
+    responseVar = "logPrice",
+    variableTransformations = records
+  )
+
+  testthat::expect_identical(out, "price ~ log(carat)")
+})

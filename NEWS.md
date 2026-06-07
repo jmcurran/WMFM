@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.045
+
+- Stage 35.15 keeps stored derived response variables synchronized with the model formula.
+- Replaces a matching inline response transformation on the formula left-hand side with the selected derived response variable name.
+- Preserves the existing right-hand side, so examples such as `log(price) ~ log(carat)` become `logPrice ~ log(carat)` after `logPrice` is selected.
+- Keeps derived-response metadata connected to fitted models so later back-transformation logic can use the stored transformation record.
+- Adds offline tests for formula substitution and non-matching formula preservation.
+
 ## WMFM 0.2.9.044
 
 - Stage 35.14.1 polishes multiplicative wording for response back-transformation explanations.
