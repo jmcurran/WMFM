@@ -125,3 +125,21 @@ testthat::test_that("postProcessStudentFacingPolish preserves numeric values", {
   testthat::expect_match(out, "7.23", fixed = TRUE)
   testthat::expect_match(out, "7.16 times", fixed = TRUE)
 })
+
+
+testthat::test_that("postProcessExplanationText repairs spliced multiplicative conclusion fragments", {
+  text = paste(
+    "Can the weight of a diamond be used to predict its price?",
+    "Overall, on average If carat increases by one unit, in weight is associated with a price that is about seven times higher than that of a diamond of average weight."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(
+    out,
+    "Overall, on average, each one-unit increase in carat is associated with a price that is about seven times higher",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl("Overall, on average If", out, fixed = TRUE))
+  testthat::expect_false(grepl("in weight is associated", out, fixed = TRUE))
+})

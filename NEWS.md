@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.055
+
+- Stage 35.16.7 repairs a deterministic post-processing splice that could produce ungrammatical multiplicative conclusion sentences.
+- Converts conclusion fragments such as an inserted conditional unit-change phrase into a complete student-facing sentence.
+- Keeps the response-transformation and back-transformation explanation path unchanged while tightening final text cleanup.
+- Adds regression coverage for the diamond-style spliced conclusion artefact while preserving numeric values.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.054
 
 - Stage 35.16.6 polishes recurring student-facing explanation wording after the response-transformation work.

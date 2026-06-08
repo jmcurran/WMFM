@@ -1069,6 +1069,22 @@ postProcessGrammarCleanup = function(text) {
   )
 
   text = gsub(
+    pattern = "\\bOverall, on average If ([^,.]+?) increases by one unit, in [^,.]+? is associated with\\b",
+    replacement = "Overall, on average, each one-unit increase in \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bOverall, on average if ([^,.]+?) increases by one unit, in [^,.]+? is associated with\\b",
+    replacement = "Overall, on average, each one-unit increase in \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
     pattern = "\\bEach an increase of one unit in ([[:alnum:]_.]+) in ([[:alpha:]_ .-]+?) is associated with\\b",
     replacement = "Each additional \\1 is associated with",
     x = text,
