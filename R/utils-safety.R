@@ -141,14 +141,20 @@ makeSafeEvalEnv = function(data) {
   env[["I"]]    = base::I
   env[["log"]]    = base::log
   env[["log1p"]]    = base::log1p
+  env[["log10"]]    = base::log10
   env[["nrow"]] = base::nrow
   env[["rep"]]    = base::rep
   env[["seq_len"]] = base::seq_len
   env[["sqrt"]] = base::sqrt
   # etc.
 
-  # IMPORTANT: allow ":" for sequences like 1:144
+  # IMPORTANT: allow arithmetic operators and ":" for derived-variable expressions.
   env[[":"]] = get(":", baseenv())
+  env[["+"]] = get("+", baseenv())
+  env[["-"]] = get("-", baseenv())
+  env[["*"]] = get("*", baseenv())
+  env[["/"]] = get("/", baseenv())
+  env[["^"]] = get("^", baseenv())
 
   env
 }

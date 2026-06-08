@@ -1,5 +1,5 @@
 test_that("R string escape scanner flags common accidental regex escapes", {
-  source(test_path("..", "..", "scripts", "checkRStringEscapes.R"), local = TRUE)
+  source(findWmfmProjectFile("scripts", "checkRStringEscapes.R"), local = TRUE)
 
   badText = paste(
     "x = paste0(\"cost\")",
@@ -16,7 +16,7 @@ test_that("R string escape scanner flags common accidental regex escapes", {
 })
 
 test_that("R string escape scanner ignores escaped backslashes and raw strings", {
-  source(test_path("..", "..", "scripts", "checkRStringEscapes.R"), local = TRUE)
+  source(findWmfmProjectFile("scripts", "checkRStringEscapes.R"), local = TRUE)
 
   safeText = paste(
     paste0("pattern = ", '"', "\\", "\\", "$", '"'),
@@ -31,7 +31,7 @@ test_that("R string escape scanner ignores escaped backslashes and raw strings",
 })
 
 test_that("R string escape scanner ignores comments", {
-  source(test_path("..", "..", "scripts", "checkRStringEscapes.R"), local = TRUE)
+  source(findWmfmProjectFile("scripts", "checkRStringEscapes.R"), local = TRUE)
 
   commentText = paste0("# pattern = ", '"', "\\", "$", '"')
   findings = scanRStringEscapesInText(commentText, path = "comment.R")

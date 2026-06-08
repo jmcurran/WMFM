@@ -49,6 +49,14 @@ print.wmfmExplanationAudit = function(x, ...) {
   }
   cat("\n")
 
+  cat("Derived-variable transformations\n")
+  if (is.data.frame(x$variableTransformations) && nrow(x$variableTransformations) > 0) {
+    print(x$variableTransformations)
+  } else {
+    cat("(none)\n")
+  }
+  cat("\n")
+
   if (!is.null(x$confidenceIntervals)) {
     cat("Confidence intervals\n")
     cat("- Level: ", x$confidenceIntervals$level %||% "", "\n", sep = "")

@@ -18,6 +18,11 @@
 #'   the same top-level contract produced by `buildModelExplanationAudit()`.
 #' @param explanationClaimEvidenceMap Deterministic claim-to-evidence map, or `NULL`.
 #' @param modelProfile Deterministic explanation model-profile metadata, or `NULL`.
+#' @param variableTransformations Named list of derived-variable transformation
+#'   records used by this fitted model.
+#' @param responseTransformationMode Character scalar describing how later
+#'   response-scale interpretation should handle recognised response
+#'   transformations. One of `"both"`, `"model"`, or `"original"`.
 #' @param interactionTerms Character vector of fitted interaction-term names.
 #' @param interactionMinPValue Minimum p-value across fitted interaction terms,
 #'   or `NA_real_`.
@@ -37,6 +42,8 @@ newWmfmModel = function(
     explanationAudit = NULL,
     explanationClaimEvidenceMap = NULL,
     modelProfile = NULL,
+    variableTransformations = list(),
+    responseTransformationMode = "both",
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
     meta = list()
@@ -85,6 +92,9 @@ newWmfmModel = function(
     stop("`meta` must be a list.", call. = FALSE)
   }
 
+  variableTransformations = normaliseVariableTransformations(variableTransformations)
+  responseTransformationMode = normaliseResponseTransformationMode(responseTransformationMode)
+
   validateWmfmExplanationAudit(
     x = explanationAudit,
     allowNull = TRUE
@@ -102,11 +112,14 @@ newWmfmModel = function(
     explanationAudit = explanationAudit,
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     modelProfile = modelProfile,
+    variableTransformations = variableTransformations,
+    responseTransformationMode = responseTransformationMode,
     interactionTerms = interactionTerms,
     interactionMinPValue = interactionMinPValue,
     meta = utils::modifyList(
       list(
-        createdAt = as.character(Sys.time())
+        createdAt = as.character(Sys.time()),
+        responseTransformationMode = responseTransformationMode
       ),
       meta
     )

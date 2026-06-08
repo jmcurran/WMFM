@@ -9,6 +9,33 @@ testthat::test_that("postProcessExplanationText preserves cleanExplanationText b
 })
 
 
+
+
+testthat::test_that("postProcessExplanationText removes escaped dollar signs", {
+  text = paste(
+    "The average price is \\$2410.",
+    "The 95% confidence interval is [\\$2400-\\$2420]."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    paste(
+      "The average price is $2410.",
+      "The 95% confidence interval is [$2400-$2420]."
+    )
+  )
+  testthat::expect_false(grepl("\\$", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2410", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2400", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2420", out, fixed = TRUE))
+
+  debugOut = postProcessExplanationText(text, debug = TRUE)
+  testthat::expect_true("escapedDollarSigns" %in% debugOut$rulesApplied)
+})
+
+
 testthat::test_that("postProcessExplanationText standardises unit-change wording", {
   text = "A one-magnitude rise multiplies the expected count by 0.21."
 
@@ -599,4 +626,39 @@ testthat::test_that("postProcessExplanationText removes generic log-log estimate
   testthat::expect_match(out, "between about 1.88% and 1.89% per 1% increase", fixed = TRUE)
   testthat::expect_false(grepl("The model estimate for the change pattern", out, fixed = TRUE))
   testthat::expect_false(grepl("doubling the bodyWeight corresponds to nearly doubling", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessExplanationText repairs awkward multiplicative wording", {
+  text = paste(
+    "For each additional carat, the expected price multiplies by about 7.2.",
+    "This means If carat increases by one unit, is associated with price rising."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(
+    out,
+    "the expected price is multiplied by about 7.2",
+    fixed = TRUE
+  )
+  testthat::expect_match(
+    out,
+    "This means this is associated with price rising",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl("multiplies by", out, fixed = TRUE))
+  testthat::expect_false(grepl("If carat increases by one unit, is associated", out, fixed = TRUE))
+})
+
+testthat::test_that("postProcessExplanationText repairs malformed each-increase wording", {
+  text = paste(
+    "Overall, weight can be used to predict diamond price on average.",
+    "Each an increase of one unit in carat in weight is associated with the expected price being multiplied by about 7.2."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "Each additional carat is associated with", fixed = TRUE)
+  testthat::expect_false(grepl("Each an increase of one unit", out, fixed = TRUE))
 })

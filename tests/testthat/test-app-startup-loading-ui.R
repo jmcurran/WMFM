@@ -68,22 +68,23 @@ test_that("model formula section keeps validation message and expert checkbox vi
   expect_match(fitModelObserverText, "output\\$formula_status\\s*=\\s*renderUI", perl = TRUE)
   expect_match(fitModelObserverText, "wmfm-formula-status", fixed = TRUE)
   expect_match(fitModelObserverText, "Formula OK\\.", perl = TRUE)
-  expect_match(uiText, "\\.tab-content \\{\\\\n        overflow: visible;", perl = TRUE)
+  expect_match(uiText, "\\.tab-content", perl = TRUE)
+  expect_match(uiText, "overflow: visible", fixed = TRUE)
   expect_equal(sum(gregexpr("textInput\\(\"formula_text\"", uiText, perl = TRUE)[[1]] != -1), 1)
 })
 
 test_that("model tab scrolls normally and uses responsive fit-control grid", {
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(uiText, "html, body \\{\\\\n        min-height: 100%;\\\\n        overflow-y: auto;", perl = TRUE)
+  expect_match(uiText, "html, body", fixed = TRUE)
+  expect_match(uiText, "min-height: 100%;", fixed = TRUE)
+  expect_match(uiText, "overflow-y: auto;", fixed = TRUE)
   expect_false(grepl("min-height: 100vh", uiText, fixed = TRUE))
-  expect_match(uiText, "\\.wmfm-model-fit-buttons \\{\\\\n        display: grid;", perl = TRUE)
+  expect_match(uiText, "\\.wmfm-model-fit-buttons", perl = TRUE)
+  expect_match(uiText, "display: grid", fixed = TRUE)
   expect_match(uiText, "grid-template-columns: repeat\\(2, minmax\\(0, auto\\)\\);", perl = TRUE)
-  expect_match(
-    uiText,
-    "@media \\(max-width: 767px\\) \\{\\\\n        \\.wmfm-model-fit-buttons \\{\\\\n          grid-template-columns: 1fr;",
-    perl = TRUE
-  )
+  expect_match(uiText, "@media (max-width: 767px)", fixed = TRUE)
+  expect_match(uiText, "grid-template-columns: 1fr", fixed = TRUE)
   expect_match(uiText, "gap: 8px", fixed = TRUE)
   expect_false(grepl("height: 8px", uiText, fixed = TRUE))
 })

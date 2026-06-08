@@ -60,6 +60,9 @@ buildExplanationTeachingSummary = function(audit, model, researchQuestion = NULL
       numericPredictors = numericPredictors,
       factorPredictors = factorPredictors
     ),
+    variableTransformationSummary = buildExplanationTeachingVariableTransformationSummary(
+      audit = audit
+    ),
     xChangeDescription = buildExplanationTeachingXChangeDescription(
       numericPredictors = numericPredictors,
       factorPredictors = factorPredictors,
@@ -406,6 +409,107 @@ buildExplanationTeachingBaselineChoice = function(audit, numericPredictors, fact
   paste(parts, collapse = " ")
 }
 
+#' Build the derived-variable transformation teaching text
+#'
+#' @param audit A `wmfmExplanationAudit` object.
+#'
+#' @return A single character string.
+#' @keywords internal
+buildExplanationTeachingVariableTransformationSummary = function(audit) {
+
+  transformations = audit$variableTransformations
+
+  if (!is.data.frame(transformations) || nrow(transformations) == 0) {
+    return(paste(
+      "No user-created derived variables were used in this fitted model, so no derived-variable transformation metadata was needed."
+    ))
+  }
+
+  responseTransformations = transformations[transformations$role %in% "response", , drop = FALSE]
+  predictorTransformations = transformations[transformations$role %in% "predictor", , drop = FALSE]
+
+  parts = character(0)
+
+  if (nrow(responseTransformations) > 0) {
+    responseVariables = collapseTeachingNames(backtickNames(responseTransformations$variable))
+    parts = c(
+      parts,
+      paste0(
+        "The fitted response used user-created derived variable",
+        if (nrow(responseTransformations) == 1) {
+          " "
+        } else {
+          "s "
+        },
+        responseVariables,
+        ". These response-side records are the ones that may later support response-scale back-transformation."
+      )
+    )
+  }
+
+  if (nrow(predictorTransformations) > 0) {
+    predictorVariables = collapseTeachingNames(backtickNames(predictorTransformations$variable))
+    parts = c(
+      parts,
+      paste0(
+        "The fitted predictors included user-created covariate",
+        if (nrow(predictorTransformations) == 1) {
+          " "
+        } else {
+          "s "
+        },
+        predictorVariables,
+        ". These predictor-side records describe modelling inputs; they are not a reason to back-transform the response."
+      )
+    )
+  }
+
+  sourceText = unique(unlist(strsplit(transformations$sourceVariables, ", ", fixed = TRUE)))
+  sourceText = sourceText[nzchar(sourceText)]
+
+  if (length(sourceText) > 0) {
+    parts = c(
+      parts,
+      paste0(
+        "The recorded source variable",
+        if (length(sourceText) == 1) {
+          " was "
+        } else {
+          "s were "
+        },
+        collapseTeachingNames(backtickNames(sourceText)),
+        "."
+      )
+    )
+  }
+
+  transformationTypes = unique(transformations$transformationType)
+  transformationTypes = transformationTypes[nzchar(transformationTypes)]
+
+  if (length(transformationTypes) > 0) {
+    parts = c(
+      parts,
+      paste0(
+        "The recorded transformation type",
+        if (length(transformationTypes) == 1) {
+          " is "
+        } else {
+          "s are "
+        },
+        collapseTeachingNames(backtickNames(transformationTypes)),
+        "."
+      )
+    )
+  }
+
+  parts = c(
+    parts,
+    "This step records the metadata only; it does not yet automatically back-transform fitted values or confidence intervals."
+  )
+
+  paste(parts, collapse = " ")
+}
+
 #' Build the x-change teaching text
 #'
 #' @param numericPredictors Character vector of numeric predictor names.
@@ -626,7 +730,21 @@ buildExplanationTeachingEvidenceTable = function(
           "Choose realistic starting values for number-valued predictors and a clear reference group for group predictors before describing the main result."
         ),
         stringsAsFactors = FALSE
-      ),
+      )
+    )
+  )
+
+  if (is.data.frame(audit$variableTransformations) && nrow(audit$variableTransformations) > 0) {
+    rows[[length(rows) + 1]] = data.frame(
+      section = "Derived variables",
+      summary = buildExplanationTeachingVariableTransformationSummary(audit = audit),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  rows = c(
+    rows,
+    list(
       data.frame(
         section = "Comparison being described",
         summary = if (length(numericPredictors) > 0 || length(factorPredictors) > 0) {

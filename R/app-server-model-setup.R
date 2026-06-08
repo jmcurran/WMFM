@@ -68,18 +68,35 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
       group_name  = paste0("vars_group_", rv$bucketGroupId),
       orientation = "horizontal",
       add_rank_list(
-        text     = "Variables",
-        labels   = vars,
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span class="wmfm-variable-bucket-title">Variables</span>',
+          '<button id="addDerivedVarBtn" ',
+          'type="button" ',
+          'class="btn btn-success action-button wmfm-model-compact-action-btn">',
+          'Add variable',
+          '</button>',
+          '</div>'
+        )),
+        labels = vars,
         input_id = "variables"
       ),
       add_rank_list(
-        text     = "Factors",
-        labels   = factorLabels,
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span class="wmfm-variable-bucket-title">Factors</span>',
+          '</div>'
+        )),
+        labels = factorLabels,
         input_id = "factors"
       ),
       add_rank_list(
-        text     = "Numeric",
-        labels   = continuousLabels,
+        text = HTML(paste0(
+          '<div class="wmfm-variable-bucket-header">',
+          '<span class="wmfm-variable-bucket-title">Numeric</span>',
+          '</div>'
+        )),
+        labels = continuousLabels,
         input_id = "continuous"
       )
     )
@@ -447,6 +464,7 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
     }
 
     rv$data = res$data
+    rv$variableTransformations[[res$name]] = res$transformation
 
     # Refresh variable list used by the buckets + response picker
     rv$allVars = names(rv$data)
@@ -570,6 +588,19 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
 
       resp = input$response_var
       if (is.null(resp) || resp == "" || !(resp %in% rv$allVars)) {
+        return(NULL)
+      }
+
+      currentFormula = trimws(input$formula_text %||% "")
+      derivedResponseFormula = substituteDerivedResponseInFormula(
+        formulaText = currentFormula,
+        responseVar = resp,
+        variableTransformations = rv$variableTransformations
+      )
+
+      if (!identical(derivedResponseFormula, currentFormula)) {
+        rv$autoFormula = derivedResponseFormula
+        updateTextInput(session, "formula_text", value = derivedResponseFormula)
         return(NULL)
       }
 
@@ -717,5 +748,21 @@ registerModelSetupObservers = function(input, output, session, rv, setBucketStat
   observeEvent(input$response_var, {
     newResp         = input$response_var
     rv$lastResponse = newResp
+
+    if (isTRUE(rv$isResetting)) {
+      return(NULL)
+    }
+
+    currentFormula = trimws(input$formula_text %||% "")
+    derivedResponseFormula = substituteDerivedResponseInFormula(
+      formulaText = currentFormula,
+      responseVar = newResp,
+      variableTransformations = rv$variableTransformations
+    )
+
+    if (!identical(derivedResponseFormula, currentFormula)) {
+      rv$autoFormula = derivedResponseFormula
+      updateTextInput(session, "formula_text", value = derivedResponseFormula)
+    }
   })
 }

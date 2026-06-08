@@ -17,6 +17,14 @@ lmToExplanationPrompt = function(model) {
   n = nrow(modelFrame)
   predictors = names(modelFrame)[-1]
   isInterceptOnlyModel = length(predictors) == 0
+  responseBackTransformationPayload = buildResponseBackTransformationPayload(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors
+  )
+  useOriginalResponseScale = responseBackTransformationUsesOriginalScale(
+    payload = responseBackTransformationPayload
+  )
 
   if (inherits(model, "glm")) {
     fam = model$family$family
@@ -28,7 +36,7 @@ lmToExplanationPrompt = function(model) {
     )
   } else {
     modelSummary = summary(model)
-    if (isInterceptOnlyModel) {
+    if (isInterceptOnlyModel || useOriginalResponseScale) {
       r2Text = ""
     } else {
       r2 = paste0(round(modelSummary$r.squared * 100), "%")
@@ -62,6 +70,12 @@ lmToExplanationPrompt = function(model) {
     mf = modelFrame,
     predictorNames = predictors
   )
+  responseBackTransformationBlock = buildResponseBackTransformationPromptBlock(
+    model = model,
+    mf = modelFrame,
+    predictorNames = predictors,
+    payload = responseBackTransformationPayload
+  )
   explanationSkeletonBlock = buildExplanationSkeletonPromptBlock(
     model = model,
     mf = modelFrame
@@ -90,6 +104,14 @@ lmToExplanationPrompt = function(model) {
     model = model,
     mf = modelFrame
   )
+  r2GuidanceText = if (nzchar(r2Text)) {
+    paste(
+      "If an R-squared value is shown above, briefly explain what it says about how well",
+      "the model explains variation in the response."
+    )
+  } else {
+    ""
+  }
 
   dsDoc = attr(model, "wmfm_dataset_doc", exact = TRUE)
   dsName = attr(model, "wmfm_dataset_name", exact = TRUE)
@@ -192,8 +214,7 @@ in clear, non-technical language.
 Response variable: {response}
 Number of observations: {n}
 {r2Text}
-If an R-squared value is shown above, briefly explain what it says about how well
-the model explains variation in the response.
+{r2GuidanceText}
 For intercept-only models, do not discuss R-squared, variation explained, model fit, or the absence of predictors unless the user specifically asks about them.
 For intercept-only models, answer using the supplied formatted estimate and confidence interval; do not give generic statements about constants or intervals without the numbers.
 For intercept-only models with a confidence interval, frame the estimate as uncertainty about an underlying average, probability, or expected count for the relevant setting, rather than only as the observed sample mean.
@@ -237,6 +258,8 @@ Interpretation rules for numeric predictors:
 {adjustmentVariableBlock}
 
 {formattedQuantityBlock}
+
+{responseBackTransformationBlock}
 
 {responseScaleControlBlock}
 

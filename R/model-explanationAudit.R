@@ -61,6 +61,13 @@ buildModelExplanationAudit = function(model) {
   numericColumns = vapply(coefficientTable, is.numeric, logical(1))
   coefficientTable[numericColumns] = lapply(coefficientTable[numericColumns], round, digits = 4)
 
+  variableTransformationTable = buildModelExplanationAuditVariableTransformations(model = model)
+  responseBackTransformationPayload = buildResponseBackTransformationPayload(
+    model = model,
+    mf = mf,
+    predictorNames = predictorNames
+  )
+
   out = list(
     transparencyNote = paste(
       "This panel shows deterministic inputs and evidence used to construct the explanation.",
@@ -90,6 +97,8 @@ buildModelExplanationAudit = function(model) {
       mf = mf,
       predictorNames = predictorNames
     ),
+    variableTransformations = variableTransformationTable,
+    responseBackTransformations = responseBackTransformationPayload,
     confidenceIntervals = buildModelExplanationAuditConfidenceIntervals(
       ciData = ciData
     ),
@@ -115,6 +124,11 @@ buildModelExplanationAudit = function(model) {
         mf = mf,
         predictorNames = predictorNames
       ),
+      responseBackTransformationPrompt = buildResponseBackTransformationPromptBlock(
+        model = model,
+        mf = mf,
+        predictorNames = predictorNames
+      ),
       explanationSkeletonPrompt = buildExplanationSkeletonPromptBlock(
         model = model,
         mf = mf
@@ -130,6 +144,9 @@ buildModelExplanationAudit = function(model) {
       promptValidationGuardPrompt = buildPromptValidationGuardBlock(
         model = model,
         mf = mf
+      ),
+      variableTransformationPrompt = buildVariableTransformationPromptBlock(
+        variableTransformations = variableTransformationTable
       )
     )
   )
@@ -202,8 +219,13 @@ buildModelExplanationAuditPromptInputs = function(model, mf, predictorNames, res
     formattedQuantitiesIncluded = TRUE,
     explanationSkeletonIncluded = TRUE,
     responseScaleControlIncluded = TRUE,
+    responseBackTransformationIncluded = identical(
+      buildResponseBackTransformationPayload(model = model)$status,
+      "available"
+    ),
     comparisonControlIncluded = TRUE,
     promptValidationGuardIncluded = TRUE,
+    variableTransformationsIncluded = length(getModelVariableTransformations(model)) > 0,
     rawCoefficientTableRetainedInAudit = TRUE,
     precomputedBaselineValuesIncluded = TRUE,
     numericAnchorRuleIncluded = TRUE,

@@ -35,7 +35,396 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
-    tags$style(HTML("\n      .bucket-list .rank-list {\n        max-height: 8em;\n        overflow-y: auto;\n      }\n      html, body {\n        min-height: 100%;\n        overflow-y: auto;\n      }\n      body {\n        font-size: 90%;\n      }\n      .container-fluid {\n        padding-bottom: 18px;\n      }\n      .shiny-input-container { font-size: 90%; }\n      .nav-tabs > li > a { font-size: 90%; }\n      pre, code { font-size: 90%; }\n\n      h4 {\n        margin-top: 12px;\n        margin-bottom: 8px;\n      }\n\n      h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      hr {\n        margin: 8px 0;\n      }\n\n      .hr-tight {\n        margin: 6px 0;\n      }\n\n      .form-group {\n        margin-bottom: 8px;\n      }\n\n      .radio {\n        margin-top: 3px;\n        margin-bottom: 3px;\n      }\n\n      .shiny-html-output,\n      .shiny-text-output {\n        margin-bottom: 6px;\n      }\n\n      .wmfm-ci-section-label {\n        font-weight: 600;\n        margin-top: 10px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-ci-drilldown-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-ci-secondary-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-ci-collapsible-block {\n        margin-top: 10px;\n      }\n\n      .wmfm-explanation-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #fcfcfc;\n        margin-top: 8px;\n        white-space: normal;\n      }\n\n      .wmfm-explanation-box p {\n        margin: 0 0 0.8em 0;\n      }\n\n      .wmfm-explanation-box p:last-child {\n        margin-bottom: 0;\n      }\n\n      .wmfm-explanation-helper-box {\n        border: 1px solid #d9d9d9;\n        border-radius: 6px;\n        padding: 12px;\n        background-color: #f8f9fb;\n        margin-top: 10px;\n        margin-bottom: 10px;\n      }\n\n      .wmfm-explanation-helper-note {\n        color: #666;\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab h5 {\n        margin-top: 6px;\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab {\n        padding-bottom: 16px;\n      }\n\n      .wmfm-model-tab .help-block {\n        margin-bottom: 6px;\n      }\n\n      #modelFollowupQuestion::placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      #modelFollowupQuestion::-webkit-input-placeholder {\n        color: #9aa0a6;\n      }\n\n      #modelFollowupQuestion::-moz-placeholder {\n        color: #9aa0a6;\n        opacity: 1;\n      }\n\n      .wmfm-model-tab .form-group {\n        margin-bottom: 8px;\n      }\n\n      .wmfm-model-tab .hr-tight {\n        margin: 6px 0;\n      }\n\n      .wmfm-model-tab #formula_text {\n        margin-bottom: 4px;\n      }\n\n      .wmfm-model-tab #formula_status {\n        margin-top: 4px;\n        margin-bottom: 0;\n        min-height: 1.4em;\n      }\n\n      .wmfm-formula-status {\n        display: inline-block;\n        padding: 2px 8px;\n        border-radius: 12px;\n        font-size: 0.9em;\n        font-weight: 600;\n      }\n\n      .wmfm-formula-status-ok {\n        background-color: #e8f5e9;\n        color: #1b5e20;\n        border: 1px solid #c8e6c9;\n      }\n\n      .wmfm-formula-status-error {\n        background-color: #ffebee;\n        color: #b71c1c;\n        border: 1px solid #ffcdd2;\n      }\n\n      .wmfm-model-tab .checkbox {\n        margin-top: 6px;\n        margin-bottom: 6px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn {\n        display: flex;\n        align-items: center;\n        min-height: 34px;\n      }\n\n      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-model-compact-action-btn {\n        padding: 4px 10px;\n        font-size: 12px;\n        line-height: 1.5;\n        border-radius: 3px;\n        min-height: 30px;\n      }\n\n      .wmfm-model-fit-buttons {\n        display: grid;\n        grid-template-columns: repeat(2, minmax(0, auto));\n        align-items: center;\n        justify-content: start;\n        gap: 8px;\n      }\n\n      .wmfm-model-fit-buttons .btn {\n        margin-bottom: 0;\n        width: auto;\n      }\n\n      .wmfm-model-fit-actions {\n        margin-top: 25px;\n      }\n\n      @media (max-width: 767px) {\n        .wmfm-model-fit-buttons {\n          grid-template-columns: 1fr;\n        }\n      }\n\n      .wmfm-data-context-control {\n        display: flex;\n        align-items: flex-start;\n        min-height: 34px;\n      }\n\n      .wmfm-data-context-control .btn {\n        margin-bottom: 0;\n        display: inline-flex;\n        align-items: center;\n      }\n\n      .wmfm-developer-mode-toggle-row {
+    tags$style(HTML("
+      .bucket-list .rank-list,
+      .bucket-list-container .rank-list,
+      .rank-list-container .rank-list {
+        max-height: 8em;
+        overflow-y: auto;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+      html, body {
+        min-height: 100%;
+        overflow-y: auto;
+      }
+      body {
+        font-size: 90%;
+      }
+      .container-fluid {
+        padding-bottom: 18px;
+      }
+      .shiny-input-container { font-size: 90%; }
+      .nav-tabs > li > a { font-size: 90%; }
+      pre, code { font-size: 90%; }
+
+      h4 {
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
+
+      h5 {
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      hr {
+        margin: 8px 0;
+      }
+
+      .hr-tight {
+        margin: 6px 0;
+      }
+
+      .form-group {
+        margin-bottom: 8px;
+      }
+
+      .radio {
+        margin-top: 3px;
+        margin-bottom: 3px;
+      }
+
+      .shiny-html-output,
+      .shiny-text-output {
+        margin-bottom: 6px;
+      }
+
+      .wmfm-ci-section-label {
+        font-weight: 600;
+        margin-top: 10px;
+        margin-bottom: 4px;
+      }
+
+      .wmfm-ci-drilldown-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fcfcfc;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .wmfm-ci-secondary-note {
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-ci-collapsible-block {
+        margin-top: 10px;
+      }
+
+      .wmfm-explanation-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fcfcfc;
+        margin-top: 8px;
+        white-space: normal;
+      }
+
+      .wmfm-explanation-box p {
+        margin: 0 0 0.8em 0;
+      }
+
+      .wmfm-explanation-box p:last-child {
+        margin-bottom: 0;
+      }
+
+      .wmfm-explanation-helper-box {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #f8f9fb;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .wmfm-explanation-helper-note {
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-model-tab h5 {
+        margin-top: 6px;
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab {
+        padding-bottom: 16px;
+      }
+
+      .wmfm-model-tab .help-block {
+        margin-bottom: 6px;
+      }
+
+      #modelFollowupQuestion::placeholder {
+        color: #9aa0a6;
+        opacity: 1;
+      }
+
+      #modelFollowupQuestion::-webkit-input-placeholder {
+        color: #9aa0a6;
+      }
+
+      #modelFollowupQuestion::-moz-placeholder {
+        color: #9aa0a6;
+        opacity: 1;
+      }
+
+      #model_question_accordion .accordion-button,
+      #model_question_accordion .accordion-header button,
+      #model_question_accordion .panel-title a {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        min-height: 36px;
+      }
+
+      #model_question_accordion .accordion-body,
+      #model_question_accordion .panel-body {
+        padding-top: 8px;
+        padding-bottom: 8px;
+      }
+
+      #model_question_accordion {
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab .form-group {
+        margin-bottom: 8px;
+      }
+
+      .wmfm-model-tab .hr-tight {
+        margin: 6px 0;
+      }
+
+      .wmfm-model-tab #formula_text {
+        margin-bottom: 4px;
+      }
+
+      .wmfm-model-tab #formula_status {
+        margin-top: 4px;
+        margin-bottom: 0;
+        min-height: 1.4em;
+      }
+
+      .wmfm-formula-status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.9em;
+        font-weight: 600;
+      }
+
+      .wmfm-formula-status-ok {
+        background-color: #e8f5e9;
+        color: #1b5e20;
+        border: 1px solid #c8e6c9;
+      }
+
+      .wmfm-formula-status-error {
+        background-color: #ffebee;
+        color: #b71c1c;
+        border: 1px solid #ffcdd2;
+      }
+
+      .wmfm-model-tab .checkbox {
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      .wmfm-optional-controls-row .wmfm-optional-control-btn {
+        display: flex;
+        align-items: center;
+        min-height: 34px;
+      }
+
+      .wmfm-optional-controls-row .wmfm-optional-control-btn .btn {
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-model-compact-action-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+        line-height: 1.5;
+        border-radius: 3px;
+        min-height: 30px;
+      }
+
+      .bucket-list .panel,
+      .bucket-list .card,
+      .bucket-list-container .panel,
+      .bucket-list-container .card,
+      .rank-list-container .panel,
+      .rank-list-container .card {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
+      .bucket-list .panel-heading,
+      .bucket-list .card-header,
+      .bucket-list-container .panel-heading,
+      .bucket-list-container .card-header,
+      .rank-list-container .panel-heading,
+      .rank-list-container .card-header {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 2px 10px 0 10px !important;
+      }
+
+      .bucket-list .panel-body,
+      .bucket-list .card-body,
+      .bucket-list-container .panel-body,
+      .bucket-list-container .card-body,
+      .rank-list-container .panel-body,
+      .rank-list-container .card-body {
+        margin-top: 0 !important;
+        padding: 2px 10px 0 10px !important;
+      }
+
+      div.rank-list-container.default-sortable,
+      .bucket-list .rank-list-container,
+      .bucket-list-container .rank-list-container,
+      .rank-list-container,
+      .default-sortable.rank-list-container {
+        margin-top: 0 !important;
+        padding: 0 2px !important;
+        padding-top: 0 !important;
+      }
+
+      div.rank-list-container.default-sortable > .wmfm-variable-bucket-header {
+        margin-top: 0 !important;
+        margin-bottom: 2px !important;
+      }
+
+      .rank-list-container > .rank-list-title,
+      .default-sortable.rank-list-container > .rank-list-title,
+      .bucket-list .rank-list-title,
+      .bucket-list-container .rank-list-title {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .bucket-list .rank-list,
+      .bucket-list-container .rank-list,
+      .rank-list-container .rank-list,
+      .default-sortable.rank-list {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
+      .wmfm-variable-bucket-header {
+        display: flex;
+        align-items: center;
+        gap: 34px;
+        min-height: 24px;
+        line-height: 1.2;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+        overflow: visible;
+      }
+
+      .wmfm-variable-bucket-title {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+      }
+
+      .wmfm-variable-bucket-header .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+        min-height: 24px;
+        padding: 2px 10px;
+        line-height: 1.2;
+        vertical-align: middle;
+      }
+
+      .wmfm-optional-info-icon,
+      .wmfm-optional-controls-label .fa,
+      .wmfm-optional-controls-label svg,
+      #interaction_label_ui .fa,
+      #interaction_label_ui svg {
+        margin-left: 6px;
+      }
+
+      .wmfm-optional-controls-row {
+        display: flex;
+        align-items: flex-start;
+      }
+
+      .wmfm-optional-controls-label {
+        margin-top: 0;
+        margin-bottom: 8px;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+      }
+
+      .wmfm-optional-controls-row .form-group {
+        margin-bottom: 0;
+      }
+
+      .wmfm-model-fit-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, auto));
+        align-items: center;
+        justify-content: start;
+        gap: 8px;
+      }
+
+      .wmfm-model-fit-buttons .btn {
+        margin-bottom: 0;
+        width: auto;
+      }
+
+      .wmfm-model-fit-actions {
+        margin-top: 25px;
+      }
+
+      @media (max-width: 767px) {
+        .wmfm-model-fit-buttons {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .wmfm-data-context-control {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: 34px;
+      }
+
+      .wmfm-data-context-control .btn {
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .wmfm-data-context-inline-control {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+      }
+
+      .wmfm-data-context-inline-control > * {
+        flex: 0 0 auto;
+      }
+
+      .wmfm-data-context-inline-control .wmfm-formula-status {
+        margin-left: 0;
+        white-space: nowrap;
+      }
+
+      .wmfm-developer-mode-toggle-row {
         display: inline-flex;
         align-items: center;
         gap: 12px;
@@ -223,7 +612,10 @@ appUI = function() {
         margin-bottom: 6px;
       }
 
-      .tab-content {\n        overflow: visible;\n      }\n    ")),
+      .tab-content {
+        overflow: visible;
+      }
+        ")),
 
     tabsetPanel(
       id = "main_tabs",
@@ -393,29 +785,37 @@ appUI = function() {
           fluidRow(
             class = "wmfm-optional-controls-row",
             column(
-              width = 4
-            ),
-            column(
-              width = 8,
-              uiOutput("interaction_label_ui")
-            )
-          ),
-          fluidRow(
-            class = "wmfm-optional-controls-row",
-            column(
               width = 4,
-              div(
-                class = "wmfm-optional-control-btn",
-                style = "padding-left: 15px;",
-                actionButton(
-                  "addDerivedVarBtn",
-                  "Add derived variable",
-                  class = "btn btn-success wmfm-model-compact-action-btn"
+              h5(
+                class = "wmfm-optional-controls-label",
+                "Response transformation ",
+                tags$span(
+                  class = "wmfm-optional-info-icon",
+                  icon("circle-info"),
+                  title = paste(
+                    "Choose how explanations should use an invertible transformation of the response variable.",
+                    "Both keeps the model scale and adds the original response scale when available.",
+                    "Model scale uses only the scale used to fit the model.",
+                    "Original response scale uses the back-transformed scale when available."
+                  ),
+                  style = "cursor: help;"
                 )
+              ),
+              selectInput(
+                "responseTransformationMode",
+                label = NULL,
+                choices = c(
+                  "Both" = "both",
+                  "Model scale" = "model",
+                  "Original response scale" = "original"
+                ),
+                selected = "both",
+                width = "100%"
               )
             ),
             column(
               width = 8,
+              uiOutput("interaction_label_ui"),
               uiOutput("interaction_ui")
             )
           ),

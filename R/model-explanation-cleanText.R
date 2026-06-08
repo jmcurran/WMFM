@@ -100,6 +100,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "escapedDollarSigns",
+    ruleFunction = postProcessEscapedDollarSigns,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "unitChangePhrasing",
     ruleFunction = postProcessUnitChangePhrasing,
     rulesApplied = rulesApplied
@@ -120,6 +129,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
     text = cleaned,
     ruleName = "confidenceIntervalTerminology",
     ruleFunction = postProcessConfidenceIntervalTerminology,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
+    ruleName = "studentFacingPolish",
+    ruleFunction = postProcessStudentFacingPolish,
     rulesApplied = rulesApplied
   )
   cleaned = processed$text
@@ -190,6 +208,85 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   cleaned
 }
+
+#' Remove escaped dollar-sign artefacts from explanation text
+#'
+#' Language-model responses can sometimes contain Markdown-escaped dollar signs
+#' such as `\$2400`. In ordinary student-facing prose those backslashes are
+#' visible artefacts, so this helper removes only the escape character and leaves
+#' the currency symbol and number unchanged.
+#'
+#' @param text Character vector of explanation text.
+#'
+#' @return A character vector with literal `\$` changed to `$`.
+#' @keywords internal
+postProcessEscapedDollarSigns = function(text) {
+  gsub("\\$", "$", text, fixed = TRUE)
+}
+
+
+#' Polish recurring student-facing explanation wording
+#'
+#' Applies conservative surface cleanup for common explanation wording artefacts
+#' that do not change numeric values or statistical meaning.
+#'
+#' @param text Character vector of explanation text.
+#'
+#' @return A character vector with recurring wording artefacts cleaned up.
+#' @keywords internal
+postProcessStudentFacingPolish = function(text) {
+  text = gsub(
+    pattern = "\\b([0-9]+(?:\\.[0-9]+)?)[[:space:]]+%",
+    replacement = "\\1%",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([A-Za-z]+)-times\\b",
+    replacement = "\\1 times",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([0-9]+(?:\\.[0-9]+)?)-times\\b",
+    replacement = "\\1 times",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([Tt]he research question is answered by showing that|[Tt]his answers the research question by showing that),?[[:space:]]+on average,?[[:space:]]+",
+    replacement = "Overall, on average, ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([Tt]he research question is answered by showing that|[Tt]his answers the research question by showing that),?[[:space:]]+",
+    replacement = "Overall, ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\bOverall, on average, ([^.?!]+)[.] each\\b",
+    replacement = "Overall, on average, \\1. Each",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(". each", ". Each", text, fixed = TRUE)
+  text = gsub(". overall", ". Overall", text, fixed = TRUE)
+  text = gsub(". for every", ". For every", text, fixed = TRUE)
+  text = gsub(". if ", ". If ", text, fixed = TRUE)
+  text = gsub("? each", "? Each", text, fixed = TRUE)
+  text = gsub("? overall", "? Overall", text, fixed = TRUE)
+
+  text
+}
+
 
 #' Apply a post-processing rule and record whether it changed text
 #'
@@ -923,6 +1020,86 @@ postProcessLongSentencePatterns = function(text) {
 #' @return A character vector with small grammar artefacts cleaned up.
 #' @keywords internal
 postProcessGrammarCleanup = function(text) {
+  text = gsub(
+    pattern = "\\b(the expected [[:alpha:]_ .-]+) multiplies by\\b",
+    replacement = "\\1 is multiplied by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b(the [[:alpha:]_ .-]+) multiplies by\\b",
+    replacement = "\\1 is multiplied by",
+    x = text,
+    perl = TRUE,
+    ignore.case = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\bThis means If ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "This means this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bThis means if ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "This means this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bmeaning If ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "meaning this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bmeaning if ([^,.]+?) increases by one unit, is associated with\\b",
+    replacement = "meaning this is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bOverall, on average If ([^,.]+?) increases by one unit, in [^,.]+? is associated with\\b",
+    replacement = "Overall, on average, each one-unit increase in \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bOverall, on average if ([^,.]+?) increases by one unit, in [^,.]+? is associated with\\b",
+    replacement = "Overall, on average, each one-unit increase in \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bEach an increase of one unit in ([[:alnum:]_.]+) in ([[:alpha:]_ .-]+?) is associated with\\b",
+    replacement = "Each additional \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
+    pattern = "\\bEach an increase of one unit in ([[:alnum:]_.]+) is associated with\\b",
+    replacement = "Each additional \\1 is associated with",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
   text = gsub(
     pattern = "\\bthe odds is multiplied by\\b",
     replacement = "the odds are multiplied by",

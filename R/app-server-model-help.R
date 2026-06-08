@@ -21,42 +21,42 @@ registerModelHelpObservers = function(input, output, session, rv) {
 
   output$modelHelpBtnUi = renderUI({
     isReady = datasetLoaded()
-    source = input$data_source %||% "upload"
-
     hasUserContext = nzchar(trimws(rv$userDatasetContext %||% ""))
+    hasPackageContext = hasPackageDatasetContext(
+      dataSource = input$data_source %||% "",
+      packageName = input$data_package %||% "",
+      datasetName = input$package_dataset %||% ""
+    )
+    hasDataContext = hasUserContext || hasPackageContext
 
-    if (identical(source, "package")) {
-      btnLabel = "Data description"
-      btnClass = "btn btn-outline-secondary action-button"
-      statusUi = NULL
+    btnLabel = if (hasDataContext) {
+      "Edit data context"
     } else {
-      btnLabel = if (hasUserContext) "Edit data context" else "Provide data context"
-      btnClass = if (hasUserContext) {
-        "btn btn-success action-button wmfm-model-compact-action-btn"
-      } else {
-        "btn btn-danger action-button wmfm-model-compact-action-btn"
-      }
-      statusUi = tags$div(
-        style = "margin-top: 6px;",
-        tags$span(
-          class = if (hasUserContext) {
-            "wmfm-formula-status wmfm-formula-status-ok"
-          } else {
-            "wmfm-formula-status wmfm-formula-status-error"
-          },
-          if (hasUserContext) {
-            "Data context provided."
-          } else {
-            "No data context provided yet."
-          }
-        )
-      )
+      "Provide data context"
     }
+    btnClass = if (hasDataContext) {
+      "btn btn-success action-button wmfm-model-compact-action-btn"
+    } else {
+      "btn btn-danger action-button wmfm-model-compact-action-btn"
+    }
+    statusUi = tags$span(
+      class = if (hasDataContext) {
+        "wmfm-formula-status wmfm-formula-status-ok"
+      } else {
+        "wmfm-formula-status wmfm-formula-status-error"
+      },
+      if (hasDataContext) {
+        "Provided"
+      } else {
+        "Not provided"
+      }
+    )
 
     tags$div(
+      class = "wmfm-data-context-inline-control",
       tags$button(
-        id    = "modelHelpBtn",
-        type  = "button",
+        id = "modelHelpBtn",
+        type = "button",
         class = btnClass,
         disabled = if (!isReady) "disabled" else NULL,
         btnLabel

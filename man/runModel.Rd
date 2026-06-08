@@ -10,7 +10,10 @@ runModel(
   modelType = c("lm", "logistic", "poisson"),
   dataContext = NULL,
   researchQuestion = NULL,
+  variableTransformations = NULL,
+  responseTransformationMode = "both",
   ollamaBaseUrl = NULL,
+  generateExplanation = TRUE,
   printOutput = TRUE,
   useExplanationCache = TRUE,
   equationMethod = c("deterministic", "llm")
@@ -31,8 +34,21 @@ about the dataset, study, variables, coding, or research aim.}
 \item{researchQuestion}{Optional character string giving the research
 question the user wants the fitted model to help answer.}
 
+\item{variableTransformations}{Optional named list of derived-variable
+transformation records to preserve when the fitted formula uses derived
+variables.}
+
+\item{responseTransformationMode}{Character scalar describing how later
+response-scale interpretation should handle recognised response
+transformations. One of \code{"both"}, \code{"model"}, or \code{"original"}.}
+
 \item{ollamaBaseUrl}{Optional character string giving the base URL for the
 language model service.}
+
+\item{generateExplanation}{Logical. If \code{TRUE}, attempt to contact the
+configured chat provider and generate model-explanation text. Set to
+\code{FALSE} in deterministic tests or offline workflows that only need the
+fitted model, equations, audit, and metadata.}
 
 \item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
 equations, and explanation to the console.}

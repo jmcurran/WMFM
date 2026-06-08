@@ -11,6 +11,7 @@ createAppServerReactiveState = function() {
   rv = reactiveValues(
     data = NULL,
     allVars = character(0),
+    variableTransformations = list(),
     autoFormula = "",
     modelEquations = NULL,
     modelExplanation = NULL,

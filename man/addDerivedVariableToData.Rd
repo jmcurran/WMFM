@@ -20,6 +20,7 @@ A list with elements:
 \item \code{msg}: character status message.
 \item \code{data}: the updated data frame (if ok), otherwise the original data.
 \item \code{name}: the new variable name (if ok).
+\item \code{transformation}: derived-variable metadata (if ok).
 }
 }
 \description{

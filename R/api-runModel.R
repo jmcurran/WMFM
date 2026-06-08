@@ -25,8 +25,18 @@
 #'   about the dataset, study, variables, coding, or research aim.
 #' @param researchQuestion Optional character string giving the research
 #'   question the user wants the fitted model to help answer.
+#' @param variableTransformations Optional named list of derived-variable
+#'   transformation records to preserve when the fitted formula uses derived
+#'   variables.
+#' @param responseTransformationMode Character scalar describing how later
+#'   response-scale interpretation should handle recognised response
+#'   transformations. One of `"both"`, `"model"`, or `"original"`.
 #' @param ollamaBaseUrl Optional character string giving the base URL for the
 #'   language model service.
+#' @param generateExplanation Logical. If `TRUE`, attempt to contact the
+#'   configured chat provider and generate model-explanation text. Set to
+#'   `FALSE` in deterministic tests or offline workflows that only need the
+#'   fitted model, equations, audit, and metadata.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
 #'   equations, and explanation to the console.
 #' @param useExplanationCache Logical. Should cached explanation text be reused
@@ -42,7 +52,10 @@ runModel = function(
     modelType = c("lm", "logistic", "poisson"),
     dataContext = NULL,
     researchQuestion = NULL,
+    variableTransformations = NULL,
+    responseTransformationMode = "both",
     ollamaBaseUrl = NULL,
+    generateExplanation = TRUE,
     printOutput = TRUE,
     useExplanationCache = TRUE,
     equationMethod = c("deterministic", "llm")
@@ -109,6 +122,13 @@ runModel = function(
   modelType = match.arg(modelType)
   equationMethod = match.arg(equationMethod)
 
+  if (!is.logical(generateExplanation) || length(generateExplanation) != 1 || is.na(generateExplanation)) {
+    stop(
+      "`generateExplanation` must be a single TRUE or FALSE value.",
+      call. = FALSE
+    )
+  }
+
   if (!is.data.frame(data)) {
     stop("`data` must be a data.frame.", call. = FALSE)
   }
@@ -129,6 +149,9 @@ runModel = function(
       stop("`researchQuestion` must be NULL or a single non-missing character string.", call. = FALSE)
     }
   }
+
+  variableTransformations = normaliseVariableTransformations(variableTransformations)
+  responseTransformationMode = normaliseResponseTransformationMode(responseTransformationMode)
 
   if (!is.logical(printOutput) || length(printOutput) != 1 || is.na(printOutput)) {
     stop("`printOutput` must be TRUE or FALSE.", call. = FALSE)
@@ -255,6 +278,15 @@ runModel = function(
   )
 
   attr(model, "wmfm_adjustment_variables") = character(0)
+  model = attachVariableTransformationsToModel(
+    model = model,
+    formula = formula,
+    variableTransformations = variableTransformations
+  )
+  model = attachResponseTransformationModeToModel(
+    model = model,
+    responseTransformationMode = responseTransformationMode
+  )
 
   if (!is.null(dataContext)) {
     dataContext = trimws(dataContext)
@@ -315,17 +347,22 @@ runModel = function(
     )
   }
 
-  chatProvider = tryCatch(
-    getChatProvider(),
-    error = function(e) {
-      warning(
-        "Could not connect to the language model server. Returning deterministic equations without an explanation. Details: ",
-        conditionMessage(e),
-        call. = FALSE
-      )
-      NULL
-    }
-  )
+  chatProvider = NULL
+  needsChatProvider = isTRUE(generateExplanation) || identical(equationMethod, "llm")
+
+  if (isTRUE(needsChatProvider)) {
+    chatProvider = tryCatch(
+      getChatProvider(),
+      error = function(e) {
+        warning(
+          "Could not connect to the language model server. Returning deterministic equations without an explanation. Details: ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+        NULL
+      }
+    )
+  }
 
   if (identical(equationMethod, "llm")) {
     if (is.null(chatProvider)) {
@@ -384,7 +421,7 @@ runModel = function(
     }
   }
 
-  if (!is.null(chatProvider)) {
+  if (isTRUE(generateExplanation) && !is.null(chatProvider)) {
     explanation = tryCatch(
       lmExplanation(
         model = model,
@@ -441,6 +478,8 @@ runModel = function(
     explanationAudit = explanationAudit,
     explanationClaimEvidenceMap = explanationClaimEvidenceMap,
     modelProfile = modelProfile,
+    variableTransformations = getModelVariableTransformations(model),
+    responseTransformationMode = getModelResponseTransformationMode(model),
     interactionTerms = interactionInfo$interactionTerms,
     interactionMinPValue = interactionInfo$interactionMinPValue,
     meta = list(
@@ -448,7 +487,9 @@ runModel = function(
       ollamaBaseUrl = ollamaBaseUrl,
       sourceFunction = "runModel",
       equationMethod = equationMethod,
-      equationMethodUsed = equationMethodUsed
+      equationMethodUsed = equationMethodUsed,
+      generateExplanation = generateExplanation,
+      responseTransformationMode = getModelResponseTransformationMode(model)
     )
   )
 

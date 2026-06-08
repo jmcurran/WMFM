@@ -4,7 +4,290 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.055
+
+- Stage 35.16.7 repairs a deterministic post-processing splice that could produce ungrammatical multiplicative conclusion sentences.
+- Converts conclusion fragments such as an inserted conditional unit-change phrase into a complete student-facing sentence.
+- Keeps the response-transformation and back-transformation explanation path unchanged while tightening final text cleanup.
+- Adds regression coverage for the diamond-style spliced conclusion artefact while preserving numeric values.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 0.2.9.054
+
+- Stage 35.16.6 polishes recurring student-facing explanation wording after the response-transformation work.
+- Adds prompt guidance to avoid spaced percent signs, hyphenated multiplier phrases, and awkward research-question answer wording.
+- Adds deterministic post-processing for 95% formatting, hyphenated multiplier phrases, direct research-question answer wording, and sentence capitalization after deterministic rewrites.
+- Adds regression coverage for the diamond-style explanation wording artefacts while preserving numeric values.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 0.2.9.053
+
+- Stage 35.16.5 prevents Markdown-escaped dollar signs from leaking into student-facing explanation text.
+- Adds prompt guidance telling the model not to write escaped currency symbols such as backslash-dollar amounts.
+- Adds deterministic post-processing so any literal escaped dollar signs are displayed as ordinary dollar signs without changing the numeric values.
+- Adds regression coverage for escaped-dollar cleanup and debug-rule reporting.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 0.2.9.052
+
+- Stage 35.16.5 prevents Markdown-escaped dollar signs from leaking into student-facing explanation text.
+- Adds prompt guidance telling the model not to write escaped currency symbols such as backslash-dollar amounts.
+- Adds deterministic post-processing so any literal escaped dollar signs are displayed as ordinary dollar signs without changing the numeric values.
+- Adds regression coverage for escaped-dollar cleanup and debug-rule reporting.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 0.2.9.050
+
+- Stage 35.16.4 synchronizes the formula left-hand side to the selected derived response variable whenever derived response metadata is available.
+- Preserves the existing right-hand side while ensuring stale inline response expressions no longer control the fitted response.
+- Keeps transformation metadata as the source of truth for response-scale interpretation and back-transformation.
+- Adds deterministic regression coverage for stale left-hand sides and arbitrary derived response names.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 0.2.9.049
+
+- Stage 35.16.3 repairs derived-response formula synchronization after response selection.
+- Resynchronises the model formula when a user selects a stored derived response variable such as `logPrice`.
+- Replaces matching inline left-hand-side transformations such as `log(price)` with the recorded derived variable name.
+- Keeps existing derived-variable metadata connected to the fitted model and back-transformation payload.
+- Adds an offline regression check for the response-selection observer.
+
+## WMFM 0.2.9.048
+
+- Stage 35.16.2 repairs response-transformation wording and interval formatting regressions.
+- Allows prompt formatting to keep working when anchored baseline confidence interval bounds are unavailable.
+- Omits unavailable interval bounds from prompt lines instead of failing validation.
+- Repairs malformed unit-change text such as `Each an increase of one unit...` into natural phrasing such as `Each additional carat...`.
+- Keeps the narrow-confidence-interval precision behavior introduced in Stage 35.16.
+
+## WMFM 0.2.9.043
+
+- Stage 35.16.1 repairs response-scale formatting after Stage 35.16.
+- Allows prompt quantity formatting to handle missing confidence interval bounds without failing model-prompt construction.
+- Fixes malformed each-increase wording cleanup so phrases such as "Each an increase of one unit" are rewritten for student-facing explanations.
+- Keeps the response back-transformation and interval precision changes from Stage 35.16.
+
+
+## WMFM 0.2.9.045
+
+- Stage 35.15 keeps stored derived response variables synchronized with the model formula.
+- Replaces a matching inline response transformation on the formula left-hand side with the selected derived response variable name.
+- Preserves the existing right-hand side, so examples such as `log(price) ~ log(carat)` become `logPrice ~ log(carat)` after `logPrice` is selected.
+- Keeps derived-response metadata connected to fitted models so later back-transformation logic can use the stored transformation record.
+- Adds offline tests for formula substitution and non-matching formula preservation.
+
+## WMFM 0.2.9.044
+
+- Stage 35.14.1 polishes multiplicative wording for response back-transformation explanations.
+- Steers original-response-scale multiplier phrasing away from awkward `multiplies by` wording and toward `is multiplied by` or `times as high` wording.
+- Adds deterministic cleanup for malformed inserted fragments such as `meaning If ... is associated with`.
+- Avoids prompting the LLM to state both multiplier and equivalent percentage-change wording unless percentages are specifically requested.
+- Adds offline tests for the prompt guidance and post-processing cleanup.
+
+## WMFM 0.2.9.042
+
+- Stage 35.13 tightens response back-transformation prompt control for derived response variables.
+- Keeps Both mode focused on original-response-scale fitted values and effects while retaining only brief model-scale context.
+- Suppresses transformed-scale formatted quantity blocks when deterministic original-response-scale quantities are available.
+- Adds prompt guidance to avoid expected-log-response and log-scale effect wording in student-facing explanations.
+- Adds offline tests for Both and Original response-scale prompt behaviour.
+
+## WMFM 0.2.9.041
+
+- Stage 35.12 tightens response back-transformation prompt control for derived response variables.
+- Keeps Both mode focused on original-response-scale fitted values and effects while retaining only brief model-scale context.
+- Suppresses transformed-scale formatted quantity blocks when deterministic original-response-scale quantities are available.
+- Adds prompt guidance to avoid expected-log-response and log-scale effect wording in student-facing explanations.
+- Adds offline tests for Both and Original response-scale prompt behaviour.
+
+## WMFM 0.2.9.040
+
+- Stage 35.12 tightens response back-transformation prompt control for derived response variables.
+- Keeps Both mode focused on original-response-scale fitted values and effects while retaining only brief model-scale context.
+- Suppresses transformed-scale formatted quantity blocks when deterministic original-response-scale quantities are available.
+- Adds prompt guidance to avoid expected-log-response and log-scale effect wording in student-facing explanations.
+- Adds offline tests for Both and Original response-scale prompt behaviour.
+
+## WMFM 0.2.9.039
+
+- Stage 35.11 adds deterministic response back-transformation payloads for derived response variables.
+- Supplies original-response-scale fitted values and safe multiplicative effects to the explanation prompt when an invertible response transformation is available.
+- Respects the response-transformation mode selector so model-scale-only explanations do not include original-scale payloads.
+- Keeps predictor-only transformations as metadata without treating them as response back-transformations.
+- Adds offline tests for available, not-requested, and predictor-only response transformation paths.
+
+## WMFM 0.2.9.038
+
+- Stage 35.10 marks documented s20x package data sets as having data context on the Model tab.
+- Treats s20x help files as built-in data context so package data sets display the green Provided status.
+- Keeps uploaded-data context behaviour unchanged and preserves the existing data description modal for package data.
+
+## WMFM 0.2.9.037
+
+- Stage 35.9.20 removes the empty sortable title gap from the Model tab variable buckets.
+- Hid the empty rank-list title element generated by the sortable widget so bucket contents sit directly under the custom headers.
+- Preserved the existing bucket-header alignment and did not change modelling or transformation behaviour.
+
+## WMFM 0.2.9.036
+
+- Stage 35.9.19 tightens spacing inside the variable bucket containers on the Model tab.
+- Reduced sortable bucket container padding so the variable, factor, and numeric headers sit closer to the top of their boxes.
+- Preserved the existing bucket-header alignment and did not change modelling or transformation behaviour.
+
+## WMFM 0.2.9.035
+
+- Stage 35.9.18 tightens spacing inside the variable bucket containers on the Model tab.
+- Reduced sortable bucket container padding so the variable, factor, and numeric headers sit closer to the top of their boxes.
+- Preserved the existing bucket-header alignment and did not change modelling or transformation behaviour.
+
+## WMFM 0.2.9.034
+
+- Stage 35.9.17 tightens spacing inside the variable bucket containers on the Model tab.
+- Reduced sortable bucket container padding so the variable, factor, and numeric headers sit closer to the top of their boxes.
+- Preserved the existing bucket-header alignment and did not change modelling or transformation behaviour.
+
+## WMFM 0.2.9.033
+
+- Stage 35.9.16 fixes source-tree path lookups in tests so strict tests and R CMD check can run from different working directories.
+- Added a test helper for locating project files without relying on brittle ../../ relative paths.
+- Updated source-file and README guard tests to use the shared helper while keeping tests offline and deterministic.
+
 Some older entries were reconstructed from completed-stage notes where exact historical build numbers were not recoverable from the available source archive. Reconstructed grouped sections use `.9000` version headings and describe feature areas rather than every individual build attempt.
+
+## WMFM 0.2.9.031
+
+- Stage 35.9.14 keeps the Model tab CSS source readable after converting escaped newlines to real source newlines.
+- Repairs brittle UI tests so they check durable CSS selectors and properties rather than exact newline formatting.
+- Preserves the compact variable-bucket and fit-control layout changes from the preceding UI polish work.
+- Leaves model fitting, transformation handling, and public APIs unchanged.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.029
+
+- Stage 35.9.12 compacts the Model tab so the formula box is easier to see on laptop screens.
+- Reduces excess vertical padding above the Variables, Factors, and Numeric bucket headers while keeping their alignment intact.
+- Reduces the optional follow-up accordion padding without changing its behaviour.
+- Leaves model fitting, transformation handling, and public APIs unchanged.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.028
+
+- Stage 35.9.11 tunes the vertical spacing above the Model tab variable bucket headers.
+- Keeps the shared Variables, Factors, and Numeric bucket-header alignment introduced in Stage 35.9.10.
+- Leaves variable bucket widths, button placement, response transformation controls, and data context controls unchanged.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.027
+
+- Stage 35.9.10 aligns the Model tab variable bucket headers by giving Variables, Factors, and Numeric the same header wrapper.
+- Keeps the Add variable button inside the Variables header while preventing it from shifting that header out of line with the other buckets.
+- Updates the UI layout test to check the shared bucket-header structure rather than exact visual coordinates.
+- Removes the stale stage-named UI test during installation if it is still present from earlier repairs.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.026
+
+- Stage 35.9.9 relaxes the Model tab UI layout test so it checks durable controls rather than rendered text order.
+- Removes brittle substring-window assertions for response transformation and interaction controls.
+- Keeps the behavioural checks that the response transformation choices, interaction UI, add-variable button, and data-context status controls exist.
+- No app behaviour or public API changes are introduced in this repair.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.022
+
+- Stage 35.9.5 polishes the Model tab layout for derived variables, response-transformation controls, interactions, and data-context status.
+- Shortens the data-context status labels to Provided and Not provided and keeps the status beside the edit button.
+- Aligns the variable bucket headers and keeps the Add variable button separated from the Variables heading.
+- Aligns the response-transformation and interactions controls so their headings and input boxes start on matching rows.
+- Updates UI tests to check structural layout intent rather than brittle screenshot-specific CSS details.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.021
+
+- Stage 35.9.4 polishes the Model tab layout for derived variables, response-transformation controls, interactions, and data-context status.
+- Shortens the data-context status labels to Provided and Not provided and keeps the status beside the edit button.
+- Aligns the variable bucket headers and keeps the Add variable button separated from the Variables heading.
+- Aligns the response-transformation and interactions controls so their headings and input boxes start on matching rows.
+- Updates UI tests to check structural layout intent rather than brittle screenshot-specific CSS details.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.019
+
+- Stage 35.9.2 relaxes the data-context UI regression test so it checks structure rather than an exact CSS fragment.
+- Keeps the test focused on the intended layout: the data-context button and status are rendered in the same inline control container.
+- Avoids brittle expectations such as a required white-space CSS declaration, so later UI layout changes are less likely to break unrelated tests.
+- No user-facing behavior changes are intended.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.017
+
+- Stage 35.9 keeps the derived-variable teaching-summary UI test offline by disabling explanation generation for its model fixture.
+- Updated the app-model-explanation UI test to fit the model, build the audit, and render the teaching summary without contacting a chat provider.
+- Preserved normal runModel() behaviour by leaving explanation generation enabled by default for ordinary use.
+- Reduced slow and CRAN-hostile test paths by avoiding unnecessary LLM prompt generation in this deterministic test.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.016
+
+- Stage 35.8 keeps variable-transformation tests offline by allowing runModel() to skip explanation generation.
+- Added a generateExplanation argument so deterministic tests can fit models, build audits, and inspect metadata without contacting a chat provider.
+- Updated variable-transformation tests to disable explanation generation and added a guard test that fails if a chat provider is requested.
+- Preserved normal runModel() behaviour by leaving explanation generation enabled by default for ordinary use.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.015
+
+- Stage 35.7 moves the Add variable button into the Variables bucket header so derived-variable creation is colocated with the variable list.
+- Shortens the response transformation selector labels and adds an info icon explaining the model-scale, original-scale, and both-scales options.
+- Moves the response transformation selector up beside the interaction header to reduce unused vertical space on the Model tab.
+- Places the data context status beside the data context button for a more compact response-selection row.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.014
+
+- Stage 35.6 moves the Add derived variable button onto the same row as the Interactions optional header on the Model tab.
+- Adds a response transformation handling selector with model-scale, original-scale, and both-scales options for later response back-transformation work.
+- Stores the selected response transformation mode on fitted model metadata without changing prediction, confidence interval, or explanation calculations yet.
+- Keeps predictor-derived-variable transformations distinct from response back-transformation handling.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.013
+
+- Stage 35.5.1 repairs a stale no-transformation teaching-summary test expectation.
+- Keeps the refined student-facing no-transformation wording introduced in Stage 35.5.
+- Confirms that derived-variable evidence rows remain conditional on recorded derived-variable transformations.
+- Preserves the metadata-only scope with no prediction, confidence interval, or automatic back-transformation behaviour changes.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.011
+
+- Stage 35.4.5 repairs the derived-variable teaching-summary test regressions left by the previous repair.
+- Restores the stable checklist shape for models that do not use derived variables while still showing a derived-variable row when transformation records are present.
+- Suppresses expected perfect-fit warnings in the new derived-variable teaching-summary tests so strict warning-as-error validation remains focused on real regressions.
+- Preserves the metadata-only scope with no prediction, confidence interval, explanation text, or automatic back-transformation behaviour changes.
+- Validates with the standard WMFM stage workflow.
+
+## WMFM 0.2.9.005
+
+- Stage 35.3.1 repairs the derived-variable transformation helper wiring used by the deterministic explanation audit.
+- Add the missing audit-table helper and variable-transformation prompt block so existing explanation-audit tests can run.
+- Preserve the Stage 35.3 metadata-only scope with no prediction, confidence interval, explanation text, or automatic back-transformation behaviour changes.
+- Validate through offline explanation-audit and variable-transformation tests plus the standard WMFM stage workflow.
+
+## WMFM 0.2.9.003
+
+- Stage 35.2 carries derived-variable transformation records from the creation registry into fitted model state.
+- Add helpers that select formula-relevant transformation records and attach them to fitted models using a dedicated WMFM attribute.
+- Extend runModel() and wmfmModel objects so command-line workflows can preserve the same transformation metadata used by the app.
+- Keep the change metadata-only: no prediction, confidence interval, explanation, or automatic back-transformation behaviour is changed yet.
+- Validate through offline transformation-registry tests and the standard WMFM stage workflow.
+
+## WMFM 0.2.9.002
+
+- Stage 35.1.1 repairs derived-variable transformation evaluation for the Stage 35.1 metadata registry.
+- Add log10 and arithmetic operators to the safe derived-variable evaluation environment so recognised expressions can be evaluated before metadata is recorded.
+- Preserve the conservative transformation metadata design introduced in Stage 35.1 without changing model fitting, prediction, confidence interval, or back-transformation behaviour.
+- Validate through the existing offline variable-transformation tests and the standard WMFM stage workflow.
 
 ## WMFM 0.2.8.012
 
