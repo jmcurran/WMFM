@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.0.006
+
+- Stage 36.4 keeps developer scoring comparison-structure metrics applicable for follow-up answers without factor predictors.
+- Preserves numeric-only reference-group metrics as not applicable while allowing follow-up comparisonStructureClear to remain scored.
+- Adds a deterministic developer-scoring regression test for follow-up comparison-structure display.
+- Keeps Stage 36.3 LLM/fake-provider follow-up scoring behaviour unchanged.
+- Validated by the standard WMFM stage workflow with deterministic offline tests and strict package check.
+
 ## WMFM 0.3.0.005
 
 - Stage 36.3 extends LLM scoring prompt guidance for follow-up prediction and interval explanations.

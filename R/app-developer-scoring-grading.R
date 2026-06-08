@@ -55,6 +55,7 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
 
   hasFactorPredictors = FALSE
   hasInteractionTerms = FALSE
+  hasFollowupScoringContext = FALSE
 
   if (!is.null(methodScore$student) && "hasFactorPredictors" %in% names(methodScore$student)) {
     hasFactorPredictors = isTRUE(methodScore$student$hasFactorPredictors[1])
@@ -62,6 +63,10 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
 
   if (!is.null(methodScore$student) && "hasInteractionTerms" %in% names(methodScore$student)) {
     hasInteractionTerms = isTRUE(methodScore$student$hasInteractionTerms[1])
+  }
+
+  if (!is.null(methodScore$student) && "hasFollowupScoringContext" %in% names(methodScore$student)) {
+    hasFollowupScoringContext = isTRUE(methodScore$student$hasFollowupScoringContext[1])
   }
 
   markMetricsNotApplicable = function(labels) {
@@ -91,9 +96,12 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
   if (!isTRUE(hasFactorPredictors)) {
     markMetricsNotApplicable(c(
       "Reference group handled correctly",
-      "Reference-group coverage adequate",
-      "Comparison structure clear"
+      "Reference-group coverage adequate"
     ))
+
+    if (!isTRUE(hasFollowupScoringContext)) {
+      markMetricsNotApplicable("Comparison structure clear")
+    }
   }
 
   if (!isTRUE(hasInteractionTerms)) {

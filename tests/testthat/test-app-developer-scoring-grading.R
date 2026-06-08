@@ -547,3 +547,58 @@ testthat::test_that("developer scoring export includes semantic evidence diagnos
   testthat::expect_equal(exported$semanticEvidence$value, "positive")
 })
 
+
+testthat::test_that("follow-up developer scoring keeps comparison structure applicable without factors", {
+  scored = data.frame(
+    overallScore = 100,
+    factualScore = 2,
+    inferenceScore = 2,
+    completenessScore = 2,
+    clarityScore = 2,
+    calibrationScore = 2,
+    effectDirectionCorrect = 2,
+    effectScaleAppropriate = 2,
+    referenceGroupHandledCorrectly = NA_real_,
+    interactionCoverageAdequate = NA_real_,
+    interactionSubstantiveCorrect = NA_real_,
+    uncertaintyHandlingAppropriate = 2,
+    inferentialRegisterAppropriate = 2,
+    mainEffectCoverageAdequate = 2,
+    referenceGroupCoverageAdequate = NA_real_,
+    clarityAdequate = 2,
+    numericExpressionAdequate = 2,
+    comparisonStructureClear = 2,
+    hasFactorPredictors = FALSE,
+    hasInteractionTerms = FALSE,
+    hasFollowupScoringContext = TRUE,
+    explanationText = paste(
+      "This prediction interval describes uncertainty for a future count,",
+      "not uncertainty about the fitted mean."
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  feedback = summariseWmfmGradeLosses(scored, method = "deterministic")
+  gradeObj = structure(
+    list(
+      scores = list(
+        byMethod = list(
+          deterministic = list(
+            student = scored,
+            metricSummary = feedback$metricSummary
+          )
+        )
+      )
+    ),
+    class = "wmfmGrade"
+  )
+
+  metricTable = buildDeveloperScoringMetricTable(gradeObj)
+  comparisonRow = metricTable[metricTable$label == "Comparison structure clear", , drop = FALSE]
+  referenceRow = metricTable[metricTable$label == "Reference group handled correctly", , drop = FALSE]
+
+  testthat::expect_equal(comparisonRow$status, "scored")
+  testthat::expect_equal(comparisonRow$studentValue, 2)
+  testthat::expect_equal(comparisonRow$maxValue, 2)
+  testthat::expect_equal(referenceRow$status, "not_applicable")
+})
