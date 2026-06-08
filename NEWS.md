@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.050
+
+- Stage 35.16.4 synchronizes the formula left-hand side to the selected derived response variable whenever derived response metadata is available.
+- Preserves the existing right-hand side while ensuring stale inline response expressions no longer control the fitted response.
+- Keeps transformation metadata as the source of truth for response-scale interpretation and back-transformation.
+- Adds deterministic regression coverage for stale left-hand sides and arbitrary derived response names.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.049
 
 - Stage 35.16.3 repairs derived-response formula synchronization after response selection.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/model-formula-derived-response.R
 \name{substituteDerivedResponseInFormula}
 \alias{substituteDerivedResponseInFormula}
-\title{Replace an inline response transformation with a recorded derived response}
+\title{Synchronize a formula response with a recorded derived response}
 \usage{
 substituteDerivedResponseInFormula(
   formulaText,
@@ -23,9 +23,11 @@ Character scalar formula text, possibly with the left-hand side
 replaced by \code{responseVar}.
 }
 \description{
-When a user has created a derived response variable, the model formula should
-use the derived variable name rather than retaining the same transformation as
-an inline left-hand side expression. This keeps the fitted model connected to
-the stored transformation metadata used for back-transformation.
+When a user has selected a derived response variable, the selected response
+variable should be authoritative for the fitted formula. The formula left-hand
+side is replaced with the selected response variable name while preserving the
+existing right-hand side. This keeps the fitted model connected to the stored
+transformation metadata used for back-transformation even when the previous
+formula left-hand side contains a stale inline expression.
 }
 \keyword{internal}

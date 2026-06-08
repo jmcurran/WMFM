@@ -576,7 +576,7 @@ testthat::test_that("derived response selection replaces matching inline formula
   testthat::expect_identical(out, "logPrice ~ log(carat)")
 })
 
-testthat::test_that("derived response formula substitution only changes matching lhs", {
+testthat::test_that("derived response formula substitution replaces stale formula lhs", {
   df = data.frame(
     price = c(10, 20, 40, 80),
     carat = c(0.5, 0.7, 0.9, 1.1)
@@ -591,5 +591,24 @@ testthat::test_that("derived response formula substitution only changes matching
     variableTransformations = records
   )
 
-  testthat::expect_identical(out, "price ~ log(carat)")
+  testthat::expect_identical(out, "logPrice ~ log(carat)")
+})
+
+
+testthat::test_that("derived response formula substitution preserves rhs for arbitrary response names", {
+  df = data.frame(
+    y = c(1, 4, 9, 16),
+    x = c(2, 3, 4, 5)
+  )
+
+  sqrtRes = addDerivedVariableToData(df, "y1 = sqrt(y)")
+  records = list(y1 = sqrtRes$transformation)
+
+  out = substituteDerivedResponseInFormula(
+    formulaText = "sqrt(y) ~ x",
+    responseVar = "y1",
+    variableTransformations = records
+  )
+
+  testthat::expect_identical(out, "y1 ~ x")
 })

@@ -1,9 +1,11 @@
-#' Replace an inline response transformation with a recorded derived response
+#' Synchronize a formula response with a recorded derived response
 #'
-#' When a user has created a derived response variable, the model formula should
-#' use the derived variable name rather than retaining the same transformation as
-#' an inline left-hand side expression. This keeps the fitted model connected to
-#' the stored transformation metadata used for back-transformation.
+#' When a user has selected a derived response variable, the selected response
+#' variable should be authoritative for the fitted formula. The formula left-hand
+#' side is replaced with the selected response variable name while preserving the
+#' existing right-hand side. This keeps the fitted model connected to the stored
+#' transformation metadata used for back-transformation even when the previous
+#' formula left-hand side contains a stale inline expression.
 #'
 #' @param formulaText Character scalar model formula text.
 #' @param responseVar Character scalar selected response variable.
@@ -30,13 +32,6 @@ substituteDerivedResponseInFormula = function(
     return(formulaText)
   }
 
-  record = variableTransformations[[responseVar]]
-  recordRhs = trimws(as.character(record$rhs %||% ""))[1]
-
-  if (!nzchar(recordRhs)) {
-    return(formulaText)
-  }
-
   parsedFormula = tryCatch(
     as.formula(formulaText),
     error = function(e) {
@@ -45,12 +40,6 @@ substituteDerivedResponseInFormula = function(
   )
 
   if (is.null(parsedFormula) || length(parsedFormula) < 3L) {
-    return(formulaText)
-  }
-
-  lhsText = deparseOneLine(parsedFormula[[2]])
-
-  if (!formulaExpressionsMatch(lhsText, recordRhs)) {
     return(formulaText)
   }
 
