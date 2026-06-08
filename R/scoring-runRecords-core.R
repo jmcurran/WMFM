@@ -193,6 +193,27 @@ scoreWmfmRunRecordsCore = function(
   outcomeMention = getLogicalColumn(runsDf, "outcomeMention")
   predictorMention = getLogicalColumn(runsDf, "predictorMention")
 
+  hasFollowupScoringContext = getLogicalColumn(runsDf, "hasFollowupScoringContext")
+  followupPredictionStatus = getCharacterColumn(runsDf, "followupPredictionStatus")
+  followupPredictionType = getCharacterColumn(runsDf, "followupPredictionType")
+  followupIntervalType = getCharacterColumn(runsDf, "followupIntervalType")
+  followupFutureObservationType = getCharacterColumn(runsDf, "followupFutureObservationType")
+  followupExtrapolationStatus = getCharacterColumn(runsDf, "followupExtrapolationStatus")
+  followupParameterUncertaintyIncluded = getLogicalColumn(
+    runsDf,
+    "followupParameterUncertaintyIncluded",
+    default = NA
+  )
+  followupPredictionTypeClaim = getCharacterColumn(runsDf, "followupPredictionTypeClaim", default = "none")
+  followupIntervalTypeClaim = getCharacterColumn(runsDf, "followupIntervalTypeClaim", default = "none")
+  followupExtrapolationWarningMention = getLogicalColumn(runsDf, "followupExtrapolationWarningMention")
+  followupBlockedPredictionMention = getLogicalColumn(runsDf, "followupBlockedPredictionMention")
+  followupFutureOutcomeFramingClaim = getCharacterColumn(runsDf, "followupFutureOutcomeFramingClaim", default = "none")
+  followupParameterUncertaintyExclusionMention = getLogicalColumn(
+    runsDf,
+    "followupParameterUncertaintyExclusionMention"
+  )
+
   factorGroupMeanComparisonMention = hasFactorPredictors &
     !hasInteractionTerms &
     comparisonLanguageMention &
@@ -345,6 +366,56 @@ scoreWmfmRunRecordsCore = function(
   uncertaintyHandlingAppropriateComputed[overclaimDetected & !uncertaintyMention] = 0L
   uncertaintyHandlingAppropriateComputed[!uncertaintyMention & inferentialRegister == "inferential"] = 1L
   uncertaintyHandlingAppropriateComputed[!uncertaintyMention & inferentialRegister == "overclaiming"] = 0L
+
+  followupHasInterval = hasFollowupScoringContext &
+    followupIntervalType %in% c("confidence_interval", "prediction_interval")
+  followupIntervalMatches = followupHasInterval &
+    followupIntervalTypeClaim == followupIntervalType
+  followupIntervalMissing = followupHasInterval &
+    followupIntervalTypeClaim %in% c("none", "")
+  followupIntervalWrong = followupHasInterval &
+    !followupIntervalMatches &
+    !followupIntervalMissing
+
+  uncertaintyHandlingAppropriateComputed[followupIntervalMatches] = 2L
+  uncertaintyHandlingAppropriateComputed[followupIntervalMissing] = 0L
+  uncertaintyHandlingAppropriateComputed[followupIntervalWrong] = 0L
+
+  followupBlockedExpected = hasFollowupScoringContext &
+    followupPredictionStatus %in% c("blocked", "not_available", "error")
+  uncertaintyHandlingAppropriateComputed[
+    followupBlockedExpected & followupBlockedPredictionMention
+  ] = 2L
+  uncertaintyHandlingAppropriateComputed[
+    followupBlockedExpected & !followupBlockedPredictionMention
+  ] = 0L
+
+  followupExtrapolationExpected = hasFollowupScoringContext &
+    followupExtrapolationStatus %in% c("warning", "outside_range", "extrapolation")
+  uncertaintyHandlingAppropriateComputed[
+    followupExtrapolationExpected & followupExtrapolationWarningMention
+  ] = 2L
+  uncertaintyHandlingAppropriateComputed[
+    followupExtrapolationExpected & !followupExtrapolationWarningMention
+  ] = pmin(
+    uncertaintyHandlingAppropriateComputed[
+      followupExtrapolationExpected & !followupExtrapolationWarningMention
+    ],
+    1L
+  )
+
+  followupParameterUncertaintyOmitted = hasFollowupScoringContext &
+    !is.na(followupParameterUncertaintyIncluded) &
+    !followupParameterUncertaintyIncluded
+  uncertaintyHandlingAppropriateComputed[
+    followupParameterUncertaintyOmitted & followupParameterUncertaintyExclusionMention
+  ] = pmax(
+    uncertaintyHandlingAppropriateComputed[
+      followupParameterUncertaintyOmitted & followupParameterUncertaintyExclusionMention
+    ],
+    1L
+  )
+
   uncertaintyHandlingAppropriate = overwriteIfMissing(uncertaintyHandlingAppropriateExisting, uncertaintyHandlingAppropriateComputed)
 
   inferentialRegisterAppropriateComputed = rep(1L, nrow(runsDf))
@@ -359,6 +430,20 @@ scoreWmfmRunRecordsCore = function(
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated"] = 1L
   mainEffectCoverageAdequateComputed[effectDirectionClaim != "not_stated" & effectScaleClaim != "not_stated"] = 2L
   mainEffectCoverageAdequateComputed[factorGroupMeanComparisonMention | semanticFactorComparisonMention] = 2L
+
+  followupNeedsFuturePredictionFraming = hasFollowupScoringContext &
+    followupPredictionType %in% c("future_observation", "individual_prediction_interval")
+  mainEffectCoverageAdequateComputed[
+    followupNeedsFuturePredictionFraming &
+      followupPredictionTypeClaim %in% c("future_observation", "mixed")
+  ] = pmax(
+    mainEffectCoverageAdequateComputed[
+      followupNeedsFuturePredictionFraming &
+        followupPredictionTypeClaim %in% c("future_observation", "mixed")
+    ],
+    1L
+  )
+
   mainEffectCoverageAdequateComputed[!explanationPresent] = 0L
   mainEffectCoverageAdequate = overwriteIfMissing(mainEffectCoverageAdequateExisting, mainEffectCoverageAdequateComputed)
 
@@ -446,6 +531,26 @@ scoreWmfmRunRecordsCore = function(
   comparisonStructureClearComputed = rep(1L, nrow(runsDf))
   comparisonStructureClearComputed[comparisonLanguageMention | conditionalLanguageMention] = 2L
   comparisonStructureClearComputed[hasInteractionTerms & !(comparisonLanguageMention | conditionalLanguageMention)] = 0L
+
+  logisticFutureOutcome = hasFollowupScoringContext &
+    followupFutureObservationType %in% c("bernoulli", "binary", "binary_outcome")
+  comparisonStructureClearComputed[
+    logisticFutureOutcome &
+      followupFutureOutcomeFramingClaim == "bernoulli_outcome_probabilities"
+  ] = 2L
+  comparisonStructureClearComputed[
+    logisticFutureOutcome &
+      followupFutureOutcomeFramingClaim %in% c("continuous_interval", "mixed")
+  ] = 0L
+
+  poissonFutureCount = hasFollowupScoringContext &
+    followupFutureObservationType %in% c("poisson_count", "count", "future_count")
+  comparisonStructureClearComputed[
+    poissonFutureCount &
+      followupPredictionTypeClaim == "future_observation" &
+      followupIntervalTypeClaim == "prediction_interval"
+  ] = 2L
+
   comparisonStructureClear = overwriteIfMissing(comparisonStructureClearExisting, comparisonStructureClearComputed)
   comparisonStructureClear[
     semanticModelMismatchExplained &
@@ -472,7 +577,11 @@ scoreWmfmRunRecordsCore = function(
   fatalFlawDetectedComputed[overclaimDetected] = TRUE
   fatalFlawDetectedComputed[interactionEvidenceAppropriate == "too_strong"] = TRUE
   fatalFlawDetectedComputed[hasInteractionTerms & interactionCoverageAdequate == 0L] = TRUE
-  fatalFlawDetectedComputed[mainEffectCoverageAdequate == 0L] = TRUE
+  fatalFlawDetectedComputed[mainEffectCoverageAdequate == 0L & !followupBlockedExpected] = TRUE
+  fatalFlawDetectedComputed[followupIntervalWrong] = TRUE
+  fatalFlawDetectedComputed[
+    logisticFutureOutcome & followupFutureOutcomeFramingClaim == "continuous_interval"
+  ] = TRUE
   fatalFlawDetected = fatalFlawDetectedExisting
   fillFatalIdx = is.na(fatalFlawDetected)
   fatalFlawDetected[fillFatalIdx] = fatalFlawDetectedComputed[fillFatalIdx]
@@ -543,7 +652,7 @@ scoreWmfmRunRecordsCore = function(
 
   referenceGroupHandledCorrectly[!hasFactorPredictors] = NA_integer_
   referenceGroupCoverageAdequate[!hasFactorPredictors] = NA_integer_
-  comparisonStructureClear[!hasFactorPredictors] = NA_integer_
+  comparisonStructureClear[!hasFactorPredictors & !hasFollowupScoringContext] = NA_integer_
 
   interactionCoverageAdequate[!hasInteractionTerms] = NA_integer_
   interactionSubstantiveCorrect[!hasInteractionTerms] = NA_integer_

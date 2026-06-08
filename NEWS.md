@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.0.004
+
+- Stage 36.2.1 tightens deterministic scoring for follow-up prediction and interval explanations.
+- Distinguishes fitted-mean confidence intervals from future-observation prediction intervals when follow-up context is supplied.
+- Adds checks for blocked predictions, extrapolation warnings, Poisson future-count intervals, and logistic Bernoulli outcome framing.
+- Preserves ordinary model-explanation scoring when no follow-up context is present.
+- Validated by the standard WMFM stage workflow with deterministic offline tests and strict package check.
+
 ## WMFM 0.3.0.002
 
 - Stage 36.1.1 repairs missing follow-up context defaults in WMFM run records.
