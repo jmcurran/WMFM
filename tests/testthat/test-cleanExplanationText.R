@@ -96,3 +96,32 @@ testthat::test_that("cleanExplanationText removes markdown-like Answer headings"
     "On average, exam marks increase."
   )
 })
+
+
+testthat::test_that("postProcessExplanationText polishes student-facing wording artefacts", {
+  text = paste(
+    "Can we predict the price of diamonds on the basis of weight?",
+    "A typical diamond has a 95 % confidence interval from $2,400 to $2,420.",
+    "Overall, the research question is answered by showing that, on average, heavier diamonds are much more expensive. each extra carat increases the expected price by roughly seven-times."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "95% confidence interval", fixed = TRUE)
+  testthat::expect_match(out, "Overall, on average, heavier diamonds are much more expensive. Each extra carat", fixed = TRUE)
+  testthat::expect_match(out, "roughly seven times", fixed = TRUE)
+  testthat::expect_false(grepl("95 %", out, fixed = TRUE))
+  testthat::expect_false(grepl("seven-times", out, fixed = TRUE))
+  testthat::expect_false(grepl("research question is answered by showing that", out, fixed = TRUE))
+})
+
+
+testthat::test_that("postProcessStudentFacingPolish preserves numeric values", {
+  text = "The 95 % confidence interval runs from 7.11 to 7.23. The fitted multiplier is 7.16-times."
+  out = postProcessExplanationText(text)
+
+  testthat::expect_match(out, "95% confidence interval", fixed = TRUE)
+  testthat::expect_match(out, "7.11", fixed = TRUE)
+  testthat::expect_match(out, "7.23", fixed = TRUE)
+  testthat::expect_match(out, "7.16 times", fixed = TRUE)
+})

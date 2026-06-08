@@ -136,6 +136,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "studentFacingPolish",
+    ruleFunction = postProcessStudentFacingPolish,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "modelMechanismLanguage",
     ruleFunction = postProcessModelMechanismLanguage,
     rulesApplied = rulesApplied
@@ -213,6 +222,69 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 #' @keywords internal
 postProcessEscapedDollarSigns = function(text) {
   gsub("\\$", "$", text, fixed = TRUE)
+}
+
+
+#' Polish recurring student-facing explanation wording
+#'
+#' Applies conservative surface cleanup for common explanation wording artefacts
+#' that do not change numeric values or statistical meaning.
+#'
+#' @param text Character vector of explanation text.
+#'
+#' @return A character vector with recurring wording artefacts cleaned up.
+#' @keywords internal
+postProcessStudentFacingPolish = function(text) {
+  text = gsub(
+    pattern = "\\b([0-9]+(?:\\.[0-9]+)?)[[:space:]]+%",
+    replacement = "\\1%",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([A-Za-z]+)-times\\b",
+    replacement = "\\1 times",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([0-9]+(?:\\.[0-9]+)?)-times\\b",
+    replacement = "\\1 times",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([Tt]he research question is answered by showing that|[Tt]his answers the research question by showing that),?[[:space:]]+on average,?[[:space:]]+",
+    replacement = "Overall, on average, ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\b([Tt]he research question is answered by showing that|[Tt]his answers the research question by showing that),?[[:space:]]+",
+    replacement = "Overall, ",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(
+    pattern = "\\bOverall, on average, ([^.?!]+)[.] each\\b",
+    replacement = "Overall, on average, \\1. Each",
+    x = text,
+    perl = TRUE
+  )
+
+  text = gsub(". each", ". Each", text, fixed = TRUE)
+  text = gsub(". overall", ". Overall", text, fixed = TRUE)
+  text = gsub(". for every", ". For every", text, fixed = TRUE)
+  text = gsub(". if ", ". If ", text, fixed = TRUE)
+  text = gsub("? each", "? Each", text, fixed = TRUE)
+  text = gsub("? overall", "? Overall", text, fixed = TRUE)
+
+  text
 }
 
 

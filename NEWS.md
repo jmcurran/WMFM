@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.054
+
+- Stage 35.16.6 polishes recurring student-facing explanation wording after the response-transformation work.
+- Adds prompt guidance to avoid spaced percent signs, hyphenated multiplier phrases, and awkward research-question answer wording.
+- Adds deterministic post-processing for 95% formatting, hyphenated multiplier phrases, direct research-question answer wording, and sentence capitalization after deterministic rewrites.
+- Adds regression coverage for the diamond-style explanation wording artefacts while preserving numeric values.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.053
 
 - Stage 35.16.5 prevents Markdown-escaped dollar signs from leaking into student-facing explanation text.
