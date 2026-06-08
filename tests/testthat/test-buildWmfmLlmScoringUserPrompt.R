@@ -75,3 +75,26 @@ testthat::test_that("buildWmfmLlmScoringUserPrompt includes follow-up scoring co
   testthat::expect_match(prompt, "Parameter uncertainty included: FALSE", fixed = TRUE)
   testthat::expect_match(prompt, "future-observation prediction intervals", fixed = TRUE)
 })
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt maps follow-up policy to rubric fields", {
+  x = makeRawRunRecordForScoring(
+    hasFollowupScoringContext = TRUE,
+    followupQuestion = "Give a prediction interval for a future count when x is 4",
+    followupCategory = "prediction_interval_request",
+    followupPredictionStatus = "ok",
+    followupPredictionType = "individual_prediction_interval",
+    followupIntervalType = "prediction_interval",
+    followupFutureObservationType = "poisson_count",
+    followupExtrapolationStatus = "within_range",
+    followupExtrapolationExplanation = "No extrapolation was needed.",
+    followupParameterUncertaintyIncluded = FALSE
+  )
+
+  prompt = buildWmfmLlmScoringUserPrompt(x)
+
+  testthat::expect_match(prompt, "Use uncertaintyHandlingAppropriate", fixed = TRUE)
+  testthat::expect_match(prompt, "Use comparisonStructureClear", fixed = TRUE)
+  testthat::expect_match(prompt, "confidence-interval wording for a prediction interval", fixed = TRUE)
+  testthat::expect_match(prompt, "Bernoulli outcome", fixed = TRUE)
+  testthat::expect_match(prompt, "parameter uncertainty is included", fixed = TRUE)
+})

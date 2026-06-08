@@ -598,6 +598,9 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
         "- For Poisson follow-ups, treat future-count prediction intervals as uncertainty about a future count, not uncertainty about the fitted mean.",
         "- For logistic future outcomes, reward Bernoulli outcome-probability framing rather than continuous prediction-interval wording.",
         "- Penalise claims that parameter uncertainty is included when the context says it is not included.",
+        "- Use uncertaintyHandlingAppropriate for correctness of interval type, future-observation uncertainty, blocked-prediction warnings, extrapolation warnings, and parameter-uncertainty caveats.",
+        "- Use comparisonStructureClear for whether the explanation clearly separates fitted-mean, future-observation, Poisson-count, or Bernoulli-outcome structures when those distinctions are relevant.",
+        "- Mark fatalFlawDetected TRUE when a follow-up answer uses confidence-interval wording for a prediction interval, treats a Bernoulli outcome as a continuous individual interval, ignores a blocked prediction, or claims included parameter uncertainty when it is excluded.",
         sep = "
 "
       )
@@ -619,6 +622,7 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "  2 if the explanation gets the substantive interpretation of the interaction right; 1 if partly right or vague; 0 if wrong.",
     "- uncertaintyHandlingAppropriate:",
     "  2 if uncertainty or evidential qualification is handled appropriately, including correct follow-up interval type where supplied; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
+    "  In follow-up scoring, this field should judge whether the answer correctly handles fitted-mean versus future-observation uncertainty, prediction-interval versus confidence-interval wording, extrapolation or blocked-prediction warnings, and whether parameter uncertainty is included or excluded.",
     "- inferentialRegisterAppropriate:",
     "  2 if the wording matches the evidential strength and avoids inappropriate causal claims; 1 if somewhat mixed; 0 if clearly overclaiming or otherwise inappropriate.",
     "- mainEffectCoverageAdequate:",
@@ -635,8 +639,10 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "  Do not treat percentage language about model fit, such as R-squared or percent of variation explained, as evidence that the coefficient effect scale is multiplicative.",
     "- comparisonStructureClear:",
     "  2 if relevant comparisons or conditional structures are clearly expressed; 1 if partly clear; 0 if important comparison structure is missing or confusing.",
+    "  In follow-up scoring, this field should also judge whether the answer clearly separates fitted-mean quantities from future-observation quantities, and whether Poisson count or Bernoulli outcome framing is structurally clear.",
     "- fatalFlawDetected:",
     "  TRUE only for a serious problem such as a major directional error, clear overclaiming, invented interaction, or another flaw that should strongly affect the final judgment.",
+    "  In follow-up scoring, examples include using confidence-interval wording for an individual prediction interval, treating Bernoulli outcomes as continuous individual intervals, ignoring a blocked prediction, or claiming parameter uncertainty is included when the context says it is excluded.",
     sep = "\n"
   )
 

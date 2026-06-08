@@ -36,12 +36,15 @@ makeFakeChat = function(responseText = NULL) {
 makeRawRunRecordForScoring = function(
     hasError = FALSE,
     interactionTerms = character(),
-    interactionMinPValue = NA_real_
+    interactionMinPValue = NA_real_,
+    ...
 ) {
 
   hasInteractionTerms = length(interactionTerms) > 0
 
-  list(
+  extraFields = list(...)
+
+  out = list(
     runId = 1L,
 
     # --- Required metadata ---
@@ -69,4 +72,10 @@ makeRawRunRecordForScoring = function(
     hasError = hasError,
     errorMessage = if (hasError) "example error" else NULL
   )
+
+  if (length(extraFields) > 0) {
+    out[names(extraFields)] = extraFields
+  }
+
+  out
 }

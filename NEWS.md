@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.0.005
+
+- Stage 36.3 extends LLM scoring prompt guidance for follow-up prediction and interval explanations.
+- Maps follow-up scoring policy explicitly onto uncertaintyHandlingAppropriate, comparisonStructureClear, and fatalFlawDetected.
+- Adds fake-provider tests confirming follow-up context reaches the LLM scoring prompt and cache key.
+- Preserves deterministic follow-up scoring behaviour from Stage 36.2.1.
+- Validated by the standard WMFM stage workflow with deterministic offline tests and strict package check.
+
 ## WMFM 0.3.0.004
 
 - Stage 36.2.1 tightens deterministic scoring for follow-up prediction and interval explanations.
