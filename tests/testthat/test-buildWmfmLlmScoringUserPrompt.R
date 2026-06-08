@@ -51,3 +51,27 @@ testthat::test_that("buildWmfmLlmScoringUserPrompt keeps default guidance when n
   testthat::expect_match(prompt, "ADJUSTMENT CONTEXT", fixed = TRUE)
   testthat::expect_match(prompt, "No adjustment-variable context was supplied", fixed = TRUE)
 })
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt includes follow-up scoring context", {
+  x = makeRawRunRecordForScoring()
+  x$hasFollowupScoringContext = TRUE
+  x$followupQuestion = "Predict a future count when x is 4"
+  x$followupCategory = "prediction_interval_request"
+  x$followupPredictionStatus = "ok"
+  x$followupPredictionType = "individual_prediction_interval"
+  x$followupIntervalType = "prediction_interval"
+  x$followupFutureObservationType = "future_count"
+  x$followupExtrapolationStatus = "extrapolation_warning"
+  x$followupExtrapolationExplanation = "WMFM computed the prediction with slight extrapolation."
+  x$followupParameterUncertaintyIncluded = FALSE
+
+  prompt = buildWmfmLlmScoringUserPrompt(x)
+
+  testthat::expect_match(prompt, "FOLLOW-UP SCORING CONTEXT", fixed = TRUE)
+  testthat::expect_match(prompt, "Prediction type: individual_prediction_interval", fixed = TRUE)
+  testthat::expect_match(prompt, "Interval type: prediction_interval", fixed = TRUE)
+  testthat::expect_match(prompt, "Future-observation type: future_count", fixed = TRUE)
+  testthat::expect_match(prompt, "Extrapolation status: extrapolation_warning", fixed = TRUE)
+  testthat::expect_match(prompt, "Parameter uncertainty included: FALSE", fixed = TRUE)
+  testthat::expect_match(prompt, "future-observation prediction intervals", fixed = TRUE)
+})

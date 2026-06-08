@@ -17,7 +17,8 @@ buildWmfmRunRecord(
   interactionTerms = character(0),
   interactionMinPValue = NA_real_,
   interactionAlpha = 0.05,
-  hasFactorPredictors = FALSE
+  hasFactorPredictors = FALSE,
+  followupScoringContext = NULL
 )
 }
 \arguments{
@@ -53,6 +54,9 @@ the run record.}
 least one factor or character predictor. Used by downstream scoring gates
 to distinguish genuinely applicable factor criteria from numeric-only
 models.}
+
+\item{followupScoringContext}{Optional named list of deterministic follow-up
+prediction metadata to carry into scoring prompts and extracted evidence.}
 }
 \value{
 Named list containing one structured raw run record.

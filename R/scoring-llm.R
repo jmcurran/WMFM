@@ -563,6 +563,48 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
       "No adjustment-variable context was supplied. Use the standard completeness and interaction expectations."
     }
 
+  followupFields = c(
+    "followupQuestion",
+    "followupCategory",
+    "followupPredictionStatus",
+    "followupPredictionType",
+    "followupIntervalType",
+    "followupFutureObservationType",
+    "followupExtrapolationStatus",
+    "followupExtrapolationExplanation"
+  )
+  hasFollowupContext = isTRUE(runRecord$hasFollowupScoringContext) ||
+    any(vapply(followupFields, function(field) {
+      value = runRecord[[field]]
+      length(value) > 0 && !is.na(value[1]) && nzchar(trimws(as.character(value[1])))
+    }, logical(1)))
+
+  followupContextBlock =
+    if (hasFollowupContext) {
+      paste(
+        "Follow-up scoring context is present.",
+        paste0("Follow-up question: ", safeWmfmScalar(runRecord$followupQuestion)),
+        paste0("Follow-up category: ", safeWmfmScalar(runRecord$followupCategory)),
+        paste0("Prediction status: ", safeWmfmScalar(runRecord$followupPredictionStatus)),
+        paste0("Prediction type: ", safeWmfmScalar(runRecord$followupPredictionType)),
+        paste0("Interval type: ", safeWmfmScalar(runRecord$followupIntervalType)),
+        paste0("Future-observation type: ", safeWmfmScalar(runRecord$followupFutureObservationType)),
+        paste0("Extrapolation status: ", safeWmfmScalar(runRecord$followupExtrapolationStatus)),
+        paste0("Extrapolation explanation: ", safeWmfmScalar(runRecord$followupExtrapolationExplanation)),
+        paste0("Parameter uncertainty included: ", safeWmfmScalar(runRecord$followupParameterUncertaintyIncluded)),
+        "Scoring policy for follow-up explanations:",
+        "- Distinguish fitted-mean confidence intervals from future-observation prediction intervals.",
+        "- Reward correct extrapolation-warning or blocked-prediction wording when the context supplies it.",
+        "- For Poisson follow-ups, treat future-count prediction intervals as uncertainty about a future count, not uncertainty about the fitted mean.",
+        "- For logistic future outcomes, reward Bernoulli outcome-probability framing rather than continuous prediction-interval wording.",
+        "- Penalise claims that parameter uncertainty is included when the context says it is not included.",
+        sep = "
+"
+      )
+    } else {
+      "No follow-up prediction context was supplied. Use the standard model-explanation scoring expectations."
+    }
+
   fieldSpecificRubric = paste(
     "FIELD-SPECIFIC RUBRIC GUIDANCE",
     "- effectDirectionCorrect:",
@@ -576,7 +618,7 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "- interactionSubstantiveCorrect:",
     "  2 if the explanation gets the substantive interpretation of the interaction right; 1 if partly right or vague; 0 if wrong.",
     "- uncertaintyHandlingAppropriate:",
-    "  2 if uncertainty or evidential qualification is handled appropriately; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
+    "  2 if uncertainty or evidential qualification is handled appropriately, including correct follow-up interval type where supplied; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
     "- inferentialRegisterAppropriate:",
     "  2 if the wording matches the evidential strength and avoids inappropriate causal claims; 1 if somewhat mixed; 0 if clearly overclaiming or otherwise inappropriate.",
     "- mainEffectCoverageAdequate:",
@@ -657,6 +699,9 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "",
     "ADJUSTMENT CONTEXT",
     adjustmentContextBlock,
+    "",
+    "FOLLOW-UP SCORING CONTEXT",
+    followupContextBlock,
     "",
     "EXPLANATION TO SCORE",
     safeWmfmScalar(runRecord$explanationText),

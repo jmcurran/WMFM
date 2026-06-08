@@ -90,6 +90,8 @@
 #'   least one factor or character predictor. Used by downstream scoring gates
 #'   to distinguish genuinely applicable factor criteria from numeric-only
 #'   models.
+#' @param followupScoringContext Optional named list of deterministic follow-up
+#'   prediction metadata to carry into scoring prompts and extracted evidence.
 #'
 #' @return Named list containing one structured raw run record.
 #' @export
@@ -106,7 +108,8 @@ buildWmfmRunRecord = function(
     interactionTerms = character(0),
     interactionMinPValue = NA_real_,
     interactionAlpha = 0.05,
-    hasFactorPredictors = FALSE
+    hasFactorPredictors = FALSE,
+    followupScoringContext = NULL
 ) {
   detectPatternLocal = function(text, pattern) {
     if (is.na(text) || !nzchar(trimws(text))) {
@@ -328,10 +331,156 @@ buildWmfmRunRecord = function(
     "none"
   }
 
+  makeDefaultFollowupScoringContext = function() {
+    list(
+      followupQuestion = NA_character_,
+      followupCategory = NA_character_,
+      followupPredictionStatus = NA_character_,
+      followupPredictionType = NA_character_,
+      followupIntervalType = NA_character_,
+      followupFutureObservationType = NA_character_,
+      followupExtrapolationStatus = NA_character_,
+      followupExtrapolationExplanation = NA_character_,
+      followupParameterUncertaintyIncluded = FALSE
+    )
+  }
+
+  hasProvidedFollowupScoringContext = function(context) {
+    if (!is.list(context)) {
+      return(FALSE)
+    }
+
+    length(Filter(Negate(is.null), context)) > 0
+  }
+
+  normaliseFollowupScoringContext = function(context) {
+    defaults = makeDefaultFollowupScoringContext()
+
+    if (!is.list(context)) {
+      return(defaults)
+    }
+
+    scalarText = function(name) {
+      normaliseScalarText(context[[name]] %||% NA_character_)
+    }
+
+    scalarLogical = function(name) {
+      value = context[[name]]
+      if (length(value) == 0 || is.na(value[1])) {
+        return(FALSE)
+      }
+
+      isTRUE(value[1])
+    }
+
+    defaults$followupQuestion = scalarText("followupQuestion")
+    defaults$followupCategory = scalarText("followupCategory")
+    defaults$followupPredictionStatus = scalarText("followupPredictionStatus")
+    defaults$followupPredictionType = scalarText("followupPredictionType")
+    defaults$followupIntervalType = scalarText("followupIntervalType")
+    defaults$followupFutureObservationType = scalarText("followupFutureObservationType")
+    defaults$followupExtrapolationStatus = scalarText("followupExtrapolationStatus")
+    defaults$followupExtrapolationExplanation = scalarText("followupExtrapolationExplanation")
+    defaults$followupParameterUncertaintyIncluded =
+      scalarLogical("followupParameterUncertaintyIncluded")
+
+    defaults
+  }
+
+  classifyPredictionTypeClaim = function(text) {
+    if (is.na(text) || !nzchar(trimws(text))) {
+      return("none")
+    }
+
+    meanDetected = detectPatternLocal(
+      text,
+      "expected|average|mean response|fitted mean|predicted mean|predicted probability|expected count"
+    )
+    futureDetected = detectPatternLocal(
+      text,
+      "individual outcome|future observation|future count|prediction interval|new observation|future response"
+    )
+
+    if (meanDetected && futureDetected) {
+      return("mixed")
+    }
+
+    if (futureDetected) {
+      return("future_observation")
+    }
+
+    if (meanDetected) {
+      return("fitted_mean")
+    }
+
+    "none"
+  }
+
+  classifyIntervalTypeClaim = function(text) {
+    if (is.na(text) || !nzchar(trimws(text))) {
+      return("none")
+    }
+
+    predictionIntervalDetected = detectPatternLocal(
+      text,
+      "prediction interval|future-observation interval|future observation interval|future count interval"
+    )
+    confidenceIntervalDetected = detectPatternLocal(
+      text,
+      "confidence interval|95% confidence|95 % confidence"
+    )
+
+    if (predictionIntervalDetected && confidenceIntervalDetected) {
+      return("mixed")
+    }
+
+    if (predictionIntervalDetected) {
+      return("prediction_interval")
+    }
+
+    if (confidenceIntervalDetected) {
+      return("confidence_interval")
+    }
+
+    "none"
+  }
+
+  classifyFutureOutcomeFramingClaim = function(text) {
+    if (is.na(text) || !nzchar(trimws(text))) {
+      return("none")
+    }
+
+    bernoulliDetected = detectPatternLocal(
+      text,
+      "bernoulli|binary outcome|two possible outcomes|probability of .* outcome|outcome probabilities"
+    )
+    continuousIntervalDetected = detectPatternLocal(
+      text,
+      "continuous prediction interval|range of possible probabilities|probability interval for an individual"
+    )
+
+    if (bernoulliDetected && continuousIntervalDetected) {
+      return("mixed")
+    }
+
+    if (bernoulliDetected) {
+      return("bernoulli_outcome_probabilities")
+    }
+
+    if (continuousIntervalDetected) {
+      return("continuous_interval")
+    }
+
+    "none"
+  }
+
+
   explanationText = normaliseScalarText(explanationText)
   equationsText = normaliseScalarText(equationsText)
   researchQuestion = normaliseScalarText(researchQuestion)
   errorMessage = normaliseScalarText(errorMessage)
+  hasFollowupScoringContext = hasProvidedFollowupScoringContext(followupScoringContext)
+  followupScoringContext = normaliseFollowupScoringContext(followupScoringContext)
   interactionTerms = as.character(interactionTerms)
 
   if (length(interactionTerms) == 1 && is.na(interactionTerms)) {
@@ -549,6 +698,21 @@ buildWmfmRunRecord = function(
   )
 
   uncertaintyTypeClaim = classifyUncertaintyTypeClaim(explanationText)
+  followupPredictionTypeClaim = classifyPredictionTypeClaim(explanationText)
+  followupIntervalTypeClaim = classifyIntervalTypeClaim(explanationText)
+  followupExtrapolationWarningMention = detectPatternLocal(
+    explanationText,
+    "extrapolation warning|slight extrapolation|outside the observed range|beyond the observed range"
+  )
+  followupBlockedPredictionMention = detectPatternLocal(
+    explanationText,
+    "blocked prediction|prediction was blocked|suppressed.*prediction|beyond the configured.*tolerance"
+  )
+  followupFutureOutcomeFramingClaim = classifyFutureOutcomeFramingClaim(explanationText)
+  followupParameterUncertaintyExclusionMention = detectPatternLocal(
+    explanationText,
+    "parameter uncertainty.*not included|does not include parameter uncertainty|treats the fitted.*fixed|conditional on the fitted"
+  )
 
   list(
     runId = runId,
@@ -567,6 +731,16 @@ buildWmfmRunRecord = function(
     interactionMinPValue = interactionMinPValue,
     interactionAlpha = interactionAlpha,
     hasFactorPredictors = isTRUE(hasFactorPredictors),
+    followupQuestion = followupScoringContext$followupQuestion,
+    followupCategory = followupScoringContext$followupCategory,
+    followupPredictionStatus = followupScoringContext$followupPredictionStatus,
+    followupPredictionType = followupScoringContext$followupPredictionType,
+    followupIntervalType = followupScoringContext$followupIntervalType,
+    followupFutureObservationType = followupScoringContext$followupFutureObservationType,
+    followupExtrapolationStatus = followupScoringContext$followupExtrapolationStatus,
+    followupExtrapolationExplanation = followupScoringContext$followupExtrapolationExplanation,
+    followupParameterUncertaintyIncluded = followupScoringContext$followupParameterUncertaintyIncluded,
+    hasFollowupScoringContext = hasFollowupScoringContext,
     hasError = !is.na(errorMessage),
     errorMessage = errorMessage,
     explanationText = explanationText,
@@ -591,10 +765,62 @@ buildWmfmRunRecord = function(
     effectScaleClaim = effectScaleClaim,
     interactionSubstantiveClaim = interactionSubstantiveClaim,
     inferentialRegister = inferentialRegister,
-    uncertaintyTypeClaim = uncertaintyTypeClaim
+    uncertaintyTypeClaim = uncertaintyTypeClaim,
+    followupPredictionTypeClaim = followupPredictionTypeClaim,
+    followupIntervalTypeClaim = followupIntervalTypeClaim,
+    followupExtrapolationWarningMention = followupExtrapolationWarningMention,
+    followupBlockedPredictionMention = followupBlockedPredictionMention,
+    followupFutureOutcomeFramingClaim = followupFutureOutcomeFramingClaim,
+    followupParameterUncertaintyExclusionMention = followupParameterUncertaintyExclusionMention
   )
 }
 
+
+#' Build follow-up scoring metadata from a model payload
+#'
+#' @param model A fitted model that may carry the WMFM follow-up payload
+#'   attribute.
+#'
+#' @return Named list of follow-up scoring metadata, or NULL.
+#' @keywords internal
+#' @noRd
+buildFollowupScoringContext = function(model) {
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (!is.list(payload)) {
+    return(NULL)
+  }
+
+  prediction = payload$predictionResult
+  intervalType = NA_character_
+  futureObservationType = NA_character_
+  parameterUncertaintyIncluded = FALSE
+
+  if (is.list(prediction)) {
+    if (is.list(prediction$predictionInterval)) {
+      intervalType = "prediction_interval"
+    } else if (is.list(prediction$confidenceInterval)) {
+      intervalType = "confidence_interval"
+    }
+
+    policy = prediction$predictionIntervalPolicy
+    if (is.list(policy)) {
+      futureObservationType = policy$futureObservationType %||% NA_character_
+      parameterUncertaintyIncluded = isTRUE(policy$parameterUncertaintyIncluded)
+    }
+  }
+
+  list(
+    followupQuestion = payload$originalText %||% NA_character_,
+    followupCategory = payload$category %||% NA_character_,
+    followupPredictionStatus = prediction$status %||% NA_character_,
+    followupPredictionType = prediction$predictionType %||% NA_character_,
+    followupIntervalType = intervalType,
+    followupFutureObservationType = futureObservationType,
+    followupExtrapolationStatus = prediction$extrapolationPolicy$status %||% prediction$extrapolationDiagnostics$status %||% NA_character_,
+    followupExtrapolationExplanation = prediction$extrapolationExplanation %||% prediction$extrapolationDiagnostics$explanationText %||% NA_character_,
+    followupParameterUncertaintyIncluded = parameterUncertaintyIncluded
+  )
+}
 
 #' Build a single run record for WMFM grading
 #'
@@ -642,7 +868,8 @@ buildWmfmGradeRunRecord = function(
     interactionTerms = x$interactionTerms %||% character(0),
     interactionMinPValue = x$interactionMinPValue %||% NA_real_,
     interactionAlpha = x$meta$interactionAlpha %||% 0.05,
-    hasFactorPredictors = isTRUE(x$meta$hasFactorPredictors)
+    hasFactorPredictors = isTRUE(x$meta$hasFactorPredictors),
+    followupScoringContext = buildFollowupScoringContext(x$model)
   )
 
   out$answerRole = answerRole

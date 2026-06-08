@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.0.002
+
+- Stage 36.1.1 repairs missing follow-up context defaults in WMFM run records.
+- Ensures ordinary non-follow-up explanations keep scalar NA follow-up fields rather than zero-length NULL fields.
+- Preserves the Stage 36.1 follow-up scoring metadata when a follow-up scoring context is supplied.
+- Adds regression coverage that raw run records without follow-up context can still be coerced to data frames.
+- Validated by the standard WMFM stage workflow with deterministic tests and strict package check.
+
 ## WMFM 0.2.9.055
 
 - Stage 35.16.7 repairs a deterministic post-processing splice that could produce ungrammatical multiplicative conclusion sentences.
