@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.2.9.052
+
+- Stage 35.16.5 prevents Markdown-escaped dollar signs from leaking into student-facing explanation text.
+- Adds prompt guidance telling the model not to write escaped currency symbols such as backslash-dollar amounts.
+- Adds deterministic post-processing so any literal escaped dollar signs are displayed as ordinary dollar signs without changing the numeric values.
+- Adds regression coverage for escaped-dollar cleanup and debug-rule reporting.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 0.2.9.050
 
 - Stage 35.16.4 synchronizes the formula left-hand side to the selected derived response variable whenever derived response metadata is available.

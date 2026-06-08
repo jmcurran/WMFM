@@ -100,6 +100,15 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   processed = postProcessApplyRule(
     text = cleaned,
+    ruleName = "escapedDollarSigns",
+    ruleFunction = postProcessEscapedDollarSigns,
+    rulesApplied = rulesApplied
+  )
+  cleaned = processed$text
+  rulesApplied = processed$rulesApplied
+
+  processed = postProcessApplyRule(
+    text = cleaned,
     ruleName = "unitChangePhrasing",
     ruleFunction = postProcessUnitChangePhrasing,
     rulesApplied = rulesApplied
@@ -190,6 +199,22 @@ postProcessExplanationText = function(text, audit = NULL, debug = FALSE) {
 
   cleaned
 }
+
+#' Remove escaped dollar-sign artefacts from explanation text
+#'
+#' Language-model responses can sometimes contain Markdown-escaped dollar signs
+#' such as `\$2400`. In ordinary student-facing prose those backslashes are
+#' visible artefacts, so this helper removes only the escape character and leaves
+#' the currency symbol and number unchanged.
+#'
+#' @param text Character vector of explanation text.
+#'
+#' @return A character vector with literal `\$` changed to `$`.
+#' @keywords internal
+postProcessEscapedDollarSigns = function(text) {
+  gsub("\\$", "$", text, fixed = TRUE)
+}
+
 
 #' Apply a post-processing rule and record whether it changed text
 #'

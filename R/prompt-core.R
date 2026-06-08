@@ -107,6 +107,7 @@ buildWmfmLanguageContractText = function(context = c("summary", "contrast")) {
     "- Prefer percentages when describing proportional changes.",
     "- Always express percentages using numerals (e.g. \"62%\" or \"62 percent\"), even for values below ten.",
     "- Write percentages without a space before the percent sign (e.g. \"62%\", not \"62 %\").",
+    "- Do not write escaped currency symbols such as `\\$2400`; write either `$2400` or `2400 dollars`.",
     "- Do not use verbal fractions or fraction-like wording for non-integer proportions (e.g. \"one-fifth\", \"one fifth\", \"three quarters\").",
     "- Express non-integer proportions numerically, preferably as percentages (e.g. \"20%\", \"75%\").",
     "- If a number violates these rules, rewrite it using numerals.",

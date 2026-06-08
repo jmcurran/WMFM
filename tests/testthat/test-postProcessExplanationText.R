@@ -9,6 +9,33 @@ testthat::test_that("postProcessExplanationText preserves cleanExplanationText b
 })
 
 
+
+
+testthat::test_that("postProcessExplanationText removes escaped dollar signs", {
+  text = paste(
+    "The average price is \\$2410.",
+    "The 95% confidence interval is [\\$2400-\\$2420]."
+  )
+
+  out = postProcessExplanationText(text)
+
+  testthat::expect_identical(
+    out,
+    paste(
+      "The average price is $2410.",
+      "The 95% confidence interval is [$2400-$2420]."
+    )
+  )
+  testthat::expect_false(grepl("\\$", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2410", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2400", out, fixed = TRUE))
+  testthat::expect_true(grepl("$2420", out, fixed = TRUE))
+
+  debugOut = postProcessExplanationText(text, debug = TRUE)
+  testthat::expect_true("escapedDollarSigns" %in% debugOut$rulesApplied)
+})
+
+
 testthat::test_that("postProcessExplanationText standardises unit-change wording", {
   text = "A one-magnitude rise multiplies the expected count by 0.21."
 
