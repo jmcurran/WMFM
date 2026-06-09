@@ -921,6 +921,52 @@ rebuildWmfmRunRecords = function(
     value[[1]]
   }
 
+  rebuildFollowupContext = function(runRecord) {
+    if (!isTRUE(getScalarField(runRecord, "hasFollowupScoringContext", FALSE))) {
+      return(NULL)
+    }
+
+    list(
+      followupQuestion = getScalarField(runRecord, "followupQuestion", NA_character_),
+      followupCategory = getScalarField(runRecord, "followupCategory", NA_character_),
+      followupPredictionStatus = getScalarField(
+        runRecord,
+        "followupPredictionStatus",
+        NA_character_
+      ),
+      followupPredictionType = getScalarField(
+        runRecord,
+        "followupPredictionType",
+        NA_character_
+      ),
+      followupIntervalType = getScalarField(
+        runRecord,
+        "followupIntervalType",
+        NA_character_
+      ),
+      followupFutureObservationType = getScalarField(
+        runRecord,
+        "followupFutureObservationType",
+        NA_character_
+      ),
+      followupExtrapolationStatus = getScalarField(
+        runRecord,
+        "followupExtrapolationStatus",
+        NA_character_
+      ),
+      followupExtrapolationExplanation = getScalarField(
+        runRecord,
+        "followupExtrapolationExplanation",
+        NA_character_
+      ),
+      followupParameterUncertaintyIncluded = getScalarField(
+        runRecord,
+        "followupParameterUncertaintyIncluded",
+        FALSE
+      )
+    )
+  }
+
   rebuildOne = function(runRecord) {
     buildWmfmRunRecord(
       runId = getScalarField(runRecord, "runId"),
@@ -929,6 +975,7 @@ rebuildWmfmRunRecords = function(
       modelType = getScalarField(runRecord, "modelType"),
       formula = getScalarField(runRecord, "formula"),
       equationsText = getScalarField(runRecord, "equationsText"),
+      researchQuestion = getScalarField(runRecord, "researchQuestion", ""),
       explanationText = getScalarField(runRecord, "explanationText"),
       errorMessage = getScalarField(runRecord, "errorMessage", NA_character_),
       interactionTerms = splitInteractionTerms(
@@ -943,7 +990,11 @@ rebuildWmfmRunRecords = function(
         runRecord,
         "interactionAlpha",
         0.05
-      )
+      ),
+      hasFactorPredictors = isTRUE(
+        getScalarField(runRecord, "hasFactorPredictors", FALSE)
+      ),
+      followupScoringContext = rebuildFollowupContext(runRecord)
     )
   }
 

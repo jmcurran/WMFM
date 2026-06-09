@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.0.007
+
+- Stage 36.5 preserves follow-up scoring context when raw WMFM run records are rebuilt.
+- Keeps follow-up prediction type, interval type, future-observation type, extrapolation metadata, and parameter-uncertainty metadata available after rebuilds.
+- Adds a deterministic regression test for rebuildWmfmRunRecords with follow-up scoring context.
+- Keeps Stage 36.4 developer scoring behaviour unchanged while protecting cached or rebuilt run objects.
+- Validated by the standard WMFM stage workflow with deterministic offline tests and strict package check.
+
 ## WMFM 0.3.0.006
 
 - Stage 36.4 keeps developer scoring comparison-structure metrics applicable for follow-up answers without factor predictors.

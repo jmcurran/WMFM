@@ -93,3 +93,72 @@ testthat::test_that("buildWmfmRunRecord records follow-up scoring context and cl
   )
   testthat::expect_true(out$followupParameterUncertaintyExclusionMention)
 })
+
+testthat::test_that("rebuildWmfmRunRecords preserves follow-up scoring context", {
+  runRecord = buildWmfmRunRecord(
+    runId = 4L,
+    exampleName = "Counts",
+    package = "WMFM",
+    modelType = "glm",
+    formula = "Freq ~ Magnitude",
+    equationsText = "log(E(Freq)) = 5 - 0.7 * Magnitude",
+    researchQuestion = "Predict a future earthquake count.",
+    explanationText = paste(
+      "This prediction interval describes uncertainty for a future count.",
+      "It does not include parameter uncertainty."
+    ),
+    followupScoringContext = list(
+      followupQuestion = "Give a prediction interval for Magnitude = 5.4.",
+      followupCategory = "prediction_interval_request",
+      followupPredictionStatus = "ok",
+      followupPredictionType = "individual_prediction_interval",
+      followupIntervalType = "prediction_interval",
+      followupFutureObservationType = "poisson_count",
+      followupExtrapolationStatus = "in_range",
+      followupExtrapolationExplanation = "No extrapolation was needed.",
+      followupParameterUncertaintyIncluded = FALSE
+    )
+  )
+
+  x = structure(
+    list(
+      runs = list(runRecord),
+      summary = data.frame(dummy = 1)
+    ),
+    class = c("wmfmRuns", "list")
+  )
+
+  rebuilt = rebuildWmfmRunRecords(x)
+  rebuiltRecord = rebuilt$runs[[1]]
+
+  testthat::expect_null(rebuilt$summary)
+  testthat::expect_identical(rebuiltRecord$hasFollowupScoringContext, TRUE)
+  testthat::expect_identical(
+    rebuiltRecord$followupPredictionType,
+    "individual_prediction_interval"
+  )
+  testthat::expect_identical(
+    rebuiltRecord$followupIntervalType,
+    "prediction_interval"
+  )
+  testthat::expect_identical(
+    rebuiltRecord$followupFutureObservationType,
+    "poisson_count"
+  )
+  testthat::expect_identical(
+    rebuiltRecord$followupExtrapolationExplanation,
+    "No extrapolation was needed."
+  )
+  testthat::expect_identical(
+    rebuiltRecord$followupParameterUncertaintyIncluded,
+    FALSE
+  )
+  testthat::expect_identical(
+    rebuiltRecord$followupParameterUncertaintyExclusionMention,
+    TRUE
+  )
+  testthat::expect_identical(
+    rebuiltRecord$researchQuestion,
+    "Predict a future earthquake count."
+  )
+})
