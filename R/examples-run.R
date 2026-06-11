@@ -634,6 +634,9 @@ runExample = function(
     package = package
   )
 
+  adjustmentVariables = exampleInfo$spec$adjustmentVariables %||% character(0)
+  primaryVariables = exampleInfo$spec$primaryVariables %||% character(0)
+
   runs = vector("list", nRuns)
   tracker = newWmfmProgressTracker(
     nSteps = nRuns,
@@ -682,7 +685,9 @@ runExample = function(
       errorMessage = result$.error %||% NA_character_,
       interactionTerms = result$interactionTerms %||% character(0),
       interactionMinPValue = result$interactionMinPValue %||% NA_real_,
-      interactionAlpha = interactionAlpha
+      interactionAlpha = interactionAlpha,
+      adjustmentVariables = adjustmentVariables,
+      primaryVariables = primaryVariables
     )
 
     runs[[i]]$runElapsedSeconds = iterationSeconds

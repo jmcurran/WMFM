@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.1.001
+
+- Added adjustment-variable and primary-variable metadata to raw WMFM run records for downstream scoring.
+- Forwarded example-spec adjustment metadata through runExample() into each run record.
+- Added offline tests covering run-record metadata and example metadata forwarding.
+- Preserved existing non-adjustment and follow-up scoring behavior.
+
 ## WMFM 0.3.0.007
 
 - Stage 36.5 preserves follow-up scoring context when raw WMFM run records are rebuilt.
