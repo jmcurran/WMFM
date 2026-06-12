@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.1.008
+
+- Centralized adjustment-aware LLM scoring policy text in reusable helpers.
+- Kept scoring prompts aligned around restrained adjusted-for interpretation and forbidden adjustment-level narration.
+- Added offline governance tests for the shared adjustment scoring policy helpers.
+
 ## WMFM 0.3.1.007
 
 - Aligned deterministic scoring with adjustment-aware restraint for weak interactions involving adjustment variables.

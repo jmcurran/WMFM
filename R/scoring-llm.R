@@ -544,40 +544,11 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
       "No interaction terms are present in the fitted model."
     }
 
-  adjustmentVariables = as.character(runRecord$adjustmentVariables %||% character(0))
-  adjustmentVariables = unique(trimws(adjustmentVariables))
-  adjustmentVariables = adjustmentVariables[nzchar(adjustmentVariables)]
-  hasAdjustmentVariables = length(adjustmentVariables) > 0
-
-  primaryVariables = as.character(runRecord$primaryVariables %||% character(0))
-  primaryVariables = unique(trimws(primaryVariables))
-  primaryVariables = primaryVariables[nzchar(primaryVariables)]
-
-  adjustmentContextBlock =
-    if (hasAdjustmentVariables) {
-      paste(
-        "Adjustment-variable context is present.",
-        paste0("Adjustment variables: ", paste(adjustmentVariables, collapse = ", ")),
-        if (length(primaryVariables) > 0) {
-          paste0("Variables of scientific interest: ", paste(primaryVariables, collapse = ", "))
-        } else {
-          "Variables of scientific interest: (not supplied)"
-        },
-        "Scoring policy for adjustment-aware explanations:",
-        "- Reward correct adjusted-for framing when adjustment variables are mentioned as controls or background variables.",
-        "- Reward restrained explanations that answer the research question using the variables of scientific interest.",
-        "- Do not penalise explanations for omitting adjustment-level details such as level-specific fitted means, contrasts, confidence intervals, coefficients, or predicted values.",
-        "- Do not require picture-specific or other adjustment-level narratives.",
-        "- Do not require coefficient-by-coefficient narration of adjustment variables.",
-        "- If an interaction involves an adjustment variable, do not penalise the absence of interaction cell-by-cell descriptions.",
-        "- Adjustment variables may be acknowledged in high-level interaction summaries, but they should not become narrative conditioning axes with level-specific estimates unless the prompt explicitly asks for that interpretation.",
-        "- Penalise explanations that turn adjustment variables into the main scientific story, narrate adjustment-level cells as if they were primary findings, or recite the regression table instead of answering the research question.",
-        "- Reward avoiding forbidden adjustment-level narratives while still answering the research question.",
-        sep = "\n"
-      )
-    } else {
-      "No adjustment-variable context was supplied. Use the standard completeness and interaction expectations."
-    }
+  adjustmentScoringPolicy = buildAdjustmentScoringPolicy(runRecord = runRecord)
+  adjustmentContextBlock = buildAdjustmentScoringContextBlock(
+    runRecord = runRecord,
+    policy = adjustmentScoringPolicy
+  )
 
   followupFields = c(
     "followupQuestion",

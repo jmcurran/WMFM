@@ -1,4 +1,3 @@
-
 #' Build the system prompt for WMFM explanation scoring
 #'
 #' Creates the fixed system prompt used when asking a language model to score a
@@ -38,7 +37,6 @@ buildWmfmLlmScoringSystemPrompt = function() {
     sep = "\n"
   )
 }
-
 
 #' Build a user prompt for WMFM explanation scoring
 #'
@@ -97,6 +95,56 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
       "No interaction terms are present in the fitted model."
     }
 
+  adjustmentScoringPolicy = buildAdjustmentScoringPolicy(runRecord = runRecord)
+  adjustmentContextBlock = buildAdjustmentScoringContextBlock(
+    runRecord = runRecord,
+    policy = adjustmentScoringPolicy
+  )
+
+  followupFields = c(
+    "followupQuestion",
+    "followupCategory",
+    "followupPredictionStatus",
+    "followupPredictionType",
+    "followupIntervalType",
+    "followupFutureObservationType",
+    "followupExtrapolationStatus",
+    "followupExtrapolationExplanation"
+  )
+  hasFollowupContext = isTRUE(runRecord$hasFollowupScoringContext) ||
+    any(vapply(followupFields, function(field) {
+      value = runRecord[[field]]
+      length(value) > 0 && !is.na(value[1]) && nzchar(trimws(as.character(value[1])))
+    }, logical(1)))
+
+  followupContextBlock =
+    if (hasFollowupContext) {
+      paste(
+        "Follow-up scoring context is present.",
+        paste0("Follow-up question: ", safeWmfmScalar(runRecord$followupQuestion)),
+        paste0("Follow-up category: ", safeWmfmScalar(runRecord$followupCategory)),
+        paste0("Prediction status: ", safeWmfmScalar(runRecord$followupPredictionStatus)),
+        paste0("Prediction type: ", safeWmfmScalar(runRecord$followupPredictionType)),
+        paste0("Interval type: ", safeWmfmScalar(runRecord$followupIntervalType)),
+        paste0("Future-observation type: ", safeWmfmScalar(runRecord$followupFutureObservationType)),
+        paste0("Extrapolation status: ", safeWmfmScalar(runRecord$followupExtrapolationStatus)),
+        paste0("Extrapolation explanation: ", safeWmfmScalar(runRecord$followupExtrapolationExplanation)),
+        paste0("Parameter uncertainty included: ", safeWmfmScalar(runRecord$followupParameterUncertaintyIncluded)),
+        "Scoring policy for follow-up explanations:",
+        "- Distinguish fitted-mean confidence intervals from future-observation prediction intervals.",
+        "- Reward correct extrapolation-warning or blocked-prediction wording when the context supplies it.",
+        "- For Poisson follow-ups, treat future-count prediction intervals as uncertainty about a future count, not uncertainty about the fitted mean.",
+        "- For logistic future outcomes, reward Bernoulli outcome-probability framing rather than continuous prediction-interval wording.",
+        "- Penalise claims that parameter uncertainty is included when the context says it is not included.",
+        "- Use uncertaintyHandlingAppropriate for correctness of interval type, future-observation uncertainty, blocked-prediction warnings, extrapolation warnings, and parameter-uncertainty caveats.",
+        "- Use comparisonStructureClear for whether the explanation clearly separates fitted-mean, future-observation, Poisson-count, or Bernoulli-outcome structures when those distinctions are relevant.",
+        "- Mark fatalFlawDetected TRUE when a follow-up answer uses confidence-interval wording for a prediction interval, treats a Bernoulli outcome as a continuous individual interval, ignores a blocked prediction, or claims included parameter uncertainty when it is excluded.",
+        sep = "\n"
+      )
+    } else {
+      "No follow-up prediction context was supplied. Use the standard model-explanation scoring expectations."
+    }
+
   fieldSpecificRubric = paste(
     "FIELD-SPECIFIC RUBRIC GUIDANCE",
     "- effectDirectionCorrect:",
@@ -106,29 +154,37 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "- referenceGroupHandledCorrectly:",
     "  2 if the baseline or comparison group is handled correctly; 1 if only partly clear; 0 if the baseline or comparison is wrong or materially misleading.",
     "- interactionCoverageAdequate:",
-    "  2 if important interactions are clearly covered when present; 1 if interaction coverage is partial; 0 if an important interaction is missed or an interaction is invented.",
+    "  2 if important interactions among variables of scientific interest are clearly covered when present; 1 if interaction coverage is partial; 0 if an important primary interaction is missed or an interaction is invented.",
+    "  When adjustment variables are supplied, do not mark this field down merely because the explanation avoids adjustment-level interaction cell narration.",
     "- interactionSubstantiveCorrect:",
     "  2 if the explanation gets the substantive interpretation of the interaction right; 1 if partly right or vague; 0 if wrong.",
+    "  When an interaction involves an adjustment variable, prefer high-level adjusted-for interpretation over level-specific adjustment-cell storytelling unless the context asks for those cells.",
     "- uncertaintyHandlingAppropriate:",
-    "  2 if uncertainty or evidential qualification is handled appropriately; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
+    "  2 if uncertainty or evidential qualification is handled appropriately, including correct follow-up interval type where supplied; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
+    "  In follow-up scoring, this field should judge whether the answer correctly handles fitted-mean versus future-observation uncertainty, prediction-interval versus confidence-interval wording, extrapolation or blocked-prediction warnings, and whether parameter uncertainty is included or excluded.",
     "- inferentialRegisterAppropriate:",
     "  2 if the wording matches the evidential strength and avoids inappropriate causal claims; 1 if somewhat mixed; 0 if clearly overclaiming or otherwise inappropriate.",
     "- mainEffectCoverageAdequate:",
-    "  2 if the key main effects are adequately covered; 1 if partly covered; 0 if important main effects are omitted.",
+    "  2 if the key variables of scientific interest are adequately covered; 1 if partly covered; 0 if important primary variables are omitted.",
+    "  When adjustment variables are supplied, do not require separate substantive narration of adjustment-variable main effects.",
     "- referenceGroupCoverageAdequate:",
-    "  2 if the explanation adequately communicates the baseline or comparison structure when relevant; 1 if partial; 0 if missing when important.",
+    "  2 if the explanation adequately communicates the baseline or comparison structure for variables of scientific interest when relevant; 1 if partial; 0 if missing when important.",
+    "  When adjustment variables are supplied, do not require adjustment-level reference-group narration unless it is needed to answer the research question.",
     "- clarityAdequate:",
     "  2 if the explanation is generally clear and easy to follow; 1 if understandable but somewhat awkward, wordy, or uneven; 0 if seriously unclear.",
     "- numericExpressionAdequate:",
-    "  2 if the explanation gives a clear quantitative interpretation of one or more important model effects using meaningful numbers, units, point differences, probabilities, odds, multiplicative language, or intervals where appropriate.",
+    "  2 if the explanation gives a clear quantitative interpretation of one or more important primary model effects using meaningful numbers, units, point differences, probabilities, odds, multiplicative language, or intervals where appropriate.",
     "  1 if some numeric information is present but the quantitative interpretation is partial, weakly connected to the effect, vague, or somewhat unclear.",
-    "  0 if meaningful quantitative interpretation is absent when it should be present, or if the numeric expression is seriously misleading.",
+    "  0 if meaningful quantitative interpretation of the variables of scientific interest is absent when it should be present, or if the numeric expression is seriously misleading.",
     "  Minor stylistic awkwardness alone should not reduce a score from 2 to 1 if the quantitative interpretation is still clear.",
     "  Do not treat percentage language about model fit, such as R-squared or percent of variation explained, as evidence that the coefficient effect scale is multiplicative.",
     "- comparisonStructureClear:",
-    "  2 if relevant comparisons or conditional structures are clearly expressed; 1 if partly clear; 0 if important comparison structure is missing or confusing.",
+    "  2 if relevant comparisons or conditional structures for the variables of scientific interest are clearly expressed; 1 if partly clear; 0 if important primary comparison structure is missing or confusing.",
+    "  When adjustment variables are supplied, do not require adjustment-level comparison structures or conditioning axes unless they are needed to answer the research question.",
+    "  In follow-up scoring, this field should also judge whether the answer clearly separates fitted-mean quantities from future-observation quantities, and whether Poisson count or Bernoulli outcome framing is structurally clear.",
     "- fatalFlawDetected:",
     "  TRUE only for a serious problem such as a major directional error, clear overclaiming, invented interaction, or another flaw that should strongly affect the final judgment.",
+    "  In follow-up scoring, examples include using confidence-interval wording for an individual prediction interval, treating Bernoulli outcomes as continuous individual intervals, ignoring a blocked prediction, or claiming parameter uncertainty is included when the context says it is excluded.",
     sep = "\n"
   )
 
@@ -188,6 +244,12 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "",
     "INTERACTION CONTEXT",
     interactionBlock,
+    "",
+    "ADJUSTMENT CONTEXT",
+    adjustmentContextBlock,
+    "",
+    "FOLLOW-UP SCORING CONTEXT",
+    followupContextBlock,
     "",
     "EXPLANATION TO SCORE",
     safeWmfmScalar(runRecord$explanationText),
