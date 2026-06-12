@@ -136,9 +136,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
   observe({
     selectedProvider = resolveSelectedProvider()
     syncProviderSpecificControlState(selectedProvider)
-    if (identical(selectedProvider, "ollama") && isWmfmProviderReadyForStartup(resolveWmfmProviderConfig())) {
-      refreshOllamaModelChoices(selected = rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel)
-    }
   })
 
   session$onFlushed(function() {

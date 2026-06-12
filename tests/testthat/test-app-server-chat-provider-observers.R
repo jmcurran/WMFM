@@ -49,3 +49,20 @@ test_that("Ollama model refresh is capability-aware and keeps failure fallback",
   expect_match(chatProviderText, "Using current/default choices", fixed = TRUE)
   expect_match(chatProviderText, "fallback = rv$availableOllamaModels", fixed = TRUE)
 })
+
+test_that("Ollama model discovery is not attempted by the startup observer", {
+  chatProviderText = readPackageText("R", "app-server-chat-provider.R")
+
+  startupObserverMatch = regexpr(
+    'observe\\(\\{\\n    selectedProvider = resolveSelectedProvider\\(\\)[\\s\\S]*?\\n  \\}\\)',
+    chatProviderText,
+    perl = TRUE
+  )
+
+  expect_gt(as.integer(startupObserverMatch), 0)
+  startupObserver = regmatches(chatProviderText, startupObserverMatch)
+
+  expect_match(startupObserver, "syncProviderSpecificControlState(selectedProvider)", fixed = TRUE)
+  expect_false(grepl("refreshOllamaModelChoices", startupObserver, fixed = TRUE))
+  expect_false(grepl("models_ollama", startupObserver, fixed = TRUE))
+})

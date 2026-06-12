@@ -8,6 +8,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 0.9.9.005
+
+- Prevented Ollama model discovery from running during provider startup observers.
+- Kept Ollama model discovery available through explicit provider actions such as the refresh control.
+- Added an offline test that guards against startup-time Ollama discovery in the chat-provider observer.
+- Validated by the standard WMFM package workflow.
+
 ## WMFM 0.9.9.004
 
 - Clarified the package description so external AI providers are explicitly user-configured and optional.
