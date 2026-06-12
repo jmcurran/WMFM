@@ -4,6 +4,15 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+
+## WMFM 0.3.1.010
+
+- Repair the adjustment-aware scaffold test so it rejects generated model-mechanics language without rejecting instruction text.
+- Keep adjustment variables in the background while allowing high-level interaction caveats when a single adjusted estimate would be misleading.
+- Keep the interaction wording invariants while allowing the prompt to contain negative guidance about model-structure wording.
+- Preserve the existing adjustment governance and deterministic scoring behavior from Stage 37.
+- Validated by the Stage 37.6.1 runner with strict tests and check.
+
 ## WMFM 0.3.1.008
 
 - Centralized adjustment-aware LLM scoring policy text in reusable helpers.
