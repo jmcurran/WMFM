@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 0.3.1.007
+
+- Aligned deterministic scoring with adjustment-aware restraint for weak interactions involving adjustment variables.
+- Allowed research-question-focused adjusted explanations to avoid adjustment-level numeric and cell-by-cell narration.
+- Preserved ordinary no-adjustment scoring behavior with a regression test.
+
 ## WMFM 0.3.1.006
 
 - Aligned deterministic scoring with adjustment-aware restraint for weak interactions involving adjustment variables.
