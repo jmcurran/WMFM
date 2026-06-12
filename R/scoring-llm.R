@@ -280,11 +280,7 @@ scoreWmfmRunWithLlm = function(
   userPrompt = buildWmfmLlmScoringUserPrompt(runRecord)
   prompt = paste(systemPrompt, "", userPrompt, sep = "\n")
 
-  key = paste(
-    "score",
-    prompt,
-    sep = "|"
-  )
+  key = buildWmfmLlmScoringCacheKey(prompt)
 
   cacheEnv = get0(".env_cache", inherits = TRUE, ifnotfound = NULL)
   usedCache = FALSE
@@ -316,6 +312,22 @@ scoreWmfmRunWithLlm = function(
 
   scoreRecord$llmScoringUsedCache = usedCache
   scoreRecord
+}
+
+
+#' Build a compact WMFM LLM scoring cache key
+#'
+#' Builds a short cache key for a scoring prompt. The full prompt can exceed
+#' R's maximum environment binding-name length, so the cache stores responses
+#' under a hash rather than the literal prompt text.
+#'
+#' @param prompt Character scalar containing the full scoring prompt.
+#'
+#' @return Character scalar cache key.
+#' @keywords internal
+buildWmfmLlmScoringCacheKey = function(prompt) {
+  prompt = safeWmfmScalar(prompt, naString = "")
+  paste("score", rlang::hash(prompt), sep = "|")
 }
 
 #' Score multiple WMFM runs using an LLM
@@ -552,10 +564,14 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
           "Variables of scientific interest: (not supplied)"
         },
         "Scoring policy for adjustment-aware explanations:",
-        "- Reward correct adjusted-for framing when adjustment variables are mentioned as controls.",
+        "- Reward correct adjusted-for framing when adjustment variables are mentioned as controls or background variables.",
+        "- Reward restrained explanations that answer the research question using the variables of scientific interest.",
         "- Do not penalise explanations for omitting adjustment-level details such as level-specific fitted means, contrasts, confidence intervals, coefficients, or predicted values.",
         "- Do not require picture-specific or other adjustment-level narratives.",
+        "- Do not require coefficient-by-coefficient narration of adjustment variables.",
         "- If an interaction involves an adjustment variable, do not penalise the absence of interaction cell-by-cell descriptions.",
+        "- Adjustment variables may be acknowledged in high-level interaction summaries, but they should not become narrative conditioning axes with level-specific estimates unless the prompt explicitly asks for that interpretation.",
+        "- Penalise explanations that turn adjustment variables into the main scientific story, narrate adjustment-level cells as if they were primary findings, or recite the regression table instead of answering the research question.",
         "- Reward avoiding forbidden adjustment-level narratives while still answering the research question.",
         sep = "\n"
       )
@@ -601,8 +617,7 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
         "- Use uncertaintyHandlingAppropriate for correctness of interval type, future-observation uncertainty, blocked-prediction warnings, extrapolation warnings, and parameter-uncertainty caveats.",
         "- Use comparisonStructureClear for whether the explanation clearly separates fitted-mean, future-observation, Poisson-count, or Bernoulli-outcome structures when those distinctions are relevant.",
         "- Mark fatalFlawDetected TRUE when a follow-up answer uses confidence-interval wording for a prediction interval, treats a Bernoulli outcome as a continuous individual interval, ignores a blocked prediction, or claims included parameter uncertainty when it is excluded.",
-        sep = "
-"
+        sep = "\n"
       )
     } else {
       "No follow-up prediction context was supplied. Use the standard model-explanation scoring expectations."
@@ -617,28 +632,33 @@ buildWmfmLlmScoringUserPrompt = function(runRecord) {
     "- referenceGroupHandledCorrectly:",
     "  2 if the baseline or comparison group is handled correctly; 1 if only partly clear; 0 if the baseline or comparison is wrong or materially misleading.",
     "- interactionCoverageAdequate:",
-    "  2 if important interactions are clearly covered when present; 1 if interaction coverage is partial; 0 if an important interaction is missed or an interaction is invented.",
+    "  2 if important interactions among variables of scientific interest are clearly covered when present; 1 if interaction coverage is partial; 0 if an important primary interaction is missed or an interaction is invented.",
+    "  When adjustment variables are supplied, do not mark this field down merely because the explanation avoids adjustment-level interaction cell narration.",
     "- interactionSubstantiveCorrect:",
     "  2 if the explanation gets the substantive interpretation of the interaction right; 1 if partly right or vague; 0 if wrong.",
+    "  When an interaction involves an adjustment variable, prefer high-level adjusted-for interpretation over level-specific adjustment-cell storytelling unless the context asks for those cells.",
     "- uncertaintyHandlingAppropriate:",
     "  2 if uncertainty or evidential qualification is handled appropriately, including correct follow-up interval type where supplied; 1 if present but limited; 0 if badly mishandled or absent in a way that encourages overstatement.",
     "  In follow-up scoring, this field should judge whether the answer correctly handles fitted-mean versus future-observation uncertainty, prediction-interval versus confidence-interval wording, extrapolation or blocked-prediction warnings, and whether parameter uncertainty is included or excluded.",
     "- inferentialRegisterAppropriate:",
     "  2 if the wording matches the evidential strength and avoids inappropriate causal claims; 1 if somewhat mixed; 0 if clearly overclaiming or otherwise inappropriate.",
     "- mainEffectCoverageAdequate:",
-    "  2 if the key main effects are adequately covered; 1 if partly covered; 0 if important main effects are omitted.",
+    "  2 if the key variables of scientific interest are adequately covered; 1 if partly covered; 0 if important primary variables are omitted.",
+    "  When adjustment variables are supplied, do not require separate substantive narration of adjustment-variable main effects.",
     "- referenceGroupCoverageAdequate:",
-    "  2 if the explanation adequately communicates the baseline or comparison structure when relevant; 1 if partial; 0 if missing when important.",
+    "  2 if the explanation adequately communicates the baseline or comparison structure for variables of scientific interest when relevant; 1 if partial; 0 if missing when important.",
+    "  When adjustment variables are supplied, do not require adjustment-level reference-group narration unless it is needed to answer the research question.",
     "- clarityAdequate:",
     "  2 if the explanation is generally clear and easy to follow; 1 if understandable but somewhat awkward, wordy, or uneven; 0 if seriously unclear.",
     "- numericExpressionAdequate:",
-    "  2 if the explanation gives a clear quantitative interpretation of one or more important model effects using meaningful numbers, units, point differences, probabilities, odds, multiplicative language, or intervals where appropriate.",
+    "  2 if the explanation gives a clear quantitative interpretation of one or more important primary model effects using meaningful numbers, units, point differences, probabilities, odds, multiplicative language, or intervals where appropriate.",
     "  1 if some numeric information is present but the quantitative interpretation is partial, weakly connected to the effect, vague, or somewhat unclear.",
-    "  0 if meaningful quantitative interpretation is absent when it should be present, or if the numeric expression is seriously misleading.",
+    "  0 if meaningful quantitative interpretation of the variables of scientific interest is absent when it should be present, or if the numeric expression is seriously misleading.",
     "  Minor stylistic awkwardness alone should not reduce a score from 2 to 1 if the quantitative interpretation is still clear.",
     "  Do not treat percentage language about model fit, such as R-squared or percent of variation explained, as evidence that the coefficient effect scale is multiplicative.",
     "- comparisonStructureClear:",
-    "  2 if relevant comparisons or conditional structures are clearly expressed; 1 if partly clear; 0 if important comparison structure is missing or confusing.",
+    "  2 if relevant comparisons or conditional structures for the variables of scientific interest are clearly expressed; 1 if partly clear; 0 if important primary comparison structure is missing or confusing.",
+    "  When adjustment variables are supplied, do not require adjustment-level comparison structures or conditioning axes unless they are needed to answer the research question.",
     "  In follow-up scoring, this field should also judge whether the answer clearly separates fitted-mean quantities from future-observation quantities, and whether Poisson count or Bernoulli outcome framing is structurally clear.",
     "- fatalFlawDetected:",
     "  TRUE only for a serious problem such as a major directional error, clear overclaiming, invented interaction, or another flaw that should strongly affect the final judgment.",
