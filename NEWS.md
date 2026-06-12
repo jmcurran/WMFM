@@ -7,6 +7,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 0.9.9.004
+
+- Clarified the package description so external AI providers are explicitly user-configured and optional.
+- Documented that provider access is not required during package checks or non-AI workflows.
+- Kept CRAN-hardening focused on package metadata clarity without changing runtime behavior.
+- Validated by the standard WMFM package workflow.
+
 ## WMFM 0.9.9.003
 
 - Replaced the package default Ollama base URL with the localhost Ollama endpoint expected for user-managed local installations.
