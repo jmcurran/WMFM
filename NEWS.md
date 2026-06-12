@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+
+## WMFM 0.9.9.001
+
+- Started Stage 38 CRAN hardening with beta-style internal build numbering for the 1.0.0 release-preparation stream.
+- Moved the completed Stage 37 restart context into dev/Completed so active development contexts stay focused on current work.
+- Added a separate future-development ideas context under dev for post-CRAN follow-up work.
+- Validated by the standard WMFM stage workflow before committing this entry.
+
 ## WMFM 0.3.1.010
 
 - Repair the adjustment-aware scaffold test so it rejects generated model-mechanics language without rejecting instruction text.
