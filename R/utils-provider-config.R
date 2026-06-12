@@ -9,7 +9,7 @@
 wmfmProviderDefaults = function() {
   list(
     backend = "ollama",
-    ollamaBaseUrl = "http://corrin.stat.auckland.ac.nz:11434",
+    ollamaBaseUrl = "http://localhost:11434",
     ollamaModel = "gpt-oss",
     ollamaThinkLow = FALSE
   )

@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 0.9.9.003
+
+- Replaced the package default Ollama base URL with the localhost Ollama endpoint expected for user-managed local installations.
+- Removed the CRAN-risky institutional Ollama default while preserving explicit user configuration through options and saved provider settings.
+- Updated provider configuration tests so the new localhost default is covered by the standard offline test suite.
+- Validated by the standard WMFM stage workflow when package validation is required.
+
 ## WMFM 0.9.9.002
 
 - Started the CRAN-hardening branch workflow for Stage 38.2.

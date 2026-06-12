@@ -2,7 +2,7 @@ test_that("wmfmProviderDefaults exposes current package defaults", {
   defaults = wmfmProviderDefaults()
 
   expect_identical(defaults$backend, "ollama")
-  expect_identical(defaults$ollamaBaseUrl, "http://corrin.stat.auckland.ac.nz:11434")
+  expect_identical(defaults$ollamaBaseUrl, "http://localhost:11434")
   expect_identical(defaults$ollamaModel, "gpt-oss")
   expect_identical(defaults$ollamaThinkLow, FALSE)
 })
