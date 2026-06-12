@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.011
+
+- Expanded README quick-start guidance for classroom use and provider setup.
+- Clarified that AI provider access is opt-in and not used during package checks, package loading, or ordinary non-AI workflows.
+- Added CRAN/offline-check notes to make the external-service boundary clearer for users and maintainers.
+- No package code changed; package validation, build, and install are skipped by the lightweight stage path.
+
+
 
 
 
