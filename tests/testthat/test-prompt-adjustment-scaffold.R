@@ -37,9 +37,13 @@ testthat::test_that("adjustment workflows use deterministic scaffold in final pr
 
   testthat::expect_match(
     prompt,
-    "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure.",
+    "Adjustment-aware interaction note: The adjusted relationship involving the variables of scientific interest may vary across the adjustment context.",
     fixed = TRUE
   )
+  testthat::expect_match(prompt, "Scientific wording requirement:", fixed = TRUE)
+  testthat::expect_no_match(prompt, "The fitted model includes terms", fixed = TRUE)
+  testthat::expect_no_match(prompt, "The fitted model includes terms", fixed = TRUE)
+  testthat::expect_no_match(prompt, "model structure explains", ignore.case = TRUE)
 })
 
 
@@ -77,14 +81,17 @@ testthat::test_that("interaction adjustment workflow remains high-level only", {
   testthat::expect_no_match(prompt, "Adjusted primary-effect summary:", fixed = TRUE)
   testthat::expect_match(
     prompt,
-    "The fitted model includes an interaction between the primary variable of interest and an adjustment variable.",
+    "The relationship involving the primary variable of interest and the response appears to depend on the adjustment context.",
     fixed = TRUE
   )
   testthat::expect_match(
     prompt,
-    "This means the primary comparison is allowed to differ across combinations of the adjustment variable.",
+    "The primary comparison is therefore not constant across all adjustment contexts.",
     fixed = TRUE
   )
+  testthat::expect_match(prompt, "Scientific wording requirement:", fixed = TRUE)
+  testthat::expect_no_match(prompt, "The fitted model includes an interaction", fixed = TRUE)
+  testthat::expect_no_match(prompt, "allowed to differ", fixed = TRUE)
   testthat::expect_match(
     prompt,
     "A single averaged estimate would hide that variation and could be misleading, so no single adjusted effect estimate is reported here.",

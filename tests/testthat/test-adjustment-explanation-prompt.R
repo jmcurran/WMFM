@@ -75,7 +75,9 @@ testthat::test_that("adjustment prompt includes interaction guardrails for pictu
   testthat::expect_match(prompt, "Do not discuss results separately by levels or values of adjustment variables.", fixed = TRUE)
   testthat::expect_match(prompt, "Do not use adjustment variables as narrative axes.", fixed = TRUE)
   testthat::expect_match(prompt, "Do not interpret interactions involving adjustment variables level by level.", fixed = TRUE)
-  testthat::expect_match(prompt, "Model-structure note:", fixed = TRUE)
+  testthat::expect_match(prompt, "Adjustment-aware interaction note:", fixed = TRUE)
+  testthat::expect_match(prompt, "Scientific wording requirement:", fixed = TRUE)
+  testthat::expect_no_match(prompt, "the model includes terms", ignore.case = TRUE)
 })
 
 testthat::test_that("formatted explanation quantity payload omits adjustment-related rows", {

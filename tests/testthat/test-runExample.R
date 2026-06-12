@@ -68,3 +68,62 @@ testthat::test_that("runExample can be unit-tested offline by mocking the expens
     "Do students who attend class tend to score more highly on the exam?"
   )
 })
+
+
+testthat::test_that("runExample forwards adjustment and primary variables into run records", {
+  testthat::local_mocked_bindings(
+    loadExampleSpec = function(name, package) {
+      list(
+        spec = list(
+          formula = "arousal ~ gender + picture + gender:picture",
+          modelType = "lm",
+          adjustmentVariables = "picture",
+          primaryVariables = "gender"
+        ),
+        data = data.frame(
+          arousal = c(1, 2),
+          gender = c("female", "male"),
+          picture = c("infant", "landscape")
+        ),
+        dataContext = "Synthetic arousal context",
+        researchQuestion = "Is there a difference in arousal levels for females and males?"
+      )
+    },
+    runModel = function(...) {
+      list(
+        explanation = "After adjusting for picture, there is no clear gender difference.",
+        equations = "arousal = fitted model",
+        interactionTerms = "gender:picture",
+        interactionMinPValue = 0.42
+      )
+    },
+    newWmfmProgressTracker = function(nSteps, showProgress, label) {
+      list(nSteps = nSteps, showProgress = showProgress, label = label)
+    },
+    updateWmfmProgressTracker = function(tracker, step, stepSeconds) {
+      invisible(NULL)
+    },
+    closeWmfmProgressTracker = function(tracker) {
+      list(
+        startedAt = as.character(Sys.time()),
+        finishedAt = as.character(Sys.time()),
+        elapsedSeconds = 0.1,
+        averageIterationSeconds = 0.1,
+        iterationSeconds = 0.1
+      )
+    },
+    .package = "WMFM"
+  )
+
+  out = runExample(
+    name = "test-arousal",
+    package = "WMFM",
+    nRuns = 1,
+    showProgress = FALSE
+  )
+
+  testthat::expect_identical(out$runs[[1]]$adjustmentVariables, "picture")
+  testthat::expect_identical(out$runs[[1]]$primaryVariables, "gender")
+  testthat::expect_identical(out$runs[[1]]$hasAdjustmentVariables, TRUE)
+  testthat::expect_identical(out$runs[[1]]$hasPrimaryVariables, TRUE)
+})

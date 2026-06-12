@@ -90,6 +90,11 @@
 #'   least one factor or character predictor. Used by downstream scoring gates
 #'   to distinguish genuinely applicable factor criteria from numeric-only
 #'   models.
+#' @param adjustmentVariables Character vector of adjustment-variable names to
+#'   carry into explanation scoring. These variables are treated as controls
+#'   rather than primary narrative targets.
+#' @param primaryVariables Character vector of variables of scientific interest
+#'   to carry into explanation scoring.
 #' @param followupScoringContext Optional named list of deterministic follow-up
 #'   prediction metadata to carry into scoring prompts and extracted evidence.
 #'
@@ -109,6 +114,8 @@ buildWmfmRunRecord = function(
     interactionMinPValue = NA_real_,
     interactionAlpha = 0.05,
     hasFactorPredictors = FALSE,
+    adjustmentVariables = character(0),
+    primaryVariables = character(0),
     followupScoringContext = NULL
 ) {
   detectPatternLocal = function(text, pattern) {
@@ -117,6 +124,16 @@ buildWmfmRunRecord = function(
     }
 
     grepl(pattern, text, ignore.case = TRUE, perl = TRUE)
+  }
+
+
+  normaliseCharacterVector = function(x) {
+    if (length(x) == 0 || is.null(x)) {
+      return(character(0))
+    }
+
+    x = unique(trimws(as.character(x)))
+    x[!is.na(x) & nzchar(x)]
   }
 
   normaliseScalarText = function(x) {
@@ -490,6 +507,8 @@ buildWmfmRunRecord = function(
   interactionTerms = interactionTerms[nzchar(trimws(interactionTerms))]
   hasInteractionTerms = length(interactionTerms) > 0
   nInteractionTerms = length(interactionTerms)
+  adjustmentVariables = normaliseCharacterVector(adjustmentVariables)
+  primaryVariables = normaliseCharacterVector(primaryVariables)
 
   explanationPresent = !is.na(explanationText) && nzchar(trimws(explanationText))
   normalizedExplanation = normaliseWmfmText(explanationText)
@@ -731,6 +750,12 @@ buildWmfmRunRecord = function(
     interactionMinPValue = interactionMinPValue,
     interactionAlpha = interactionAlpha,
     hasFactorPredictors = isTRUE(hasFactorPredictors),
+    adjustmentVariables = paste(adjustmentVariables, collapse = " | "),
+    hasAdjustmentVariables = length(adjustmentVariables) > 0,
+    nAdjustmentVariables = length(adjustmentVariables),
+    primaryVariables = paste(primaryVariables, collapse = " | "),
+    hasPrimaryVariables = length(primaryVariables) > 0,
+    nPrimaryVariables = length(primaryVariables),
     followupQuestion = followupScoringContext$followupQuestion,
     followupCategory = followupScoringContext$followupCategory,
     followupPredictionStatus = followupScoringContext$followupPredictionStatus,
@@ -898,6 +923,15 @@ rebuildWmfmRunRecords = function(
     x,
     preserveClass = TRUE
 ) {
+  splitPipeSeparatedTerms = function(x) {
+    if (length(x) == 0 || is.na(x[1]) || !nzchar(trimws(x[1]))) {
+      return(character(0))
+    }
+
+    out = trimws(strsplit(as.character(x[1]), "|", fixed = TRUE)[[1]])
+    out[nzchar(out)]
+  }
+
   splitInteractionTerms = function(x) {
     if (length(x) == 0 || is.na(x) || !nzchar(trimws(x))) {
       return(character(0))
@@ -993,6 +1027,12 @@ rebuildWmfmRunRecords = function(
       ),
       hasFactorPredictors = isTRUE(
         getScalarField(runRecord, "hasFactorPredictors", FALSE)
+      ),
+      adjustmentVariables = splitPipeSeparatedTerms(
+        getScalarField(runRecord, "adjustmentVariables", NA_character_)
+      ),
+      primaryVariables = splitPipeSeparatedTerms(
+        getScalarField(runRecord, "primaryVariables", NA_character_)
       ),
       followupScoringContext = rebuildFollowupContext(runRecord)
     )

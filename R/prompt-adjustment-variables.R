@@ -61,7 +61,8 @@ buildAdjustmentVariablePromptBlock = function(model, mf = NULL) {
   if (isTRUE(hasAdjustmentInteractions)) {
     lines = c(
       lines,
-      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+      "Adjustment-aware interaction note: The adjusted relationship involving the variables of scientific interest may vary across the adjustment context.",
+      "Scientific wording requirement: Describe this as a relationship or difference varying by adjustment context, not as model terms allowing a comparison to vary."
     )
   }
 
@@ -303,7 +304,8 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
   if (length(omittedTerms) > 0) {
     lines = c(
       lines,
-      "Model-structure caveat: The fitted model includes terms involving adjustment variables, so the adjusted comparison is based on that model structure."
+      "Adjustment-aware interaction note: The adjusted relationship involving the variables of scientific interest may vary across the adjustment context.",
+      "Scientific wording requirement: Describe this as a relationship or difference varying by adjustment context, not as model terms allowing a comparison to vary."
     )
   }
 
@@ -316,10 +318,11 @@ buildAdjustmentExplanationScaffold = function(model, mf = NULL) {
     lines = c(
       lines,
       paste(
-        "Model-structure note:",
-        "The fitted model includes an interaction between the primary variable of interest and an adjustment variable.",
-        "This means the primary comparison is allowed to differ across combinations of the adjustment variable.",
-        "A single averaged estimate would hide that variation and could be misleading, so no single adjusted effect estimate is reported here."
+        "Adjustment-aware interaction note:",
+        "The relationship involving the primary variable of interest and the response appears to depend on the adjustment context.",
+        "The primary comparison is therefore not constant across all adjustment contexts.",
+        "A single averaged estimate would hide that variation and could be misleading, so no single adjusted effect estimate is reported here.",
+        "Scientific wording requirement: Describe this as a relationship or difference varying by adjustment context, not as model terms allowing a comparison to vary."
       )
     )
   }

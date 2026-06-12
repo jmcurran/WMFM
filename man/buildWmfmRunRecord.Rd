@@ -18,6 +18,8 @@ buildWmfmRunRecord(
   interactionMinPValue = NA_real_,
   interactionAlpha = 0.05,
   hasFactorPredictors = FALSE,
+  adjustmentVariables = character(0),
+  primaryVariables = character(0),
   followupScoringContext = NULL
 )
 }
@@ -54,6 +56,13 @@ the run record.}
 least one factor or character predictor. Used by downstream scoring gates
 to distinguish genuinely applicable factor criteria from numeric-only
 models.}
+
+\item{adjustmentVariables}{Character vector of adjustment-variable names to
+carry into explanation scoring. These variables are treated as controls
+rather than primary narrative targets.}
+
+\item{primaryVariables}{Character vector of variables of scientific interest
+to carry into explanation scoring.}
 
 \item{followupScoringContext}{Optional named list of deterministic follow-up
 prediction metadata to carry into scoring prompts and extracted evidence.}

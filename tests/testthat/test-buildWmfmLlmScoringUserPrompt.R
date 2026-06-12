@@ -45,6 +45,44 @@ testthat::test_that("buildWmfmLlmScoringUserPrompt includes adjustment-aware sco
   testthat::expect_match(prompt, "do not penalise the absence of interaction cell-by-cell descriptions", ignore.case = TRUE)
 })
 
+
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt rewards restrained adjustment-aware explanations", {
+  x = makeRawRunRecordForScoring(
+    formula = "arousal ~ gender + picture + gender:picture",
+    interactionTerms = "gender:picture",
+    interactionMinPValue = 0.18,
+    adjustmentVariables = "picture",
+    primaryVariables = "gender"
+  )
+
+  prompt = buildWmfmLlmScoringUserPrompt(x)
+
+  testthat::expect_match(prompt, "Reward restrained explanations", fixed = TRUE)
+  testthat::expect_match(prompt, "using the variables of scientific interest", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not require coefficient-by-coefficient narration", fixed = TRUE)
+  testthat::expect_match(prompt, "should not become narrative conditioning axes", fixed = TRUE)
+  testthat::expect_match(prompt, "recite the regression table instead of answering the research question", fixed = TRUE)
+})
+
+testthat::test_that("buildWmfmLlmScoringUserPrompt maps adjustment policy to rubric fields", {
+  x = makeRawRunRecordForScoring(
+    formula = "arousal ~ gender + picture + gender:picture",
+    interactionTerms = "gender:picture",
+    adjustmentVariables = "picture",
+    primaryVariables = "gender"
+  )
+
+  prompt = buildWmfmLlmScoringUserPrompt(x)
+
+  testthat::expect_match(prompt, "do not mark this field down merely because", fixed = TRUE)
+  testthat::expect_match(prompt, "adjustment-level interaction cell narration", fixed = TRUE)
+  testthat::expect_match(prompt, "do not require separate substantive narration of adjustment-variable main effects", fixed = TRUE)
+  testthat::expect_match(prompt, "do not require adjustment-level reference-group narration", fixed = TRUE)
+  testthat::expect_match(prompt, "important primary model effects", fixed = TRUE)
+  testthat::expect_match(prompt, "do not require adjustment-level comparison structures", fixed = TRUE)
+})
+
 testthat::test_that("buildWmfmLlmScoringUserPrompt keeps default guidance when no adjustment variables are supplied", {
   prompt = buildWmfmLlmScoringUserPrompt(makeRawRunRecordForScoring())
 

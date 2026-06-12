@@ -4,6 +4,40 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+
+## WMFM 0.3.1.010
+
+- Repair the adjustment-aware scaffold test so it rejects generated model-mechanics language without rejecting instruction text.
+- Keep adjustment variables in the background while allowing high-level interaction caveats when a single adjusted estimate would be misleading.
+- Keep the interaction wording invariants while allowing the prompt to contain negative guidance about model-structure wording.
+- Preserve the existing adjustment governance and deterministic scoring behavior from Stage 37.
+- Validated by the Stage 37.6.1 runner with strict tests and check.
+
+## WMFM 0.3.1.008
+
+- Centralized adjustment-aware LLM scoring policy text in reusable helpers.
+- Kept scoring prompts aligned around restrained adjusted-for interpretation and forbidden adjustment-level narration.
+- Added offline governance tests for the shared adjustment scoring policy helpers.
+
+## WMFM 0.3.1.007
+
+- Aligned deterministic scoring with adjustment-aware restraint for weak interactions involving adjustment variables.
+- Allowed research-question-focused adjusted explanations to avoid adjustment-level numeric and cell-by-cell narration.
+- Preserved ordinary no-adjustment scoring behavior with a regression test.
+
+## WMFM 0.3.1.006
+
+- Aligned deterministic scoring with adjustment-aware restraint for weak interactions involving adjustment variables.
+- Allowed research-question-focused adjusted explanations to avoid adjustment-level numeric and cell-by-cell narration.
+- Preserved ordinary no-adjustment scoring behavior with a regression test.
+
+## WMFM 0.3.1.001
+
+- Added adjustment-variable and primary-variable metadata to raw WMFM run records for downstream scoring.
+- Forwarded example-spec adjustment metadata through runExample() into each run record.
+- Added offline tests covering run-record metadata and example metadata forwarding.
+- Preserved existing non-adjustment and follow-up scoring behavior.
+
 ## WMFM 0.3.0.007
 
 - Stage 36.5 preserves follow-up scoring context when raw WMFM run records are rebuilt.

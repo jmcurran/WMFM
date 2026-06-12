@@ -162,3 +162,29 @@ testthat::test_that("rebuildWmfmRunRecords preserves follow-up scoring context",
     "Predict a future earthquake count."
   )
 })
+
+
+testthat::test_that("buildWmfmRunRecord records adjustment and primary variable metadata", {
+  out = buildWmfmRunRecord(
+    runId = 5L,
+    exampleName = "Arousal",
+    package = "WMFM",
+    modelType = "lm",
+    formula = "arousal ~ gender + picture + gender:picture",
+    equationsText = "arousal = model with gender and picture",
+    explanationText = paste(
+      "After adjusting for picture effects,",
+      "the data do not indicate a clear gender difference."
+    ),
+    interactionTerms = "gender:picture",
+    adjustmentVariables = c("picture", "picture", ""),
+    primaryVariables = "gender"
+  )
+
+  testthat::expect_identical(out$adjustmentVariables, "picture")
+  testthat::expect_identical(out$hasAdjustmentVariables, TRUE)
+  testthat::expect_identical(out$nAdjustmentVariables, 1L)
+  testthat::expect_identical(out$primaryVariables, "gender")
+  testthat::expect_identical(out$hasPrimaryVariables, TRUE)
+  testthat::expect_identical(out$nPrimaryVariables, 1L)
+})
