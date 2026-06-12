@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 0.9.9.002
+
+- Started the CRAN-hardening branch workflow for Stage 38.2.
+- Added a CRAN preflight context file describing the validation goals and expected follow-up evidence.
+- Forced the stage runner to run strict validation and a CRAN-oriented check even though the installed change set is documentation-focused.
+- Kept this stage focused on establishing the CRAN preflight baseline rather than repairing any issues surfaced by the checks.
+
 ## WMFM 0.9.9.001
 
 - Started Stage 38 CRAN hardening with beta-style internal build numbering for the 1.0.0 release-preparation stream.
