@@ -166,8 +166,56 @@ scoreWmfmRunRecordsCore = function(
   duplicateCount[!explanationPresent] = 0L
   isExactDuplicate = duplicateCount > 1L
 
+  splitRoleVariables = function(x) {
+    x = as.character(x)
+    x[is.na(x)] = ""
+    strsplit(x, ",\\s*|;\\s*", perl = TRUE)
+  }
+
+  normaliseRoleVariables = function(x) {
+    x = trimws(as.character(x))
+    x = x[nzchar(x)]
+    unique(x)
+  }
+
+  interactionTermInvolvesAnyVariable = function(term, variables) {
+    term = trimws(as.character(term))
+    variables = normaliseRoleVariables(variables)
+
+    if (!nzchar(term) || length(variables) == 0) {
+      return(FALSE)
+    }
+
+    termPieces = trimws(strsplit(term, ":", fixed = TRUE)[[1]])
+    any(termPieces %in% variables)
+  }
+
+  interactionTermsAllInvolveAdjustment = function(termsText, adjustmentText) {
+    terms = normaliseRoleVariables(unlist(splitRoleVariables(termsText), use.names = FALSE))
+    adjustmentVariables = normaliseRoleVariables(unlist(splitRoleVariables(adjustmentText), use.names = FALSE))
+
+    if (length(terms) == 0 || length(adjustmentVariables) == 0) {
+      return(FALSE)
+    }
+
+    all(vapply(terms, interactionTermInvolvesAnyVariable, logical(1), variables = adjustmentVariables))
+  }
+
   hasInteractionTerms = getLogicalColumn(runsDf, "hasInteractionTerms")
   hasFactorPredictors = getLogicalColumn(runsDf, "hasFactorPredictors")
+  adjustmentVariablesText = getCharacterColumn(runsDf, "adjustmentVariables", default = "")
+  primaryVariablesText = getCharacterColumn(runsDf, "primaryVariables", default = "")
+  hasAdjustmentVariables = getLogicalColumn(runsDf, "hasAdjustmentVariables")
+
+  if (!"hasAdjustmentVariables" %in% names(runsDf)) {
+    hasAdjustmentVariables = vapply(
+      splitRoleVariables(adjustmentVariablesText),
+      function(x) {
+        length(normaliseRoleVariables(x)) > 0
+      },
+      logical(1)
+    )
+  }
 
   if (!"hasInteractionTerms" %in% names(runsDf)) {
     nInteractionTerms = getIntegerColumn(runsDf, "nInteractionTerms", default = NA_integer_)
@@ -175,10 +223,46 @@ scoreWmfmRunRecordsCore = function(
     hasInteractionTerms = (!is.na(nInteractionTerms) & nInteractionTerms > 0L) | nzchar(interactionTermsText)
   }
 
+  interactionTermsText = normaliseText(getCharacterColumn(runsDf, "interactionTerms", default = ""))
   interactionMinPValue = getNumericColumn(runsDf, "interactionMinPValue")
   interactionAlpha = getNumericColumn(runsDf, "interactionAlpha", default = 0.05)
   interactionAlpha[is.na(interactionAlpha)] = 0.05
 
+  adjustmentInteractionOnly = hasInteractionTerms &
+    hasAdjustmentVariables &
+    vapply(
+      seq_len(nrow(runsDf)),
+      function(i) {
+        interactionTermsAllInvolveAdjustment(
+          termsText = interactionTermsText[i],
+          adjustmentText = adjustmentVariablesText[i]
+        )
+      },
+      logical(1)
+    )
+
+  adjustmentAwareFramingMention = hasAdjustmentVariables &
+    grepl("\\badjust(ed|ing|ment|s)?\\b", explanationText, ignore.case = TRUE, perl = TRUE)
+  primaryVariableMention = vapply(
+    seq_len(nrow(runsDf)),
+    function(i) {
+      primaryVariables = normaliseRoleVariables(unlist(splitRoleVariables(primaryVariablesText[i]), use.names = FALSE))
+
+      if (length(primaryVariables) == 0) {
+        return(FALSE)
+      }
+
+      explanationTextLower = tolower(explanationText[i])
+      any(vapply(tolower(primaryVariables), grepl, logical(1), x = explanationTextLower, fixed = TRUE))
+    },
+    logical(1)
+  )
+  noClearDifferenceMention = grepl(
+    "\\b(no clear|not clear|does not indicate|do not indicate|little evidence|not enough evidence)\\b",
+    explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
   ciMention = getLogicalColumn(runsDf, "ciMention", fallbackNames = c("mentionsConfidenceInterval"))
   percentLanguageMention = getLogicalColumn(runsDf, "percentLanguageMention", fallbackNames = c("usesPercentLanguage"))
   referenceGroupMention = getLogicalColumn(runsDf, "referenceGroupMention", fallbackNames = c("mentionsReferenceGroup"))
@@ -247,6 +331,10 @@ scoreWmfmRunRecordsCore = function(
     semanticEvidence$semanticAlternativeModelInterpretationProvided
   outcomeMention = outcomeMention | semanticEvidence$semanticModelCannotAnswerQuestion
   predictorMention = predictorMention | semanticEvidence$semanticAlternativeModelInterpretationProvided
+
+  adjustmentRestrainedResearchFocus = adjustmentAwareFramingMention &
+    (primaryVariableMention | comparisonLanguageMention | outcomeMention | predictorMention) &
+    noClearDifferenceMention
 
   repairDirectionIdx = effectDirectionClaim %in% c("", "not_stated", "unclear") &
     semanticDirectionClaim != "not_stated"
@@ -324,15 +412,27 @@ scoreWmfmRunRecordsCore = function(
   referenceGroupHandledCorrectly = overwriteIfMissing(referenceGroupHandledCorrectlyExisting, referenceGroupHandledCorrectlyComputed)
 
   interactionCoverageAdequateComputed = rep(2L, nrow(runsDf))
+  weakAdjustmentInteraction = adjustmentInteractionOnly &
+    !is.na(interactionMinPValue) &
+    interactionMinPValue > interactionAlpha
   interactionCoverageAdequateComputed[hasInteractionTerms & !interactionMention & interactionSubstantiveClaim %in% c("not_mentioned", "", NA)] = 0L
   interactionCoverageAdequateComputed[hasInteractionTerms & (interactionMention | interactionSubstantiveClaim != "not_mentioned") & !(comparisonLanguageMention | conditionalLanguageMention)] = 1L
   interactionCoverageAdequateComputed[hasInteractionTerms & (interactionMention | interactionSubstantiveClaim != "not_mentioned") & (comparisonLanguageMention | conditionalLanguageMention)] = 2L
+  interactionCoverageAdequateComputed[
+    weakAdjustmentInteraction &
+      adjustmentRestrainedResearchFocus
+  ] = 2L
   interactionCoverageAdequate = overwriteIfMissing(interactionCoverageAdequateExisting, interactionCoverageAdequateComputed)
 
   interactionSubstantiveCorrectComputed = rep(2L, nrow(runsDf))
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "not_mentioned"] = 0L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "unclear"] = 1L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim == "no_clear_difference"] = 1L
+  interactionSubstantiveCorrectComputed[
+    weakAdjustmentInteraction &
+      adjustmentRestrainedResearchFocus &
+      interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned", "unclear", "")
+  ] = 2L
   interactionSubstantiveCorrectComputed[hasInteractionTerms & interactionSubstantiveClaim %in% c("difference_claimed_cautiously", "difference_claimed_strongly")] = 2L
   interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("difference_claimed_cautiously", "difference_claimed_strongly")] = 0L
   interactionSubstantiveCorrectComputed[!hasInteractionTerms & interactionSubstantiveClaim %in% c("no_clear_difference", "not_mentioned", "not_applicable", "unclear", "")] = 2L
@@ -526,11 +626,20 @@ scoreWmfmRunRecordsCore = function(
     (factorGroupMeanComparisonMention | semanticFactorComparisonMention) &
       hasNumericMagnitude
   ] = 2L
+  numericExpressionAdequateComputed[
+    weakAdjustmentInteraction &
+      adjustmentRestrainedResearchFocus &
+      !hasNumericMagnitude
+  ] = 2L
   numericExpressionAdequate = overwriteIfMissing(numericExpressionAdequateExisting, numericExpressionAdequateComputed)
 
   comparisonStructureClearComputed = rep(1L, nrow(runsDf))
   comparisonStructureClearComputed[comparisonLanguageMention | conditionalLanguageMention] = 2L
   comparisonStructureClearComputed[hasInteractionTerms & !(comparisonLanguageMention | conditionalLanguageMention)] = 0L
+  comparisonStructureClearComputed[
+    weakAdjustmentInteraction &
+      adjustmentRestrainedResearchFocus
+  ] = 2L
 
   logisticFutureOutcome = hasFollowupScoringContext &
     followupFutureObservationType %in% c("bernoulli", "binary", "binary_outcome")
