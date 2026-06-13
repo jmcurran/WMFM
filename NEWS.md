@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.017
+
+- Added a CRAN-hardening file-organization audit context for the source and test naming cleanup discussion.
+- Recorded that the current R source prefixes still broadly follow the earlier api/app/model/prompt/scoring grouping strategy.
+- Deferred broad source-file renaming until after CRAN hardening unless a concrete check issue requires it.
+- Skipped package validation, build, and install because this stage changes development documentation only.
+
+
 ## WMFM 0.9.9.016
 
 - Removed obsolete stage-numbered test files left behind by the Stage 38.9 rename.
