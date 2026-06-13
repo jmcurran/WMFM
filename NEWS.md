@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.1.001
+
+- Started Stage 39 file-organization work with a developer-facing inventory of current source and test filename structure.
+- Confirmed that the existing prefix system remains useful and that early Stage 39 work should avoid broad noisy renames.
+- Recorded large-file and small-file candidates for later targeted review without changing installed package behavior.
+- Skipped package validation because this stage adds only a developer-facing markdown inventory plus the automatic version and NEWS updates.
+
 ## WMFM 0.9.9.001
 
 - Started Stage 38 CRAN hardening with beta-style internal build numbering for the 1.0.0 release-preparation stream.
