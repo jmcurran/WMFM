@@ -227,3 +227,18 @@ Rscript dev/audit-file-organization.R --output dev/file-organization-audit-repor
 ```
 
 The output report is intended for local review and does not need to be committed unless it is useful evidence for a later stage.
+
+## Stage 39.6 follow-up: test helper and unexpected-test filename reporting
+
+Stage 39.6 refines the developer audit helper so the test tree is not treated as one undifferentiated group of files.
+
+The helper now reports:
+
+- counts for `test-`, `helper-`, and unexpected testthat filename patterns;
+- the full list of test helper files, including whether each helper filename has mixed camelCase/dash style;
+- testthat files that are neither ordinary tests nor helpers;
+- mixed-style test filenames with their test/helper classification.
+
+This remains an advisory developer tool. It does not enforce a naming policy and does not rename tests. That is deliberate: helper filenames may mirror existing object names, and function-specific test names can still improve traceability. Any enforcement or broad rename should wait until a later stage decides which naming rules are stable enough to make automatic.
+
+Stage 39.6 also removes the base-pipe placeholder from the helper's `relativePath()` implementation. This keeps the helper simple and portable for older R versions while preserving the same output.

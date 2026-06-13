@@ -40,6 +40,17 @@ isMixedStyleName = function(path) {
   grepl("[a-z][A-Z]", stem)
 }
 
+testFileKind = function(path) {
+  name = basename(path)
+  if (startsWith(name, "test-")) {
+    return("test")
+  }
+  if (startsWith(name, "helper-")) {
+    return("helper")
+  }
+  "other"
+}
+
 markdownTable = function(data, columns) {
   if (nrow(data) == 0L) {
     return("No files found.")
@@ -61,8 +72,9 @@ markdownTable = function(data, columns) {
 }
 
 relativePath = function(path) {
-  normalizePath(path, winslash = "/", mustWork = FALSE) |>
-    sub(paste0("^", normalizePath(getwd(), winslash = "/", mustWork = FALSE), "/?"), "", x = _)
+  absolutePath = normalizePath(path, winslash = "/", mustWork = FALSE)
+  rootPath = normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  sub(paste0("^", rootPath, "/?"), "", absolutePath)
 }
 
 sourceFiles = sort(list.files("R", pattern = "[.]R$", full.names = TRUE))
@@ -78,9 +90,9 @@ sourceData = data.frame(
 
 testData = data.frame(
   File = vapply(testFiles, relativePath, character(1L)),
+  Kind = vapply(testFiles, testFileKind, character(1L)),
   Lines = vapply(testFiles, countLines, integer(1L)),
   MixedStyle = vapply(testFiles, isMixedStyleName, logical(1L)),
-  IsHelper = startsWith(basename(testFiles), "helper-"),
   stringsAsFactors = FALSE
 )
 
@@ -88,9 +100,15 @@ prefixData = as.data.frame(table(sourceData$Prefix), stringsAsFactors = FALSE)
 names(prefixData) = c("Prefix", "Count")
 prefixData = prefixData[order(prefixData$Prefix), , drop = FALSE]
 
+testKindData = as.data.frame(table(testData$Kind), stringsAsFactors = FALSE)
+names(testKindData) = c("Kind", "Count")
+testKindData = testKindData[order(testKindData$Kind), , drop = FALSE]
+
 unrecognizedSourceData = sourceData[!(sourceData$Prefix %in% recognizedPrefixes) & sourceData$Prefix != "WMFM", , drop = FALSE]
 mixedSourceData = sourceData[sourceData$MixedStyle, c("File", "Lines"), drop = FALSE]
-mixedTestData = testData[testData$MixedStyle, c("File", "Lines"), drop = FALSE]
+mixedTestData = testData[testData$MixedStyle, c("File", "Kind", "Lines"), drop = FALSE]
+helperTestData = testData[testData$Kind == "helper", c("File", "Lines", "MixedStyle"), drop = FALSE]
+unexpectedTestData = testData[testData$Kind == "other", c("File", "Lines", "MixedStyle"), drop = FALSE]
 
 largestSourceData = sourceData[order(sourceData$Lines, decreasing = TRUE), c("File", "Lines"), drop = FALSE]
 largestSourceData = head(largestSourceData, 20L)
@@ -115,9 +133,21 @@ lines = c(
   "",
   markdownTable(mixedSourceData, c("File", "Lines")),
   "",
+  "## Test file kind counts",
+  "",
+  markdownTable(testKindData, c("Kind", "Count")),
+  "",
+  "## Test helper files",
+  "",
+  markdownTable(helperTestData, c("File", "Lines", "MixedStyle")),
+  "",
+  "## Unexpected testthat filenames",
+  "",
+  markdownTable(unexpectedTestData, c("File", "Lines", "MixedStyle")),
+  "",
   "## Mixed-style test filenames",
   "",
-  markdownTable(mixedTestData, c("File", "Lines")),
+  markdownTable(mixedTestData, c("File", "Kind", "Lines")),
   "",
   "## Largest source files",
   "",

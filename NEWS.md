@@ -9,6 +9,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.006
+
+- Refined the Stage 39 file-organization audit helper to classify testthat files as tests, helpers, or unexpected filenames.
+- Added helper-file and unexpected-test filename sections so future cleanup can distinguish real drift from normal testthat helpers.
+- Kept the helper advisory only and avoided broad test renames until a stable naming policy is chosen.
+- Skipped package validation because this stage changes only developer audit documentation and helper files under dev/.
+
 ## WMFM 1.0.1.005
 
 - Added a dev-only file-organization audit helper so Stage 39 naming evidence can be regenerated consistently.
