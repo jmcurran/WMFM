@@ -10,6 +10,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.007
+
+- Extended the Stage 39 file-organization audit helper to report developer-context files under dev/ and dev/Completed/.
+- Added active developer-file, completed context-file, and mixed-style developer filename sections so current work can be distinguished from historical notes.
+- Kept the new developer-file reporting advisory only because completed context filenames may intentionally preserve historical stage labels.
+- Skipped package validation because this stage changes only developer audit documentation and helper files under dev/.
+
 ## WMFM 1.0.1.006
 
 - Refined the Stage 39 file-organization audit helper to classify testthat files as tests, helpers, or unexpected filenames.

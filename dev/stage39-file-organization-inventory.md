@@ -242,3 +242,18 @@ The helper now reports:
 This remains an advisory developer tool. It does not enforce a naming policy and does not rename tests. That is deliberate: helper filenames may mirror existing object names, and function-specific test names can still improve traceability. Any enforcement or broad rename should wait until a later stage decides which naming rules are stable enough to make automatic.
 
 Stage 39.6 also removes the base-pipe placeholder from the helper's `relativePath()` implementation. This keeps the helper simple and portable for older R versions while preserving the same output.
+
+## Stage 39.7 follow-up: developer-context filename reporting
+
+Stage 39.7 extends `dev/audit-file-organization.R` so the file-organization evidence also covers developer-context files under `dev/`.
+
+This matters because the project has a large historical `dev/Completed/` context archive. Those files are not part of the installed package, but they are part of the repository's maintainability story and can make it harder to distinguish current working context from historical stage notes.
+
+The helper now reports:
+
+- developer file kind counts;
+- active top-level developer files;
+- mixed-style developer filenames;
+- completed developer-context files under `dev/Completed/`.
+
+The new reporting is advisory only. It deliberately does not enforce a naming policy for old completed context files, because those names often preserve useful historical stage labels. A later stage can use this report to decide whether active `dev/` files should follow a stricter naming pattern than completed historical material.
