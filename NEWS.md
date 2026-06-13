@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.018
+
+- Added a final Stage 38.12 CRAN preflight context for the release-hardening branch.
+- Forced the full CRAN-style validation path for this final preflight, even though the change set is documentation-only.
+- Kept build and check responsibilities separate: devtools::check() validates, while devtools::build() only builds the source tarball after validation succeeds.
+- If this preflight passes, Stage 38 can be treated as CRAN-hardening complete unless manual review identifies further issues.
+
+
 ## WMFM 0.9.9.017
 
 - Added a CRAN-hardening file-organization audit context for the source and test naming cleanup discussion.
