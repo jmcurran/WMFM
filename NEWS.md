@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.003
+
+- Renamed the developer-feedback source file from R/app-developerFeedback.R to R/app-developer-feedback.R so it follows the dash-separated app filename convention.
+- Kept internal function names and behavior unchanged; this is a file-organization cleanup only.
+- Updated the Stage 39 inventory to record the completed rename and the reason for keeping the change narrow.
+- Validated with the standard full WMFM workflow because the installed R source tree changed.
+
 ## WMFM 1.0.1.002
 
 - Renamed the remaining stage-numbered durable test files to purpose-based test filenames.

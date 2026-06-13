@@ -119,3 +119,13 @@ A sensible sequence is:
 ## Validation note
 
 This stage adds a developer-facing markdown inventory only. It does not change installed package code, tests, generated documentation, package metadata, or user-facing behavior. The Stage 39.1 runner can therefore use the no-package-validation path while still bumping `DESCRIPTION`, updating `NEWS.md`, committing, and archiving the completed stage.
+
+## Stage 39.3 follow-up: developer feedback filename normalization
+
+Stage 39.3 resolves the one concrete mixed-style source filename identified in the Stage 39.1 inventory:
+
+- `R/app-developerFeedback.R` is renamed to `R/app-developer-feedback.R`.
+
+This is a filename-only organization change. The R function names remain unchanged because they are part of the existing internal developer-feedback implementation, and changing those identifiers would be a broader code refactor rather than a file-organization cleanup.
+
+The rename aligns the source filename with the surrounding dash-separated app-file convention while keeping behavior unchanged. Full package validation is still appropriate because the installed `R/` source tree changes and the old filename must be removed during installation of the staged change set.
