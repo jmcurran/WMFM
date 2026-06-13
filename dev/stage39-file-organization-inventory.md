@@ -129,3 +129,74 @@ Stage 39.3 resolves the one concrete mixed-style source filename identified in t
 This is a filename-only organization change. The R function names remain unchanged because they are part of the existing internal developer-feedback implementation, and changing those identifiers would be a broader code refactor rather than a file-organization cleanup.
 
 The rename aligns the source filename with the surrounding dash-separated app-file convention while keeping behavior unchanged. Full package validation is still appropriate because the installed `R/` source tree changes and the old filename must be removed during installation of the staged change set.
+
+## Stage 39.4 follow-up: unprefixed and mixed-style filename audit
+
+Stage 39.4 extends the inventory beyond recognized source prefixes. The aim is to make sure that the audit does not only find files that already participate in the prefix system.
+
+### Unprefixed source files
+
+Using the current recognized source prefixes:
+
+- `api`
+- `app`
+- `class`
+- `examples`
+- `explain`
+- `methods`
+- `model`
+- `plot`
+- `prompt`
+- `scoring`
+- `text`
+- `utils`
+
+there are no unprefixed `R/*.R` files in the Stage 39.3 completed source tree. The package-level file `R/WMFM-package.R` is the only source file outside the lowercase prefix family, and it is an acceptable special case because it is the package-level roxygen documentation file.
+
+This means the source-tree issue is not orphaned unprefixed R files. The higher-value organization work remains:
+
+- large source files that may benefit from internal decomposition;
+- historically accumulated app-server files;
+- prompt, model-explanation, and scoring files whose names encode narrow behaviours;
+- test filenames that still use function-level camelCase names.
+
+### Test helper files
+
+The test tree includes 13 helper files that do not start with `test-`. These are expected `testthat` helper files and should remain unrenamed unless a specific helper is being reorganized:
+
+| File | Lines |
+| --- | ---: |
+| `tests/testthat/helper-developer-scoring-fixtures.R` | 96 |
+| `tests/testthat/helper-diagnose-fixtures.R` | 23 |
+| `tests/testthat/helper-fake-wmfmRuns.R` | 104 |
+| `tests/testthat/helper-fake-wmfmScores.R` | 74 |
+| `tests/testthat/helper-llm-scoring-fixtures.R` | 81 |
+| `tests/testthat/helper-metric-comparison-fixtures.R` | 134 |
+| `tests/testthat/helper-mockDiagnosisObjects.R` | 67 |
+| `tests/testthat/helper-offline-wmfm-model.R` | 21 |
+| `tests/testthat/helper-package-source.R` | 43 |
+| `tests/testthat/helper-project-files.R` | 36 |
+| `tests/testthat/helper-stats20x-fixtures.R` | 24 |
+| `tests/testthat/helper-valid-parsed-scores.R` | 40 |
+| `tests/testthat/helper-wmfm-test-fixtures.R` | 137 |
+
+Several helper filenames still contain camelCase object names, such as `helper-fake-wmfmRuns.R`, `helper-fake-wmfmScores.R`, and `helper-mockDiagnosisObjects.R`. These are not urgent because helper filenames are not user-facing, but they are reasonable later cleanup candidates if nearby tests are being touched.
+
+### Mixed-style test filenames
+
+The remaining test filename drift is mostly function-name mirroring. Many files use names such as `test-buildExplanationTeachingSummary.R` or `test-scoreWmfmRunRecordsCore.R`. This was useful while the tests were written close to individual functions, but it leaves mixed camelCase and dash-separated naming in the test tree.
+
+This should not be fixed by one broad rename. A safer strategy is:
+
+1. keep function-specific test filenames when they improve traceability;
+2. rename only small clusters when a related source-file refactor is already happening;
+3. prefer dash-separated behaviour names for new tests;
+4. add or extend a filename audit helper only after deciding which naming rule should be enforced.
+
+### Stage 39.4 recommendation
+
+Do not rename more files immediately. The audit now shows that unprefixed source files are not the problem. The next useful implementation stage should choose either:
+
+- a narrow helper/test filename normalization cluster; or
+- an internal decomposition plan for one large source file, starting with `R/model-ci-data.R` or one app-server workflow file.
+

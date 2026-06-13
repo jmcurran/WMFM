@@ -57,3 +57,18 @@ Good targets:
 - Clearer UI when a follow-up cannot be answered deterministically.
 - A small library of supported follow-up question templates.
 - Better explanation of why a requested prediction is extrapolative.
+
+## 6. API key setup guidance for novice users
+
+A future README or documentation stage should add plain-language instructions for obtaining and configuring API keys for OpenAI and Anthropic.
+
+This is important because novice users may find provider account setup, billing activation, API-key creation, and environment-variable configuration difficult even when the package code itself is working correctly.
+
+Good targets:
+
+- Add a short README section explaining that external LLM providers require a separate account and API key.
+- Link users to the relevant provider dashboards without assuming they already understand developer accounts.
+- Explain, in beginner-friendly language, the difference between a ChatGPT or Claude subscription and an API key.
+- Show how to set keys with environment variables, for example `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
+- Mention that users should not commit API keys to Git, scripts, examples, or public screenshots.
+- Keep this guidance separate from file-organization work so it can be reviewed as public documentation.

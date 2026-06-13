@@ -7,6 +7,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.004
+
+- Extended the Stage 39 file-organization inventory to explicitly cover unprefixed source files and test helper naming.
+- Recorded that the source tree has no unprefixed lowercase R files, with `R/WMFM-package.R` treated as an acceptable package-documentation special case.
+- Added future documentation notes for novice-friendly OpenAI and Anthropic API-key setup guidance.
+- Skipped package validation because only developer-facing markdown notes changed.
+
 ## WMFM 1.0.1.003
 
 - Renamed the developer-feedback source file from R/app-developerFeedback.R to R/app-developer-feedback.R so it follows the dash-separated app filename convention.
