@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.015
+
+- Added an offline CRAN-safety regression test for runnable Rd examples.
+- Confirmed that examples which would launch the app, construct live providers, run packaged LLM examples, or call LLM scoring helpers must remain inside dontrun or donttest blocks.
+- Reduced CRAN submission risk by making external-service example checks deterministic and local.
+- Validated through the standard full package path because this stage adds a test.
+
+
 ## WMFM 0.9.9.013
 
 - Added a package-level help topic summarising WMFM teaching workflows, main entry points, and optional AI-provider behavior.
