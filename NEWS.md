@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.013
+
+- Added a package-level help topic summarising WMFM teaching workflows, main entry points, and optional AI-provider behavior.
+- Clarified in package documentation that external providers are user-configured and not contacted during package loading or deterministic workflows.
+- Kept the change documentation-focused while generating Rd output through roxygen.
+- Validated with the standard full package workflow because a package-level roxygen source file was added.
+
+
 ## WMFM 0.9.9.012
 
 - Clarified provider-related help pages so external AI access is described as explicit, user-configured, and optional.
