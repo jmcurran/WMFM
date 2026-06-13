@@ -11,6 +11,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.8
+
+- Added novice-friendly README guidance for obtaining Anthropic and OpenAI API keys.
+- Explained that commercial LLM providers require separate API accounts and billing or credits, not just consumer chat subscriptions.
+- Documented safe `~/.Renviron` configuration for `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`, including restart and secrecy reminders.
+- Marked the matching future-ideas note as completed while leaving room for later classroom-driven refinements.
+- Ran metadata-only package validation because this stage changes README and developer documentation, not package code.
+
 ## WMFM 1.0.1.007
 
 - Extended the Stage 39 file-organization audit helper to report developer-context files under dev/ and dev/Completed/.

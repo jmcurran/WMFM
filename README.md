@@ -8,15 +8,23 @@ WMFM needs access to an AI provider before it can generate fitted-model explanat
 
 API keys are read from environment variables. Set these variables in `~/.Renviron`, then restart R before starting WMFM. The app does not ask for API keys in the UI and does not look for them in the WMFM config file.
 
-WMFM never stores API keys in its config file.
+WMFM never stores API keys in its config file. Never paste an API key into an assignment, email, screenshot, public repository, or example script. Treat it like a password.
 
 ### Commercial providers require API credits
 
 Claude and OpenAI access require provider API credentials with API billing or API credits enabled. A normal Claude subscription or ChatGPT Plus subscription does not automatically provide API access for an R package.
 
-### Claude / Anthropic
+### Getting an Anthropic API key
 
-Add your Anthropic API key to `~/.Renviron`:
+To use Claude through Anthropic, you need an Anthropic Console account and an API key. The official Anthropic API overview is at <https://platform.claude.com/docs/en/api/overview>.
+
+A typical setup is:
+
+1. Go to <https://console.anthropic.com/> and sign in or create an account.
+2. Check that API billing or credits are available for the account.
+3. Open the API keys area in the Console.
+4. Create a new key and copy it once. Store it somewhere private, such as a password manager.
+5. Add the key to `~/.Renviron` as shown below.
 
 ```text
 ANTHROPIC_API_KEY=your_key_here
@@ -24,15 +32,35 @@ ANTHROPIC_API_KEY=your_key_here
 
 Restart R after editing `~/.Renviron`. Then start WMFM, open **Settings**, choose **Claude / Anthropic**, click **Apply provider**, and click **Save provider config** if you want Claude remembered for future sessions.
 
-### OpenAI
+### Getting an OpenAI API key
 
-Add your OpenAI API key to `~/.Renviron`:
+To use OpenAI, you need an OpenAI platform account and an API key. The official OpenAI API quickstart is at <https://developers.openai.com/api/docs/quickstart>.
+
+A typical setup is:
+
+1. Go to <https://platform.openai.com/> and sign in or create an account.
+2. Check that API billing or credits are available for the account.
+3. Open the API keys area in the platform dashboard.
+4. Create a new key and copy it once. Store it somewhere private, such as a password manager.
+5. Add the key to `~/.Renviron` as shown below.
 
 ```text
 OPENAI_API_KEY=your_key_here
 ```
 
 Restart R after editing `~/.Renviron`. Then start WMFM and select the OpenAI provider in **Settings** when that provider is enabled by the app.
+
+### Editing `~/.Renviron`
+
+In RStudio, one convenient way to open the file is:
+
+```r
+usethis::edit_r_environ()
+```
+
+If you do not use RStudio or do not have `usethis` installed, create or edit a plain text file named `.Renviron` in your home directory. Put each key on its own line, save the file, and restart R before starting WMFM.
+
+Do not put quotation marks around the key unless the provider explicitly includes them as part of the key. Do not add spaces around the equals sign.
 
 ### Local Ollama
 
