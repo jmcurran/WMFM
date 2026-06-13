@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.1.002
+
+- Renamed the remaining stage-numbered durable test files to purpose-based test filenames.
+- Added an offline filename hygiene test so future durable test files do not use stage-numbered names.
+- Kept test contents behavior-preserving while making CRAN-facing test names easier to review.
+- Validated with the standard full WMFM stage workflow because test files changed.
+
 ## WMFM 1.0.1.001
 
 - Started Stage 39 file-organization work with a developer-facing inventory of current source and test filename structure.
