@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.016
+
+- Removed obsolete stage-numbered test files left behind by the Stage 38.9 rename.
+- Added an offline guard test so future test files are not named after development stages.
+- Kept the renamed deterministic scoring tests under meaningful, release-facing filenames.
+- Validated by the full WMFM package workflow because the test suite changed.
+
+
 ## WMFM 0.9.9.015
 
 - Added an offline CRAN-safety regression test for runnable Rd examples.
