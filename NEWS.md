@@ -8,6 +8,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.1.005
+
+- Added a dev-only file-organization audit helper so Stage 39 naming evidence can be regenerated consistently.
+- Extended the Stage 39 inventory to describe the helper and keep future rename decisions evidence-based.
+- Kept the helper out of the installed package API; no user-facing package behaviour changed.
+- Skipped devtools validation because the stage changes only developer-facing files and NEWS metadata.
+
 ## WMFM 1.0.1.004
 
 - Extended the Stage 39 file-organization inventory to explicitly cover unprefixed source files and test helper naming.

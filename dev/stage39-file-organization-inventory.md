@@ -200,3 +200,30 @@ Do not rename more files immediately. The audit now shows that unprefixed source
 - a narrow helper/test filename normalization cluster; or
 - an internal decomposition plan for one large source file, starting with `R/model-ci-data.R` or one app-server workflow file.
 
+
+## Stage 39.5 follow-up: reusable file-organization audit helper
+
+Stage 39.5 adds `dev/audit-file-organization.R`, a lightweight developer helper for regenerating the file-organization evidence used by this stream.
+
+The helper is intentionally kept under `dev/` rather than `R/` or `scripts/` because it is not part of the installed package API and should not affect package behaviour. It reports:
+
+- source-file prefix counts;
+- source files with unrecognized prefixes;
+- mixed-style source filenames;
+- mixed-style test filenames;
+- the largest source files by line count;
+- the smallest source files by line count.
+
+This gives future file-organization stages a repeatable way to check whether a proposed rename or decomposition is addressing a real naming or maintainability issue. It also prevents the audit from depending on one-off manual observations made in chat.
+
+The helper does not enforce a policy yet. Enforcement should wait until the project decides which naming rules should be treated as hard checks rather than advisory diagnostics.
+
+### Suggested command
+
+From the package root:
+
+```bash
+Rscript dev/audit-file-organization.R --output dev/file-organization-audit-report.md
+```
+
+The output report is intended for local review and does not need to be committed unless it is useful evidence for a later stage.
