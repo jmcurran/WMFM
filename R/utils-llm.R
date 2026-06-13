@@ -24,13 +24,21 @@ NULL
 
 #' Create a safe chat provider for WMFM
 #'
-#' Constructs a chat provider used by WMFM, choosing between an Ollama-based
-#' provider and an Anthropic Claude-based provider.
+#' Constructs a chat provider used by WMFM when a model explanation or other
+#' AI-backed workflow is explicitly requested by the user. Creating a provider
+#' is separate from loading the package, launching the app, running examples,
+#' and fitting models with deterministic output only.
 #'
 #' The backend is selected via the `backend` argument, or if omitted, from the
 #' `wmfm.chat_backend` option. When `backend = "ollama"`, the Ollama model can
 #' be supplied explicitly via `model`; otherwise `getOption("wmfm.ollama_model")`
-#' is used, with a default of `"gpt-oss"`.
+#' is used, with a default of `"gpt-oss"`. Ollama uses the local default
+#' `"http://localhost:11434"` unless `wmfm.ollama_base_url` is set or a provider
+#' configuration supplies another user-managed endpoint.
+#'
+#' If a configured provider cannot be created, WMFM returns a dummy provider
+#' object that reports a user-friendly error when used. This keeps package
+#' loading and offline checks free of required network calls or credentials.
 #'
 #' @param backend Character scalar giving the backend to use. Supported values
 #'   are `"ollama"` and `"claude"`.

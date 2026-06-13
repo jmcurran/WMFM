@@ -31,12 +31,15 @@
 #' @param responseTransformationMode Character scalar describing how later
 #'   response-scale interpretation should handle recognised response
 #'   transformations. One of `"both"`, `"model"`, or `"original"`.
-#' @param ollamaBaseUrl Optional character string giving the base URL for the
-#'   language model service.
+#' @param ollamaBaseUrl Optional character string giving the base URL for a
+#'   user-managed Ollama service. Supplying this value configures the provider
+#'   endpoint for later explanation generation; it is not queried when
+#'   `generateExplanation = FALSE` and does not make package checks depend on a
+#'   live Ollama server.
 #' @param generateExplanation Logical. If `TRUE`, attempt to contact the
 #'   configured chat provider and generate model-explanation text. Set to
-#'   `FALSE` in deterministic tests or offline workflows that only need the
-#'   fitted model, equations, audit, and metadata.
+#'   `FALSE` in deterministic tests, CRAN checks, examples, or offline workflows
+#'   that only need the fitted model, equations, audit, and metadata.
 #' @param printOutput Logical. If `TRUE`, prints the model summary, fitted
 #'   equations, and explanation to the console.
 #' @param useExplanationCache Logical. Should cached explanation text be reused

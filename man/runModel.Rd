@@ -42,13 +42,16 @@ variables.}
 response-scale interpretation should handle recognised response
 transformations. One of \code{"both"}, \code{"model"}, or \code{"original"}.}
 
-\item{ollamaBaseUrl}{Optional character string giving the base URL for the
-language model service.}
+\item{ollamaBaseUrl}{Optional character string giving the base URL for a
+user-managed Ollama service. Supplying this value configures the provider
+endpoint for later explanation generation; it is not queried when
+\code{generateExplanation = FALSE} and does not make package checks depend on a
+live Ollama server.}
 
 \item{generateExplanation}{Logical. If \code{TRUE}, attempt to contact the
 configured chat provider and generate model-explanation text. Set to
-\code{FALSE} in deterministic tests or offline workflows that only need the
-fitted model, equations, audit, and metadata.}
+\code{FALSE} in deterministic tests, CRAN checks, examples, or offline workflows
+that only need the fitted model, equations, audit, and metadata.}
 
 \item{printOutput}{Logical. If \code{TRUE}, prints the model summary, fitted
 equations, and explanation to the console.}

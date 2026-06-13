@@ -5,6 +5,14 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+## WMFM 0.9.9.012
+
+- Clarified provider-related help pages so external AI access is described as explicit, user-configured, and optional.
+- Documented that launching the app, loading the package, and deterministic model workflows do not contact Ollama or other providers.
+- Made the runModel() documentation clearer for CRAN checks, offline workflows, and deterministic examples using generateExplanation = FALSE.
+- Regenerated documentation and validated the roxygen-only CRAN-hardening changes with the standard full package path.
+
+
 ## WMFM 0.9.9.011
 
 - Expanded README quick-start guidance for classroom use and provider setup.

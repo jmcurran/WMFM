@@ -8,14 +8,18 @@ runWMFMApp(ollamaBaseUrl = NULL)
 }
 \arguments{
 \item{ollamaBaseUrl}{Optional character string giving the base URL of
-the Ollama server, for example \code{"http://localhost:11434"}.
+a user-managed Ollama server, for example \code{"http://localhost:11434"}.
 If \code{NULL}, the function uses the current value of the option
-\code{"wmfm.ollama_base_url"} if set, otherwise a built-in default.}
+\code{"wmfm.ollama_base_url"} if set, otherwise the local default
+\code{"http://localhost:11434"}. This value is stored only as
+configuration; launching the app does not itself query Ollama.}
 }
 \value{
 A \code{shiny.appobj}, invisibly.
 }
 \description{
-Launches the WMFM Shiny application. The Ollama base URL used for
-language-model calls can be configured here.
+Launches the WMFM Shiny application. The application can be used to fit
+models and view deterministic model output without contacting any external
+AI provider. Language-model explanations are requested only after the user
+configures a provider and explicitly runs an explanation workflow.
 }

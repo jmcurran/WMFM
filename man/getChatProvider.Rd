@@ -21,14 +21,22 @@ A chat provider object created by \code{ellmer::chat_ollama()} or
 \code{"wmfm_dummy_chat_provider"}) that throws a user-friendly error on use.
 }
 \description{
-Constructs a chat provider used by WMFM, choosing between an Ollama-based
-provider and an Anthropic Claude-based provider.
+Constructs a chat provider used by WMFM when a model explanation or other
+AI-backed workflow is explicitly requested by the user. Creating a provider
+is separate from loading the package, launching the app, running examples,
+and fitting models with deterministic output only.
 }
 \details{
 The backend is selected via the \code{backend} argument, or if omitted, from the
 \code{wmfm.chat_backend} option. When \code{backend = "ollama"}, the Ollama model can
 be supplied explicitly via \code{model}; otherwise \code{getOption("wmfm.ollama_model")}
-is used, with a default of \code{"gpt-oss"}.
+is used, with a default of \code{"gpt-oss"}. Ollama uses the local default
+\code{"http://localhost:11434"} unless \code{wmfm.ollama_base_url} is set or a provider
+configuration supplies another user-managed endpoint.
+
+If a configured provider cannot be created, WMFM returns a dummy provider
+object that reports a user-friendly error when used. This keeps package
+loading and offline checks free of required network calls or credentials.
 }
 \examples{
 \dontrun{
