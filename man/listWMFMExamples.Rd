@@ -10,8 +10,9 @@ listWMFMExamples(package = "WMFM", includeTestExamples = FALSE)
 \item{package}{A character string giving the package name containing the
 packaged examples.}
 
-\item{includeTestExamples}{Logical. Should developer-only examples whose
-names begin with \code{test} be included? Defaults to \code{FALSE}.}
+\item{includeTestExamples}{Logical. Should developer-only examples marked
+as \code{developer} or \code{test} in the example metadata be included? Defaults
+to \code{FALSE}.}
 }
 \value{
 A character vector of available example names. If no examples are
@@ -25,7 +26,8 @@ ending in \code{.spec.yml}.
 \details{
 Each example is expected to live in its own subdirectory under
 \verb{extdata/examples/<name>/} and to contain a specification file named
-\verb{<name>.spec.yml}.
+\verb{<name>.spec.yml}. Example visibility is controlled by the optional
+\code{extdata/examples/example-metadata.yml} manifest.
 }
 \examples{
 \dontrun{

@@ -6,12 +6,14 @@
 #'
 #' Each example is expected to live in its own subdirectory under
 #' `extdata/examples/<name>/` and to contain a specification file named
-#' `<name>.spec.yml`.
+#' `<name>.spec.yml`. Example visibility is controlled by the optional
+#' `extdata/examples/example-metadata.yml` manifest.
 #'
 #' @param package A character string giving the package name containing the
 #'   packaged examples.
-#' @param includeTestExamples Logical. Should developer-only examples whose
-#'   names begin with `test` be included? Defaults to `FALSE`.
+#' @param includeTestExamples Logical. Should developer-only examples marked
+#'   as `developer` or `test` in the example metadata be included? Defaults
+#'   to `FALSE`.
 #'
 #' @return A character vector of available example names. If no examples are
 #'   found, an empty character vector is returned.
@@ -48,38 +50,167 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
     return(character(0))
   }
 
-  exampleNames = vapply(
+  exampleMetadata = loadWMFMExampleMetadata(examplesPath)
+  exampleRecords = buildWMFMExampleRecords(
+    examplesPath = examplesPath,
+    specFiles = specFiles,
+    exampleMetadata = exampleMetadata
+  )
+
+  if (!isTRUE(includeTestExamples)) {
+    exampleRecords = exampleRecords[
+      !exampleRecords$exampleAudience %in% c("developer", "test"),
+      ,
+      drop = FALSE
+    ]
+  }
+
+  sort(unique(exampleRecords$exampleName))
+}
+
+#' Load packaged example metadata
+#'
+#' @param examplesPath Path to the installed examples directory.
+#'
+#' @return A named list of metadata records keyed by example folder name.
+#'
+#' @keywords internal
+#' @noRd
+loadWMFMExampleMetadata = function(examplesPath) {
+  metadataPath = file.path(examplesPath, "example-metadata.yml")
+
+  if (!file.exists(metadataPath)) {
+    return(list())
+  }
+
+  metadata = read_yaml(metadataPath)
+
+  if (is.null(metadata)) {
+    return(list())
+  }
+
+  if (!is.list(metadata) || is.null(metadata$examples) || !is.list(metadata$examples)) {
+    stop(
+      "Example metadata file must contain an `examples` mapping.",
+      call. = FALSE
+    )
+  }
+
+  metadata$examples
+}
+
+#' Build packaged example records
+#'
+#' @param examplesPath Path to the installed examples directory.
+#' @param specFiles Relative paths to packaged example specification files.
+#' @param exampleMetadata Named list of example metadata records.
+#'
+#' @return A data frame with one row per example specification.
+#'
+#' @keywords internal
+#' @noRd
+buildWMFMExampleRecords = function(examplesPath, specFiles, exampleMetadata) {
+  records = lapply(
     specFiles,
     function(specFile) {
       specPath = file.path(examplesPath, specFile)
       spec = tryCatch(read_yaml(specPath), error = function(e) NULL)
-      displayName = NULL
-      if (is.list(spec)) {
-        displayName = spec$displayName %||% NULL
-      }
+      exampleDir = basename(dirname(specPath))
+      metadata = exampleMetadata[[exampleDir]] %||% list()
+      displayName = getWMFMExampleDisplayName(
+        spec = spec,
+        specFile = specFile,
+        metadata = metadata
+      )
+      exampleAudience = getWMFMExampleAudience(
+        exampleDir = exampleDir,
+        metadata = metadata
+      )
 
-      if (is.character(displayName) && length(displayName) == 1 && !is.na(displayName)) {
-        displayName = trimws(displayName)
-      } else {
-        displayName = ""
-      }
-
-      if (!nzchar(displayName)) {
-        basename(sub("\\.spec\\.yml$", "", specFile))
-      } else {
-        displayName
-      }
-    },
-    FUN.VALUE = character(1)
+      data.frame(
+        exampleDir = exampleDir,
+        exampleName = displayName,
+        exampleAudience = exampleAudience,
+        stringsAsFactors = FALSE
+      )
+    }
   )
-  exampleNames = sort(unique(exampleNames))
 
-  if (!isTRUE(includeTestExamples)) {
-    exampleNames = exampleNames[!startsWith(exampleNames, "test")]
+  do.call(rbind, records)
+}
+
+#' Get the display name for a packaged example
+#'
+#' @param spec Parsed example specification.
+#' @param specFile Relative path to the example specification file.
+#' @param metadata Optional metadata record for the example.
+#'
+#' @return A single example display name.
+#'
+#' @keywords internal
+#' @noRd
+getWMFMExampleDisplayName = function(spec, specFile, metadata) {
+  displayName = metadata$displayName %||% NULL
+
+  if (is.null(displayName) && is.list(spec)) {
+    displayName = spec$displayName %||% NULL
   }
 
-  exampleNames
+  if (is.character(displayName) && length(displayName) == 1 && !is.na(displayName)) {
+    displayName = trimws(displayName)
+  } else {
+    displayName = ""
+  }
+
+  if (!nzchar(displayName)) {
+    displayName = basename(sub("\\.spec\\.yml$", "", specFile))
+  }
+
+  displayName
 }
+
+#' Get the audience for a packaged example
+#'
+#' @param exampleDir Example directory name.
+#' @param metadata Optional metadata record for the example.
+#'
+#' @return One of `public`, `classroom`, `developer`, or `test`.
+#'
+#' @keywords internal
+#' @noRd
+getWMFMExampleAudience = function(exampleDir, metadata) {
+  exampleAudience = metadata$exampleAudience %||% NULL
+
+  if (is.character(exampleAudience) && length(exampleAudience) == 1 && !is.na(exampleAudience)) {
+    exampleAudience = trimws(exampleAudience)
+  } else {
+    exampleAudience = ""
+  }
+
+  if (!nzchar(exampleAudience)) {
+    if (startsWith(exampleDir, "test")) {
+      exampleAudience = "test"
+    } else {
+      exampleAudience = "public"
+    }
+  }
+
+  validAudiences = c("public", "classroom", "developer", "test")
+
+  if (!exampleAudience %in% validAudiences) {
+    stop(
+      "Unsupported example audience `",
+      exampleAudience,
+      "` for example `",
+      exampleDir,
+      "`.",
+      call. = FALSE
+    )
+  }
+
+  exampleAudience
+}
+
 
 #' Load packaged WMFM example inputs
 #'
@@ -120,21 +251,20 @@ loadExampleSpec = function(name, package = "WMFM") {
     recursive = TRUE,
     full.names = TRUE
   )
+  exampleMetadata = loadWMFMExampleMetadata(examplesPath)
 
   exampleDir = NULL
   specPath = NULL
   for (candidateSpecPath in specFiles) {
     candidateSpec = tryCatch(read_yaml(candidateSpecPath), error = function(e) NULL)
-    candidateDisplayName = ""
-    if (is.list(candidateSpec)) {
-      rawDisplayName = candidateSpec$displayName %||% ""
-      if (is.character(rawDisplayName) && length(rawDisplayName) == 1 && !is.na(rawDisplayName)) {
-        candidateDisplayName = trimws(rawDisplayName)
-      }
-    }
-
     candidateStem = sub("\\.spec\\.yml$", "", basename(candidateSpecPath))
     candidateDir = basename(dirname(candidateSpecPath))
+    candidateMetadata = exampleMetadata[[candidateDir]] %||% list()
+    candidateDisplayName = getWMFMExampleDisplayName(
+      spec = candidateSpec,
+      specFile = candidateSpecPath,
+      metadata = candidateMetadata
+    )
 
     if (identical(requestedName, candidateDisplayName) ||
         identical(requestedName, candidateStem) ||

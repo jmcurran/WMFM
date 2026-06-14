@@ -6,6 +6,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.2.002
+
+- Added an installed example metadata manifest that classifies classroom, developer, and test examples without moving example folders.
+- Updated packaged example listing so release-mode choices use explicit audience metadata rather than only the test-name prefix.
+- Kept developer and regression examples available when test examples are requested, preserving existing example lookup compatibility.
+- Added offline tests for metadata-driven visibility and metadata override behaviour.
+- Validated by the standard full WMFM package workflow because R code, tests, and installed example files changed.
 ## WMFM 1.0.2.001
 
 - Documented the Stage 40.1 example-file reorganisation plan for separating classroom examples from developer and regression examples.
