@@ -6,6 +6,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.2.001
+
+- Documented the Stage 40.1 example-file reorganisation plan for separating classroom examples from developer and regression examples.
+- Recorded the current example groups and a staged metadata-first implementation strategy before moving installed files.
+- Preserved package behaviour for this documentation-only step; devtools document, tests, check, build, and install were intentionally skipped.
+
 ## WMFM 0.9.9.001
 
 - Started Stage 38 CRAN hardening with beta-style internal build numbering for the 1.0.0 release-preparation stream.
