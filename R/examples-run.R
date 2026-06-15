@@ -129,6 +129,8 @@ buildWMFMExampleRecords = function(examplesPath, specFiles, exampleMetadata) {
 
       data.frame(
         exampleDir = exampleDir,
+        examplePath = dirname(specFile),
+        specFile = specFile,
         exampleName = displayName,
         exampleAudience = exampleAudience,
         stringsAsFactors = FALSE
@@ -212,6 +214,35 @@ getWMFMExampleAudience = function(exampleDir, metadata) {
 }
 
 
+#' Find a packaged example record by display name, stem, or directory
+#'
+#' @param requestedName User-supplied example name.
+#' @param exampleRecords Data frame returned by `buildWMFMExampleRecords()`.
+#'
+#' @return A one-row data frame for the matched example, or `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+findWMFMExampleRecord = function(requestedName, exampleRecords) {
+  if (nrow(exampleRecords) == 0) {
+    return(NULL)
+  }
+
+  exampleStem = sub("\\.spec\\.yml$", "", basename(exampleRecords$specFile))
+  matched = which(
+    requestedName == exampleRecords$exampleName |
+      requestedName == exampleStem |
+      requestedName == exampleRecords$exampleDir
+  )
+
+  if (length(matched) == 0) {
+    return(NULL)
+  }
+
+  exampleRecords[matched[1], , drop = FALSE]
+}
+
+
 #' Load packaged WMFM example inputs
 #'
 #' Loads and validates the specification, data, and optional context for a
@@ -249,39 +280,21 @@ loadExampleSpec = function(name, package = "WMFM") {
     path = examplesPath,
     pattern = "\\.spec\\.yml$",
     recursive = TRUE,
-    full.names = TRUE
+    full.names = FALSE
   )
   exampleMetadata = loadWMFMExampleMetadata(examplesPath)
+  exampleRecords = buildWMFMExampleRecords(
+    examplesPath = examplesPath,
+    specFiles = specFiles,
+    exampleMetadata = exampleMetadata
+  )
 
-  exampleDir = NULL
-  specPath = NULL
-  for (candidateSpecPath in specFiles) {
-    candidateSpec = tryCatch(read_yaml(candidateSpecPath), error = function(e) NULL)
-    candidateStem = sub("\\.spec\\.yml$", "", basename(candidateSpecPath))
-    candidateDir = basename(dirname(candidateSpecPath))
-    candidateMetadata = exampleMetadata[[candidateDir]] %||% list()
-    candidateDisplayName = getWMFMExampleDisplayName(
-      spec = candidateSpec,
-      specFile = candidateSpecPath,
-      metadata = candidateMetadata
-    )
+  matchedRecord = findWMFMExampleRecord(
+    requestedName = requestedName,
+    exampleRecords = exampleRecords
+  )
 
-    if (identical(requestedName, candidateDisplayName) ||
-        identical(requestedName, candidateStem) ||
-        identical(requestedName, candidateDir)) {
-      exampleDir = candidateDir
-      specPath = candidateSpecPath
-      break
-    }
-  }
-
-  basePath = if (!is.null(exampleDir)) {
-    system.file("extdata", "examples", exampleDir, package = package)
-  } else {
-    ""
-  }
-
-  if (basePath == "") {
+  if (is.null(matchedRecord)) {
     availableExamples = listWMFMExamples(package = package)
 
     if (length(availableExamples) == 0) {
@@ -297,6 +310,8 @@ loadExampleSpec = function(name, package = "WMFM") {
     )
   }
 
+  specPath = file.path(examplesPath, matchedRecord$specFile)
+  basePath = file.path(examplesPath, matchedRecord$examplePath)
   specFileName = basename(specPath)
 
   if (!file.exists(specPath)) {

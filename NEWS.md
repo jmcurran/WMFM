@@ -7,6 +7,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.2.004
+
+- Prepared Stage 40.3 example loading for future nested example-folder reorganisation.
+- Stored package-relative example paths and specification paths in internal example records.
+- Updated example lookup so runExample can resolve examples by display name, directory, or specification stem without assuming every example is a direct child of inst/extdata/examples.
+- Added regression coverage for nested example record paths before any physical file moves are attempted.
+
 ## WMFM 1.0.2.002
 
 - Added an installed example metadata manifest that classifies classroom, developer, and test examples without moving example folders.

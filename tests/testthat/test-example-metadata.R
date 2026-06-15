@@ -82,3 +82,40 @@ testthat::test_that("example audience metadata overrides name-prefix heuristics"
   testthat::expect_true("Classroom Fixture" %in% visibleRecords$exampleName)
   testthat::expect_false("Internal Fixture" %in% visibleRecords$exampleName)
 })
+
+
+testthat::test_that("example records keep package-relative paths for future reorganisation", {
+  examplesPath = file.path(tempdir(), "wmfm-example-path-test")
+  unlink(examplesPath, recursive = TRUE, force = TRUE)
+  dir.create(file.path(examplesPath, "developer", "NestedFixture"), recursive = TRUE)
+
+  writeLines(
+    c(
+      "modelType: lm",
+      "formula: y ~ x",
+      "displayName: Nested Fixture"
+    ),
+    file.path(examplesPath, "developer", "NestedFixture", "NestedFixture.spec.yml")
+  )
+
+  specFiles = list.files(
+    path = examplesPath,
+    pattern = "\\.spec\\.yml$",
+    recursive = TRUE,
+    full.names = FALSE
+  )
+  records = buildWMFMExampleRecords(
+    examplesPath = examplesPath,
+    specFiles = specFiles,
+    exampleMetadata = list()
+  )
+  matchedRecord = findWMFMExampleRecord(
+    requestedName = "Nested Fixture",
+    exampleRecords = records
+  )
+
+  testthat::expect_identical(records$exampleDir, "NestedFixture")
+  testthat::expect_identical(records$examplePath, "developer/NestedFixture")
+  testthat::expect_identical(records$specFile, "developer/NestedFixture/NestedFixture.spec.yml")
+  testthat::expect_identical(matchedRecord$examplePath, "developer/NestedFixture")
+})
