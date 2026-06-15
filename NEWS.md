@@ -7,6 +7,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.2.005
+
+- Added a metadata-backed example detail listing for classroom and developer example-library views.
+- Kept the existing example-name listing compatible by deriving it from the richer detail table.
+- Added offline tests for metadata fields, developer-example hiding, and stable empty detail columns.
+- Validated by the standard full WMFM package workflow.
+
 ## WMFM 1.0.2.004
 
 - Prepared Stage 40.3 example loading for future nested example-folder reorganisation.

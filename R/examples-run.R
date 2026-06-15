@@ -29,14 +29,48 @@
 #' @importFrom utils read.csv read.table data capture.output
 #' @importFrom yaml read_yaml
 listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
+  exampleDetails = listWMFMExampleDetails(
+    package = package,
+    includeTestExamples = includeTestExamples
+  )
+
+  sort(unique(exampleDetails$exampleName))
+}
+
+#' List packaged WMFM example details
+#'
+#' Returns metadata-backed details for packaged examples stored under
+#' `inst/extdata/examples`. This is intended for release-mode and
+#' developer-mode example-library displays that need more than the example
+#' names alone.
+#'
+#' @param package A character string giving the package name containing the
+#'   packaged examples.
+#' @param includeTestExamples Logical. Should developer-only examples marked
+#'   as `developer` or `test` in the example metadata be included? Defaults
+#'   to `FALSE`.
+#'
+#' @return A data frame with one row per available example and columns for
+#'   example name, path, audience, model family, difficulty, teaching topic,
+#'   and developer purpose.
+#'
+#' @examples
+#' \dontrun{
+#' listWMFMExampleDetails(package = "WMFM")
+#' }
+#'
+#' @export
+listWMFMExampleDetails = function(package = "WMFM", includeTestExamples = FALSE) {
   examplesPath = system.file(
     "extdata",
     "examples",
     package = package
   )
 
+  emptyDetails = getEmptyWMFMExampleRecords()
+
   if (examplesPath == "" || !dir.exists(examplesPath)) {
-    return(character(0))
+    return(emptyDetails)
   }
 
   specFiles = list.files(
@@ -47,7 +81,7 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
   )
 
   if (length(specFiles) == 0) {
-    return(character(0))
+    return(emptyDetails)
   }
 
   exampleMetadata = loadWMFMExampleMetadata(examplesPath)
@@ -65,7 +99,7 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
     ]
   }
 
-  sort(unique(exampleRecords$exampleName))
+  exampleRecords[order(exampleRecords$exampleName), , drop = FALSE]
 }
 
 #' Load packaged example metadata
@@ -110,6 +144,10 @@ loadWMFMExampleMetadata = function(examplesPath) {
 #' @keywords internal
 #' @noRd
 buildWMFMExampleRecords = function(examplesPath, specFiles, exampleMetadata) {
+  if (length(specFiles) == 0) {
+    return(getEmptyWMFMExampleRecords())
+  }
+
   records = lapply(
     specFiles,
     function(specFile) {
@@ -133,12 +171,56 @@ buildWMFMExampleRecords = function(examplesPath, specFiles, exampleMetadata) {
         specFile = specFile,
         exampleName = displayName,
         exampleAudience = exampleAudience,
+        exampleFamily = getWMFMExampleMetadataText(metadata, "exampleFamily"),
+        exampleDifficulty = getWMFMExampleMetadataText(metadata, "exampleDifficulty"),
+        teachingTopic = getWMFMExampleMetadataText(metadata, "teachingTopic"),
+        developerPurpose = getWMFMExampleMetadataText(metadata, "developerPurpose"),
         stringsAsFactors = FALSE
       )
     }
   )
 
   do.call(rbind, records)
+}
+
+#' Get an empty packaged example records data frame
+#'
+#' @return A zero-row data frame with the packaged example detail columns.
+#'
+#' @keywords internal
+#' @noRd
+getEmptyWMFMExampleRecords = function() {
+  data.frame(
+    exampleDir = character(0),
+    examplePath = character(0),
+    specFile = character(0),
+    exampleName = character(0),
+    exampleAudience = character(0),
+    exampleFamily = character(0),
+    exampleDifficulty = character(0),
+    teachingTopic = character(0),
+    developerPurpose = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Get a single text field from packaged example metadata
+#'
+#' @param metadata Optional metadata record for the example.
+#' @param fieldName Metadata field name to read.
+#'
+#' @return A single character string, or an empty string when absent.
+#'
+#' @keywords internal
+#' @noRd
+getWMFMExampleMetadataText = function(metadata, fieldName) {
+  fieldValue = metadata[[fieldName]] %||% NULL
+
+  if (is.character(fieldValue) && length(fieldValue) == 1 && !is.na(fieldValue)) {
+    return(trimws(fieldValue))
+  }
+
+  ""
 }
 
 #' Get the display name for a packaged example
