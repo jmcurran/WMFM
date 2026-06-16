@@ -8,6 +8,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.2.008
+
+- Add a Stage 40 manual validation checklist for the reorganised example library.
+- Record the completed Stage 40 example-file reorganisation steps in the developer plan.
+- Confirm that this documentation-only step does not require devtools document, tests, check, build, or install.
+
 ## WMFM 1.0.2.007
 
 - Shortened the physically separated internal model-grid example path so package checks no longer report non-portable file names.

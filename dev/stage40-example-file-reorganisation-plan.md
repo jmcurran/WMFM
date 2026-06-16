@@ -85,3 +85,16 @@ The existing `modelType`, `formula`, `researchQuestion`, and `followupQuestion` 
 Stage 40.1 is documentation-only. It records the reorganisation inventory and staged implementation strategy but does not change R code, tests, installed example files, or package metadata directly.
 
 Because this stage adds only developer documentation, the runner should use the no-package-validation path: bump `DESCRIPTION`, update `NEWS.md`, commit, and archive, but skip `devtools::document()`, `devtools::test()`, `devtools::check()`, package build, and package install.
+
+## Stage 40 completion notes
+
+The Stage 40 implementation followed the staged strategy above.
+
+- Stage 40.2 added metadata-backed example listing and tests.
+- Stage 40.3 prepared example lookup for nested example paths.
+- Stage 40.4 exposed richer example detail records for release-mode and developer-mode displays.
+- Stage 40.5 moved developer and regression fixtures into grouped installed paths.
+- Stage 40.5.1 shortened the model-grid fixture path to avoid CRAN portable-file-name notes.
+- Stage 40.6 records the manual validation checklist for the reorganised example library.
+
+After Stage 40.6, no further Stage 40 implementation is expected unless manual app validation finds a regression.
