@@ -154,3 +154,16 @@ Update the README with desktop and deployed setup instructions after implementat
 ### Stage 41.5: optional local credential storage
 
 Only implement this stage if the design decision is to support single-user config-file credential storage. Keep the implementation conservative, reversible, masked, and disabled for deployed contexts.
+
+
+## Stage 41.2 implementation decision
+
+Stage 41.2 begins with policy and user-experience guardrails rather than API-key persistence. The first implementation slice should:
+
+- detect administrator-managed deployments conservatively;
+- prevent ordinary deployed-app users from editing provider configuration;
+- keep provider and credential guidance in a modal dialog rather than front-and-centre Settings text;
+- allow local desktop users to continue editing non-secret provider settings;
+- leave actual credential persistence for a later stage after the single-source configuration decision is fully settled.
+
+This keeps the deployed-app security boundary clear while avoiding another premature credential-storage implementation.

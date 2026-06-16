@@ -1,6 +1,6 @@
 Package: WMFM
 Title: Explore Fitted Linear and Generalised Linear Models with Shiny
-Version: 1.0.3.001
+Version: 1.0.3.004
 Authors@R:
     person(
         given = "James",
@@ -48,3 +48,4 @@ Suggests:
     withr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3

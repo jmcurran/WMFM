@@ -9,7 +9,10 @@ buildProviderSettingsState = function() {
     providerStatus = describeWmfmProviderStatus(),
     providerConfig = resolveWmfmProviderConfig(),
     providerProfiles = readWmfmProviderProfiles(),
-    activeProfile = resolveWmfmActiveProviderProfile()
+    activeProfile = resolveWmfmActiveProviderProfile(),
+    deployedApp = isWmfmDeployedApp(),
+    providerConfigurationEditable = isWmfmProviderConfigurationEditable(),
+    credentialEntryAllowed = isWmfmCredentialEntryAllowed()
   )
 }
 
@@ -25,6 +28,7 @@ buildProviderSettingsStatusLines = function(settingsState) {
   selectedBackend = providerConfig$backend %||% "ollama"
 
   c(
+    buildWmfmProviderSetupPolicyText(),
     paste0("Active provider: ", activeProfile$displayName %||% selectedBackend),
     paste0("Provider type: ", activeProfile$providerType %||% selectedBackend),
     paste0("Model: ", if (identical(selectedBackend, "ollama")) providerConfig$ollamaModel %||% "gpt-oss" else (activeProfile$defaultModel %||% "default")),

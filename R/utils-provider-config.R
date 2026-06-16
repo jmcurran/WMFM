@@ -122,6 +122,106 @@ wmfmConfigPath = function() {
   file.path(wmfmConfigDir(), "config.json")
 }
 
+
+#' Test whether WMFM is running in a deployed app context
+#'
+#' Uses conservative environment and option checks to distinguish local desktop
+#' use from administrator-managed Shiny or CI-style deployments.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmDeployedApp = function() {
+  explicitFlag = tolower(trimws(Sys.getenv("WMFM_DEPLOYED_APP", unset = "")))
+  if (explicitFlag %in% c("1", "true", "yes", "on")) {
+    return(TRUE)
+  }
+  if (explicitFlag %in% c("0", "false", "no", "off")) {
+    return(FALSE)
+  }
+
+  optionFlag = getOption("wmfm.deployed_app", default = NULL)
+  if (!is.null(optionFlag)) {
+    return(isTRUE(optionFlag))
+  }
+
+  any(nzchar(c(
+    Sys.getenv("SHINY_PORT", unset = ""),
+    Sys.getenv("SHINY_SERVER_VERSION", unset = ""),
+    Sys.getenv("RSTUDIO_PRODUCT", unset = "")
+  ))) || identical(tolower(trimws(Sys.getenv("CI", unset = ""))), "true")
+}
+
+#' Test whether end users may edit provider configuration
+#'
+#' In local desktop use, provider configuration is editable by default. In a
+#' deployed app, configuration is administrator-managed unless an explicit WMFM
+#' option or environment flag allows end-user provider selection.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmProviderConfigurationEditable = function() {
+  explicitFlag = tolower(trimws(Sys.getenv("WMFM_ALLOW_USER_PROVIDER_CONFIG", unset = "")))
+  if (explicitFlag %in% c("1", "true", "yes", "on")) {
+    return(TRUE)
+  }
+  if (explicitFlag %in% c("0", "false", "no", "off")) {
+    return(FALSE)
+  }
+
+  optionFlag = getOption("wmfm.allow_user_provider_config", default = NULL)
+  if (!is.null(optionFlag)) {
+    return(isTRUE(optionFlag))
+  }
+
+  !isWmfmDeployedApp()
+}
+
+#' Test whether end users may enter provider credentials
+#'
+#' Credential entry is local-desktop only by default. Deployed apps must receive
+#' credentials from the installer through environment variables or deployment
+#' secrets rather than from ordinary browser users.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmCredentialEntryAllowed = function() {
+  explicitFlag = tolower(trimws(Sys.getenv("WMFM_ALLOW_USER_CREDENTIAL_ENTRY", unset = "")))
+  if (explicitFlag %in% c("1", "true", "yes", "on")) {
+    return(!isWmfmDeployedApp())
+  }
+  if (explicitFlag %in% c("0", "false", "no", "off")) {
+    return(FALSE)
+  }
+
+  optionFlag = getOption("wmfm.allow_user_credential_entry", default = NULL)
+  if (!is.null(optionFlag)) {
+    return(isTRUE(optionFlag) && !isWmfmDeployedApp())
+  }
+
+  !isWmfmDeployedApp()
+}
+
+#' Build provider setup policy text
+#'
+#' @return Character vector describing who controls provider setup in the
+#'   current runtime context.
+#' @keywords internal
+buildWmfmProviderSetupPolicyText = function() {
+  if (isWmfmDeployedApp()) {
+    return(c(
+      "This appears to be an administrator-managed WMFM deployment.",
+      "Ordinary users cannot enter API keys or add provider configuration here.",
+      "The installer controls available providers, models, and server credentials."
+    ))
+  }
+
+  c(
+    "This appears to be a local desktop WMFM session.",
+    "Provider setup can be managed here without editing hidden files directly.",
+    "Credential setup is shown in a separate dialog so API-key guidance is not front and centre."
+  )
+}
+
 #' Read WMFM local configuration
 #'
 #' Reads persisted, non-secret local defaults for provider settings.

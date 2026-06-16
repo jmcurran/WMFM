@@ -9,6 +9,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.3.004
+
+- Added Stage 41.2.1 provider setup policy helpers so WMFM can distinguish local desktop use from administrator-managed deployments.
+- Moved provider credential guidance into a modal setup dialog rather than keeping API-key guidance front and centre in Settings.
+- Blocked ordinary deployed-app users from saving provider configuration while preserving local desktop configuration editing.
+- Recorded the Stage 41.2.1 implementation decision in the configuration design notes.
+- Validated with the standard WMFM full package workflow.
+
 ## WMFM 1.0.3.001
 
 - Added Stage 41.1 configuration design principles before changing provider setup code.

@@ -1073,10 +1073,10 @@ appUI = function() {
                 "Choose one active provider/backend. Ollama uses base URL plus model and no API key."
               ),
               tags$p(
-                "Claude uses the ANTHROPIC_API_KEY environment variable set in .Renviron before WMFM starts."
+                "Hosted providers use API keys or deployment secrets configured through provider setup; for Claude this means ANTHROPIC_API_KEY."
               ),
               tags$p(
-                "API keys are not shown here and are never stored in the WMFM config file."
+                "API keys are not shown here and are never stored by WMFM. Credential guidance is shown in a separate dialog so API-key setup is not front and centre."
               )
             )
           )
@@ -1088,6 +1088,13 @@ appUI = function() {
           choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
           selected = resolveWmfmProviderConfig()$backend
         ),
+        helpText("A deployed app may restrict these choices to installer-approved providers and models."),
+        actionButton(
+          inputId = "showProviderSetupBtn",
+          label = "Provider setup help",
+          class = "btn-secondary btn-sm"
+        ),
+        tags$br(), tags$br(),
         helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
         textInput(
           inputId = "providerConfig_ollamaBaseUrl",
