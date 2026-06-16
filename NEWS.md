@@ -9,6 +9,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.3.001
+
+- Added Stage 41.1 configuration design principles before changing provider setup code.
+- Documented the single-user desktop and deployed Shiny configuration boundaries.
+- Recorded security, simplicity, UI, documentation, and testing principles for later implementation stages.
+- Skipped package validation because this stage only adds a design note plus the standard version and NEWS updates.
+
 ## WMFM 1.0.2.009
 
 - Added a developer-mode metadata box beside the built-in example selector.
