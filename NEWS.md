@@ -6,6 +6,57 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+
+
+## WMFM 1.0.2.009
+
+- Added a developer-mode metadata box beside the built-in example selector.
+- Exposed example audience, model family, difficulty, teaching topic, developer purpose, installed path, and specification path for the selected example.
+- Kept classroom mode unchanged by hiding the metadata box unless developer mode is unlocked.
+- Added deterministic tests for developer example metadata formatting.
+- Validated through the standard full WMFM package workflow.
+
+## WMFM 1.0.2.008
+
+- Add a Stage 40 manual validation checklist for the reorganised example library.
+- Record the completed Stage 40 example-file reorganisation steps in the developer plan.
+- Confirm that this documentation-only step does not require devtools document, tests, check, build, or install.
+
+## WMFM 1.0.2.007
+
+- Shortened the physically separated internal model-grid example path so package checks no longer report non-portable file names.
+- Kept classroom examples at the top level while preserving grouped developer and test fixtures behind metadata-backed lookup.
+- Removed the abandoned long `test-fixtures/model-grid` fixture location during installation.
+- Validated by the standard WMFM full package workflow.
+
+## WMFM 1.0.2.005
+
+- Added a metadata-backed example detail listing for classroom and developer example-library views.
+- Kept the existing example-name listing compatible by deriving it from the richer detail table.
+- Added offline tests for metadata fields, developer-example hiding, and stable empty detail columns.
+- Validated by the standard full WMFM package workflow.
+
+## WMFM 1.0.2.004
+
+- Prepared Stage 40.3 example loading for future nested example-folder reorganisation.
+- Stored package-relative example paths and specification paths in internal example records.
+- Updated example lookup so runExample can resolve examples by display name, directory, or specification stem without assuming every example is a direct child of inst/extdata/examples.
+- Added regression coverage for nested example record paths before any physical file moves are attempted.
+
+## WMFM 1.0.2.002
+
+- Added an installed example metadata manifest that classifies classroom, developer, and test examples without moving example folders.
+- Updated packaged example listing so release-mode choices use explicit audience metadata rather than only the test-name prefix.
+- Kept developer and regression examples available when test examples are requested, preserving existing example lookup compatibility.
+- Added offline tests for metadata-driven visibility and metadata override behaviour.
+- Validated by the standard full WMFM package workflow because R code, tests, and installed example files changed.
+## WMFM 1.0.2.001
+
+- Documented the Stage 40.1 example-file reorganisation plan for separating classroom examples from developer and regression examples.
+- Recorded the current example groups and a staged metadata-first implementation strategy before moving installed files.
+- Preserved package behaviour for this documentation-only step; devtools document, tests, check, build, and install were intentionally skipped.
+
 ## WMFM 0.9.9.001
 
 - Started Stage 38 CRAN hardening with beta-style internal build numbering for the 1.0.0 release-preparation stream.

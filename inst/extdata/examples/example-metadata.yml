@@ -1,0 +1,216 @@
+examples:
+  Course:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: introductory
+    teachingTopic: Multiple regression with attendance and test scores
+  DiamondsII:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: intermediate
+    teachingTopic: Power-law prediction with one numeric predictor
+  DiamondsIII:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: advanced
+    teachingTopic: Power-law prediction adjusted for diamond quality factors
+  DiamondsIV:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: advanced
+    teachingTopic: Adjustment comparison in power-law prediction
+  DiamondsUnitChange:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: intermediate
+    teachingTopic: Unit-change interpretation for diamond price prediction
+  Mtcars:
+    exampleAudience: classroom
+    exampleFamily: lm
+    exampleDifficulty: introductory
+    teachingTopic: Linear regression with car fuel economy
+  Oysters:
+    exampleAudience: classroom
+    exampleFamily: logistic
+    exampleDifficulty: intermediate
+    teachingTopic: Logistic regression with binary outcomes
+  Quakes:
+    exampleAudience: classroom
+    exampleFamily: poisson
+    exampleDifficulty: intermediate
+    teachingTopic: Poisson regression for earthquake frequency
+  QuakesUnitChange0_1:
+    exampleAudience: classroom
+    exampleFamily: poisson
+    exampleDifficulty: intermediate
+    teachingTopic: Unit-change interpretation for earthquake frequency
+  test-01-G00F:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression intercept-only fixture
+  test-02-G01F:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression one-factor fixture
+  test-03-G10F:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression one-numeric fixture
+  test-04-G20F:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression two-numeric fixture
+  test-05-G20T:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression two-numeric interaction fixture
+  test-06-G11F:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression numeric-plus-factor fixture
+  test-07-G11T:
+    exampleAudience: test
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Linear regression numeric-by-factor interaction fixture
+  test-08-B00F:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression intercept-only fixture
+  test-09-B01F:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression one-factor fixture
+  test-10-B10F:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression one-numeric fixture
+  test-11-B20F:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression two-numeric fixture
+  test-12-B20T:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression two-numeric interaction fixture
+  test-13-B11F:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression numeric-plus-factor fixture
+  test-14-B11T:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic regression numeric-by-factor interaction fixture
+  test-15-P00F:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson regression intercept-only fixture
+  test-16-P01F:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson regression one-factor fixture
+  test-17-P10F:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson regression one-numeric fixture
+  test-18-P11F:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson regression numeric-plus-factor fixture
+  test-19-P11T:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson regression numeric-by-factor interaction fixture
+  test-20-B01F-followup:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic follow-up prediction fixture
+  test-21-B11F-followup:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic numeric-plus-factor follow-up fixture
+  test-22-P01F-followup:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson follow-up prediction fixture
+  test-23-P11F-followup:
+    exampleAudience: test
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    developerPurpose: Poisson numeric-plus-factor follow-up fixture
+  test-24-B01F-followup-odds:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic follow-up odds fixture
+  test-25-B11F-followup-odds:
+    exampleAudience: test
+    exampleFamily: logistic
+    exampleDifficulty: developer
+    developerPurpose: Logistic numeric-plus-factor odds follow-up fixture
+  test-SG-1:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-SG-2:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-SG-3:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-SG-4:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-SG-5:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-SG-6:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Scoring and grading fixture
+  test-arousal-01:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Adjustment-variable UI fixture
+  test-arousal-02:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Adjustment-variable UI fixture
+  test-course-follow-up:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    developerPurpose: Course follow-up prediction fixture

@@ -13,8 +13,8 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny reactiveVal renderText observe observeEvent isolate req
-#' @importFrom shiny updateSelectInput updateTextInput updateCheckboxInput showNotification removeNotification showModal removeModal modalDialog modalButton tagList passwordInput actionButton
+#' @importFrom shiny reactiveVal renderText renderUI observe observeEvent isolate req
+#' @importFrom shiny updateSelectInput updateTextInput updateCheckboxInput showNotification removeNotification showModal removeModal modalDialog modalButton tagList passwordInput actionButton div tags
 registerStartupDataChoiceObservers = function(input, output, session) {
   packageChoices = reactiveVal(character(0))
   packageScanStatus = reactiveVal(NULL)
@@ -62,6 +62,27 @@ registerStartupDataChoiceObservers = function(input, output, session) {
     }
 
     "Developer-only controls are disabled for this session."
+  })
+
+  output$exampleMetadataUi = renderUI({
+    if (!isTRUE(developerModeUnlocked())) {
+      return(NULL)
+    }
+
+    metadataLines = formatWMFMExampleMetadataLines(
+      selectedName = input$exampleName %||% "",
+      includeTestExamples = TRUE
+    )
+
+    div(
+      style = paste(
+        "border: 1px solid #ddd; border-radius: 4px; padding: 8px;",
+        "background-color: #f8f8f8; font-size: 0.85em; color: #444;",
+        "margin-top: 25px;"
+      ),
+      tags$strong("Developer example metadata"),
+      tags$ul(lapply(metadataLines, tags$li))
+    )
   })
 
   if (isDeveloperModeUiEnabled()) {

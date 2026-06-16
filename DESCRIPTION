@@ -1,6 +1,6 @@
 Package: WMFM
 Title: Explore Fitted Linear and Generalised Linear Models with Shiny
-Version: 1.0.1
+Version: 1.0.2.009
 Authors@R:
     person(
         given = "James",
@@ -16,7 +16,6 @@ Description: Provides a Shiny application that helps learners connect regression
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 URL: https://github.com/jmcurran/WMFM
 BugReports: https://github.com/jmcurran/WMFM/issues
 Depends:
@@ -48,3 +47,4 @@ Suggests:
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
