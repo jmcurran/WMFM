@@ -8,6 +8,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.2.009
+
+- Added a developer-mode metadata box beside the built-in example selector.
+- Exposed example audience, model family, difficulty, teaching topic, developer purpose, installed path, and specification path for the selected example.
+- Kept classroom mode unchanged by hiding the metadata box unless developer mode is unlocked.
+- Added deterministic tests for developer example metadata formatting.
+- Validated through the standard full WMFM package workflow.
+
 ## WMFM 1.0.2.008
 
 - Add a Stage 40 manual validation checklist for the reorganised example library.

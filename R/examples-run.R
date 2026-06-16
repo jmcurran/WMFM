@@ -325,6 +325,76 @@ findWMFMExampleRecord = function(requestedName, exampleRecords) {
 }
 
 
+#' Format packaged example metadata for developer UI display
+#'
+#' @param selectedName Character scalar selected example display name, stem, or
+#'   directory name.
+#' @param package Character. Package containing the examples. Defaults to
+#'   `"WMFM"`.
+#' @param includeTestExamples Logical. Should developer-only examples be searched?
+#'
+#' @return A character vector of labelled metadata lines for the selected
+#'   example.
+#'
+#' @keywords internal
+#' @noRd
+formatWMFMExampleMetadataLines = function(
+  selectedName,
+  package = "WMFM",
+  includeTestExamples = TRUE
+) {
+  requestedName = trimws(as.character(selectedName %||% ""))
+
+  if (!nzchar(requestedName)) {
+    return("Choose an example to see developer metadata.")
+  }
+
+  exampleDetails = listWMFMExampleDetails(
+    package = package,
+    includeTestExamples = includeTestExamples
+  )
+  matchedRecord = findWMFMExampleRecord(
+    requestedName = requestedName,
+    exampleRecords = exampleDetails
+  )
+
+  if (is.null(matchedRecord)) {
+    return(paste0("No metadata found for example: ", requestedName))
+  }
+
+  metadataRows = c(
+    paste0("Example: ", matchedRecord$exampleName),
+    paste0("Audience: ", matchedRecord$exampleAudience),
+    paste0("Family: ", formatWMFMExampleMetadataValue(matchedRecord$exampleFamily)),
+    paste0("Difficulty: ", formatWMFMExampleMetadataValue(matchedRecord$exampleDifficulty)),
+    paste0("Teaching topic: ", formatWMFMExampleMetadataValue(matchedRecord$teachingTopic)),
+    paste0("Developer purpose: ", formatWMFMExampleMetadataValue(matchedRecord$developerPurpose)),
+    paste0("Path: inst/extdata/examples/", matchedRecord$examplePath),
+    paste0("Spec: ", matchedRecord$specFile)
+  )
+
+  metadataRows
+}
+
+#' Format a scalar example metadata value for display
+#'
+#' @param value Metadata value.
+#'
+#' @return A single non-empty character string.
+#'
+#' @keywords internal
+#' @noRd
+formatWMFMExampleMetadataValue = function(value) {
+  valueText = trimws(as.character(value %||% ""))
+
+  if (!nzchar(valueText) || is.na(valueText)) {
+    return("not recorded")
+  }
+
+  valueText
+}
+
+
 #' Load packaged WMFM example inputs
 #'
 #' Loads and validates the specification, data, and optional context for a

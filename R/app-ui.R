@@ -677,15 +677,24 @@ appUI = function() {
         ),
         tags$hr(class = "hr-tight"),
         h4("Load a built-in example"),
-        selectInput(
-          "exampleName",
-          "Choose an example:",
-          choices = c("Loading examples..." = "")
-        ),
-        actionButton(
-          "loadExampleBtn",
-          "Load example",
-          class = "btn btn-secondary"
+        fluidRow(
+          column(
+            6,
+            selectInput(
+              "exampleName",
+              "Choose an example:",
+              choices = c("Loading examples..." = "")
+            ),
+            actionButton(
+              "loadExampleBtn",
+              "Load example",
+              class = "btn btn-secondary"
+            )
+          ),
+          column(
+            6,
+            uiOutput("exampleMetadataUi")
+          )
         ),
         div(
           style = "margin-top: 10px;",

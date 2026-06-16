@@ -202,3 +202,27 @@ testthat::test_that("moved internal examples still load through display names an
   testthat::expect_true(is.data.frame(scoringExample$data))
   testthat::expect_true(is.data.frame(modelGridExample$data))
 })
+
+
+testthat::test_that("developer example metadata lines explain internal examples", {
+  metadataLines = formatWMFMExampleMetadataLines(
+    selectedName = "test-SG-1",
+    package = "WMFM",
+    includeTestExamples = TRUE
+  )
+
+  testthat::expect_true(any(grepl("Example: test-SG-1", metadataLines, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Audience: developer", metadataLines, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Developer purpose: Scoring and grading fixture", metadataLines, fixed = TRUE)))
+  testthat::expect_true(any(grepl("Path: inst/extdata/examples/developer/scoring-grading/test-SG-1", metadataLines, fixed = TRUE)))
+})
+
+
+testthat::test_that("developer example metadata lines handle missing selection", {
+  metadataLines = formatWMFMExampleMetadataLines("")
+
+  testthat::expect_identical(
+    metadataLines,
+    "Choose an example to see developer metadata."
+  )
+})
