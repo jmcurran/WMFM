@@ -171,3 +171,34 @@ testthat::test_that("empty example detail listing has stable columns", {
   testthat::expect_true("exampleFamily" %in% names(records))
   testthat::expect_true("teachingTopic" %in% names(records))
 })
+
+
+testthat::test_that("packaged internal examples are physically separated from classroom examples", {
+  developerDetails = listWMFMExampleDetails(
+    package = "WMFM",
+    includeTestExamples = TRUE
+  )
+  visibleDetails = listWMFMExampleDetails(package = "WMFM")
+
+  scoringRow = developerDetails[developerDetails$exampleName == "test-SG-1", , drop = FALSE]
+  arousalRow = developerDetails[developerDetails$exampleName == "test-arousal-01", , drop = FALSE]
+  modelGridRow = developerDetails[developerDetails$exampleName == "test-01-G00F", , drop = FALSE]
+  courseRow = visibleDetails[visibleDetails$exampleName == "Course", , drop = FALSE]
+
+  testthat::expect_identical(scoringRow$examplePath, "developer/scoring-grading/test-SG-1")
+  testthat::expect_identical(arousalRow$examplePath, "developer/adjustment/test-arousal-01")
+  testthat::expect_identical(modelGridRow$examplePath, "t/grid/test-01-G00F")
+  testthat::expect_identical(courseRow$examplePath, "Course")
+  testthat::expect_false("test-SG-1" %in% visibleDetails$exampleName)
+})
+
+
+testthat::test_that("moved internal examples still load through display names and stems", {
+  scoringExample = loadExampleSpec("test-SG-1", package = "WMFM")
+  modelGridExample = loadExampleSpec("test-01-G00F", package = "WMFM")
+
+  testthat::expect_match(scoringExample$basePath, "developer/scoring-grading/test-SG-1")
+  testthat::expect_match(modelGridExample$basePath, "t/grid/test-01-G00F")
+  testthat::expect_true(is.data.frame(scoringExample$data))
+  testthat::expect_true(is.data.frame(modelGridExample$data))
+})

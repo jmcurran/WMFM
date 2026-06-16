@@ -7,6 +7,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.2.007
+
+- Shortened the physically separated internal model-grid example path so package checks no longer report non-portable file names.
+- Kept classroom examples at the top level while preserving grouped developer and test fixtures behind metadata-backed lookup.
+- Removed the abandoned long `test-fixtures/model-grid` fixture location during installation.
+- Validated by the standard WMFM full package workflow.
+
 ## WMFM 1.0.2.005
 
 - Added a metadata-backed example detail listing for classroom and developer example-library views.
