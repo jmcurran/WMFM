@@ -182,3 +182,16 @@ Stage 41.3 should therefore:
 - keep credential-entry controls out of the front of the Settings tab;
 - disable local config credential storage in deployed app contexts;
 - never display full credential values in status text, notifications, tests, logs, README text, or NEWS entries.
+
+## Stage 41.4 implementation decision
+
+Stage 41.4 updates the README setup guide after the policy and local-desktop credential behaviour have stabilized.
+
+The documentation should now describe the intended user experience rather than the earlier environment-variable-only design:
+
+- local desktop users start in Settings and use the Provider setup modal for API-key guidance or local desktop credential entry;
+- users who prefer standard R environment variables can use `usethis::edit_r_environ()` to find and edit `.Renviron`;
+- environment variables remain higher priority than locally saved WMFM credentials;
+- deployed Shiny apps are administrator-managed, and ordinary browser users cannot enter API keys, add providers, or change server credentials;
+- deployed users may choose only among administrator-approved provider or model options;
+- README examples must never include real API-key values.

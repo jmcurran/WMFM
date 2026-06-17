@@ -10,6 +10,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.007
+
+- Updated README setup guidance for local desktop and deployed WMFM configuration.
+- Documented Provider setup as the local desktop path for credential guidance and optional local credential entry.
+- Documented usethis::edit_r_environ() for users who prefer standard R environment-variable setup.
+- Clarified that deployed Shiny apps are administrator-managed and ordinary users may only choose approved providers or models.
+- Updated README coverage tests for the revised setup guide.
+
 ## WMFM 1.0.3.006
 
 - Repaired Stage 41.3 provider credential wording so existing provider-setting tests continue to match documented messages.
