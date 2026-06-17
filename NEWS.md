@@ -12,6 +12,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.012
+
+- Repaired Stage 41.6 provider settings tests so they match the provider-object Settings redesign.
+- Updated expectations for the simplified active-provider status and provider registry controls.
+- Removed obsolete assertions for the old inline Ollama-only settings layout.
+- Preserved the Stage 41.6 implementation while restoring the standard WMFM validation workflow.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 1.0.3.008
 
 - Added Stage 41.5 design notes for the provider-as-object Settings redesign.

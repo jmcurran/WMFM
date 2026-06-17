@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog modalButton tags passwordInput actionButton removeModal
+#' @importFrom shiny observe observeEvent renderText renderTable showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog modalButton tags passwordInput actionButton removeModal
 registerChatProviderObservers = function(input, output, session, rv) {
   resolveSelectedProvider = function() {
     requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
@@ -34,14 +34,40 @@ registerChatProviderObservers = function(input, output, session, rv) {
   syncProviderConfigurationPolicyState = function() {
     editable = isWmfmProviderConfigurationEditable()
     session$sendInputMessage("providerConfig_backend", list(disabled = !editable))
-    session$sendInputMessage("saveProviderConfigBtn", list(disabled = !editable))
-    session$sendInputMessage("resetProviderConfigBtn", list(disabled = !editable))
+    session$sendInputMessage("addProviderProfileBtn", list(disabled = !editable))
+    session$sendInputMessage("removeProviderProfileBtn", list(disabled = !editable))
     if (!editable) {
       session$sendInputMessage("providerConfig_ollamaBaseUrl", list(disabled = TRUE))
       session$sendInputMessage("providerConfig_ollamaModel", list(disabled = TRUE))
       session$sendInputMessage("providerConfig_ollamaThinkLow", list(disabled = TRUE))
       session$sendInputMessage("refreshOllamaModelsBtn", list(disabled = TRUE))
     }
+  }
+
+
+  providerProfileModal = function() {
+    if (!isWmfmProviderConfigurationEditable()) {
+      return(providerSetupModal(resolveSelectedProvider()))
+    }
+
+    modalDialog(
+      title = "Add provider",
+      tags$p("Add a provider that WMFM can use for explanations. API keys are handled separately and are never displayed after entry."),
+      textInput("providerProfileName", "Provider name", value = ""),
+      selectInput(
+        "providerProfileType",
+        "Provider type",
+        choices = c("Ollama" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
+        selected = "ollama"
+      ),
+      textInput("providerProfileUrl", "Endpoint URL, if needed", value = ""),
+      textInput("providerProfileModel", "Default model, if needed", value = ""),
+      easyClose = TRUE,
+      footer = tags$div(
+        actionButton("saveProviderProfileBtn", "Save provider", class = "btn-primary"),
+        modalButton("Cancel")
+      )
+    )
   }
 
   providerSetupModal = function(provider = resolveSelectedProvider()) {
@@ -225,6 +251,71 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }, ignoreInit = TRUE)
 
 
+  observeEvent(input$addProviderProfileBtn, {
+    if (blockUserProviderConfiguration()) {
+      return(NULL)
+    }
+    showModal(providerProfileModal())
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$saveProviderProfileBtn, {
+    if (blockUserProviderConfiguration()) {
+      return(NULL)
+    }
+
+    providerType = tolower(trimws(input$providerProfileType %||% "ollama"))
+    if (!isWmfmProviderSupported(providerType)) {
+      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
+      return(NULL)
+    }
+
+    providerName = trimws(input$providerProfileName %||% "")
+    adapter = getWmfmProviderAdapter(providerType)
+    if (!nzchar(providerName)) {
+      providerName = adapter$label %||% providerType
+    }
+
+    profileId = paste0(providerType, "-", format(Sys.time(), "%Y%m%d%H%M%S"))
+    newProfile = normaliseWmfmProviderProfile(list(
+      profileId = profileId,
+      displayName = providerName,
+      providerType = providerType,
+      apiUrl = input$providerProfileUrl %||% "",
+      defaultModel = input$providerProfileModel %||% "",
+      credentialSource = if (isTRUE(adapter$requiresCredentials)) "envvar" else "none",
+      credentialEnvVar = adapter$credentialEnvVar %||% "",
+      enabled = TRUE,
+      active = FALSE
+    ))
+
+    writeWmfmProviderProfiles(c(readWmfmProviderProfiles(), list(newProfile)))
+    rv$providerConfigSaveStatus = paste0("Added provider ", providerName, ".")
+    removeModal()
+    showNotification("Added provider.", type = "message", duration = 5)
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$removeProviderProfileBtn, {
+    if (blockUserProviderConfiguration()) {
+      return(NULL)
+    }
+
+    profiles = readWmfmProviderProfiles()
+    activeProvider = resolveSelectedProvider()
+    keep = !vapply(profiles, function(profile) {
+      identical(tolower(trimws(as.character(profile$providerType %||% ""))), activeProvider)
+    }, logical(1))
+
+    if (length(profiles) <= 1 || all(!keep)) {
+      showNotification("WMFM needs at least one configured provider.", type = "warning", duration = 6)
+      return(NULL)
+    }
+
+    writeWmfmProviderProfiles(profiles[keep])
+    rv$providerConfigSaveStatus = "Removed the active provider from the local provider list."
+    showNotification("Removed provider.", type = "message", duration = 5)
+  }, ignoreInit = TRUE)
+
+
   observeEvent(input$saveProviderCredentialBtn, {
     provider = resolveSelectedProvider()
     adapter = getWmfmProviderAdapter(provider)
@@ -287,6 +378,10 @@ registerChatProviderObservers = function(input, output, session, rv) {
     settingsState = buildProviderSettingsState()
     paste(buildProviderSettingsStatusLines(settingsState), collapse = "\n")
   })
+
+  output$providerRegistryTable = renderTable({
+    buildWmfmProviderRegistryRows()
+  }, striped = TRUE, bordered = TRUE, spacing = "xs")
 
   output$providerConfigSaveStatus = renderText({
     rv$providerConfigSaveStatus %||% ""

@@ -227,3 +227,24 @@ Stage 41.6 and follow-up implementation stages should test:
 Stage 41.5 is design only.
 
 The first code stage for this redesign should be Stage 41.6, not Stage 41.5.1. Patch-style stage numbers such as 41.5.1 should be reserved for repairs to completed 41.5 work, not for the first implementation of this design.
+
+## Stage 41.6 first implementation slice
+
+Stage 41.6 starts the provider-object redesign without trying to complete the whole registry architecture in one pass.
+
+Implemented direction:
+
+- The main Settings page now presents an active provider selector and a simple provider registry table with Name, Type, and Status columns.
+- Add, remove, and setup actions are grouped with the provider registry rather than exposing technical config fields first.
+- Advanced diagnostics and Ollama-specific connection fields are hidden behind expandable sections.
+- The package default no longer exposes the University of Auckland Ollama URL to fresh users.
+- Fresh local installs should show Ollama as needing setup rather than implying that a shared departmental endpoint is available.
+
+Deliberately deferred:
+
+- Full row-selection and double-click editing behavior.
+- Provider IDs as the active selection value when multiple providers share the same provider type.
+- Encrypted credential storage or keychain integration.
+- Administrator-managed provider registry import/export for deployed servers.
+
+These deferred items should be handled in later implementation stages after the new provider-object screen has been manually tested.

@@ -7,9 +7,8 @@ test_that("provider settings status lines use concise active-profile format and 
   statusText = paste(statusLines, collapse = "\n")
 
   expect_match(statusText, "Active provider:", fixed = TRUE)
-  expect_match(statusText, "Provider type:", fixed = TRUE)
   expect_match(statusText, "Model:", fixed = TRUE)
-  expect_match(statusText, "Credential:", fixed = TRUE)
+  expect_match(statusText, "Status:", fixed = TRUE)
   expect_match(statusText, "API key values are never stored or displayed by WMFM.", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
@@ -82,14 +81,14 @@ test_that("resetNonSecretProviderConfig restores defaults", {
   expect_null(persisted$developerModeEnabled)
 })
 
-test_that("provider settings labels keep Ollama-specific controls explicit", {
+test_that("provider settings expose provider registry controls instead of old inline Ollama controls", {
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(uiText, "Ollama-specific and apply only when Ollama is selected", fixed = TRUE)
-  expect_match(uiText, "Ollama base URL (Ollama only)", fixed = TRUE)
-  expect_match(uiText, "Ollama model (Ollama only)", fixed = TRUE)
-  expect_match(uiText, "Refresh available Ollama models", fixed = TRUE)
-  expect_match(uiText, "Default to low thinking for Ollama (Ollama only)", fixed = TRUE)
+  expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
+  expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "Active provider", fixed = TRUE)
+  expect_match(uiText, "Advanced provider diagnostics", fixed = TRUE)
 })
 
 
@@ -141,6 +140,10 @@ test_that("provider settings UI uses compact info help and no apply button", {
   expect_match(uiText, 'icon("circle-info")', fixed = TRUE)
   expect_match(uiText, "API keys are not shown here and are never stored", fixed = TRUE)
   expect_match(html, "Provider settings information", fixed = TRUE)
+  expect_match(html, "Active provider", fixed = TRUE)
+  expect_match(uiText, "providerRegistryTable", fixed = TRUE)
+  expect_match(uiText, "addProviderProfileBtn", fixed = TRUE)
+  expect_match(uiText, "removeProviderProfileBtn", fixed = TRUE)
   expect_match(html, "ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("Current provider:", uiText, fixed = TRUE))
   expect_false(grepl("applyChatProviderBtn", uiText, fixed = TRUE))
@@ -199,4 +202,26 @@ test_that("provider setup modal supports local desktop credential storage withou
   expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
   expect_match(observerText, "removeWmfmConfigCredential(provider)", fixed = TRUE)
   expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
+})
+
+
+test_that("provider settings main UI is provider-object oriented", {
+  html = as.character(appUI())
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(html, "Active provider", fixed = TRUE)
+  expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
+  expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
+  expect_match(html, "Advanced Ollama configuration", fixed = TRUE)
+  expect_false(grepl("http://corrin.stat.auckland.ac.nz:11434", html, fixed = TRUE))
+})
+
+test_that("provider observers include add and remove provider registry actions", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(observerText, "observeEvent(input$addProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$removeProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "writeWmfmProviderProfiles", fixed = TRUE)
+  expect_match(observerText, "providerProfileModal", fixed = TRUE)
 })

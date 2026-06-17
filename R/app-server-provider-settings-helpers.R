@@ -26,15 +26,85 @@ buildProviderSettingsStatusLines = function(settingsState) {
   providerConfig = settingsState$providerConfig
   activeProfile = settingsState$activeProfile %||% list()
   selectedBackend = providerConfig$backend %||% "ollama"
+  statusText = buildWmfmProviderReadinessLabel(activeProfile, providerConfig)
 
   c(
-    buildWmfmProviderSetupPolicyText(),
     paste0("Active provider: ", activeProfile$displayName %||% selectedBackend),
-    paste0("Provider type: ", activeProfile$providerType %||% selectedBackend),
-    paste0("Model: ", if (identical(selectedBackend, "ollama")) providerConfig$ollamaModel %||% "gpt-oss" else (activeProfile$defaultModel %||% "default")),
-    paste0("Credential: ", paste(buildProviderCredentialStatusLines(selectedBackend), collapse = " ")),
+    paste0("Model: ", buildWmfmProviderModelLabel(activeProfile, providerConfig)),
+    paste0("Status: ", statusText),
     "API key values are never stored or displayed by WMFM."
   )
+}
+
+#' Build a user-facing provider model label
+#'
+#' @param profile Named provider profile.
+#' @param providerConfig Resolved provider configuration.
+#'
+#' @return Character scalar model label.
+#' @keywords internal
+buildWmfmProviderModelLabel = function(profile, providerConfig = resolveWmfmProviderConfig()) {
+  providerType = tolower(trimws(as.character(profile$providerType %||% providerConfig$backend %||% "")))
+  if (identical(providerType, "ollama")) {
+    return(providerConfig$ollamaModel %||% profile$defaultModel %||% "not selected")
+  }
+
+  profile$defaultModel %||% "provider default"
+}
+
+#' Build a user-facing provider readiness label
+#'
+#' @param profile Named provider profile.
+#' @param providerConfig Resolved provider configuration.
+#'
+#' @return Character scalar readiness label.
+#' @keywords internal
+buildWmfmProviderReadinessLabel = function(profile, providerConfig = resolveWmfmProviderConfig()) {
+  providerType = tolower(trimws(as.character(profile$providerType %||% providerConfig$backend %||% "")))
+
+  if (isWmfmDeployedApp() && isTRUE(profile$isManaged %||% TRUE)) {
+    return("Managed by administrator")
+  }
+
+  if (identical(providerType, "ollama")) {
+    if (nzchar(trimws(as.character(profile$apiUrl %||% providerConfig$ollamaBaseUrl %||% "")))) {
+      return("Ready")
+    }
+    return("Setup needed")
+  }
+
+  if (isTRUE(hasWmfmProviderCredentials(providerType))) {
+    return("Ready")
+  }
+
+  "Credential needed"
+}
+
+#' Build provider registry rows for the settings UI
+#'
+#' @param profiles List of provider profiles.
+#' @param providerConfig Resolved provider configuration.
+#'
+#' @return Data frame with user-facing provider registry rows.
+#' @keywords internal
+buildWmfmProviderRegistryRows = function(profiles = readWmfmProviderProfiles(),
+                                          providerConfig = resolveWmfmProviderConfig()) {
+  if (!is.list(profiles) || length(profiles) == 0) {
+    profiles = wmfmDefaultProviderProfiles()
+  }
+
+  rows = lapply(profiles, function(profile) {
+    providerType = tolower(trimws(as.character(profile$providerType %||% "")))
+    adapter = if (isWmfmProviderSupported(providerType)) getWmfmProviderAdapter(providerType) else NULL
+    data.frame(
+      Name = as.character(profile$displayName %||% profile$profileId %||% providerType),
+      Type = as.character(adapter$label %||% providerType),
+      Status = buildWmfmProviderReadinessLabel(profile, providerConfig),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, rows)
 }
 
 

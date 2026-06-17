@@ -2,7 +2,7 @@ test_that("wmfmProviderDefaults exposes current package defaults", {
   defaults = wmfmProviderDefaults()
 
   expect_identical(defaults$backend, "ollama")
-  expect_identical(defaults$ollamaBaseUrl, "http://corrin.stat.auckland.ac.nz:11434")
+  expect_identical(defaults$ollamaBaseUrl, "")
   expect_identical(defaults$ollamaModel, "gpt-oss")
   expect_identical(defaults$ollamaThinkLow, FALSE)
 })
@@ -500,4 +500,21 @@ test_that("deployed sessions cannot use local config credential storage", {
     "not allowed",
     fixed = TRUE
   )
+})
+
+
+test_that("provider registry rows expose user-facing status without secrets", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
+
+  rows = buildWmfmProviderRegistryRows(list(
+    list(displayName = "Local Ollama", providerType = "ollama", apiUrl = "", defaultModel = "llama3"),
+    list(displayName = "Claude", providerType = "claude", credentialEnvVar = "ANTHROPIC_API_KEY")
+  ))
+
+  expect_identical(names(rows), c("Name", "Type", "Status"))
+  expect_true("Setup needed" %in% rows$Status)
+  expect_true("Credential needed" %in% rows$Status)
+  expect_false(any(grepl("ANTHROPIC_API_KEY", rows$Status, fixed = TRUE)))
 })

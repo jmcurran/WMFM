@@ -1070,10 +1070,10 @@ appUI = function() {
             tags$div(
               class = "wmfm-provider-settings-info-body",
               tags$p(
-                "Choose one active provider/backend. Ollama uses base URL plus model and no API key."
+                "Choose the AI provider WMFM should use. Add or edit providers if you are running WMFM on your own computer."
               ),
               tags$p(
-                "Hosted providers use API keys or deployment secrets configured through provider setup; for Claude this means ANTHROPIC_API_KEY."
+                "A provider stores the connection details for a local Ollama service or a hosted service such as Claude. For Claude, the administrator route is ANTHROPIC_API_KEY."
               ),
               tags$p(
                 "API keys are not shown here and are never stored by WMFM. Credential guidance is shown in a separate dialog so API-key setup is not front and centre."
@@ -1081,60 +1081,67 @@ appUI = function() {
             )
           )
         ),
-        tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
           inputId = "providerConfig_backend",
-          label = "Active provider profile",
+          label = "Active provider",
           choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
           selected = resolveWmfmProviderConfig()$backend
         ),
-        helpText("A deployed app may restrict these choices to installer-approved providers and models."),
-        actionButton(
-          inputId = "showProviderSetupBtn",
-          label = "Provider setup help",
-          class = "btn-secondary btn-sm"
-        ),
-        tags$br(), tags$br(),
-        helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
-        textInput(
-          inputId = "providerConfig_ollamaBaseUrl",
-          label = "Ollama base URL (Ollama only)",
-          value = ""
-        ),
-        selectInput(
-          inputId = "providerConfig_ollamaModel",
-          label = "Ollama model (Ollama only)",
-          choices = c("gpt-oss"),
-          selected = "gpt-oss"
-        ),
-        checkboxInput(
-          inputId = "providerConfig_ollamaThinkLow",
-          label = "Default to low thinking for Ollama (Ollama only)",
-          value = FALSE
-        ),
+        tableOutput("providerRegistryTable"),
         tags$div(
-          style = "margin-bottom: 6px;",
+          class = "wmfm-provider-registry-actions",
           actionButton(
-            inputId = "refreshOllamaModelsBtn",
-            label = "Refresh available Ollama models",
-            class = "btn btn-secondary btn-sm"
+            inputId = "addProviderProfileBtn",
+            label = "+",
+            title = "Add provider",
+            class = "btn-secondary btn-sm"
+          ),
+          actionButton(
+            inputId = "removeProviderProfileBtn",
+            label = "-",
+            title = "Remove the active provider",
+            class = "btn-secondary btn-sm"
+          ),
+          actionButton(
+            inputId = "showProviderSetupBtn",
+            label = "Setup selected provider",
+            class = "btn-secondary btn-sm"
           )
         ),
-        actionButton(
-          inputId = "saveProviderConfigBtn",
-          label = "Save provider config",
-          class = "btn-primary btn-sm"
+        helpText("In a deployed WMFM app, available providers and models are controlled by the installer."),
+        tags$details(
+          tags$summary("Advanced provider diagnostics"),
+          textOutput("providerConfigLocationStatus")
         ),
-        actionButton(
-          inputId = "resetProviderConfigBtn",
-          label = "Reset provider config to defaults",
-          class = "btn-secondary btn-sm"
+        tags$details(
+          tags$summary("Advanced Ollama configuration"),
+          helpText("Only change these settings when you are running or administering an Ollama service."),
+          textInput(
+            inputId = "providerConfig_ollamaBaseUrl",
+            label = "Ollama base URL",
+            value = ""
+          ),
+          selectInput(
+            inputId = "providerConfig_ollamaModel",
+            label = "Ollama model",
+            choices = c("gpt-oss"),
+            selected = "gpt-oss"
+          ),
+          checkboxInput(
+            inputId = "providerConfig_ollamaThinkLow",
+            label = "Default to low thinking for Ollama",
+            value = FALSE
+          ),
+          tags$div(
+            style = "margin-bottom: 6px;",
+            actionButton(
+              inputId = "refreshOllamaModelsBtn",
+              label = "Refresh available Ollama models",
+              class = "btn btn-secondary btn-sm"
+            )
+          )
         ),
-        tags$br(), tags$br(),
-        textOutput("providerConfigSaveStatus"),
-        helpText(
-          "Config path can be overridden with options(wmfm.config_dir = '/path')."
-        )
+        textOutput("providerConfigSaveStatus")
       )
 
     )
