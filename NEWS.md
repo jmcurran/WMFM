@@ -15,6 +15,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.016
+
+- Added a confirmation dialog before removing provider objects from the Settings provider registry.
+- Kept the existing safeguard that WMFM must retain at least one configured provider.
+- Updated provider settings tests and design notes for the confirmed remove workflow.
+- Validated by the standard WMFM full package workflow.
 ## WMFM 1.0.3.015
 
 - Added an explicit Edit action for provider objects in the Settings provider registry.

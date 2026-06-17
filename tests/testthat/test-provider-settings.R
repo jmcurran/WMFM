@@ -220,12 +220,14 @@ test_that("provider settings main UI is provider-object oriented", {
   expect_false(grepl("http://corrin.stat.auckland.ac.nz:11434", html, fixed = TRUE))
 })
 
-test_that("provider observers include add and remove provider registry actions", {
+test_that("provider observers include add edit and confirmed remove provider registry actions", {
   observerText = readPackageText("R", "app-server-chat-provider.R")
 
   expect_match(observerText, "observeEvent(input$addProviderProfileBtn", fixed = TRUE)
   expect_match(observerText, "observeEvent(input$editProviderProfileBtn", fixed = TRUE)
   expect_match(observerText, "observeEvent(input$removeProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$confirmRemoveProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "providerRemoveConfirmationModal", fixed = TRUE)
   expect_match(observerText, "writeWmfmProviderProfiles", fixed = TRUE)
   expect_match(observerText, "providerProfileModal", fixed = TRUE)
 })

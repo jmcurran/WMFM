@@ -275,3 +275,7 @@ Stage 41.8 adds the first edit path for provider objects.
 The main Settings screen now includes an explicit Edit action for the active provider. This is a practical interim control while the provider registry is still rendered as a simple Shiny table rather than a fully interactive row-selection widget. The Edit action opens the same provider modal used for adding providers, pre-populated from the active provider profile, and saves back to the matching provider profile identifier rather than creating a duplicate.
 
 This keeps the provider-object workflow discoverable for manual testing while preserving the longer-term design goal that activating a provider row should open the edit dialog directly.
+
+## Stage 41.9 implementation note
+
+Stage 41.9 adds the deletion guardrail from this design. The remove action now opens a confirmation dialog before deleting the active provider object. The confirmed action keeps the existing safeguard that WMFM must retain at least one configured provider. This keeps the provider-object UI safer for desktop users while preserving administrator-managed deployment restrictions.

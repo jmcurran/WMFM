@@ -91,6 +91,22 @@ registerChatProviderObservers = function(input, output, session, rv) {
     )
   }
 
+
+  providerRemoveConfirmationModal = function(profile = resolveSelectedProviderProfile()) {
+    profile = normaliseWmfmProviderProfile(profile)
+
+    modalDialog(
+      title = "Remove provider",
+      tags$p(paste0("Remove provider '", profile$displayName, "' from this WMFM configuration?")),
+      tags$p("This removes the provider entry from the local provider list. It does not delete API keys from environment variables or administrator-managed deployment secrets."),
+      easyClose = TRUE,
+      footer = tags$div(
+        actionButton("confirmRemoveProviderProfileBtn", "Remove provider", class = "btn-danger"),
+        modalButton("Cancel")
+      )
+    )
+  }
+
   providerSetupModal = function(provider = resolveSelectedProvider()) {
     provider = tolower(trimws(as.character(provider %||% wmfmProviderDefaults()$backend)))
     if (!isWmfmProviderSupported(provider)) {
@@ -359,6 +375,20 @@ registerChatProviderObservers = function(input, output, session, rv) {
     }
 
     profiles = readWmfmProviderProfiles()
+    if (length(profiles) <= 1) {
+      showNotification("WMFM needs at least one configured provider.", type = "warning", duration = 6)
+      return(NULL)
+    }
+
+    showModal(providerRemoveConfirmationModal(resolveSelectedProviderProfile()))
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$confirmRemoveProviderProfileBtn, {
+    if (blockUserProviderConfiguration()) {
+      return(NULL)
+    }
+
+    profiles = readWmfmProviderProfiles()
     activeProfileId = resolveSelectedProviderProfile()$profileId
     keep = !vapply(profiles, function(profile) {
       normalisedProfile = normaliseWmfmProviderProfile(profile)
@@ -379,6 +409,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
       selected = normaliseWmfmProviderProfile(remainingProfiles[[1]])$profileId
     )
     rv$providerConfigSaveStatus = "Removed the active provider from the local provider list."
+    removeModal()
     showNotification("Removed provider.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
