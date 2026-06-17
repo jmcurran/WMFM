@@ -14,8 +14,15 @@
 #'
 #' @importFrom shiny observe observeEvent renderText renderTable showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog modalButton tags passwordInput actionButton removeModal
 registerChatProviderObservers = function(input, output, session, rv) {
+  resolveSelectedProviderProfile = function() {
+    selectedProfileId = trimws(as.character(input$providerConfig_backend %||% ""))
+    activeProfile = resolveWmfmActiveProviderProfile(profileId = selectedProfileId)
+    activeProfile
+  }
+
   resolveSelectedProvider = function() {
-    requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
+    activeProfile = resolveSelectedProviderProfile()
+    requested = tolower(trimws(activeProfile$providerType %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
     if (!isWmfmProviderSupported(requested)) {
       return(wmfmProviderDefaults()$backend)
     }
@@ -289,6 +296,12 @@ registerChatProviderObservers = function(input, output, session, rv) {
     ))
 
     writeWmfmProviderProfiles(c(readWmfmProviderProfiles(), list(newProfile)))
+    updateSelectInput(
+      session,
+      "providerConfig_backend",
+      choices = buildProviderProfileChoices(),
+      selected = newProfile$profileId
+    )
     rv$providerConfigSaveStatus = paste0("Added provider ", providerName, ".")
     removeModal()
     showNotification("Added provider.", type = "message", duration = 5)
@@ -300,9 +313,10 @@ registerChatProviderObservers = function(input, output, session, rv) {
     }
 
     profiles = readWmfmProviderProfiles()
-    activeProvider = resolveSelectedProvider()
+    activeProfileId = resolveSelectedProviderProfile()$profileId
     keep = !vapply(profiles, function(profile) {
-      identical(tolower(trimws(as.character(profile$providerType %||% ""))), activeProvider)
+      normalisedProfile = normaliseWmfmProviderProfile(profile)
+      identical(normalisedProfile$profileId, activeProfileId)
     }, logical(1))
 
     if (length(profiles) <= 1 || all(!keep)) {
@@ -310,7 +324,14 @@ registerChatProviderObservers = function(input, output, session, rv) {
       return(NULL)
     }
 
-    writeWmfmProviderProfiles(profiles[keep])
+    remainingProfiles = profiles[keep]
+    writeWmfmProviderProfiles(remainingProfiles)
+    updateSelectInput(
+      session,
+      "providerConfig_backend",
+      choices = buildProviderProfileChoices(remainingProfiles),
+      selected = normaliseWmfmProviderProfile(remainingProfiles[[1]])$profileId
+    )
     rv$providerConfigSaveStatus = "Removed the active provider from the local provider list."
     showNotification("Removed provider.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
@@ -393,7 +414,8 @@ registerChatProviderObservers = function(input, output, session, rv) {
     updateSelectInput(
       session,
       "providerConfig_backend",
-      selected = resolvedConfig$backend
+      choices = buildProviderProfileChoices(),
+      selected = resolvedConfig$activeProviderProfileId
     )
 
     updateTextInput(
@@ -421,20 +443,23 @@ registerChatProviderObservers = function(input, output, session, rv) {
       return(NULL)
     }
 
-    requested = tolower(trimws(input$providerConfig_backend %||% wmfmProviderDefaults()$backend))
+    requestedProfileId = trimws(as.character(input$providerConfig_backend %||% ""))
+    activeProfile = resolveWmfmActiveProviderProfile(profileId = requestedProfileId)
+    requested = tolower(trimws(activeProfile$providerType %||% wmfmProviderDefaults()$backend))
     if (!isWmfmProviderSupported(requested)) {
-      updateSelectInput(session, "providerConfig_backend", selected = rv$activeChatBackend)
+      updateSelectInput(session, "providerConfig_backend", selected = resolveWmfmActiveProviderProfile()$profileId)
       showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
       return(NULL)
     }
 
-    selectedModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
+    selectedModel = activeProfile$defaultModel %||% input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel
     selectedThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
     providerConfig = prepareNonSecretProviderConfig(
       backend = requested,
-      ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
+      ollamaBaseUrl = activeProfile$apiUrl %||% input$providerConfig_ollamaBaseUrl,
       ollamaModel = selectedModel,
-      ollamaThinkLow = selectedThinkLow
+      ollamaThinkLow = selectedThinkLow,
+      activeProviderProfileId = activeProfile$profileId
     )
 
     rv$activeChatBackend = requested
@@ -476,7 +501,8 @@ registerChatProviderObservers = function(input, output, session, rv) {
       backend = requested,
       ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
       ollamaModel = input$providerConfig_ollamaModel %||% rv$activeOllamaModel %||% wmfmProviderDefaults()$ollamaModel,
-      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow),
+      activeProviderProfileId = resolveSelectedProviderProfile()$profileId
     ))
   }, ignoreInit = TRUE, priority = 80)
 
@@ -486,10 +512,11 @@ registerChatProviderObservers = function(input, output, session, rv) {
     }
 
     configToSave = prepareNonSecretProviderConfig(
-      backend = input$providerConfig_backend,
+      backend = resolveSelectedProvider(),
       ollamaBaseUrl = input$providerConfig_ollamaBaseUrl,
       ollamaModel = input$providerConfig_ollamaModel,
-      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow)
+      ollamaThinkLow = isTRUE(input$providerConfig_ollamaThinkLow),
+      activeProviderProfileId = resolveSelectedProviderProfile()$profileId
     )
 
     if (!isTRUE(hasWmfmProviderCredentials(configToSave$backend))) {

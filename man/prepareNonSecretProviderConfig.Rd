@@ -8,7 +8,8 @@ prepareNonSecretProviderConfig(
   backend,
   ollamaBaseUrl,
   ollamaModel,
-  ollamaThinkLow
+  ollamaThinkLow,
+  activeProviderProfileId = NULL
 )
 }
 \arguments{

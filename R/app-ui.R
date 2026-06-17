@@ -1084,8 +1084,8 @@ appUI = function() {
         selectInput(
           inputId = "providerConfig_backend",
           label = "Active provider",
-          choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
-          selected = resolveWmfmProviderConfig()$backend
+          choices = buildProviderProfileChoices(),
+          selected = resolveWmfmActiveProviderProfile()$profileId
         ),
         tableOutput("providerRegistryTable"),
         tags$div(

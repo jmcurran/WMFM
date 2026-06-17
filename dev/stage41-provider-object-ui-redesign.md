@@ -248,3 +248,22 @@ Deliberately deferred:
 - Administrator-managed provider registry import/export for deployed servers.
 
 These deferred items should be handled in later implementation stages after the new provider-object screen has been manually tested.
+
+## Stage 41.7 active provider profile slice
+
+Stage 41.7 continues the provider-object redesign by making the active provider selector profile-based rather than provider-type-based.
+
+Implemented direction:
+
+- The Active provider selector now uses configured provider profile identifiers as values.
+- The active provider profile is persisted as `activeProviderProfileId` in the WMFM user configuration.
+- Resolving the active provider now first looks for the selected provider profile and only falls back to legacy provider-type selection when needed.
+- Ollama endpoint and model defaults can now come from the active provider profile.
+- Adding or removing providers refreshes the active-provider selector choices.
+
+Deliberately deferred:
+
+- Row-selection and double-click edit behavior for the provider registry table.
+- Full edit-provider modal support.
+- Per-profile credential references beyond the current provider-type credential resolution.
+- Administrator-managed provider registry import/export for deployed servers.

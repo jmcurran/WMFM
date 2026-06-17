@@ -13,6 +13,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.014
+
+- Repaired Stage 41.7 provider profile resolution so legacy local configuration remains usable during migration.
+- Allowed provider type identifiers such as claude to resolve the corresponding configured provider profile.
+- Restored local config precedence for persisted Ollama URLs and models when the active profile does not supply those fields.
+- Preserved the provider-object UI redesign while keeping legacy resolver behavior covered by existing tests.
+- Validated by the standard WMFM stage workflow.
+
 ## WMFM 1.0.3.012
 
 - Repaired Stage 41.6 provider settings tests so they match the provider-object Settings redesign.

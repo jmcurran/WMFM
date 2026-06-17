@@ -195,13 +195,19 @@ buildProviderCredentialStatusLines = function(provider) {
 #'
 #' @return Named list containing only the non-secret config fields WMFM stores.
 #' @keywords internal
-prepareNonSecretProviderConfig = function(backend, ollamaBaseUrl, ollamaModel, ollamaThinkLow) {
-  resolveWmfmProviderConfig(
+prepareNonSecretProviderConfig = function(backend, ollamaBaseUrl, ollamaModel, ollamaThinkLow, activeProviderProfileId = NULL) {
+  providerConfig = resolveWmfmProviderConfig(
     backend = backend,
     ollamaBaseUrl = ollamaBaseUrl,
     ollamaModel = ollamaModel,
     ollamaThinkLow = isTRUE(ollamaThinkLow)
   )
+
+  if (!is.null(activeProviderProfileId)) {
+    providerConfig$activeProviderProfileId = trimws(as.character(activeProviderProfileId))
+  }
+
+  providerConfig
 }
 
 #' Persist settings-side non-secret provider config

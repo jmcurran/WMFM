@@ -80,15 +80,73 @@ writeWmfmProviderProfiles = function(profiles = list()) {
   writeWmfmConfig(cfg)
 }
 
+#' Resolve a provider profile by identifier
+#'
+#' @param profileId Character scalar provider profile identifier.
+#' @param profiles Optional list of provider profiles.
+#'
+#' @return A normalised provider profile when available, otherwise `NULL`.
 #' @keywords internal
-resolveWmfmActiveProviderProfile = function(backend = NULL) {
-  profiles = readWmfmProviderProfiles()
-  backend = tolower(trimws(as.character(backend %||% resolveWmfmProviderConfig()$backend %||% "")))
-  idx = which(vapply(profiles, function(x) identical(tolower(trimws(as.character(x$providerType %||% ""))), backend), logical(1)))[1]
-  if (!is.na(idx)) {
-    return(profiles[[idx]])
+resolveWmfmProviderProfileById = function(profileId, profiles = readWmfmProviderProfiles()) {
+  profileId = trimws(as.character(profileId %||% ""))
+  if (!nzchar(profileId) || !is.list(profiles) || length(profiles) == 0) {
+    return(NULL)
   }
-  profiles[[1]]
+
+  for (profile in profiles) {
+    normalisedProfile = normaliseWmfmProviderProfile(profile)
+    if (identical(normalisedProfile$profileId, profileId)) {
+      return(normalisedProfile)
+    }
+  }
+
+  NULL
+}
+
+#' Resolve the active WMFM provider profile
+#'
+#' @param profileId Optional provider profile identifier.
+#' @param backend Optional provider type fallback for legacy configuration.
+#'
+#' @return A normalised provider profile.
+#' @keywords internal
+resolveWmfmActiveProviderProfile = function(profileId = NULL, backend = NULL) {
+  profiles = readWmfmProviderProfiles()
+  localConfig = readWmfmConfig()
+
+  requestedProfileId = profileId %||%
+    getOption("wmfm.active_provider_profile_id", default = NULL) %||%
+    localConfig$activeProviderProfileId %||%
+    ""
+
+  matchedProfile = resolveWmfmProviderProfileById(requestedProfileId, profiles)
+  if (!is.null(matchedProfile)) {
+    return(matchedProfile)
+  }
+
+  if (nzchar(requestedProfileId)) {
+    requestedProviderType = tolower(trimws(as.character(requestedProfileId)))
+    idx = which(vapply(profiles, function(x) {
+      profile = normaliseWmfmProviderProfile(x)
+      identical(tolower(trimws(as.character(profile$providerType %||% ""))), requestedProviderType)
+    }, logical(1)))[1]
+
+    if (!is.na(idx)) {
+      return(normaliseWmfmProviderProfile(profiles[[idx]]))
+    }
+  }
+
+  backend = tolower(trimws(as.character(backend %||% localConfig$backend %||% wmfmProviderDefaults()$backend %||% "")))
+  idx = which(vapply(profiles, function(x) {
+    profile = normaliseWmfmProviderProfile(x)
+    identical(tolower(trimws(as.character(profile$providerType %||% ""))), backend)
+  }, logical(1)))[1]
+
+  if (!is.na(idx)) {
+    return(normaliseWmfmProviderProfile(profiles[[idx]]))
+  }
+
+  normaliseWmfmProviderProfile(profiles[[1]])
 }
 
 #' @keywords internal
@@ -266,6 +324,7 @@ readWmfmConfig = function() {
     "ollamaModel",
     "ollamaThinkLow",
     "providerProfiles",
+    "activeProviderProfileId",
     "developerModeEnabled"
   )
 
@@ -292,6 +351,7 @@ writeWmfmConfig = function(config = list()) {
     "ollamaModel",
     "ollamaThinkLow",
     "providerProfiles",
+    "activeProviderProfileId",
     "developerModeEnabled"
   )
 
@@ -598,34 +658,50 @@ buildMissingProviderStartupMessage = function() {
 #' @return Named list with normalized provider config.
 #' @keywords internal
 resolveWmfmProviderConfig = function(backend = NULL,
-                                     ollamaBaseUrl = NULL,
-                                     ollamaModel = NULL,
-                                     ollamaThinkLow = NULL) {
+                                      ollamaBaseUrl = NULL,
+                                      ollamaModel = NULL,
+                                      ollamaThinkLow = NULL) {
   defaults = wmfmProviderDefaults()
   localConfig = readWmfmConfig()
+  activeProfile = resolveWmfmActiveProviderProfile(backend = backend %||% localConfig$backend %||% defaults$backend)
 
   backendFromOption = getOption("wmfm.chat_backend", default = NULL)
+  backendFromProfile = activeProfile$providerType %||% NULL
   backendFromLocal = localConfig$backend %||% NULL
   fallbackBackend = defaults$backend
 
   resolvedBackend = tolower(trimws(as.character(backend %||%
     backendFromOption %||%
+    backendFromProfile %||%
     backendFromLocal %||%
     fallbackBackend)))
   if (!nzchar(resolvedBackend)) {
     resolvedBackend = fallbackBackend
   }
 
+  profileBaseUrl = if (identical(resolvedBackend, "ollama")) activeProfile$apiUrl else NULL
+  profileBaseUrl = trimws(as.character(profileBaseUrl %||% ""))
+  if (!nzchar(profileBaseUrl)) {
+    profileBaseUrl = NULL
+  }
+
   resolvedBaseUrl = trimws(as.character(ollamaBaseUrl %||%
     getOption("wmfm.ollama_base_url", default = NULL) %||%
+    profileBaseUrl %||%
     localConfig$ollamaBaseUrl %||%
     defaults$ollamaBaseUrl))
   if (!nzchar(resolvedBaseUrl)) {
     resolvedBaseUrl = defaults$ollamaBaseUrl
   }
 
+  profileModel = trimws(as.character(activeProfile$defaultModel %||% ""))
+  if (!nzchar(profileModel)) {
+    profileModel = NULL
+  }
+
   resolvedModel = trimws(as.character(ollamaModel %||%
     getOption("wmfm.ollama_model", default = NULL) %||%
+    profileModel %||%
     localConfig$ollamaModel %||%
     defaults$ollamaModel))
   if (!nzchar(resolvedModel)) {
@@ -641,7 +717,8 @@ resolveWmfmProviderConfig = function(backend = NULL,
     backend = resolvedBackend,
     ollamaBaseUrl = resolvedBaseUrl,
     ollamaModel = resolvedModel,
-    ollamaThinkLow = resolvedThinkLow
+    ollamaThinkLow = resolvedThinkLow,
+    activeProviderProfileId = activeProfile$profileId
   )
 }
 

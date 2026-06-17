@@ -225,3 +225,69 @@ test_that("provider observers include add and remove provider registry actions",
   expect_match(observerText, "writeWmfmProviderProfiles", fixed = TRUE)
   expect_match(observerText, "providerProfileModal", fixed = TRUE)
 })
+
+test_that("active provider selector uses provider profile identifiers", {
+  tmpDir = tempfile("wmfm-provider-profile-active-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  profiles = list(
+    normaliseWmfmProviderProfile(list(
+      profileId = "local-ollama-one",
+      displayName = "Local Ollama One",
+      providerType = "ollama",
+      apiUrl = "http://localhost:11434",
+      defaultModel = "llama3.2"
+    )),
+    normaliseWmfmProviderProfile(list(
+      profileId = "claude-work",
+      displayName = "Claude Work",
+      providerType = "claude",
+      credentialSource = "envvar",
+      credentialEnvVar = "ANTHROPIC_API_KEY"
+    ))
+  )
+
+  writeWmfmProviderProfiles(profiles)
+  saveNonSecretProviderConfig(list(activeProviderProfileId = "claude-work"))
+
+  activeProfile = resolveWmfmActiveProviderProfile()
+  providerConfig = resolveWmfmProviderConfig()
+  choices = buildProviderProfileChoices()
+
+  expect_identical(activeProfile$profileId, "claude-work")
+  expect_identical(providerConfig$backend, "claude")
+  expect_identical(providerConfig$activeProviderProfileId, "claude-work")
+  expect_identical(unname(choices), c("local-ollama-one", "claude-work"))
+  expect_identical(names(choices), c("Local Ollama One", "Claude Work"))
+})
+
+test_that("active Ollama provider profile supplies endpoint and model", {
+  tmpDir = tempfile("wmfm-provider-profile-ollama-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  writeWmfmProviderProfiles(list(normaliseWmfmProviderProfile(list(
+    profileId = "local-custom-ollama",
+    displayName = "Custom Ollama",
+    providerType = "ollama",
+    apiUrl = "http://localhost:11434",
+    defaultModel = "custom-model"
+  ))))
+  saveNonSecretProviderConfig(list(activeProviderProfileId = "local-custom-ollama"))
+
+  providerConfig = resolveWmfmProviderConfig()
+
+  expect_identical(providerConfig$backend, "ollama")
+  expect_identical(providerConfig$ollamaBaseUrl, "http://localhost:11434")
+  expect_identical(providerConfig$ollamaModel, "custom-model")
+  expect_identical(providerConfig$activeProviderProfileId, "local-custom-ollama")
+})
+
+test_that("provider settings UI active selector is profile based", {
+  uiText = readPackageText("R", "app-ui.R")
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(uiText, "choices = buildProviderProfileChoices()", fixed = TRUE)
+  expect_match(uiText, "selected = resolveWmfmActiveProviderProfile()$profileId", fixed = TRUE)
+  expect_match(observerText, "resolveSelectedProviderProfile", fixed = TRUE)
+  expect_match(observerText, "activeProviderProfileId = activeProfile$profileId", fixed = TRUE)
+})
