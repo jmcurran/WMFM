@@ -167,3 +167,18 @@ Stage 41.2 begins with policy and user-experience guardrails rather than API-key
 - leave actual credential persistence for a later stage after the single-source configuration decision is fully settled.
 
 This keeps the deployed-app security boundary clear while avoiding another premature credential-storage implementation.
+
+## Stage 41.3 implementation decision
+
+Stage 41.3 implements the local-desktop credential path that was deferred in Stage 41.2.
+
+The design decision is that desktop users should not have to manage provider setup in two separate places. WMFM may therefore store a local API key in the same WMFM user configuration file that stores non-secret provider preferences, but only for local single-user sessions. Environment variables remain the recommended and higher-priority route for deployed apps, scripts, and administrators.
+
+Stage 41.3 should therefore:
+
+- keep environment variables ahead of local config credentials in the resolution order;
+- keep ordinary configuration reads from exposing credential values;
+- allow local desktop users to add or remove a provider credential through the Provider setup modal;
+- keep credential-entry controls out of the front of the Settings tab;
+- disable local config credential storage in deployed app contexts;
+- never display full credential values in status text, notifications, tests, logs, README text, or NEWS entries.

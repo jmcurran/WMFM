@@ -55,9 +55,10 @@ buildProviderCredentialGuidance = function(provider) {
   if (identical(providerId, "claude")) {
     envVar = adapter$credentialEnvVar %||% "ANTHROPIC_API_KEY"
     return(c(
-      "Claude (Anthropic) requires a credential set outside WMFM.",
-      paste0("Set environment variable: ", envVar),
-      "WMFM never stores or displays API key values."
+      "Claude (Anthropic) requires a credential.",
+      paste0("Recommended deployment route: set environment variable ", envVar, "."),
+      "For a local desktop session, Provider setup can save the key in the WMFM user config file.",
+      "WMFM never displays API key values."
     ))
   }
 
@@ -71,9 +72,10 @@ buildProviderCredentialGuidance = function(provider) {
   if (!is.null(adapter) && isTRUE(adapter$requiresCredentials)) {
     envVar = adapter$credentialEnvVar %||% "provider-specific env var"
     return(c(
-      paste0(adapter$label %||% providerId, " requires a credential set outside WMFM."),
-      paste0("Set environment variable: ", envVar),
-      "WMFM never stores or displays API key values."
+      paste0(adapter$label %||% providerId, " requires a credential."),
+      paste0("Recommended deployment route: set environment variable ", envVar, "."),
+      "For a local desktop session, Provider setup can save the key in the WMFM user config file.",
+      "WMFM never displays API key values."
     ))
   }
 
@@ -105,10 +107,12 @@ buildProviderCredentialStatusLines = function(provider) {
 
   envVar = adapter$credentialEnvVar %||% "provider-specific env var"
   detected = if (isTRUE(details$credentialsAvailable)) "detected" else "missing"
+  sourceText = details$credentialSource %||% "missing"
 
   c(
     paste0("Credential status: ", detected, "."),
-    paste0("Expected location: environment variable ", envVar, ".")
+    paste0("Credential source: ", sourceText, "."),
+    paste0("Expected environment variable ", envVar, ".")
   )
 }
 

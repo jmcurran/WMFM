@@ -9,6 +9,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.006
+
+- Repaired Stage 41.3 provider credential wording so existing provider-setting tests continue to match documented messages.
+- Preserved the local desktop credential setup behavior and deployed-app administrator controls added in Stage 41.3.
+- Kept Claude missing-credential guidance explicit about ANTHROPIC_API_KEY while mentioning the Provider setup modal.
+- Validated through the standard WMFM stage workflow.
+
 ## WMFM 1.0.3.004
 
 - Added Stage 41.2.1 provider setup policy helpers so WMFM can distinguish local desktop use from administrator-managed deployments.

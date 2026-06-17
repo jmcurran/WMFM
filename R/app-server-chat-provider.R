@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog modalButton tags
+#' @importFrom shiny observe observeEvent renderText showNotification updateCheckboxInput updateSelectInput updateTextInput showModal modalDialog modalButton tags passwordInput actionButton removeModal
 registerChatProviderObservers = function(input, output, session, rv) {
   resolveSelectedProvider = function() {
     requested = tolower(trimws(input$providerConfig_backend %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
@@ -50,14 +50,37 @@ registerChatProviderObservers = function(input, output, session, rv) {
       provider = wmfmProviderDefaults()$backend
     }
 
+    adapter = getWmfmProviderAdapter(provider)
+    credentialControls = NULL
+    footerControls = modalButton("Close")
+
+    if (isTRUE(adapter$requiresCredentials) && isWmfmCredentialEntryAllowed() &&
+        isWmfmConfigCredentialStorageAllowed()) {
+      credentialControls = tags$div(
+        tags$hr(),
+        tags$p("Local desktop credential storage saves the key in the WMFM user config file. Do not use this on a deployed shared server."),
+        passwordInput(
+          inputId = "providerCredentialValue",
+          label = "API key for this local desktop session",
+          value = ""
+        )
+      )
+      footerControls = tags$div(
+        actionButton("saveProviderCredentialBtn", "Save local credential", class = "btn-primary"),
+        actionButton("removeProviderCredentialBtn", "Remove local credential", class = "btn-secondary"),
+        modalButton("Close")
+      )
+    }
+
     modalDialog(
       title = "Provider setup",
       tags$p(paste(buildWmfmProviderSetupPolicyText(), collapse = " ")),
       tags$hr(),
       tags$p(paste(buildProviderCredentialGuidance(provider), collapse = " ")),
       tags$p(paste(buildProviderCredentialStatusLines(provider), collapse = " ")),
+      credentialControls,
       easyClose = TRUE,
-      footer = modalButton("Close")
+      footer = footerControls
     )
   }
 
@@ -199,6 +222,40 @@ registerChatProviderObservers = function(input, output, session, rv) {
 
   observeEvent(input$showProviderSetupBtn, {
     showModal(providerSetupModal(resolveSelectedProvider()))
+  }, ignoreInit = TRUE)
+
+
+  observeEvent(input$saveProviderCredentialBtn, {
+    provider = resolveSelectedProvider()
+    adapter = getWmfmProviderAdapter(provider)
+
+    if (!isTRUE(adapter$requiresCredentials)) {
+      showNotification("The selected provider does not require an API key.", type = "message", duration = 5)
+      return(NULL)
+    }
+    if (!isWmfmCredentialEntryAllowed() || !isWmfmConfigCredentialStorageAllowed()) {
+      showNotification("Local credential storage is not allowed in this WMFM runtime context.", type = "error", duration = 8)
+      return(NULL)
+    }
+
+    credential = input$providerCredentialValue %||% ""
+    if (!nzchar(trimws(credential))) {
+      showNotification("Enter an API key before saving the local credential.", type = "warning", duration = 6)
+      return(NULL)
+    }
+
+    writeWmfmConfigCredential(provider, credential)
+    rv$providerConfigSaveStatus = paste0("Saved local credential for ", provider, " in the WMFM user config file.")
+    removeModal()
+    showNotification("Saved local provider credential. The key value will not be displayed by WMFM.", type = "message", duration = 6)
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$removeProviderCredentialBtn, {
+    provider = resolveSelectedProvider()
+    removeWmfmConfigCredential(provider)
+    rv$providerConfigSaveStatus = paste0("Removed any local credential for ", provider, " from the WMFM user config file.")
+    removeModal()
+    showNotification("Removed local provider credential.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
   observeEvent(input$refreshOllamaModelsBtn, {

@@ -188,3 +188,15 @@ test_that("provider observers auto-save provider changes and avoid non-Ollama di
   expect_match(observerText, 'if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(providerConfig))', fixed = TRUE)
   expect_false(grepl("observeEvent(input$applyChatProviderBtn", observerText, fixed = TRUE))
 })
+
+test_that("provider setup modal supports local desktop credential storage without front-page secret fields", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(observerText, "providerCredentialValue", fixed = TRUE)
+  expect_match(observerText, "Save local credential", fixed = TRUE)
+  expect_match(observerText, "Remove local credential", fixed = TRUE)
+  expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
+  expect_match(observerText, "removeWmfmConfigCredential(provider)", fixed = TRUE)
+  expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
+})

@@ -222,13 +222,15 @@ buildWmfmProviderSetupPolicyText = function() {
   )
 }
 
-#' Read WMFM local configuration
+#' Read raw WMFM local configuration
 #'
-#' Reads persisted, non-secret local defaults for provider settings.
+#' Reads the complete local WMFM configuration file. This helper is internal
+#' and may include locally stored credential metadata, so user-facing code
+#' should prefer `readWmfmConfig()` unless it is explicitly managing secrets.
 #'
-#' @return Named list with recognized non-secret fields when present.
+#' @return Named list containing all parsed configuration fields.
 #' @keywords internal
-readWmfmConfig = function() {
+readWmfmRawConfig = function() {
   configPath = wmfmConfigPath()
   if (!file.exists(configPath)) {
     return(list())
@@ -245,6 +247,19 @@ readWmfmConfig = function() {
     return(list())
   }
 
+  as.list(parsed)
+}
+
+#' Read WMFM local configuration
+#'
+#' Reads persisted local defaults for provider settings. Credential values are
+#' deliberately excluded from this ordinary settings view.
+#'
+#' @return Named list with recognized non-secret fields when present.
+#' @keywords internal
+readWmfmConfig = function() {
+  parsed = readWmfmRawConfig()
+
   recognizedFields = c(
     "backend",
     "ollamaBaseUrl",
@@ -259,13 +274,16 @@ readWmfmConfig = function() {
 
 #' Write WMFM local configuration
 #'
-#' Persists non-secret provider defaults for local reuse.
+#' Persists non-secret provider defaults for local reuse while preserving any
+#' separately managed local credential block already present in the same WMFM
+#' configuration file.
 #'
 #' @param config Named list with provider defaults to persist.
 #'
 #' @return Invisibly returns the path that was written.
 #' @keywords internal
 writeWmfmConfig = function(config = list()) {
+  existing = readWmfmRawConfig()
   config = as.list(config)
 
   allowedFields = c(
@@ -276,10 +294,11 @@ writeWmfmConfig = function(config = list()) {
     "providerProfiles",
     "developerModeEnabled"
   )
-  secretFieldNames = c("anthropicApiKey", "apiKey", "ANTHROPIC_API_KEY")
 
   kept = config[intersect(names(config), allowedFields)]
-  kept = kept[setdiff(names(kept), secretFieldNames)]
+  if ("credentials" %in% names(existing)) {
+    kept$credentials = existing$credentials
+  }
 
   configPath = wmfmConfigPath()
   dir.create(dirname(configPath), recursive = TRUE, showWarnings = FALSE)
@@ -288,6 +307,174 @@ writeWmfmConfig = function(config = list()) {
   invisible(configPath)
 }
 
+#' Test whether local WMFM credential storage is allowed
+#'
+#' Local credential storage is available only for single-user desktop sessions.
+#' Deployed and administrator-managed apps must use environment variables or
+#' deployment secrets instead.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+isWmfmConfigCredentialStorageAllowed = function() {
+  if (isWmfmDeployedApp()) {
+    return(FALSE)
+  }
+
+  explicitFlag = tolower(trimws(Sys.getenv("WMFM_ALLOW_CONFIG_CREDENTIALS", unset = "")))
+  if (explicitFlag %in% c("1", "true", "yes", "on")) {
+    return(TRUE)
+  }
+  if (explicitFlag %in% c("0", "false", "no", "off")) {
+    return(FALSE)
+  }
+
+  optionFlag = getOption("wmfm.allow_config_credentials", default = NULL)
+  if (!is.null(optionFlag)) {
+    return(isTRUE(optionFlag))
+  }
+
+  TRUE
+}
+
+#' Normalise a WMFM provider credential environment variable name
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Character scalar environment variable name, or an empty string.
+#' @keywords internal
+normaliseWmfmCredentialEnvVar = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  if (!isWmfmProviderSupported(providerId)) {
+    return("")
+  }
+
+  getWmfmProviderAdapter(providerId)$credentialEnvVar %||% ""
+}
+
+#' Read a locally stored WMFM provider credential
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Character scalar credential value, or an empty string.
+#' @keywords internal
+readWmfmConfigCredential = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  if (!nzchar(providerId) || !isWmfmConfigCredentialStorageAllowed()) {
+    return("")
+  }
+
+  rawConfig = readWmfmRawConfig()
+  credentials = rawConfig$credentials
+  if (!is.list(credentials) || !providerId %in% tolower(names(credentials))) {
+    return("")
+  }
+
+  matchedName = names(credentials)[tolower(names(credentials)) == providerId][1]
+  credentialEntry = credentials[[matchedName]]
+  if (!is.list(credentialEntry)) {
+    return("")
+  }
+
+  value = credentialEntry$apiKey %||% credentialEntry$key %||% ""
+  value = trimws(as.character(value))
+  if (length(value) != 1 || is.na(value)) {
+    return("")
+  }
+
+  value
+}
+
+#' Write a locally stored WMFM provider credential
+#'
+#' @param provider Character scalar provider id.
+#' @param credential Character scalar credential value.
+#'
+#' @return Invisibly returns the config file path written.
+#' @keywords internal
+writeWmfmConfigCredential = function(provider, credential) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  credential = trimws(as.character(credential %||% ""))
+
+  if (!isWmfmProviderSupported(providerId)) {
+    stop("Cannot save credential for an unsupported WMFM provider.", call. = FALSE)
+  }
+  if (!isWmfmConfigCredentialStorageAllowed()) {
+    stop("Local WMFM credential storage is not allowed in this runtime context.", call. = FALSE)
+  }
+  if (!nzchar(credential)) {
+    stop("Credential value cannot be empty.", call. = FALSE)
+  }
+
+  rawConfig = readWmfmRawConfig()
+  credentials = rawConfig$credentials
+  if (!is.list(credentials)) {
+    credentials = list()
+  }
+  credentials[[providerId]] = list(apiKey = credential)
+  rawConfig$credentials = credentials
+
+  configPath = wmfmConfigPath()
+  dir.create(dirname(configPath), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(x = rawConfig, path = configPath, auto_unbox = TRUE, pretty = TRUE)
+
+  invisible(configPath)
+}
+
+#' Remove a locally stored WMFM provider credential
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Invisibly returns the config file path written.
+#' @keywords internal
+removeWmfmConfigCredential = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  rawConfig = readWmfmRawConfig()
+  credentials = rawConfig$credentials
+  if (!is.list(credentials)) {
+    return(invisible(wmfmConfigPath()))
+  }
+
+  keep = setdiff(names(credentials), names(credentials)[tolower(names(credentials)) == providerId])
+  rawConfig$credentials = credentials[keep]
+
+  configPath = wmfmConfigPath()
+  dir.create(dirname(configPath), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(x = rawConfig, path = configPath, auto_unbox = TRUE, pretty = TRUE)
+
+  invisible(configPath)
+}
+
+#' Resolve WMFM provider credential availability
+#'
+#' Environment variables have priority over local config credentials so deployed
+#' and scripted use can override desktop settings predictably.
+#'
+#' @param provider Character scalar provider id.
+#'
+#' @return Named list with non-secret credential availability metadata.
+#' @keywords internal
+resolveWmfmProviderCredential = function(provider) {
+  providerId = tolower(trimws(as.character(provider %||% "")))
+  if (!isWmfmProviderSupported(providerId)) {
+    return(list(provider = providerId, available = FALSE, source = "unsupported"))
+  }
+
+  adapter = getWmfmProviderAdapter(providerId)
+  if (!isTRUE(adapter$requiresCredentials)) {
+    return(list(provider = providerId, available = TRUE, source = "none-required"))
+  }
+
+  envVar = normaliseWmfmCredentialEnvVar(providerId)
+  if (nzchar(envVar) && nzchar(Sys.getenv(envVar, unset = ""))) {
+    return(list(provider = providerId, available = TRUE, source = paste0("env:", envVar)))
+  }
+
+  if (nzchar(readWmfmConfigCredential(providerId))) {
+    return(list(provider = providerId, available = TRUE, source = "wmfm-config"))
+  }
+
+  list(provider = providerId, available = FALSE, source = "missing")
+}
 
 #' Test whether the developer-mode UI should be exposed
 #'
@@ -558,7 +745,7 @@ getWmfmProviderAdapter = function(provider) {
 #' @return Logical scalar; `TRUE` when `ANTHROPIC_API_KEY` is set.
 #' @keywords internal
 hasClaudeApiKey = function() {
-  nzchar(Sys.getenv("ANTHROPIC_API_KEY", unset = ""))
+  isTRUE(resolveWmfmProviderCredential("claude")$available)
 }
 
 #' Resolve WMFM provider credentials
@@ -571,8 +758,9 @@ hasClaudeApiKey = function() {
 #'   `credentialSource`, and `localOnly` fields.
 #' @keywords internal
 resolveWmfmProviderCredentials = function() {
-  claudeKeyPresent = hasClaudeApiKey()
   registry = wmfmProviderRegistry()
+  claudeCredential = resolveWmfmProviderCredential("claude")
+  openaiCredential = resolveWmfmProviderCredential("openai")
 
   list(
     ollama = list(
@@ -585,15 +773,15 @@ resolveWmfmProviderCredentials = function() {
     claude = list(
       provider = "claude",
       requiresCredentials = isTRUE(registry$claude$requiresCredentials),
-      credentialsAvailable = isTRUE(claudeKeyPresent),
-      credentialSource = if (isTRUE(claudeKeyPresent)) "env:ANTHROPIC_API_KEY" else "missing",
+      credentialsAvailable = isTRUE(claudeCredential$available),
+      credentialSource = claudeCredential$source,
       localOnly = FALSE
     ),
     openai = list(
       provider = "openai",
       requiresCredentials = isTRUE(registry$openai$requiresCredentials),
-      credentialsAvailable = FALSE,
-      credentialSource = "not-configured",
+      credentialsAvailable = isTRUE(openaiCredential$available),
+      credentialSource = openaiCredential$source,
       localOnly = FALSE
     ),
     openaiCompatible = list(

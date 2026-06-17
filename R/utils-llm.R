@@ -105,8 +105,8 @@ getChatProvider = function(backend = NULL,
             "",
             "Backend: claude",
             "",
-            "ANTHROPIC_API_KEY is not set on this machine.",
-            "Set it in the runtime environment before selecting Claude.",
+            "ANTHROPIC_API_KEY is not set.",
+            "Set ANTHROPIC_API_KEY or add a local desktop credential through Provider setup.",
             sep = "\n"
           )
         ))

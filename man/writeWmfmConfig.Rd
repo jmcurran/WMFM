@@ -13,6 +13,8 @@ writeWmfmConfig(config = list())
 Invisibly returns the path that was written.
 }
 \description{
-Persists non-secret provider defaults for local reuse.
+Persists non-secret provider defaults for local reuse while preserving any
+separately managed local credential block already present in the same WMFM
+configuration file.
 }
 \keyword{internal}

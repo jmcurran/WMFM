@@ -10,6 +10,7 @@ readWmfmConfig()
 Named list with recognized non-secret fields when present.
 }
 \description{
-Reads persisted, non-secret local defaults for provider settings.
+Reads persisted local defaults for provider settings. Credential values are
+deliberately excluded from this ordinary settings view.
 }
 \keyword{internal}

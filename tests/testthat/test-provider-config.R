@@ -446,3 +446,58 @@ test_that("provider resolver does not infer Claude solely from API-key presence"
 
   expect_identical(cfg$backend, wmfmProviderDefaults()$backend)
 })
+
+test_that("local config credentials are available for desktop sessions without readWmfmConfig exposing values", {
+  tmpDir = tempfile("wmfm-config-credentials-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = ""
+  ), .local_envir = parent.frame())
+
+  writeWmfmConfigCredential("claude", "local-secret-value")
+
+  credential = resolveWmfmProviderCredential("claude")
+  credentials = resolveWmfmProviderCredentials()
+  publicConfig = readWmfmConfig()
+  rawConfig = readWmfmRawConfig()
+
+  expect_true(credential$available)
+  expect_identical(credential$source, "wmfm-config")
+  expect_true(credentials$claude$credentialsAvailable)
+  expect_identical(credentials$claude$credentialSource, "wmfm-config")
+  expect_false("credentials" %in% names(publicConfig))
+  expect_identical(rawConfig$credentials$claude$apiKey, "local-secret-value")
+})
+
+test_that("environment credentials take precedence over local config credentials", {
+  tmpDir = tempfile("wmfm-config-credential-precedence-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = "env-secret-value"
+  ), .local_envir = parent.frame())
+
+  writeWmfmConfigCredential("claude", "local-secret-value")
+
+  credential = resolveWmfmProviderCredential("claude")
+
+  expect_true(credential$available)
+  expect_identical(credential$source, "env:ANTHROPIC_API_KEY")
+})
+
+test_that("deployed sessions cannot use local config credential storage", {
+  tmpDir = tempfile("wmfm-config-credential-deployed-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = TRUE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = ""
+  ), .local_envir = parent.frame())
+
+  expect_false(isWmfmConfigCredentialStorageAllowed())
+  expect_error(
+    writeWmfmConfigCredential("claude", "local-secret-value"),
+    "not allowed",
+    fixed = TRUE
+  )
+})
