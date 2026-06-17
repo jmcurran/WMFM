@@ -11,6 +11,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.008
+
+- Added Stage 41.5 design notes for the provider-as-object Settings redesign.
+- Defined the user-facing provider table, active-provider selector, and add/edit/delete modal workflow.
+- Recorded that credentials must remain hidden and exposed only as provider status.
+- Clarified that Stage 41.6 is the first implementation stage for the redesign.
+- No package-code validation was required because this stage only adds design documentation.
+
 ## WMFM 1.0.3.007
 
 - Updated README setup guidance for local desktop and deployed WMFM configuration.
