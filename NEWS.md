@@ -14,6 +14,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.015
+
+- Added an explicit Edit action for provider objects in the Settings provider registry.
+- Reused the provider modal for both adding and editing provider profiles, with existing values pre-populated for edits.
+- Updated provider settings tests to cover the edit action while keeping credentials out of the main UI.
+- Validated by the standard WMFM full package workflow.
 ## WMFM 1.0.3.014
 
 - Repaired Stage 41.7 provider profile resolution so legacy local configuration remains usable during migration.

@@ -86,6 +86,7 @@ test_that("provider settings expose provider registry controls instead of old in
 
   expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
   expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"editProviderProfileBtn\"", fixed = TRUE)
   expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
   expect_match(uiText, "Active provider", fixed = TRUE)
   expect_match(uiText, "Advanced provider diagnostics", fixed = TRUE)
@@ -143,6 +144,7 @@ test_that("provider settings UI uses compact info help and no apply button", {
   expect_match(html, "Active provider", fixed = TRUE)
   expect_match(uiText, "providerRegistryTable", fixed = TRUE)
   expect_match(uiText, "addProviderProfileBtn", fixed = TRUE)
+  expect_match(uiText, "editProviderProfileBtn", fixed = TRUE)
   expect_match(uiText, "removeProviderProfileBtn", fixed = TRUE)
   expect_match(html, "ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("Current provider:", uiText, fixed = TRUE))
@@ -212,6 +214,7 @@ test_that("provider settings main UI is provider-object oriented", {
   expect_match(html, "Active provider", fixed = TRUE)
   expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
   expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"editProviderProfileBtn\"", fixed = TRUE)
   expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
   expect_match(html, "Advanced Ollama configuration", fixed = TRUE)
   expect_false(grepl("http://corrin.stat.auckland.ac.nz:11434", html, fixed = TRUE))
@@ -221,9 +224,23 @@ test_that("provider observers include add and remove provider registry actions",
   observerText = readPackageText("R", "app-server-chat-provider.R")
 
   expect_match(observerText, "observeEvent(input$addProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$editProviderProfileBtn", fixed = TRUE)
   expect_match(observerText, "observeEvent(input$removeProviderProfileBtn", fixed = TRUE)
   expect_match(observerText, "writeWmfmProviderProfiles", fixed = TRUE)
   expect_match(observerText, "providerProfileModal", fixed = TRUE)
+})
+
+
+
+test_that("provider profile modal supports editing the active provider", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "inputId = \"editProviderProfileBtn\"", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$editProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "providerProfileModal(resolveSelectedProviderProfile())", fixed = TRUE)
+  expect_match(observerText, "providerProfileId", fixed = TRUE)
+  expect_match(observerText, "Updated provider", fixed = TRUE)
 })
 
 test_that("active provider selector uses provider profile identifiers", {

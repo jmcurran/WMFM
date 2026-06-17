@@ -1097,6 +1097,12 @@ appUI = function() {
             class = "btn-secondary btn-sm"
           ),
           actionButton(
+            inputId = "editProviderProfileBtn",
+            label = "Edit",
+            title = "Edit the active provider",
+            class = "btn-secondary btn-sm"
+          ),
+          actionButton(
             inputId = "removeProviderProfileBtn",
             label = "-",
             title = "Remove the active provider",

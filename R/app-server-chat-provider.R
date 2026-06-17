@@ -42,6 +42,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
     editable = isWmfmProviderConfigurationEditable()
     session$sendInputMessage("providerConfig_backend", list(disabled = !editable))
     session$sendInputMessage("addProviderProfileBtn", list(disabled = !editable))
+    session$sendInputMessage("editProviderProfileBtn", list(disabled = !editable))
     session$sendInputMessage("removeProviderProfileBtn", list(disabled = !editable))
     if (!editable) {
       session$sendInputMessage("providerConfig_ollamaBaseUrl", list(disabled = TRUE))
@@ -52,23 +53,36 @@ registerChatProviderObservers = function(input, output, session, rv) {
   }
 
 
-  providerProfileModal = function() {
+  providerProfileModal = function(profile = NULL) {
     if (!isWmfmProviderConfigurationEditable()) {
       return(providerSetupModal(resolveSelectedProvider()))
     }
 
+    editing = !is.null(profile)
+    if (editing) {
+      profile = normaliseWmfmProviderProfile(profile)
+    } else {
+      profile = normaliseWmfmProviderProfile(list())
+      profile$profileId = ""
+      profile$displayName = ""
+      profile$providerType = "ollama"
+      profile$apiUrl = ""
+      profile$defaultModel = ""
+    }
+
     modalDialog(
-      title = "Add provider",
-      tags$p("Add a provider that WMFM can use for explanations. API keys are handled separately and are never displayed after entry."),
-      textInput("providerProfileName", "Provider name", value = ""),
+      title = if (editing) "Edit provider" else "Add provider",
+      tags$p("Add or update a provider that WMFM can use for explanations. API keys are handled separately and are never displayed after entry."),
+      tags$input(type = "hidden", id = "providerProfileId", value = profile$profileId),
+      textInput("providerProfileName", "Provider name", value = profile$displayName),
       selectInput(
         "providerProfileType",
         "Provider type",
         choices = c("Ollama" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
-        selected = "ollama"
+        selected = profile$providerType
       ),
-      textInput("providerProfileUrl", "Endpoint URL, if needed", value = ""),
-      textInput("providerProfileModel", "Default model, if needed", value = ""),
+      textInput("providerProfileUrl", "Endpoint URL, if needed", value = profile$apiUrl),
+      textInput("providerProfileModel", "Default model, if needed", value = profile$defaultModel),
       easyClose = TRUE,
       footer = tags$div(
         actionButton("saveProviderProfileBtn", "Save provider", class = "btn-primary"),
@@ -265,6 +279,14 @@ registerChatProviderObservers = function(input, output, session, rv) {
     showModal(providerProfileModal())
   }, ignoreInit = TRUE)
 
+  observeEvent(input$editProviderProfileBtn, {
+    if (blockUserProviderConfiguration()) {
+      return(NULL)
+    }
+
+    showModal(providerProfileModal(resolveSelectedProviderProfile()))
+  }, ignoreInit = TRUE)
+
   observeEvent(input$saveProviderProfileBtn, {
     if (blockUserProviderConfiguration()) {
       return(NULL)
@@ -282,7 +304,13 @@ registerChatProviderObservers = function(input, output, session, rv) {
       providerName = adapter$label %||% providerType
     }
 
-    profileId = paste0(providerType, "-", format(Sys.time(), "%Y%m%d%H%M%S"))
+    existingProfileId = trimws(as.character(input$providerProfileId %||% ""))
+    profiles = readWmfmProviderProfiles()
+    profileId = existingProfileId
+    if (!nzchar(profileId)) {
+      profileId = paste0(providerType, "-", format(Sys.time(), "%Y%m%d%H%M%S"))
+    }
+
     newProfile = normaliseWmfmProviderProfile(list(
       profileId = profileId,
       displayName = providerName,
@@ -295,16 +323,34 @@ registerChatProviderObservers = function(input, output, session, rv) {
       active = FALSE
     ))
 
-    writeWmfmProviderProfiles(c(readWmfmProviderProfiles(), list(newProfile)))
+    matched = FALSE
+    updatedProfiles = lapply(profiles, function(profile) {
+      normalisedProfile = normaliseWmfmProviderProfile(profile)
+      if (identical(normalisedProfile$profileId, existingProfileId)) {
+        matched <<- TRUE
+        return(newProfile)
+      }
+      normalisedProfile
+    })
+
+    if (!matched) {
+      updatedProfiles = c(updatedProfiles, list(newProfile))
+    }
+
+    writeWmfmProviderProfiles(updatedProfiles)
     updateSelectInput(
       session,
       "providerConfig_backend",
-      choices = buildProviderProfileChoices(),
+      choices = buildProviderProfileChoices(updatedProfiles),
       selected = newProfile$profileId
     )
-    rv$providerConfigSaveStatus = paste0("Added provider ", providerName, ".")
+    rv$providerConfigSaveStatus = if (matched) {
+      paste0("Updated provider ", providerName, ".")
+    } else {
+      paste0("Added provider ", providerName, ".")
+    }
     removeModal()
-    showNotification("Added provider.", type = "message", duration = 5)
+    showNotification(if (matched) "Updated provider." else "Added provider.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
   observeEvent(input$removeProviderProfileBtn, {

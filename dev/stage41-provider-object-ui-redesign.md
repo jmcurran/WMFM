@@ -267,3 +267,11 @@ Deliberately deferred:
 - Full edit-provider modal support.
 - Per-profile credential references beyond the current provider-type credential resolution.
 - Administrator-managed provider registry import/export for deployed servers.
+
+## Stage 41.8 implementation note
+
+Stage 41.8 adds the first edit path for provider objects.
+
+The main Settings screen now includes an explicit Edit action for the active provider. This is a practical interim control while the provider registry is still rendered as a simple Shiny table rather than a fully interactive row-selection widget. The Edit action opens the same provider modal used for adding providers, pre-populated from the active provider profile, and saves back to the matching provider profile identifier rather than creating a duplicate.
+
+This keeps the provider-object workflow discoverable for manual testing while preserving the longer-term design goal that activating a provider row should open the edit dialog directly.
