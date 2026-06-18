@@ -16,6 +16,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.018
+
+- Repaired the provider settings developer-mode guard so developer controls are not present when developer mode UI is disabled.
+- Updated editWmfmConfig() to accept an injectable editor function for deterministic offline tests.
+- Replaced the config editor test's dependency on newer withr mocking helpers with a package-local editor stub.
+- Preserved the Stage 41.10 provider registry UI polish and config path helper behavior.
 ## WMFM 1.0.3.016
 
 - Added a confirmation dialog before removing provider objects from the Settings provider registry.

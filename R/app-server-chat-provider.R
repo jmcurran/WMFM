@@ -20,6 +20,16 @@ registerChatProviderObservers = function(input, output, session, rv) {
     activeProfile
   }
 
+  resolveProviderProfileByRow = function(rowIndex) {
+    profiles = readWmfmProviderProfiles()
+    rowIndex = suppressWarnings(as.integer(rowIndex))
+    if (is.na(rowIndex) || rowIndex < 1L || rowIndex > length(profiles)) {
+      return(resolveSelectedProviderProfile())
+    }
+
+    normaliseWmfmProviderProfile(profiles[[rowIndex]])
+  }
+
   resolveSelectedProvider = function() {
     activeProfile = resolveSelectedProviderProfile()
     requested = tolower(trimws(activeProfile$providerType %||% rv$activeChatBackend %||% wmfmProviderDefaults()$backend))
@@ -42,8 +52,7 @@ registerChatProviderObservers = function(input, output, session, rv) {
     editable = isWmfmProviderConfigurationEditable()
     session$sendInputMessage("providerConfig_backend", list(disabled = !editable))
     session$sendInputMessage("addProviderProfileBtn", list(disabled = !editable))
-    session$sendInputMessage("editProviderProfileBtn", list(disabled = !editable))
-    session$sendInputMessage("removeProviderProfileBtn", list(disabled = !editable))
+       session$sendInputMessage("removeProviderProfileBtn", list(disabled = !editable))
     if (!editable) {
       session$sendInputMessage("providerConfig_ollamaBaseUrl", list(disabled = TRUE))
       session$sendInputMessage("providerConfig_ollamaModel", list(disabled = TRUE))
@@ -283,11 +292,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
     }
   }, once = TRUE)
 
-  observeEvent(input$showProviderSetupBtn, {
-    showModal(providerSetupModal(resolveSelectedProvider()))
-  }, ignoreInit = TRUE)
-
-
   observeEvent(input$addProviderProfileBtn, {
     if (blockUserProviderConfiguration()) {
       return(NULL)
@@ -295,12 +299,12 @@ registerChatProviderObservers = function(input, output, session, rv) {
     showModal(providerProfileModal())
   }, ignoreInit = TRUE)
 
-  observeEvent(input$editProviderProfileBtn, {
+  observeEvent(input$providerRegistryRowDoubleClick, {
     if (blockUserProviderConfiguration()) {
       return(NULL)
     }
 
-    showModal(providerProfileModal(resolveSelectedProviderProfile()))
+    showModal(providerProfileModal(resolveProviderProfileByRow(input$providerRegistryRowDoubleClick)))
   }, ignoreInit = TRUE)
 
   observeEvent(input$saveProviderProfileBtn, {

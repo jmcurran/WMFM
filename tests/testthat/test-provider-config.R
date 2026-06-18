@@ -518,3 +518,18 @@ test_that("provider registry rows expose user-facing status without secrets", {
   expect_true("Credential needed" %in% rows$Status)
   expect_false(any(grepl("ANTHROPIC_API_KEY", rows$Status, fixed = TRUE)))
 })
+
+test_that("user-facing config path helpers expose and edit the config file", {
+  tmpDir = tempfile("wmfm-config-path-helper-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  expect_identical(getWmfmConfigDir(), normalizePath(tmpDir, winslash = "/", mustWork = FALSE))
+  expect_identical(getWmfmConfigPath(), normalizePath(file.path(tmpDir, "config.json"), winslash = "/", mustWork = FALSE))
+  expect_identical(readWmfmConfigPath(), getWmfmConfigPath())
+
+  editedPath = editWmfmConfig(editor = function(...) {
+    invisible(TRUE)
+  })
+  expect_identical(editedPath, getWmfmConfigPath())
+  expect_true(file.exists(getWmfmConfigPath()))
+})

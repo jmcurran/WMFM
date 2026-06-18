@@ -181,6 +181,63 @@ wmfmConfigPath = function() {
 }
 
 
+
+#' Get the WMFM local configuration directory
+#'
+#' Returns the directory that WMFM uses for user-specific local configuration.
+#' The path respects `options(wmfm.config_dir = ...)` when that option has
+#' been set.
+#'
+#' @return Character scalar path to the WMFM configuration directory.
+#' @export
+getWmfmConfigDir = function() {
+  normalizePath(wmfmConfigDir(), winslash = "/", mustWork = FALSE)
+}
+
+#' Get the WMFM local configuration file path
+#'
+#' Returns the full path to the WMFM user configuration file. This is useful
+#' when checking or backing up a local configuration during setup and testing.
+#'
+#' @return Character scalar path to `config.json`.
+#' @export
+getWmfmConfigPath = function() {
+  normalizePath(wmfmConfigPath(), winslash = "/", mustWork = FALSE)
+}
+
+#' Read the WMFM local configuration file path
+#'
+#' Alias for [getWmfmConfigPath()].
+#'
+#' @return Character scalar path to `config.json`.
+#' @export
+readWmfmConfigPath = getWmfmConfigPath
+
+#' Edit the WMFM local configuration file
+#'
+#' Opens the WMFM user configuration file in the default R editor. If the
+#' configuration directory or file does not yet exist, they are created first.
+#'
+#' @param editor Function used to open the configuration file. Defaults to
+#'   [utils::file.edit()]. This argument is mainly provided so tests can avoid
+#'   opening an editor.
+#'
+#' @return Invisibly returns the path to the configuration file.
+#' @export
+#' @importFrom utils file.edit
+editWmfmConfig = function(editor = utils::file.edit) {
+  configPath = getWmfmConfigPath()
+  configDir = dirname(configPath)
+  dir.create(configDir, recursive = TRUE, showWarnings = FALSE)
+
+  if (!file.exists(configPath)) {
+    jsonlite::write_json(x = list(), path = configPath, auto_unbox = TRUE, pretty = TRUE)
+  }
+
+  editor(configPath)
+  invisible(configPath)
+}
+
 #' Test whether WMFM is running in a deployed app context
 #'
 #' Uses conservative environment and option checks to distinguish local desktop

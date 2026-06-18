@@ -540,6 +540,31 @@ appUI = function() {
       }
 
 
+      .wmfm-provider-registry-panel {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-top: 14px;
+        margin-bottom: 10px;
+        max-width: 760px;
+        background-color: #ffffff;
+      }
+
+      .wmfm-provider-registry-panel table {
+        margin-bottom: 0;
+      }
+
+      .wmfm-provider-registry-panel tbody tr {
+        cursor: pointer;
+      }
+
+      .wmfm-provider-registry-help {
+        margin-top: 6px;
+        margin-bottom: 0;
+        color: #666;
+      }
+
+
       .wmfm-model-plots-heading {
         display: flex;
         align-items: center;
@@ -1087,7 +1112,14 @@ appUI = function() {
           choices = buildProviderProfileChoices(),
           selected = resolveWmfmActiveProviderProfile()$profileId
         ),
-        tableOutput("providerRegistryTable"),
+        tags$div(
+          class = "wmfm-provider-registry-panel",
+          tableOutput("providerRegistryTable"),
+          tags$p(
+            class = "wmfm-provider-registry-help",
+            "Double-click a provider row to edit its settings."
+          )
+        ),
         tags$div(
           class = "wmfm-provider-registry-actions",
           actionButton(
@@ -1097,28 +1129,28 @@ appUI = function() {
             class = "btn-secondary btn-sm"
           ),
           actionButton(
-            inputId = "editProviderProfileBtn",
-            label = "Edit",
-            title = "Edit the active provider",
-            class = "btn-secondary btn-sm"
-          ),
-          actionButton(
             inputId = "removeProviderProfileBtn",
             label = "-",
             title = "Remove the active provider",
             class = "btn-secondary btn-sm"
-          ),
-          actionButton(
-            inputId = "showProviderSetupBtn",
-            label = "Setup selected provider",
-            class = "btn-secondary btn-sm"
           )
         ),
         helpText("In a deployed WMFM app, available providers and models are controlled by the installer."),
-        tags$details(
-          tags$summary("Advanced provider diagnostics"),
-          textOutput("providerConfigLocationStatus")
-        ),
+        if (isDeveloperModeUiEnabled()) {
+          conditionalPanel(
+            condition = "input.developerModeToggle == true",
+            tags$details(
+              tags$summary("Developer diagnostics"),
+              textOutput("providerConfigLocationStatus")
+            )
+          )
+        },
+        tags$script(HTML("
+          $(document).on('dblclick', '#providerRegistryTable table tbody tr', function() {
+            var rowIndex = $(this).index() + 1;
+            Shiny.setInputValue('providerRegistryRowDoubleClick', rowIndex, {priority: 'event'});
+          });
+        ")),
         tags$details(
           tags$summary("Advanced Ollama configuration"),
           helpText("Only change these settings when you are running or administering an Ollama service."),
