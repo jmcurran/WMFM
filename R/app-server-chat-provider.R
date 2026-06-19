@@ -92,6 +92,22 @@ registerChatProviderObservers = function(input, output, session, rv) {
       ),
       textInput("providerProfileUrl", "Endpoint URL, if needed", value = profile$apiUrl),
       textInput("providerProfileModel", "Default model, if needed", value = profile$defaultModel),
+      conditionalPanel(
+        condition = "input.providerProfileType != 'ollama'",
+        tags$hr(),
+        tags$p("API key, if this provider requires one"),
+        tags$p("Leave this blank to keep the existing API key setting. WMFM never displays saved API key values."),
+        passwordInput(
+          inputId = "providerProfileCredentialValue",
+          label = "Add or replace API key",
+          value = ""
+        ),
+        actionButton(
+          inputId = "removeProviderProfileCredentialBtn",
+          label = "Remove API key",
+          class = "btn-secondary btn-sm"
+        )
+      ),
       easyClose = TRUE,
       footer = tags$div(
         actionButton("saveProviderProfileBtn", "Save provider", class = "btn-primary"),
@@ -357,6 +373,15 @@ registerChatProviderObservers = function(input, output, session, rv) {
       updatedProfiles = c(updatedProfiles, list(newProfile))
     }
 
+    profileCredential = input$providerProfileCredentialValue %||% ""
+    if (isTRUE(adapter$requiresCredentials) && nzchar(trimws(profileCredential))) {
+      if (!isWmfmCredentialEntryAllowed() || !isWmfmConfigCredentialStorageAllowed()) {
+        showNotification("Local credential storage is not allowed in this WMFM runtime context.", type = "error", duration = 8)
+        return(NULL)
+      }
+      writeWmfmConfigCredential(providerType, profileCredential)
+    }
+
     writeWmfmProviderProfiles(updatedProfiles)
     updateSelectInput(
       session,
@@ -448,6 +473,27 @@ registerChatProviderObservers = function(input, output, session, rv) {
     removeWmfmConfigCredential(provider)
     rv$providerConfigSaveStatus = paste0("Removed any local credential for ", provider, " from the WMFM user config file.")
     removeModal()
+    showNotification("Removed local provider credential.", type = "message", duration = 5)
+  }, ignoreInit = TRUE)
+
+
+  observeEvent(input$removeProviderProfileCredentialBtn, {
+    providerType = tolower(trimws(input$providerProfileType %||% ""))
+    if (!isWmfmProviderSupported(providerType)) {
+      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
+      return(NULL)
+    }
+    adapter = getWmfmProviderAdapter(providerType)
+    if (!isTRUE(adapter$requiresCredentials)) {
+      showNotification("The selected provider does not require an API key.", type = "message", duration = 5)
+      return(NULL)
+    }
+    if (!isWmfmCredentialEntryAllowed() || !isWmfmConfigCredentialStorageAllowed()) {
+      showNotification("Local credential storage is not allowed in this WMFM runtime context.", type = "error", duration = 8)
+      return(NULL)
+    }
+    removeWmfmConfigCredential(providerType)
+    rv$providerConfigSaveStatus = paste0("Removed any local credential for ", providerType, " from the WMFM user config file.")
     showNotification("Removed local provider credential.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 

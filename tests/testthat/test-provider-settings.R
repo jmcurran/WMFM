@@ -88,7 +88,7 @@ test_that("provider settings expose provider registry controls instead of old in
   expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
   expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
   expect_match(uiText, "providerRegistryRowDoubleClick", fixed = TRUE)
-  expect_match(uiText, "Double-click a provider row to edit its settings.", fixed = TRUE)
+  expect_false(grepl("Double-click a provider row to edit its settings.", uiText, fixed = TRUE))
   expect_match(uiText, "Active provider", fixed = TRUE)
   expect_match(uiText, "Developer diagnostics", fixed = TRUE)
   expect_false(grepl("editProviderProfileBtn", uiText, fixed = TRUE))
@@ -202,10 +202,13 @@ test_that("provider setup modal supports local desktop credential storage withou
   uiText = readPackageText("R", "app-ui.R")
 
   expect_match(observerText, "providerCredentialValue", fixed = TRUE)
+  expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
   expect_match(observerText, "Save local credential", fixed = TRUE)
   expect_match(observerText, "Remove local credential", fixed = TRUE)
   expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
+  expect_match(observerText, "writeWmfmConfigCredential(providerType, profileCredential)", fixed = TRUE)
   expect_match(observerText, "removeWmfmConfigCredential(provider)", fixed = TRUE)
+  expect_match(observerText, "removeProviderProfileCredentialBtn", fixed = TRUE)
   expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
 })
 
@@ -314,4 +317,25 @@ test_that("provider settings UI active selector is profile based", {
   expect_match(uiText, "selected = resolveWmfmActiveProviderProfile()$profileId", fixed = TRUE)
   expect_match(observerText, "resolveSelectedProviderProfile", fixed = TRUE)
   expect_match(observerText, "activeProviderProfileId = activeProfile$profileId", fixed = TRUE)
+})
+
+
+test_that("provider registry panel uses a rounded full-width table container", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "border-radius: 18px", fixed = TRUE)
+  expect_match(uiText, "width: 100%;", fixed = TRUE)
+  expect_match(uiText, "max-width: 920px", fixed = TRUE)
+  expect_false(grepl("wmfm-provider-registry-help", uiText, fixed = TRUE))
+})
+
+test_that("provider edit modal includes API key management for credentialled providers", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(observerText, "API key, if this provider requires one", fixed = TRUE)
+  expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
+  expect_match(observerText, "Add or replace API key", fixed = TRUE)
+  expect_match(observerText, "removeProviderProfileCredentialBtn", fixed = TRUE)
+  expect_match(observerText, "Remove API key", fixed = TRUE)
+  expect_match(observerText, "condition = \"input.providerProfileType != 'ollama'\"", fixed = TRUE)
 })

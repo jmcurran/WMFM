@@ -542,26 +542,41 @@ appUI = function() {
 
       .wmfm-provider-registry-panel {
         border: 1px solid #d9d9d9;
-        border-radius: 6px;
-        padding: 12px 16px;
-        margin-top: 14px;
+        border-radius: 18px;
+        margin-top: 20px;
         margin-bottom: 10px;
-        max-width: 760px;
-        background-color: #ffffff;
+        width: 100%;
+        max-width: 920px;
+        background-color: #f5f5f5;
+        overflow: hidden;
       }
 
       .wmfm-provider-registry-panel table {
+        width: 100%;
         margin-bottom: 0;
+        background-color: transparent;
       }
 
-      .wmfm-provider-registry-panel tbody tr {
+      .wmfm-provider-registry-panel table > thead > tr > th,
+      .wmfm-provider-registry-panel table > tbody > tr > td {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .wmfm-provider-registry-panel table > tbody > tr {
         cursor: pointer;
       }
 
-      .wmfm-provider-registry-help {
-        margin-top: 6px;
-        margin-bottom: 0;
-        color: #666;
+      .wmfm-provider-registry-panel table > tbody > tr + tr {
+        border-top: 1px solid #e1e1e1;
+      }
+
+      .wmfm-provider-registry-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+        margin-bottom: 8px;
       }
 
 
@@ -1114,11 +1129,7 @@ appUI = function() {
         ),
         tags$div(
           class = "wmfm-provider-registry-panel",
-          tableOutput("providerRegistryTable"),
-          tags$p(
-            class = "wmfm-provider-registry-help",
-            "Double-click a provider row to edit its settings."
-          )
+          tableOutput("providerRegistryTable")
         ),
         tags$div(
           class = "wmfm-provider-registry-actions",

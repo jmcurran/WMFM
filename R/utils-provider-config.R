@@ -226,7 +226,7 @@ readWmfmConfigPath = getWmfmConfigPath
 #' @export
 #' @importFrom utils file.edit
 editWmfmConfig = function(editor = utils::file.edit) {
-  configPath = getWmfmConfigPath()
+  configPath = wmfmConfigPath()
   configDir = dirname(configPath)
   dir.create(configDir, recursive = TRUE, showWarnings = FALSE)
 
@@ -234,6 +234,7 @@ editWmfmConfig = function(editor = utils::file.edit) {
     jsonlite::write_json(x = list(), path = configPath, auto_unbox = TRUE, pretty = TRUE)
   }
 
+  configPath = normalizePath(configPath, winslash = "/", mustWork = TRUE)
   editor(configPath)
   invisible(configPath)
 }

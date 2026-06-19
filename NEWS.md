@@ -17,6 +17,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.022
+
+- Normalised editWmfmConfig() return paths so they match getWmfmConfigPath() across platform-specific path aliases.
+- Preserved the provider-object settings UI while fixing a config helper path consistency issue.
+- Kept the repair limited to the Stage 41.11.3 path-normalisation failure.
 ## WMFM 1.0.3.018
 
 - Repaired the provider settings developer-mode guard so developer controls are not present when developer mode UI is disabled.
