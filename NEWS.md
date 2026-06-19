@@ -19,6 +19,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.026
+
+- Expanded the provider registry table and output container so the table fills the rounded settings panel.
+- Kept provider columns evenly distributed across the available provider list width.
+- Reduced the plus and minus provider action buttons to a consistent compact row-height size.
+- Preserved the provider-object settings behaviour while improving the visual layout.
 ## WMFM 1.0.3.023
 
 - Expanded the provider registry table so it fills the rounded settings panel.

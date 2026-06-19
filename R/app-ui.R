@@ -550,23 +550,28 @@ appUI = function() {
         overflow: hidden;
       }
 
+      #providerRegistryTable,
       .wmfm-provider-registry-panel .shiny-html-output {
-        width: 100%;
+        width: 100% !important;
         margin-bottom: 0;
       }
 
+      #providerRegistryTable table,
       .wmfm-provider-registry-panel table,
       .wmfm-provider-registry-panel .table,
       .wmfm-provider-registry-panel .shiny-table {
         width: 100% !important;
-        max-width: none;
+        max-width: none !important;
         table-layout: fixed;
         margin-bottom: 0;
         background-color: transparent;
       }
 
+      #providerRegistryTable table > thead > tr > th,
+      #providerRegistryTable table > tbody > tr > td,
       .wmfm-provider-registry-panel table > thead > tr > th,
       .wmfm-provider-registry-panel table > tbody > tr > td {
+        width: 33.333%;
         padding-left: 16px;
         padding-right: 16px;
       }
@@ -584,16 +589,24 @@ appUI = function() {
         gap: 8px;
         align-items: center;
         border-top: 1px solid #e1e1e1;
-        padding: 8px 16px;
+        min-height: 44px;
+        padding: 4px 16px;
         margin-top: 0;
         margin-bottom: 0;
         background-color: #eeeeee;
       }
 
       .wmfm-provider-registry-actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
         min-width: 36px;
         min-height: 36px;
-        padding: 4px 10px;
+        max-width: 36px;
+        max-height: 36px;
+        padding: 0;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 18px;
         line-height: 1;
