@@ -546,13 +546,21 @@ appUI = function() {
         margin-top: 20px;
         margin-bottom: 10px;
         width: 100%;
-        max-width: 920px;
         background-color: #f5f5f5;
         overflow: hidden;
       }
 
-      .wmfm-provider-registry-panel table {
+      .wmfm-provider-registry-panel .shiny-html-output {
         width: 100%;
+        margin-bottom: 0;
+      }
+
+      .wmfm-provider-registry-panel table,
+      .wmfm-provider-registry-panel .table,
+      .wmfm-provider-registry-panel .shiny-table {
+        width: 100% !important;
+        max-width: none;
+        table-layout: fixed;
         margin-bottom: 0;
         background-color: transparent;
       }
@@ -575,8 +583,21 @@ appUI = function() {
         display: flex;
         gap: 8px;
         align-items: center;
-        margin-top: 8px;
-        margin-bottom: 8px;
+        border-top: 1px solid #e1e1e1;
+        padding: 8px 16px;
+        margin-top: 0;
+        margin-bottom: 0;
+        background-color: #eeeeee;
+      }
+
+      .wmfm-provider-registry-actions .btn {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 4px 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 18px;
+        line-height: 1;
+        text-align: center;
       }
 
 
@@ -1129,21 +1150,21 @@ appUI = function() {
         ),
         tags$div(
           class = "wmfm-provider-registry-panel",
-          tableOutput("providerRegistryTable")
-        ),
-        tags$div(
-          class = "wmfm-provider-registry-actions",
-          actionButton(
-            inputId = "addProviderProfileBtn",
-            label = "+",
-            title = "Add provider",
-            class = "btn-secondary btn-sm"
-          ),
-          actionButton(
-            inputId = "removeProviderProfileBtn",
-            label = "-",
-            title = "Remove the active provider",
-            class = "btn-secondary btn-sm"
+          tableOutput("providerRegistryTable"),
+          tags$div(
+            class = "wmfm-provider-registry-actions",
+            actionButton(
+              inputId = "addProviderProfileBtn",
+              label = "+",
+              title = "Add provider",
+              class = "btn-secondary btn-sm"
+            ),
+            actionButton(
+              inputId = "removeProviderProfileBtn",
+              label = "-",
+              title = "Remove the active provider",
+              class = "btn-secondary btn-sm"
+            )
           )
         ),
         helpText("In a deployed WMFM app, available providers and models are controlled by the installer."),

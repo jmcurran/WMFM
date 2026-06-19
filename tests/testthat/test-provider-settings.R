@@ -325,8 +325,20 @@ test_that("provider registry panel uses a rounded full-width table container", {
 
   expect_match(uiText, "border-radius: 18px", fixed = TRUE)
   expect_match(uiText, "width: 100%;", fixed = TRUE)
-  expect_match(uiText, "max-width: 920px", fixed = TRUE)
+  expect_match(uiText, "width: 100% !important;", fixed = TRUE)
+  expect_match(uiText, "table-layout: fixed", fixed = TRUE)
+  expect_match(uiText, "max-width: none", fixed = TRUE)
+  expect_false(grepl("max-width: 920px", uiText, fixed = TRUE))
   expect_false(grepl("wmfm-provider-registry-help", uiText, fixed = TRUE))
+})
+
+test_that("provider registry actions are integrated with consistent button sizing", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "border-top: 1px solid #e1e1e1", fixed = TRUE)
+  expect_match(uiText, "font-family: ui-monospace", fixed = TRUE)
+  expect_match(uiText, "min-width: 36px", fixed = TRUE)
+  expect_match(uiText, "min-height: 36px", fixed = TRUE)
 })
 
 test_that("provider edit modal includes API key management for credentialled providers", {

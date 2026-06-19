@@ -18,6 +18,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.023
+
+- Expanded the provider registry table so it fills the rounded settings panel.
+- Integrated provider add and remove controls into the provider list footer.
+- Applied consistent monospace sizing to the provider action buttons so plus and minus controls align visually.
+- Preserved the provider-object settings behaviour while improving the visual layout.
 ## WMFM 1.0.3.022
 
 - Normalised editWmfmConfig() return paths so they match getWmfmConfigPath() across platform-specific path aliases.
