@@ -2,7 +2,7 @@ test_that("wmfmProviderDefaults exposes current package defaults", {
   defaults = wmfmProviderDefaults()
 
   expect_identical(defaults$backend, "ollama")
-  expect_identical(defaults$ollamaBaseUrl, "http://corrin.stat.auckland.ac.nz:11434")
+  expect_identical(defaults$ollamaBaseUrl, "")
   expect_identical(defaults$ollamaModel, "gpt-oss")
   expect_identical(defaults$ollamaThinkLow, FALSE)
 })
@@ -445,4 +445,91 @@ test_that("provider resolver does not infer Claude solely from API-key presence"
   cfg = resolveWmfmProviderConfig()
 
   expect_identical(cfg$backend, wmfmProviderDefaults()$backend)
+})
+
+test_that("local config credentials are available for desktop sessions without readWmfmConfig exposing values", {
+  tmpDir = tempfile("wmfm-config-credentials-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = ""
+  ), .local_envir = parent.frame())
+
+  writeWmfmConfigCredential("claude", "local-secret-value")
+
+  credential = resolveWmfmProviderCredential("claude")
+  credentials = resolveWmfmProviderCredentials()
+  publicConfig = readWmfmConfig()
+  rawConfig = readWmfmRawConfig()
+
+  expect_true(credential$available)
+  expect_identical(credential$source, "wmfm-config")
+  expect_true(credentials$claude$credentialsAvailable)
+  expect_identical(credentials$claude$credentialSource, "wmfm-config")
+  expect_false("credentials" %in% names(publicConfig))
+  expect_identical(rawConfig$credentials$claude$apiKey, "local-secret-value")
+})
+
+test_that("environment credentials take precedence over local config credentials", {
+  tmpDir = tempfile("wmfm-config-credential-precedence-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = "env-secret-value"
+  ), .local_envir = parent.frame())
+
+  writeWmfmConfigCredential("claude", "local-secret-value")
+
+  credential = resolveWmfmProviderCredential("claude")
+
+  expect_true(credential$available)
+  expect_identical(credential$source, "env:ANTHROPIC_API_KEY")
+})
+
+test_that("deployed sessions cannot use local config credential storage", {
+  tmpDir = tempfile("wmfm-config-credential-deployed-")
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = TRUE))
+  withr::local_envvar(list(
+    WMFM_ALLOW_CONFIG_CREDENTIALS = "1",
+    ANTHROPIC_API_KEY = ""
+  ), .local_envir = parent.frame())
+
+  expect_false(isWmfmConfigCredentialStorageAllowed())
+  expect_error(
+    writeWmfmConfigCredential("claude", "local-secret-value"),
+    "not allowed",
+    fixed = TRUE
+  )
+})
+
+
+test_that("provider registry rows expose user-facing status without secrets", {
+  withr::local_tempdir() -> tmpDir
+  withr::local_options(list(wmfm.config_dir = tmpDir, wmfm.deployed_app = FALSE))
+  withr::local_envvar(list(ANTHROPIC_API_KEY = ""), .local_envir = parent.frame())
+
+  rows = buildWmfmProviderRegistryRows(list(
+    list(displayName = "Local Ollama", providerType = "ollama", apiUrl = "", defaultModel = "llama3"),
+    list(displayName = "Claude", providerType = "claude", credentialEnvVar = "ANTHROPIC_API_KEY")
+  ))
+
+  expect_identical(names(rows), c("Name", "Type", "Status"))
+  expect_true("Setup needed" %in% rows$Status)
+  expect_true("Credential needed" %in% rows$Status)
+  expect_false(any(grepl("ANTHROPIC_API_KEY", rows$Status, fixed = TRUE)))
+})
+
+test_that("user-facing config path helpers expose and edit the config file", {
+  tmpDir = tempfile("wmfm-config-path-helper-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  expect_identical(getWmfmConfigDir(), normalizePath(tmpDir, winslash = "/", mustWork = FALSE))
+  expect_identical(getWmfmConfigPath(), normalizePath(file.path(tmpDir, "config.json"), winslash = "/", mustWork = FALSE))
+  expect_identical(readWmfmConfigPath(), getWmfmConfigPath())
+
+  editedPath = editWmfmConfig(editor = function(...) {
+    invisible(TRUE)
+  })
+  expect_identical(editedPath, getWmfmConfigPath())
+  expect_true(file.exists(getWmfmConfigPath()))
 })

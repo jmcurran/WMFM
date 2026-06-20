@@ -7,9 +7,8 @@ test_that("provider settings status lines use concise active-profile format and 
   statusText = paste(statusLines, collapse = "\n")
 
   expect_match(statusText, "Active provider:", fixed = TRUE)
-  expect_match(statusText, "Provider type:", fixed = TRUE)
   expect_match(statusText, "Model:", fixed = TRUE)
-  expect_match(statusText, "Credential:", fixed = TRUE)
+  expect_match(statusText, "Status:", fixed = TRUE)
   expect_match(statusText, "API key values are never stored or displayed by WMFM.", fixed = TRUE)
   expect_false(grepl("super-secret-value", statusText, fixed = TRUE))
 })
@@ -82,14 +81,21 @@ test_that("resetNonSecretProviderConfig restores defaults", {
   expect_null(persisted$developerModeEnabled)
 })
 
-test_that("provider settings labels keep Ollama-specific controls explicit", {
+test_that("provider settings expose provider registry controls instead of old inline Ollama controls", {
   uiText = readPackageText("R", "app-ui.R")
 
-  expect_match(uiText, "Ollama-specific and apply only when Ollama is selected", fixed = TRUE)
-  expect_match(uiText, "Ollama base URL (Ollama only)", fixed = TRUE)
-  expect_match(uiText, "Ollama model (Ollama only)", fixed = TRUE)
-  expect_match(uiText, "Refresh available Ollama models", fixed = TRUE)
-  expect_match(uiText, "Default to low thinking for Ollama (Ollama only)", fixed = TRUE)
+  expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
+  expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "providerRegistryRowDoubleClick", fixed = TRUE)
+  expect_match(uiText, "#providerRegistryTable", fixed = TRUE)
+  expect_match(uiText, "width: 100% !important", fixed = TRUE)
+  expect_match(uiText, "height: 36px", fixed = TRUE)
+  expect_false(grepl("Double-click a provider row to edit its settings.", uiText, fixed = TRUE))
+  expect_match(uiText, "Active provider", fixed = TRUE)
+  expect_match(uiText, "Developer diagnostics", fixed = TRUE)
+  expect_false(grepl("editProviderProfileBtn", uiText, fixed = TRUE))
+  expect_false(grepl("showProviderSetupBtn", uiText, fixed = TRUE))
 })
 
 
@@ -141,6 +147,11 @@ test_that("provider settings UI uses compact info help and no apply button", {
   expect_match(uiText, 'icon("circle-info")', fixed = TRUE)
   expect_match(uiText, "API keys are not shown here and are never stored", fixed = TRUE)
   expect_match(html, "Provider settings information", fixed = TRUE)
+  expect_match(html, "Active provider", fixed = TRUE)
+  expect_match(uiText, "providerRegistryTable", fixed = TRUE)
+  expect_match(uiText, "addProviderProfileBtn", fixed = TRUE)
+  expect_match(uiText, "removeProviderProfileBtn", fixed = TRUE)
+  expect_match(uiText, "providerRegistryRowDoubleClick", fixed = TRUE)
   expect_match(html, "ANTHROPIC_API_KEY", fixed = TRUE)
   expect_false(grepl("Current provider:", uiText, fixed = TRUE))
   expect_false(grepl("applyChatProviderBtn", uiText, fixed = TRUE))
@@ -187,4 +198,160 @@ test_that("provider observers auto-save provider changes and avoid non-Ollama di
   expect_match(observerText, 'if (!identical(activeProvider, "ollama"))', fixed = TRUE)
   expect_match(observerText, 'if (identical(requested, "ollama") && isWmfmProviderReadyForStartup(providerConfig))', fixed = TRUE)
   expect_false(grepl("observeEvent(input$applyChatProviderBtn", observerText, fixed = TRUE))
+})
+
+test_that("provider setup modal supports local desktop credential storage without front-page secret fields", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(observerText, "providerCredentialValue", fixed = TRUE)
+  expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
+  expect_match(observerText, "Save local credential", fixed = TRUE)
+  expect_false(grepl("Remove local credential", observerText, fixed = TRUE))
+  expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
+  expect_match(observerText, "writeWmfmConfigCredential(providerType, profileCredential)", fixed = TRUE)
+  expect_false(grepl("removeProviderCredentialBtn", observerText, fixed = TRUE))
+  expect_false(grepl("removeWmfmConfigCredential(provider)", observerText, fixed = TRUE))
+  expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
+})
+
+
+test_that("provider settings main UI is provider-object oriented", {
+  html = as.character(appUI())
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(html, "Active provider", fixed = TRUE)
+  expect_match(uiText, "tableOutput(\"providerRegistryTable\")", fixed = TRUE)
+  expect_match(uiText, "inputId = \"addProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "inputId = \"removeProviderProfileBtn\"", fixed = TRUE)
+  expect_match(uiText, "providerRegistryRowDoubleClick", fixed = TRUE)
+  expect_match(html, "Advanced Ollama configuration", fixed = TRUE)
+  expect_false(grepl("editProviderProfileBtn", uiText, fixed = TRUE))
+  expect_false(grepl("showProviderSetupBtn", uiText, fixed = TRUE))
+  expect_false(grepl("http://corrin.stat.auckland.ac.nz:11434", html, fixed = TRUE))
+})
+
+test_that("provider observers include add double-click edit and confirmed remove provider registry actions", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(observerText, "observeEvent(input$addProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$providerRegistryRowDoubleClick", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$removeProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$confirmRemoveProviderProfileBtn", fixed = TRUE)
+  expect_match(observerText, "providerRemoveConfirmationModal", fixed = TRUE)
+  expect_match(observerText, "writeWmfmProviderProfiles", fixed = TRUE)
+  expect_match(observerText, "providerProfileModal", fixed = TRUE)
+})
+
+
+
+test_that("provider profile modal supports editing a double-clicked provider", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "providerRegistryRowDoubleClick", fixed = TRUE)
+  expect_match(observerText, "observeEvent(input$providerRegistryRowDoubleClick", fixed = TRUE)
+  expect_match(observerText, "providerProfileModal(resolveProviderProfileByRow(input$providerRegistryRowDoubleClick))", fixed = TRUE)
+  expect_match(observerText, "providerProfileId", fixed = TRUE)
+  expect_match(observerText, "Updated provider", fixed = TRUE)
+})
+
+test_that("active provider selector uses provider profile identifiers", {
+  tmpDir = tempfile("wmfm-provider-profile-active-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  profiles = list(
+    normaliseWmfmProviderProfile(list(
+      profileId = "local-ollama-one",
+      displayName = "Local Ollama One",
+      providerType = "ollama",
+      apiUrl = "http://localhost:11434",
+      defaultModel = "llama3.2"
+    )),
+    normaliseWmfmProviderProfile(list(
+      profileId = "claude-work",
+      displayName = "Claude Work",
+      providerType = "claude",
+      credentialSource = "envvar",
+      credentialEnvVar = "ANTHROPIC_API_KEY"
+    ))
+  )
+
+  writeWmfmProviderProfiles(profiles)
+  saveNonSecretProviderConfig(list(activeProviderProfileId = "claude-work"))
+
+  activeProfile = resolveWmfmActiveProviderProfile()
+  providerConfig = resolveWmfmProviderConfig()
+  choices = buildProviderProfileChoices()
+
+  expect_identical(activeProfile$profileId, "claude-work")
+  expect_identical(providerConfig$backend, "claude")
+  expect_identical(providerConfig$activeProviderProfileId, "claude-work")
+  expect_identical(unname(choices), c("local-ollama-one", "claude-work"))
+  expect_identical(names(choices), c("Local Ollama One", "Claude Work"))
+})
+
+test_that("active Ollama provider profile supplies endpoint and model", {
+  tmpDir = tempfile("wmfm-provider-profile-ollama-")
+  withr::local_options(list(wmfm.config_dir = tmpDir))
+
+  writeWmfmProviderProfiles(list(normaliseWmfmProviderProfile(list(
+    profileId = "local-custom-ollama",
+    displayName = "Custom Ollama",
+    providerType = "ollama",
+    apiUrl = "http://localhost:11434",
+    defaultModel = "custom-model"
+  ))))
+  saveNonSecretProviderConfig(list(activeProviderProfileId = "local-custom-ollama"))
+
+  providerConfig = resolveWmfmProviderConfig()
+
+  expect_identical(providerConfig$backend, "ollama")
+  expect_identical(providerConfig$ollamaBaseUrl, "http://localhost:11434")
+  expect_identical(providerConfig$ollamaModel, "custom-model")
+  expect_identical(providerConfig$activeProviderProfileId, "local-custom-ollama")
+})
+
+test_that("provider settings UI active selector is profile based", {
+  uiText = readPackageText("R", "app-ui.R")
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(uiText, "choices = buildProviderProfileChoices()", fixed = TRUE)
+  expect_match(uiText, "selected = resolveWmfmActiveProviderProfile()$profileId", fixed = TRUE)
+  expect_match(observerText, "resolveSelectedProviderProfile", fixed = TRUE)
+  expect_match(observerText, "activeProviderProfileId = activeProfile$profileId", fixed = TRUE)
+})
+
+
+test_that("provider registry panel uses a rounded full-width table container", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "border-radius: 18px", fixed = TRUE)
+  expect_match(uiText, "width: 100%;", fixed = TRUE)
+  expect_match(uiText, "width: 100% !important;", fixed = TRUE)
+  expect_match(uiText, "table-layout: fixed", fixed = TRUE)
+  expect_match(uiText, "max-width: none", fixed = TRUE)
+  expect_false(grepl("max-width: 920px", uiText, fixed = TRUE))
+  expect_false(grepl("wmfm-provider-registry-help", uiText, fixed = TRUE))
+})
+
+test_that("provider registry actions are integrated with consistent button sizing", {
+  uiText = readPackageText("R", "app-ui.R")
+
+  expect_match(uiText, "border-top: 1px solid #e1e1e1", fixed = TRUE)
+  expect_match(uiText, "font-family: ui-monospace", fixed = TRUE)
+  expect_match(uiText, "min-width: 28px", fixed = TRUE)
+  expect_match(uiText, "min-height: 28px", fixed = TRUE)
+  expect_match(uiText, "min-height: 34px", fixed = TRUE)
+})
+
+test_that("provider edit modal includes API key management for credentialled providers", {
+  observerText = readPackageText("R", "app-server-chat-provider.R")
+
+  expect_match(observerText, "API key, if this provider requires one", fixed = TRUE)
+  expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
+  expect_match(observerText, "Add or replace API key", fixed = TRUE)
+  expect_false(grepl("removeProviderProfileCredentialBtn", observerText, fixed = TRUE))
+  expect_false(grepl("Remove API key", observerText, fixed = TRUE))
+  expect_match(observerText, "condition = \"input.providerProfileType != 'ollama'\"", fixed = TRUE)
 })

@@ -9,6 +9,134 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+## WMFM 1.0.3.030
+
+- Removed the remaining provider-credential removal control from the legacy provider setup modal.
+- Removed the corresponding server observer so the app no longer advertises API-key deletion in the provider settings workflow.
+- Updated provider settings tests to assert that API-key replacement is available, while API-key removal is hidden from the normal user flow.
+
+
+## WMFM 1.0.3.029
+
+- Removed the visible Remove API key control from the provider edit modal.
+- Kept API-key replacement through the existing password field: leaving it blank preserves the current credential, while entering a new value replaces it.
+- Updated provider settings tests so API-key removal is not advertised in the main edit-provider flow.
+
+## WMFM 1.0.3.028
+
+- Reduced the provider registry plus and minus controls to a smaller 28px square size.
+- Tightened the provider registry action strip so action controls sit closer to the table row height.
+- Added stronger CSS specificity so Bootstrap button defaults do not make the controls visually oversized.
+- Updated provider settings tests to assert the compact action-control dimensions.
+## WMFM 1.0.3.027
+
+- Reduced the provider registry plus and minus controls to a smaller 28px square size.
+- Tightened the provider registry action strip so action controls sit closer to the table row height.
+- Added stronger CSS specificity for provider action buttons so Bootstrap button defaults do not make them visually oversized.
+- Updated provider settings tests to assert the compact action-control dimensions.
+
+## WMFM 1.0.3.026
+
+- Expanded the provider registry table and output container so the table fills the rounded settings panel.
+- Kept provider columns evenly distributed across the available provider list width.
+- Reduced the plus and minus provider action buttons to a consistent compact row-height size.
+- Preserved the provider-object settings behaviour while improving the visual layout.
+## WMFM 1.0.3.023
+
+- Expanded the provider registry table so it fills the rounded settings panel.
+- Integrated provider add and remove controls into the provider list footer.
+- Applied consistent monospace sizing to the provider action buttons so plus and minus controls align visually.
+- Preserved the provider-object settings behaviour while improving the visual layout.
+## WMFM 1.0.3.022
+
+- Normalised editWmfmConfig() return paths so they match getWmfmConfigPath() across platform-specific path aliases.
+- Preserved the provider-object settings UI while fixing a config helper path consistency issue.
+- Kept the repair limited to the Stage 41.11.3 path-normalisation failure.
+## WMFM 1.0.3.018
+
+- Repaired the provider settings developer-mode guard so developer controls are not present when developer mode UI is disabled.
+- Updated editWmfmConfig() to accept an injectable editor function for deterministic offline tests.
+- Replaced the config editor test's dependency on newer withr mocking helpers with a package-local editor stub.
+- Preserved the Stage 41.10 provider registry UI polish and config path helper behavior.
+## WMFM 1.0.3.016
+
+- Added a confirmation dialog before removing provider objects from the Settings provider registry.
+- Kept the existing safeguard that WMFM must retain at least one configured provider.
+- Updated provider settings tests and design notes for the confirmed remove workflow.
+- Validated by the standard WMFM full package workflow.
+## WMFM 1.0.3.015
+
+- Added an explicit Edit action for provider objects in the Settings provider registry.
+- Reused the provider modal for both adding and editing provider profiles, with existing values pre-populated for edits.
+- Updated provider settings tests to cover the edit action while keeping credentials out of the main UI.
+- Validated by the standard WMFM full package workflow.
+## WMFM 1.0.3.014
+
+- Repaired Stage 41.7 provider profile resolution so legacy local configuration remains usable during migration.
+- Allowed provider type identifiers such as claude to resolve the corresponding configured provider profile.
+- Restored local config precedence for persisted Ollama URLs and models when the active profile does not supply those fields.
+- Preserved the provider-object UI redesign while keeping legacy resolver behavior covered by existing tests.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 1.0.3.012
+
+- Repaired Stage 41.6 provider settings tests so they match the provider-object Settings redesign.
+- Updated expectations for the simplified active-provider status and provider registry controls.
+- Removed obsolete assertions for the old inline Ollama-only settings layout.
+- Preserved the Stage 41.6 implementation while restoring the standard WMFM validation workflow.
+- Validated by the standard WMFM stage workflow.
+
+## WMFM 1.0.3.008
+
+- Added Stage 41.5 design notes for the provider-as-object Settings redesign.
+- Defined the user-facing provider table, active-provider selector, and add/edit/delete modal workflow.
+- Recorded that credentials must remain hidden and exposed only as provider status.
+- Clarified that Stage 41.6 is the first implementation stage for the redesign.
+- No package-code validation was required because this stage only adds design documentation.
+
+## WMFM 1.0.3.007
+
+- Updated README setup guidance for local desktop and deployed WMFM configuration.
+- Documented Provider setup as the local desktop path for credential guidance and optional local credential entry.
+- Documented usethis::edit_r_environ() for users who prefer standard R environment-variable setup.
+- Clarified that deployed Shiny apps are administrator-managed and ordinary users may only choose approved providers or models.
+- Updated README coverage tests for the revised setup guide.
+
+## WMFM 1.0.3.006
+
+- Repaired Stage 41.3 provider credential wording so existing provider-setting tests continue to match documented messages.
+- Preserved the local desktop credential setup behavior and deployed-app administrator controls added in Stage 41.3.
+- Kept Claude missing-credential guidance explicit about ANTHROPIC_API_KEY while mentioning the Provider setup modal.
+- Validated through the standard WMFM stage workflow.
+
+## WMFM 1.0.3.004
+
+- Added Stage 41.2.1 provider setup policy helpers so WMFM can distinguish local desktop use from administrator-managed deployments.
+- Moved provider credential guidance into a modal setup dialog rather than keeping API-key guidance front and centre in Settings.
+- Blocked ordinary deployed-app users from saving provider configuration while preserving local desktop configuration editing.
+- Recorded the Stage 41.2.1 implementation decision in the configuration design notes.
+- Validated with the standard WMFM full package workflow.
+
+## WMFM 1.0.3.001
+
+- Added Stage 41.1 configuration design principles before changing provider setup code.
+- Documented the single-user desktop and deployed Shiny configuration boundaries.
+- Recorded security, simplicity, UI, documentation, and testing principles for later implementation stages.
+- Skipped package validation because this stage only adds a design note plus the standard version and NEWS updates.
+
 ## WMFM 1.0.2.009
 
 - Added a developer-mode metadata box beside the built-in example selector.

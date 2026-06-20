@@ -540,6 +540,81 @@ appUI = function() {
       }
 
 
+      .wmfm-provider-registry-panel {
+        border: 1px solid #d9d9d9;
+        border-radius: 18px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        width: 100%;
+        background-color: #f5f5f5;
+        overflow: hidden;
+      }
+
+      #providerRegistryTable,
+      .wmfm-provider-registry-panel .shiny-html-output {
+        width: 100% !important;
+        margin-bottom: 0;
+      }
+
+      #providerRegistryTable table,
+      .wmfm-provider-registry-panel table,
+      .wmfm-provider-registry-panel .table,
+      .wmfm-provider-registry-panel .shiny-table {
+        width: 100% !important;
+        max-width: none !important;
+        table-layout: fixed;
+        margin-bottom: 0;
+        background-color: transparent;
+      }
+
+      #providerRegistryTable table > thead > tr > th,
+      #providerRegistryTable table > tbody > tr > td,
+      .wmfm-provider-registry-panel table > thead > tr > th,
+      .wmfm-provider-registry-panel table > tbody > tr > td {
+        width: 33.333%;
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .wmfm-provider-registry-panel table > tbody > tr {
+        cursor: pointer;
+      }
+
+      .wmfm-provider-registry-panel table > tbody > tr + tr {
+        border-top: 1px solid #e1e1e1;
+      }
+
+      .wmfm-provider-registry-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        border-top: 1px solid #e1e1e1;
+        min-height: 34px;
+        padding: 3px 16px;
+        margin-top: 0;
+        margin-bottom: 0;
+        background-color: #eeeeee;
+      }
+
+      .wmfm-provider-registry-actions .btn,
+      .wmfm-provider-registry-actions .action-button {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+        padding: 0 !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 16px;
+        line-height: 1;
+        text-align: center;
+      }
+
+
       .wmfm-model-plots-heading {
         display: flex;
         align-items: center;
@@ -1070,64 +1145,87 @@ appUI = function() {
             tags$div(
               class = "wmfm-provider-settings-info-body",
               tags$p(
-                "Choose one active provider/backend. Ollama uses base URL plus model and no API key."
+                "Choose the AI provider WMFM should use. Add or edit providers if you are running WMFM on your own computer."
               ),
               tags$p(
-                "Claude uses the ANTHROPIC_API_KEY environment variable set in .Renviron before WMFM starts."
+                "A provider stores the connection details for a local Ollama service or a hosted service such as Claude. For Claude, the administrator route is ANTHROPIC_API_KEY."
               ),
               tags$p(
-                "API keys are not shown here and are never stored in the WMFM config file."
+                "API keys are not shown here and are never stored by WMFM. Credential guidance is shown in a separate dialog so API-key setup is not front and centre."
               )
             )
           )
         ),
-        tags$details(tags$summary("Advanced provider diagnostics"), textOutput("providerConfigLocationStatus")),
         selectInput(
           inputId = "providerConfig_backend",
-          label = "Active provider profile",
-          choices = c("Ollama (local)" = "ollama", "Claude / Anthropic" = "claude", "OpenAI" = "openai", "OpenAI-compatible" = "openaiCompatible"),
-          selected = resolveWmfmProviderConfig()$backend
-        ),
-        helpText("The controls below are Ollama-specific and apply only when Ollama is selected."),
-        textInput(
-          inputId = "providerConfig_ollamaBaseUrl",
-          label = "Ollama base URL (Ollama only)",
-          value = ""
-        ),
-        selectInput(
-          inputId = "providerConfig_ollamaModel",
-          label = "Ollama model (Ollama only)",
-          choices = c("gpt-oss"),
-          selected = "gpt-oss"
-        ),
-        checkboxInput(
-          inputId = "providerConfig_ollamaThinkLow",
-          label = "Default to low thinking for Ollama (Ollama only)",
-          value = FALSE
+          label = "Active provider",
+          choices = buildProviderProfileChoices(),
+          selected = resolveWmfmActiveProviderProfile()$profileId
         ),
         tags$div(
-          style = "margin-bottom: 6px;",
-          actionButton(
-            inputId = "refreshOllamaModelsBtn",
-            label = "Refresh available Ollama models",
-            class = "btn btn-secondary btn-sm"
+          class = "wmfm-provider-registry-panel",
+          tableOutput("providerRegistryTable"),
+          tags$div(
+            class = "wmfm-provider-registry-actions",
+            actionButton(
+              inputId = "addProviderProfileBtn",
+              label = "+",
+              title = "Add provider",
+              class = "btn-secondary btn-sm"
+            ),
+            actionButton(
+              inputId = "removeProviderProfileBtn",
+              label = "-",
+              title = "Remove the active provider",
+              class = "btn-secondary btn-sm"
+            )
           )
         ),
-        actionButton(
-          inputId = "saveProviderConfigBtn",
-          label = "Save provider config",
-          class = "btn-primary btn-sm"
+        helpText("In a deployed WMFM app, available providers and models are controlled by the installer."),
+        if (isDeveloperModeUiEnabled()) {
+          conditionalPanel(
+            condition = "input.developerModeToggle == true",
+            tags$details(
+              tags$summary("Developer diagnostics"),
+              textOutput("providerConfigLocationStatus")
+            )
+          )
+        },
+        tags$script(HTML("
+          $(document).on('dblclick', '#providerRegistryTable table tbody tr', function() {
+            var rowIndex = $(this).index() + 1;
+            Shiny.setInputValue('providerRegistryRowDoubleClick', rowIndex, {priority: 'event'});
+          });
+        ")),
+        tags$details(
+          tags$summary("Advanced Ollama configuration"),
+          helpText("Only change these settings when you are running or administering an Ollama service."),
+          textInput(
+            inputId = "providerConfig_ollamaBaseUrl",
+            label = "Ollama base URL",
+            value = ""
+          ),
+          selectInput(
+            inputId = "providerConfig_ollamaModel",
+            label = "Ollama model",
+            choices = c("gpt-oss"),
+            selected = "gpt-oss"
+          ),
+          checkboxInput(
+            inputId = "providerConfig_ollamaThinkLow",
+            label = "Default to low thinking for Ollama",
+            value = FALSE
+          ),
+          tags$div(
+            style = "margin-bottom: 6px;",
+            actionButton(
+              inputId = "refreshOllamaModelsBtn",
+              label = "Refresh available Ollama models",
+              class = "btn btn-secondary btn-sm"
+            )
+          )
         ),
-        actionButton(
-          inputId = "resetProviderConfigBtn",
-          label = "Reset provider config to defaults",
-          class = "btn-secondary btn-sm"
-        ),
-        tags$br(), tags$br(),
-        textOutput("providerConfigSaveStatus"),
-        helpText(
-          "Config path can be overridden with options(wmfm.config_dir = '/path')."
-        )
+        textOutput("providerConfigSaveStatus")
       )
 
     )
