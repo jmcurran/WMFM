@@ -340,8 +340,9 @@ test_that("provider registry actions are integrated with consistent button sizin
 
   expect_match(uiText, "border-top: 1px solid #e1e1e1", fixed = TRUE)
   expect_match(uiText, "font-family: ui-monospace", fixed = TRUE)
-  expect_match(uiText, "min-width: 36px", fixed = TRUE)
-  expect_match(uiText, "min-height: 36px", fixed = TRUE)
+  expect_match(uiText, "min-width: 28px", fixed = TRUE)
+  expect_match(uiText, "min-height: 28px", fixed = TRUE)
+  expect_match(uiText, "min-height: 34px", fixed = TRUE)
 })
 
 test_that("provider edit modal includes API key management for credentialled providers", {

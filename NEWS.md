@@ -20,6 +20,20 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.028
+
+- Reduced the provider registry plus and minus controls to a smaller 28px square size.
+- Tightened the provider registry action strip so action controls sit closer to the table row height.
+- Added stronger CSS specificity so Bootstrap button defaults do not make the controls visually oversized.
+- Updated provider settings tests to assert the compact action-control dimensions.
+## WMFM 1.0.3.027
+
+- Reduced the provider registry plus and minus controls to a smaller 28px square size.
+- Tightened the provider registry action strip so action controls sit closer to the table row height.
+- Added stronger CSS specificity for provider action buttons so Bootstrap button defaults do not make them visually oversized.
+- Updated provider settings tests to assert the compact action-control dimensions.
+
 ## WMFM 1.0.3.026
 
 - Expanded the provider registry table and output container so the table fills the rounded settings panel.

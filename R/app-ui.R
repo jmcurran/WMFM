@@ -586,29 +586,30 @@ appUI = function() {
 
       .wmfm-provider-registry-actions {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         border-top: 1px solid #e1e1e1;
-        min-height: 44px;
-        padding: 4px 16px;
+        min-height: 34px;
+        padding: 3px 16px;
         margin-top: 0;
         margin-bottom: 0;
         background-color: #eeeeee;
       }
 
-      .wmfm-provider-registry-actions .btn {
-        display: inline-flex;
+      .wmfm-provider-registry-actions .btn,
+      .wmfm-provider-registry-actions .action-button {
+        display: inline-flex !important;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        min-height: 36px;
-        max-width: 36px;
-        max-height: 36px;
-        padding: 0;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+        padding: 0 !important;
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1;
         text-align: center;
       }
