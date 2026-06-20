@@ -21,6 +21,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.3.029
+
+- Removed the visible Remove API key control from the provider edit modal.
+- Kept API-key replacement through the existing password field: leaving it blank preserves the current credential, while entering a new value replaces it.
+- Updated provider settings tests so API-key removal is not advertised in the main edit-provider flow.
+
 ## WMFM 1.0.3.028
 
 - Reduced the provider registry plus and minus controls to a smaller 28px square size.

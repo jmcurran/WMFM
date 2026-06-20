@@ -101,11 +101,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
           inputId = "providerProfileCredentialValue",
           label = "Add or replace API key",
           value = ""
-        ),
-        actionButton(
-          inputId = "removeProviderProfileCredentialBtn",
-          label = "Remove API key",
-          class = "btn-secondary btn-sm"
         )
       ),
       easyClose = TRUE,
@@ -476,26 +471,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
     showNotification("Removed local provider credential.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
-
-  observeEvent(input$removeProviderProfileCredentialBtn, {
-    providerType = tolower(trimws(input$providerProfileType %||% ""))
-    if (!isWmfmProviderSupported(providerType)) {
-      showNotification(buildUnknownChatProviderMessage(), type = "error", duration = 6)
-      return(NULL)
-    }
-    adapter = getWmfmProviderAdapter(providerType)
-    if (!isTRUE(adapter$requiresCredentials)) {
-      showNotification("The selected provider does not require an API key.", type = "message", duration = 5)
-      return(NULL)
-    }
-    if (!isWmfmCredentialEntryAllowed() || !isWmfmConfigCredentialStorageAllowed()) {
-      showNotification("Local credential storage is not allowed in this WMFM runtime context.", type = "error", duration = 8)
-      return(NULL)
-    }
-    removeWmfmConfigCredential(providerType)
-    rv$providerConfigSaveStatus = paste0("Removed any local credential for ", providerType, " from the WMFM user config file.")
-    showNotification("Removed local provider credential.", type = "message", duration = 5)
-  }, ignoreInit = TRUE)
 
   observeEvent(input$refreshOllamaModelsBtn, {
     if (blockUserProviderConfiguration()) {

@@ -211,7 +211,6 @@ test_that("provider setup modal supports local desktop credential storage withou
   expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
   expect_match(observerText, "writeWmfmConfigCredential(providerType, profileCredential)", fixed = TRUE)
   expect_match(observerText, "removeWmfmConfigCredential(provider)", fixed = TRUE)
-  expect_match(observerText, "removeProviderProfileCredentialBtn", fixed = TRUE)
   expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
 })
 
@@ -351,7 +350,7 @@ test_that("provider edit modal includes API key management for credentialled pro
   expect_match(observerText, "API key, if this provider requires one", fixed = TRUE)
   expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
   expect_match(observerText, "Add or replace API key", fixed = TRUE)
-  expect_match(observerText, "removeProviderProfileCredentialBtn", fixed = TRUE)
-  expect_match(observerText, "Remove API key", fixed = TRUE)
+  expect_false(grepl("removeProviderProfileCredentialBtn", observerText, fixed = TRUE))
+  expect_false(grepl("Remove API key", observerText, fixed = TRUE))
   expect_match(observerText, "condition = \"input.providerProfileType != 'ollama'\"", fixed = TRUE)
 })
