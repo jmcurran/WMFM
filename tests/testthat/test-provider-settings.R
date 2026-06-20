@@ -207,10 +207,11 @@ test_that("provider setup modal supports local desktop credential storage withou
   expect_match(observerText, "providerCredentialValue", fixed = TRUE)
   expect_match(observerText, "providerProfileCredentialValue", fixed = TRUE)
   expect_match(observerText, "Save local credential", fixed = TRUE)
-  expect_match(observerText, "Remove local credential", fixed = TRUE)
+  expect_false(grepl("Remove local credential", observerText, fixed = TRUE))
   expect_match(observerText, "writeWmfmConfigCredential(provider, credential)", fixed = TRUE)
   expect_match(observerText, "writeWmfmConfigCredential(providerType, profileCredential)", fixed = TRUE)
-  expect_match(observerText, "removeWmfmConfigCredential(provider)", fixed = TRUE)
+  expect_false(grepl("removeProviderCredentialBtn", observerText, fixed = TRUE))
+  expect_false(grepl("removeWmfmConfigCredential(provider)", observerText, fixed = TRUE))
   expect_false(grepl("providerCredentialValue", uiText, fixed = TRUE))
 })
 

@@ -22,6 +22,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.3.030
+
+- Removed the remaining provider-credential removal control from the legacy provider setup modal.
+- Removed the corresponding server observer so the app no longer advertises API-key deletion in the provider settings workflow.
+- Updated provider settings tests to assert that API-key replacement is available, while API-key removal is hidden from the normal user flow.
+
+
 ## WMFM 1.0.3.029
 
 - Removed the visible Remove API key control from the provider edit modal.

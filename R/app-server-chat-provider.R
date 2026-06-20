@@ -150,7 +150,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
       )
       footerControls = tags$div(
         actionButton("saveProviderCredentialBtn", "Save local credential", class = "btn-primary"),
-        actionButton("removeProviderCredentialBtn", "Remove local credential", class = "btn-secondary"),
         modalButton("Close")
       )
     }
@@ -461,14 +460,6 @@ registerChatProviderObservers = function(input, output, session, rv) {
     rv$providerConfigSaveStatus = paste0("Saved local credential for ", provider, " in the WMFM user config file.")
     removeModal()
     showNotification("Saved local provider credential. The key value will not be displayed by WMFM.", type = "message", duration = 6)
-  }, ignoreInit = TRUE)
-
-  observeEvent(input$removeProviderCredentialBtn, {
-    provider = resolveSelectedProvider()
-    removeWmfmConfigCredential(provider)
-    rv$providerConfigSaveStatus = paste0("Removed any local credential for ", provider, " from the WMFM user config file.")
-    removeModal()
-    showNotification("Removed local provider credential.", type = "message", duration = 5)
   }, ignoreInit = TRUE)
 
 
