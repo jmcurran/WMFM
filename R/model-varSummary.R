@@ -26,16 +26,6 @@
 #'   \item{\code{details}}{A short human-readable summary string.}
 #' }
 #'
-#' @examples
-#' df = data.frame(
-#'   a = factor(c("L1", "L2", "L1")),
-#'   b = c(1, NA, 3),
-#'   c = c("x", "y", "x"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' WMFM:::buildVarSummary(df)
-#'
 #' @keywords internal
 buildVarSummary = function(df, maxLevels = 30, maxUnique = 12) {
 
@@ -149,18 +139,6 @@ buildVarSummary = function(df, maxLevels = 30, maxUnique = 12) {
 #' @return A Shiny tag object (a \code{shiny.tag.list}) containing a table.
 #'
 #' @importFrom shiny tags tagList
-#'
-#' @examples
-#' summaryDf = data.frame(
-#'   var = c("a", "b"),
-#'   class = c("factor", "numeric"),
-#'   missing = c(0L, 1L),
-#'   details = c("Levels: L1, L2", "Range: 1 to 3"),
-#'   stringsAsFactors = FALSE
-#' )
-#'
-#' ui = WMFM:::renderVarSummaryUi(summaryDf)
-#' ui
 #'
 #' @keywords internal
 renderVarSummaryUi = function(summaryDf) {

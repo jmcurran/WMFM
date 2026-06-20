@@ -22,6 +22,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.4.001
+
+- Addressed the first CRAN reviewer documentation slice by quoting the shiny package name in DESCRIPTION.
+- Removed CRAN-facing examples for internal helpers and eliminated generated triple-colon documentation examples.
+- Replaced remaining roxygen dontrun examples with interactive guards where examples should stay visible but not run during checks.
+- Regenerated documentation and validated the package with the standard WMFM workflow.
+
 ## WMFM 1.0.3.030
 
 - Removed the remaining provider-credential removal control from the legacy provider setup modal.

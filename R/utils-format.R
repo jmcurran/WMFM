@@ -7,9 +7,6 @@
 #'
 #' @return A character vector of the same length as \code{x}.
 #'
-#' @examples
-#' WMFM:::fmt3(c(0.001234, 12.3456, 12345.6))
-#'
 #' @keywords internal
 fmt3 = function(x) {
   format(signif(x, 3), trim = TRUE, scientific = FALSE)

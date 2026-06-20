@@ -30,8 +30,8 @@ Each example is expected to live in its own subdirectory under
 \code{extdata/examples/example-metadata.yml} manifest.
 }
 \examples{
-\dontrun{
-listWMFMExamples(package = "WMFM")
+if (interactive()) {
+  listWMFMExamples(package = "WMFM")
 }
 
 }

@@ -19,8 +19,8 @@
 #'   found, an empty character vector is returned.
 #'
 #' @examples
-#' \dontrun{
-#' listWMFMExamples(package = "WMFM")
+#' if (interactive()) {
+#'   listWMFMExamples(package = "WMFM")
 #' }
 #'
 #' @export
@@ -55,8 +55,8 @@ listWMFMExamples = function(package = "WMFM", includeTestExamples = FALSE) {
 #'   and developer purpose.
 #'
 #' @examples
-#' \dontrun{
-#' listWMFMExampleDetails(package = "WMFM")
+#' if (interactive()) {
+#'   listWMFMExampleDetails(package = "WMFM")
 #' }
 #'
 #' @export
@@ -879,9 +879,9 @@ loadWMFMExampleContext = function(spec, basePath) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' x = runExample("Course")
-#' y = runExample("Course", nRuns = 20)
+#' if (interactive()) {
+#'   x = runExample("Course")
+#'   y = runExample("Course", nRuns = 20)
 #' }
 #'
 #' @export

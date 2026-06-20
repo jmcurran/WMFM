@@ -25,17 +25,4 @@ model terms and matched against the columns in the supplied model frame.
 This helper is primarily used to identify categorical predictors that are
 eligible for factor-only contrasts.
 }
-\examples{
-df = data.frame(
-  y = rnorm(10),
-  f = factor(rep(c("A", "B"), each = 5)),
-  x = rnorm(10)
-)
-
-m = lm(y ~ f + x, data = df)
-mf = model.frame(m)
-
-WMFM:::getFactorOnlyPredictors(m, mf)
-
-}
 \keyword{internal}

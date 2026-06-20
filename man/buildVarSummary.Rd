@@ -37,15 +37,4 @@ string:
 \item Other types: a brief note based on class
 }
 }
-\examples{
-df = data.frame(
-  a = factor(c("L1", "L2", "L1")),
-  b = c(1, NA, 3),
-  c = c("x", "y", "x"),
-  stringsAsFactors = FALSE
-)
-
-WMFM:::buildVarSummary(df)
-
-}
 \keyword{internal}

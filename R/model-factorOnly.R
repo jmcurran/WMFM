@@ -233,18 +233,6 @@ isFactorOnlyPredictorModel = function(m) {
 #'
 #' @importFrom stats terms
 #'
-#' @examples
-#' df = data.frame(
-#'   y = rnorm(10),
-#'   f = factor(rep(c("A", "B"), each = 5)),
-#'   x = rnorm(10)
-#' )
-#'
-#' m = lm(y ~ f + x, data = df)
-#' mf = model.frame(m)
-#'
-#' WMFM:::getFactorOnlyPredictors(m, mf)
-#'
 #' @keywords internal
 getFactorOnlyPredictors = function(m, mf) {
 

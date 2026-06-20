@@ -47,7 +47,7 @@ deliberately flawed explanations that may be slipping through the current
 deterministic rubric.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 badGrades = grade(modelObj, explanation = badVec, method = "deterministic")
 goodGrade = grade(modelObj, explanation = modelObj$explanation, method = "deterministic")
 

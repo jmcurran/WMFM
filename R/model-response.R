@@ -18,12 +18,6 @@
 #' @return A single character string naming the detected transformation, or
 #'   \code{NULL} if none is detected.
 #'
-#' @examples
-#' WMFM:::detectRespTransform("log(y)")
-#' WMFM:::detectRespTransform(" log1p(count) ")
-#' WMFM:::detectRespTransform("sqrt(x)")
-#' WMFM:::detectRespTransform("y")
-#'
 #' @keywords internal
 detectRespTransform = function(expr) {
 

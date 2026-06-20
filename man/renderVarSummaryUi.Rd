@@ -17,17 +17,4 @@ A Shiny tag object (a \code{shiny.tag.list}) containing a table.
 Converts a variable-summary data frame (as produced by \code{buildVarSummary()})
 into a simple HTML table for display in a Shiny UI.
 }
-\examples{
-summaryDf = data.frame(
-  var = c("a", "b"),
-  class = c("factor", "numeric"),
-  missing = c(0L, 1L),
-  details = c("Levels: L1, L2", "Range: 1 to 3"),
-  stringsAsFactors = FALSE
-)
-
-ui = WMFM:::renderVarSummaryUi(summaryDf)
-ui
-
-}
 \keyword{internal}

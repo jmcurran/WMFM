@@ -32,17 +32,6 @@
 #'   where plotting is not applicable, the function draws an informative message
 #'   using base graphics and returns \code{invisible()}.
 #'
-#' @examples
-#' \dontrun{
-#' m = lm(mpg ~ wt, data = mtcars)
-#' p = drawModelPlot(m, showCi = TRUE)
-#' print(p)
-#'
-#' m2 = glm(vs ~ wt, data = mtcars, family = binomial())
-#' p2 = drawModelPlot(m2, showCi = TRUE, ciType = "sandwich", hcType = "HC3")
-#' print(p2)
-#' }
-#'
 #' @importFrom stats model.frame predict na.omit
 #' @importFrom graphics plot.new text
 #' @importFrom ggplot2 ggplot geom_point geom_line geom_ribbon labs aes vars facet_wrap

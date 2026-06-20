@@ -64,9 +64,9 @@ No scoring is performed here. Scoring should be done later using \code{score()}
 on the returned object.
 }
 \examples{
-\dontrun{
-x = runExample("Course")
-y = runExample("Course", nRuns = 20)
+if (interactive()) {
+  x = runExample("Course")
+  y = runExample("Course", nRuns = 20)
 }
 
 }
