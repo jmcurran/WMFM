@@ -23,6 +23,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.0.4.005
+
+- Added a final CRAN reviewer audit script for documentation, example, global-write, and package-availability checks.
+- Removed the remaining triple-colon test call so the full checked source tree is clean for the reviewer audit.
+- Validated the audit before and after roxygen documentation regeneration as part of the standard stage workflow.
+
 ## WMFM 1.0.4.004
 
 - Replaced the package-data scan so WMFM no longer uses installed.packages() in package code.

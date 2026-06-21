@@ -55,5 +55,5 @@ testthat::test_that("numeric-token preservation treats hyphenated ranges as rang
   before = "The interval is 53-58."
   after = paste0("The interval is 53", intToUtf8(0x2013), "58.")
 
-  testthat::expect_true(WMFM:::postProcessPreservesNumericTokens(before, after))
+  testthat::expect_true(postProcessPreservesNumericTokens(before, after))
 })
