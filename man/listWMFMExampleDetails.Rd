@@ -26,8 +26,8 @@ developer-mode example-library displays that need more than the example
 names alone.
 }
 \examples{
-\dontrun{
-listWMFMExampleDetails(package = "WMFM")
+if (interactive()) {
+  listWMFMExampleDetails(package = "WMFM")
 }
 
 }

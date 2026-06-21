@@ -16,8 +16,4 @@ A character vector of the same length as \code{x}.
 Formats numeric values for user-facing display using approximately three
 significant figures, suppressing scientific notation where possible.
 }
-\examples{
-WMFM:::fmt3(c(0.001234, 12.3456, 12345.6))
-
-}
 \keyword{internal}

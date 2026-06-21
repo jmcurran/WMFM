@@ -270,8 +270,9 @@ buildDerivedConfidenceIntervalData = function(
     predictorNames = derivedPlan$predictorNames
   )
 
-  rows = list()
-  details = list()
+  rowState = new.env(parent = emptyenv())
+  rowState$rows = list()
+  rowState$details = list()
 
   appendRow = function(
       quantity,
@@ -285,7 +286,7 @@ buildDerivedConfidenceIntervalData = function(
       scaleNote
   ) {
 
-    rows[[length(rows) + 1]] <<- data.frame(
+    rowState$rows[[length(rowState$rows) + 1]] = data.frame(
       ciSection = section,
       quantity = quantity,
       estimate = round(estimate, 3),
@@ -295,7 +296,7 @@ buildDerivedConfidenceIntervalData = function(
       stringsAsFactors = FALSE
     )
 
-    details[[length(details) + 1]] <<- list(
+    rowState$details[[length(rowState$details) + 1]] = list(
       label = quantity,
       quantity = quantity,
       section = section,
@@ -338,7 +339,7 @@ buildDerivedConfidenceIntervalData = function(
     )
   }
 
-  ciTable = do.call(rbind, rows)
+  ciTable = do.call(rbind, rowState$rows)
   ciTable = enrichConfidenceIntervalDisplayTable(
     model = model,
     ciTable = ciTable
@@ -346,7 +347,7 @@ buildDerivedConfidenceIntervalData = function(
 
   list(
     table = ciTable,
-    details = details,
+    details = rowState$details,
     note = buildDerivedModeNote(mf = mf, numericReference = numericReference),
     teachingNote = NULL,
     vcovTable = NULL,

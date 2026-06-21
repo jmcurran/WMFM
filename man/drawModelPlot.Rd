@@ -52,16 +52,4 @@ raw data and a fitted line. Optionally, it can add confidence bands around the
 fitted line(s). Bands can be computed using either the model-based standard
 errors or sandwich/robust standard errors.
 }
-\examples{
-\dontrun{
-m = lm(mpg ~ wt, data = mtcars)
-p = drawModelPlot(m, showCi = TRUE)
-print(p)
-
-m2 = glm(vs ~ wt, data = mtcars, family = binomial())
-p2 = drawModelPlot(m2, showCi = TRUE, ciType = "sandwich", hcType = "HC3")
-print(p2)
-}
-
-}
 \keyword{internal}

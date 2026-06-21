@@ -35,20 +35,83 @@ ensureS20xInstalled = function() {
 #'   one or more datasets.
 #' @keywords internal
 #' @importFrom tools Rd2HTML Rd2txt Rd_db
-#' @importFrom utils installed.packages data capture.output
+#' @importFrom utils data capture.output
 getInstalledPackagesWithData = function() {
-  pkgMatrix = installed.packages()
+  listPackagesWithDatasetMetadata(.libPaths())
+}
 
-  if (nrow(pkgMatrix) == 0) {
+#' List packages with installed dataset metadata in library paths
+#'
+#' Scans library directories for package metadata created at installation time.
+#' This avoids a full installed-package matrix scan while preserving the app behaviour of
+#' listing installed packages that appear to contain datasets.
+#'
+#' @param libPaths Character vector of library paths to scan.
+#'
+#' @return A sorted character vector of package names with dataset metadata.
+#' @keywords internal
+listPackagesWithDatasetMetadata = function(libPaths) {
+  libPaths = libPaths[file.exists(libPaths)]
+
+  if (length(libPaths) == 0L) {
     return(character(0))
   }
 
-  pkgs = pkgMatrix[, "Package"]
-  libPaths = pkgMatrix[, "LibPath"]
+  pkgs = character(0)
 
-  hasData = file.exists(file.path(libPaths, pkgs, "Meta", "data.rds"))
+  for (libPath in libPaths) {
+    packageDirs = list.dirs(libPath, full.names = TRUE, recursive = FALSE)
 
-  sort(unique(pkgs[hasData]))
+    for (packageDir in packageDirs) {
+      dataMetadataPath = file.path(packageDir, "Meta", "data.rds")
+
+      if (!file.exists(dataMetadataPath)) {
+        next
+      }
+
+      packageName = getPackageNameFromDescription(packageDir)
+
+      if (nzchar(packageName)) {
+        pkgs = c(pkgs, packageName)
+      }
+    }
+  }
+
+  sort(unique(pkgs))
+}
+
+#' Get a package name from an installed package DESCRIPTION file
+#'
+#' @param packageDir Path to an installed package directory.
+#'
+#' @return A character scalar package name, or an empty string if the name
+#'   cannot be read.
+#' @keywords internal
+getPackageNameFromDescription = function(packageDir) {
+  descriptionPath = file.path(packageDir, "DESCRIPTION")
+
+  if (!file.exists(descriptionPath)) {
+    return("")
+  }
+
+  description = tryCatch(
+    read.dcf(descriptionPath),
+    error = function(e) {
+      NULL
+    }
+  )
+
+  if (is.null(description) || nrow(description) == 0L || !("Package" %in% colnames(description))) {
+    return("")
+  }
+
+  packageName = trimws(description[1, "Package"])
+
+  if (is.na(packageName)) {
+    return("")
+  }
+
+  packageName
 }
 
 #' List datasets available in an installed package

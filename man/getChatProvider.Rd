@@ -30,12 +30,4 @@ The backend is selected via the \code{backend} argument, or if omitted, from the
 be supplied explicitly via \code{model}; otherwise \code{getOption("wmfm.ollama_model")}
 is used, with a default of \code{"gpt-oss"}.
 }
-\examples{
-\dontrun{
-  provider = getChatProvider("ollama")
-  providerQwen = getChatProvider("ollama", model = "qwen3.5:35b-a3b-bf16")
-  providerClaude = getChatProvider("claude")
-}
-
-}
 \keyword{internal}

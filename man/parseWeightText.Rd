@@ -22,11 +22,4 @@ Parses a user-entered weight string into a numeric value. Supports:
 \details{
 If parsing fails, the function returns \code{NA_real_}.
 }
-\examples{
-WMFM:::parseWeightText("0.5")
-WMFM:::parseWeightText("1/2")
-WMFM:::parseWeightText(" 3 / 4 ")
-WMFM:::parseWeightText("not a number")
-
-}
 \keyword{internal}

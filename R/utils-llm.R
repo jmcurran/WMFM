@@ -43,13 +43,6 @@ NULL
 #' `ellmer::chat_anthropic()`, or a dummy provider object (class
 #' `"wmfm_dummy_chat_provider"`) that throws a user-friendly error on use.
 #'
-#' @examples
-#' \dontrun{
-#'   provider = getChatProvider("ollama")
-#'   providerQwen = getChatProvider("ollama", model = "qwen3.5:35b-a3b-bf16")
-#'   providerClaude = getChatProvider("claude")
-#' }
-#'
 #' @keywords internal
 getChatProvider = function(backend = NULL,
                            model = NULL,

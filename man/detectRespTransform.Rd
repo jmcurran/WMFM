@@ -28,11 +28,4 @@ Recognised transformations (returned values):
 
 If no recognised transformation is detected, returns \code{NULL}.
 }
-\examples{
-WMFM:::detectRespTransform("log(y)")
-WMFM:::detectRespTransform(" log1p(count) ")
-WMFM:::detectRespTransform("sqrt(x)")
-WMFM:::detectRespTransform("y")
-
-}
 \keyword{internal}

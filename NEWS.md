@@ -22,6 +22,34 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+
+## WMFM 1.0.4.005
+
+- Added a final CRAN reviewer audit script for documentation, example, global-write, and package-availability checks.
+- Removed the remaining triple-colon test call so the full checked source tree is clean for the reviewer audit.
+- Validated the audit before and after roxygen documentation regeneration as part of the standard stage workflow.
+
+## WMFM 1.0.4.004
+
+- Replaced the package-data scan so WMFM no longer uses installed.packages() in package code.
+- Added deterministic tests for detecting installed package dataset metadata from temporary library directories.
+- Added a CRAN preflight check to confirm the Stage 42 reviewer repair stream remains release-ready.
+
+## WMFM 1.0.4.003
+
+- Repaired the Stage 42.2.1 provider-profile save observer so the matched-profile flag is assigned explicitly before status messages are built.
+- Removed the CRAN check note about no visible binding for global variable matched in registerChatProviderObservers.
+- Kept the repair narrowly scoped to the provider-configuration observer and retained the Stage 42.2 CRAN-audit changes.
+- Validated with CRAN reviewer greps, strict tests, and strict check.
+
+## WMFM 1.0.4.001
+
+- Addressed the first CRAN reviewer documentation slice by quoting the shiny package name in DESCRIPTION.
+- Removed CRAN-facing examples for internal helpers and eliminated generated triple-colon documentation examples.
+- Replaced remaining roxygen dontrun examples with interactive guards where examples should stay visible but not run during checks.
+- Regenerated documentation and validated the package with the standard WMFM workflow.
+
 ## WMFM 1.0.3.030
 
 - Removed the remaining provider-credential removal control from the legacy provider setup modal.

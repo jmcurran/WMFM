@@ -238,7 +238,7 @@ validateBadExplanationResponse = function(parsed, plan) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' badGrades = grade(modelObj, explanation = badVec, method = "deterministic")
 #' goodGrade = grade(modelObj, explanation = modelObj$explanation, method = "deterministic")
 #'

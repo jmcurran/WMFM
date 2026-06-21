@@ -12,12 +12,6 @@
 #'
 #' @return A numeric scalar if parsing succeeds; otherwise \code{NA_real_}.
 #'
-#' @examples
-#' WMFM:::parseWeightText("0.5")
-#' WMFM:::parseWeightText("1/2")
-#' WMFM:::parseWeightText(" 3 / 4 ")
-#' WMFM:::parseWeightText("not a number")
-#'
 #' @keywords internal
 parseWeightText = function(x) {
 
