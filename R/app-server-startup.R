@@ -140,14 +140,14 @@ registerStartupDataChoiceObservers = function(input, output, session) {
 
     observeEvent(input$confirmDeveloperModeUnlockBtn, {
       password = input$developerModePassword %||% ""
-      unlockError = NULL
-      passwordOk = tryCatch(
-        verifyDeveloperModePassword(password),
+      unlockResult = tryCatch(
+        list(ok = verifyDeveloperModePassword(password), error = NULL),
         error = function(e) {
-          unlockError <<- conditionMessage(e)
-          FALSE
+          list(ok = FALSE, error = conditionMessage(e))
         }
       )
+      passwordOk = unlockResult$ok
+      unlockError = unlockResult$error
 
       if (isTRUE(passwordOk)) {
         developerModeUnlocked(TRUE)

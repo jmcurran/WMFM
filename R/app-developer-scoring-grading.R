@@ -69,43 +69,45 @@ buildDeveloperScoringMetricTable = function(gradeObj, method = "deterministic") 
     hasFollowupScoringContext = isTRUE(methodScore$student$hasFollowupScoringContext[1])
   }
 
-  markMetricsNotApplicable = function(labels) {
+  markMetricsNotApplicable = function(metricTable, labels) {
     rows = metricTable$label %in% labels
 
     if (any(rows)) {
-      metricTable$studentValue[rows] <<- NA_real_
-      metricTable$maxValue[rows] <<- 0
-      metricTable$marksLost[rows] <<- 0
-      metricTable$status[rows] <<- "not_applicable"
+      metricTable$studentValue[rows] = NA_real_
+      metricTable$maxValue[rows] = 0
+      metricTable$marksLost[rows] = 0
+      metricTable$status[rows] = "not_applicable"
 
       if ("confidence" %in% names(metricTable)) {
-        metricTable$confidence[rows] <<- "not_applicable"
+        metricTable$confidence[rows] = "not_applicable"
       }
 
       if ("evidenceStrength" %in% names(metricTable)) {
-        metricTable$evidenceStrength[rows] <<- NA_real_
+        metricTable$evidenceStrength[rows] = NA_real_
       }
 
-      metricTable$reason[rows] <<- paste0(
+      metricTable$reason[rows] = paste0(
         metricTable$label[rows],
         " was not applicable to this model."
       )
     }
+
+    metricTable
   }
 
   if (!isTRUE(hasFactorPredictors)) {
-    markMetricsNotApplicable(c(
+    metricTable = markMetricsNotApplicable(metricTable, c(
       "Reference group handled correctly",
       "Reference-group coverage adequate"
     ))
 
     if (!isTRUE(hasFollowupScoringContext)) {
-      markMetricsNotApplicable("Comparison structure clear")
+      metricTable = markMetricsNotApplicable(metricTable, "Comparison structure clear")
     }
   }
 
   if (!isTRUE(hasInteractionTerms)) {
-    markMetricsNotApplicable(c(
+    metricTable = markMetricsNotApplicable(metricTable, c(
       "Interaction coverage adequate",
       "Interaction substance correct"
     ))
@@ -1248,10 +1250,17 @@ registerDeveloperScoringGradingObservers = function(
                 method = "deterministic"
               ),
               error = function(e) {
-                statusText <<- paste("scoring failed:", conditionMessage(e))
-                NULL
+                structure(
+                  list(message = paste("scoring failed:", conditionMessage(e))),
+                  class = "wmfmDeveloperScoringError"
+                )
               }
             )
+          }
+
+          if (inherits(scoredGrade, "wmfmDeveloperScoringError")) {
+            statusText = scoredGrade$message
+            scoredGrade = NULL
           }
 
           grades[[runIdx]] = scoredGrade

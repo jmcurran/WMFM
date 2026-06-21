@@ -103,10 +103,11 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects adjustment-role cont
     "}"
   )
 
-  calls = 0L
+  callState = new.env(parent = emptyenv())
+  callState$calls = 0L
   chat = structure(
     list(chat = function(...) {
-      calls <<- calls + 1L
+      callState$calls = callState$calls + 1L
       raw
     }),
     class = "ProviderFake"
@@ -121,15 +122,9 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects adjustment-role cont
   runB$primaryVariables = c("treatment")
 
   withr::local_options(list(warn = 2))
-  cache = new.env(parent = emptyenv())
-  oldCache = get0(".env_cache", inherits = TRUE, ifnotfound = NULL)
-  assign(".env_cache", cache, envir = .GlobalEnv)
+  rm(list = ls(envir = .env_cache), envir = .env_cache)
   withr::defer({
-    if (is.null(oldCache)) {
-      rm(".env_cache", envir = .GlobalEnv)
-    } else {
-      assign(".env_cache", oldCache, envir = .GlobalEnv)
-    }
+    rm(list = ls(envir = .env_cache), envir = .env_cache)
   })
 
   outA = scoreWmfmRunWithLlm(runA, chat = chat, useCache = TRUE)
@@ -137,7 +132,7 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects adjustment-role cont
 
   testthat::expect_identical(outA$llmScoringUsedCache, FALSE)
   testthat::expect_identical(outB$llmScoringUsedCache, FALSE)
-  testthat::expect_identical(calls, 2L)
+  testthat::expect_identical(callState$calls, 2L)
 })
 
 testthat::test_that("scoreWmfmRunWithLlm sends follow-up scoring context to fake providers", {
@@ -182,10 +177,11 @@ testthat::test_that("scoreWmfmRunWithLlm sends follow-up scoring context to fake
     "}"
   )
 
-  capturedPrompt = NULL
+  capturedState = new.env(parent = emptyenv())
+  capturedState$prompt = NULL
   chat = structure(
     list(chat = function(prompt) {
-      capturedPrompt <<- prompt
+      capturedState$prompt = prompt
       raw
     }),
     class = "ProviderFake"
@@ -207,10 +203,10 @@ testthat::test_that("scoreWmfmRunWithLlm sends follow-up scoring context to fake
   out = scoreWmfmRunWithLlm(runRecord, chat = chat)
 
   testthat::expect_identical(out$llmScored, TRUE)
-  testthat::expect_match(capturedPrompt, "FOLLOW-UP SCORING CONTEXT", fixed = TRUE)
-  testthat::expect_match(capturedPrompt, "Prediction type: individual_prediction_interval", fixed = TRUE)
-  testthat::expect_match(capturedPrompt, "Future-observation type: poisson_count", fixed = TRUE)
-  testthat::expect_match(capturedPrompt, "Use uncertaintyHandlingAppropriate", fixed = TRUE)
+  testthat::expect_match(capturedState$prompt, "FOLLOW-UP SCORING CONTEXT", fixed = TRUE)
+  testthat::expect_match(capturedState$prompt, "Prediction type: individual_prediction_interval", fixed = TRUE)
+  testthat::expect_match(capturedState$prompt, "Future-observation type: poisson_count", fixed = TRUE)
+  testthat::expect_match(capturedState$prompt, "Use uncertaintyHandlingAppropriate", fixed = TRUE)
 })
 
 testthat::test_that("scoreWmfmRunWithLlm cache key reflects follow-up scoring context", {
@@ -255,10 +251,11 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects follow-up scoring co
     "}"
   )
 
-  calls = 0L
+  callState = new.env(parent = emptyenv())
+  callState$calls = 0L
   chat = structure(
     list(chat = function(...) {
-      calls <<- calls + 1L
+      callState$calls = callState$calls + 1L
       raw
     }),
     class = "ProviderFake"
@@ -283,15 +280,9 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects follow-up scoring co
   )
 
   withr::local_options(list(warn = 2))
-  cache = new.env(parent = emptyenv())
-  oldCache = get0(".env_cache", inherits = TRUE, ifnotfound = NULL)
-  assign(".env_cache", cache, envir = .GlobalEnv)
+  rm(list = ls(envir = .env_cache), envir = .env_cache)
   withr::defer({
-    if (is.null(oldCache)) {
-      rm(".env_cache", envir = .GlobalEnv)
-    } else {
-      assign(".env_cache", oldCache, envir = .GlobalEnv)
-    }
+    rm(list = ls(envir = .env_cache), envir = .env_cache)
   })
 
   outA = scoreWmfmRunWithLlm(runA, chat = chat, useCache = TRUE)
@@ -299,5 +290,5 @@ testthat::test_that("scoreWmfmRunWithLlm cache key reflects follow-up scoring co
 
   testthat::expect_identical(outA$llmScoringUsedCache, FALSE)
   testthat::expect_identical(outB$llmScoringUsedCache, FALSE)
-  testthat::expect_identical(calls, 2L)
+  testthat::expect_identical(callState$calls, 2L)
 })

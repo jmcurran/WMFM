@@ -168,16 +168,18 @@ testthat::test_that("final provider prompt excludes adjustment-level labels and 
   fit = stats::lm(y ~ treatment + site + age, data = dat)
   attr(fit, "wmfm_adjustment_variables") = c("site", "age")
 
-  capturedPrompt = NULL
+  capturedState = new.env(parent = emptyenv())
+  capturedState$prompt = NULL
   fakeChat = list(
     chat = function(prompt) {
-      capturedPrompt <<- prompt
+      capturedState$prompt = prompt
       "stub explanation"
     }
   )
 
   suppressWarnings(lmExplanation(fit, chat = fakeChat, useCache = FALSE))
 
+  capturedPrompt = capturedState$prompt
   testthat::expect_true(is.character(capturedPrompt) && length(capturedPrompt) == 1)
 
   modelFrame = stats::model.frame(fit)

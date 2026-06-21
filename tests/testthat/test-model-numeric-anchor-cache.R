@@ -22,11 +22,12 @@ test_that("lmExplanation cache key depends on numeric anchor metadata", {
   )
   fit = stats::lm(y ~ x, data = dat)
 
-  callCount = 0L
+  callState = new.env(parent = emptyenv())
+  callState$count = 0L
   chat = list(
     chat = function(prompt) {
-      callCount <<- callCount + 1L
-      paste("explanation", callCount)
+      callState$count = callState$count + 1L
+      paste("explanation", callState$count)
     }
   )
 
@@ -34,7 +35,7 @@ test_that("lmExplanation cache key depends on numeric anchor metadata", {
   second = suppressWarnings(lmExplanation(fit, chat = chat, useCache = TRUE))
 
   expect_identical(first, second)
-  expect_identical(callCount, 1L)
+  expect_identical(callState$count, 1L)
 
   local_mocked_bindings(
     buildModelNumericAnchorInfo = function(...) {
@@ -49,7 +50,7 @@ test_that("lmExplanation cache key depends on numeric anchor metadata", {
 
   third = suppressWarnings(lmExplanation(fit, chat = chat, useCache = TRUE))
 
-  expect_identical(callCount, 2L)
+  expect_identical(callState$count, 2L)
   expect_false(identical(third, first))
 })
 
@@ -77,11 +78,12 @@ test_that("lmEquations cache key depends on numeric anchor metadata", {
   )
   fit = stats::lm(y ~ x, data = dat)
 
-  callCount = 0L
+  callState = new.env(parent = emptyenv())
+  callState$count = 0L
   chat = list(
     chat = function(prompt) {
-      callCount <<- callCount + 1L
-      paste("equation", callCount)
+      callState$count = callState$count + 1L
+      paste("equation", callState$count)
     }
   )
 
@@ -89,7 +91,7 @@ test_that("lmEquations cache key depends on numeric anchor metadata", {
   second = suppressWarnings(lmEquations(fit, chat = chat))
 
   expect_identical(first, second)
-  expect_identical(callCount, 1L)
+  expect_identical(callState$count, 1L)
 
   local_mocked_bindings(
     buildModelNumericAnchorInfo = function(...) {
@@ -104,7 +106,7 @@ test_that("lmEquations cache key depends on numeric anchor metadata", {
 
   third = suppressWarnings(lmEquations(fit, chat = chat))
 
-  expect_identical(callCount, 2L)
+  expect_identical(callState$count, 2L)
   expect_false(identical(third, first))
 })
 

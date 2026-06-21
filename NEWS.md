@@ -23,6 +23,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.4.003
+
+- Repaired the Stage 42.2.1 provider-profile save observer so the matched-profile flag is assigned explicitly before status messages are built.
+- Removed the CRAN check note about no visible binding for global variable matched in registerChatProviderObservers.
+- Kept the repair narrowly scoped to the provider-configuration observer and retained the Stage 42.2 CRAN-audit changes.
+- Validated with CRAN reviewer greps, strict tests, and strict check.
+
 ## WMFM 1.0.4.001
 
 - Addressed the first CRAN reviewer documentation slice by quoting the shiny package name in DESCRIPTION.

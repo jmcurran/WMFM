@@ -353,15 +353,19 @@ registerChatProviderObservers = function(input, output, session, rv) {
       active = FALSE
     ))
 
-    matched = FALSE
-    updatedProfiles = lapply(profiles, function(profile) {
+    matchedProfiles = vapply(profiles, function(profile) {
       normalisedProfile = normaliseWmfmProviderProfile(profile)
-      if (identical(normalisedProfile$profileId, existingProfileId)) {
-        matched <<- TRUE
+      identical(normalisedProfile$profileId, existingProfileId)
+    }, logical(1))
+
+    updatedProfiles = Map(function(profile, matchedProfile) {
+      if (isTRUE(matchedProfile)) {
         return(newProfile)
       }
-      normalisedProfile
-    })
+      normaliseWmfmProviderProfile(profile)
+    }, profiles, matchedProfiles)
+
+    matched = any(matchedProfiles)
 
     if (!matched) {
       updatedProfiles = c(updatedProfiles, list(newProfile))

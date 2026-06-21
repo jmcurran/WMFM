@@ -150,11 +150,13 @@ splitExplanationIntoClaimUnits = function(explanationText) {
 #' @keywords internal
 buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, model = NULL) {
 
-  rows = list()
+  rowState = new.env(parent = emptyenv())
+  rowState$rows = list()
 
   addRow = function(evidenceType, sourceSection, label, summary) {
-    rows[[length(rows) + 1]] <<- data.frame(
-      evidenceId = paste0("evidence_", length(rows) + 1),
+    rowIndex = length(rowState$rows) + 1L
+    rowState$rows[[rowIndex]] = data.frame(
+      evidenceId = paste0("evidence_", rowIndex),
       evidenceType = evidenceType,
       sourceSection = sourceSection,
       label = label,
@@ -304,7 +306,7 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
     }
   }
 
-  if (length(rows) == 0) {
+  if (length(rowState$rows) == 0) {
     return(data.frame(
       evidenceId = character(0),
       evidenceType = character(0),
@@ -315,7 +317,7 @@ buildExplanationEvidenceInventory = function(audit, teachingSummary = NULL, mode
     ))
   }
 
-  do.call(rbind, rows)
+  do.call(rbind, rowState$rows)
 }
 
 #' Check whether a teaching summary came from an explicit research-question input
