@@ -23,6 +23,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.0.4.004
+
+- Replaced the package-data scan so WMFM no longer uses installed.packages() in package code.
+- Added deterministic tests for detecting installed package dataset metadata from temporary library directories.
+- Added a CRAN preflight check to confirm the Stage 42 reviewer repair stream remains release-ready.
+
 ## WMFM 1.0.4.003
 
 - Repaired the Stage 42.2.1 provider-profile save observer so the matched-profile flag is assigned explicitly before status messages are built.
