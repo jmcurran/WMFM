@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.008
+
+- Repair the Stage 43.6 prediction-example validation to use the exported listWMFMExamples() API.
+- Retain the twelve loadable Course, Oysters, Quakes, and Diamonds prediction examples unchanged.
+- Confirm the examples remain visible and loadable through the package example API.
+- Run the complete package validation, archive, build, and installation workflow after the test repair.
+
 ## WMFM 1.1.0.006
 
 - Run the complete package validation workflow before using the Stage 43 manual prediction-evaluation examples.

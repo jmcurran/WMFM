@@ -1,0 +1,13 @@
+displayName: Diamonds Prediction 1
+modelType: lm
+formula: log(price) ~ log(carat) + cut + color + clarity
+dataSource: package
+dataPackage: ggplot2
+dataObject: diamonds
+dataTransform: diamondsPlainFactors
+researchQuestion: Can we predict the price of diamonds on the basis of weight?
+followupQuestion: What price would you predict for a 1.0 carat diamond with cut Ideal, color G, and clarity VS1?
+adjustmentVariables:
+  - cut
+  - color
+  - clarity

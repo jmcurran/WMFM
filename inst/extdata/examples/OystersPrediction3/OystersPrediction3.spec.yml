@@ -1,0 +1,8 @@
+displayName: Oysters Prediction 3
+modelType: poisson
+formula: Oysters ~ Site
+dataSource: package
+dataPackage: s20x
+dataObject: oysters.df
+researchQuestion: Does the expected number of oysters appear to differ between the study sites?
+followupQuestion: What is the expected number of oysters in a sample taken at George River?
