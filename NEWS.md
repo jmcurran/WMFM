@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.006
+
+- Run the complete package validation workflow before using the Stage 43 manual prediction-evaluation examples.
+- Confirm the prediction implementation through strict tests and a zero-error, zero-warning, zero-note package check.
+- Build and install the exact validated source package for the subsequent developer-mode manual evaluation.
+- Record the forced-validation stage without changing the prediction engine or the labelled example prompts.
+
 ## WMFM 1.1.0.005
 
 - Add a uniquely labelled manual prediction-evaluation set for the Course, Oysters, Quakes, and Diamonds examples.
