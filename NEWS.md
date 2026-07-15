@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.005
+
+- Add a uniquely labelled manual prediction-evaluation set for the Course, Oysters, Quakes, and Diamonds examples.
+- Cover explicit individual predictions, ambiguous personal or practical wording, and explicit mean or expected responses.
+- Keep the prompts suitable for developer-mode JSON review without asserting fixed automated answers.
+- Preserve Stage 44 for deterministic R code generation after prediction behaviour has been reviewed.
+
 ## WMFM 1.1.0.004
 
 - Distinguish mean-response, individual-outcome, and ambiguous personal prediction questions.
