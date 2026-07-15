@@ -154,11 +154,15 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  predictionIntent = classifyPredictionQuestionIntent(normalizedText)
+
   if (grepl("prediction interval", normalizedText, perl = TRUE)) {
     result$category = "prediction_interval_request"
     result$supported = TRUE
     result$requiresDeterministicComputation = TRUE
-    result$message = "Prediction-interval style request captured for a later stage."
+    result$predictionIntent = predictionIntent$target
+    result$predictionAmbiguity = predictionIntent$ambiguity
+    result$message = "Prediction-interval request captured for deterministic follow-up handling."
     return(result)
   }
 
@@ -166,7 +170,19 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     result$category = "prediction_request"
     result$supported = TRUE
     result$requiresDeterministicComputation = TRUE
+    result$predictionIntent = predictionIntent$target
+    result$predictionAmbiguity = predictionIntent$ambiguity
     result$message = "Prediction-style request captured for deterministic follow-up handling."
+    return(result)
+  }
+
+  if (identical(predictionIntent$target, "ambiguous_personal")) {
+    result$category = "prediction_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$predictionIntent = predictionIntent$target
+    result$predictionAmbiguity = predictionIntent$ambiguity
+    result$message = "Ambiguous personal-outcome request captured; WMFM will report both average-response and individual prediction uncertainty."
     return(result)
   }
 
@@ -350,4 +366,34 @@ extractRequestedUnitChangeValues = function(normalizedText) {
   }
 
   sort(unique(values))
+}
+
+
+#' Classify prediction intent in natural-language follow-up questions
+#'
+#' @param normalizedText Lower-case normalized question text.
+#'
+#' @return List with `target` and `ambiguity`.
+#' @keywords internal
+#' @noRd
+classifyPredictionQuestionIntent = function(normalizedText) {
+  text = as.character(normalizedText %||% "")
+  hasPersonal = grepl("\\b(i|me|my|mine)\\b", text, perl = TRUE)
+  hasExplicitPrediction = grepl("\\b(predict|predicted|prediction|prediction interval)\\b", text, perl = TRUE)
+  hasAverage = grepl("\\b(on average|average|mean|expected response|expected mark|students with|people with)\\b", text, perl = TRUE)
+  hasAmbiguousOutcome = grepl("\\b(will i|would i|am i likely|do well|perform well|succeed)\\b", text, perl = TRUE)
+
+  if (isTRUE(hasAverage) && !isTRUE(hasPersonal)) {
+    return(list(target = "mean_response", ambiguity = "low"))
+  }
+
+  if (isTRUE(hasPersonal) && isTRUE(hasExplicitPrediction)) {
+    return(list(target = "individual_outcome", ambiguity = "low"))
+  }
+
+  if (isTRUE(hasPersonal) && isTRUE(hasAmbiguousOutcome)) {
+    return(list(target = "ambiguous_personal", ambiguity = "high"))
+  }
+
+  list(target = "mean_response", ambiguity = "low")
 }

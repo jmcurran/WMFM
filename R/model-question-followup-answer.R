@@ -18,14 +18,14 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     return(explanation)
   }
 
+  if (grepl(answer, explanation, fixed = TRUE)) {
+    return(explanation)
+  }
+
   explanation = removeConflictingLlmFollowupPredictionText(
     explanation = explanation,
     model = model
   )
-
-  if (grepl(answer, explanation, fixed = TRUE)) {
-    return(explanation)
-  }
 
   paste(trimws(as.character(explanation %||% "")), answer, sep = "\n\n")
 }
@@ -101,7 +101,9 @@ buildDeterministicFollowupAnswer = function(model) {
         formatFollowupPredictionNumber(interval$upr)
       )
     )
-  } else if (is.list(prediction$confidenceInterval)) {
+  }
+
+  if (is.list(prediction$confidenceInterval)) {
     interval = prediction$confidenceInterval
     intervalSubject = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
       "predicted probability"

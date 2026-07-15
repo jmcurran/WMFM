@@ -96,12 +96,17 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
     ))
   }
 
-  predictionType = if (isTRUE(inputValidation$requestsPredictionInterval)) "individual_prediction_interval" else "mean_response_prediction"
+  predictionIntent = classifyPredictionQuestionIntent(tolower(followupQuestion))
+  includeIndividual = isTRUE(inputValidation$requestsPredictionInterval) ||
+    predictionIntent$target %in% c("individual_outcome", "ambiguous_personal")
+  includeMean = isTRUE(inputValidation$requestsConfidenceInterval) ||
+    predictionIntent$target %in% c("mean_response", "individual_outcome", "ambiguous_personal")
+  predictionType = if (isTRUE(includeIndividual)) "individual_prediction_interval" else "mean_response_prediction"
   predFit = as.numeric(stats::predict(model, newdata = newDataInfo$newData))[1]
   confidenceInterval = NULL
   predictionInterval = NULL
 
-  if (isTRUE(inputValidation$requestsPredictionInterval)) {
+  if (isTRUE(includeIndividual)) {
     piMat = stats::predict(model, newdata = newDataInfo$newData, interval = "prediction")
     predictionInterval = list(
       fit = as.numeric(piMat[1, "fit"]),
@@ -109,7 +114,9 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
       upr = as.numeric(piMat[1, "upr"]),
       level = 0.95
     )
-  } else if (isTRUE(inputValidation$requestsConfidenceInterval)) {
+  }
+
+  if (isTRUE(includeMean)) {
     ciMat = stats::predict(model, newdata = newDataInfo$newData, interval = "confidence")
     confidenceInterval = list(
       fit = as.numeric(ciMat[1, "fit"]),
@@ -128,6 +135,8 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
     fittedPrediction = predFit,
     confidenceInterval = confidenceInterval,
     predictionInterval = predictionInterval,
+    predictionIntent = predictionIntent$target,
+    predictionAmbiguity = predictionIntent$ambiguity,
     warnings = newDataInfo$warnings
   )
 }
@@ -723,7 +732,7 @@ extractPredictionAssignmentPairs = function(followupQuestion) {
 
 #' @keywords internal
 #' @noRd
-formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", responseScale = "response", suppliedPredictorValues, resolvedPredictorValues, completedPredictorValues = resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, warnings = character(0)) {
+formatModelQuestionPredictionPayload = function(modelType, predictionType = "mean_response_prediction", responseScale = "response", suppliedPredictorValues, resolvedPredictorValues, completedPredictorValues = resolvedPredictorValues, fittedPrediction, confidenceInterval = NULL, predictionInterval = NULL, predictionIntent = "mean_response", predictionAmbiguity = "low", warnings = character(0)) {
   list(
     status = "ok",
     modelType = modelType,
@@ -735,6 +744,8 @@ formatModelQuestionPredictionPayload = function(modelType, predictionType = "mea
     fittedPrediction = fittedPrediction,
     confidenceInterval = confidenceInterval,
     predictionInterval = predictionInterval,
+    predictionIntent = predictionIntent,
+    predictionAmbiguity = predictionAmbiguity,
     warnings = warnings
   )
 }

@@ -357,3 +357,39 @@ testthat::test_that("numeric prediction parsing escapes transformed predictor na
   )
   testthat::expect_identical(valueBeforeWithSentencePunctuation, "0.5")
 })
+
+testthat::test_that("ambiguous personal lm questions return mean and individual uncertainty", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+
+  question = "Will I do well on the final exam if Attend = Yes and Test = 15?"
+  classified = classifyModelFollowupQuestion(question)
+  out = computeLmModelQuestionPrediction(model, question)
+
+  testthat::expect_identical(classified$predictionIntent, "ambiguous_personal")
+  testthat::expect_identical(classified$predictionAmbiguity, "high")
+  testthat::expect_identical(out$predictionIntent, "ambiguous_personal")
+  testthat::expect_true(is.list(out$confidenceInterval))
+  testthat::expect_true(is.list(out$predictionInterval))
+})
+
+testthat::test_that("explicit personal predictions remain supported and show both intervals", {
+  df = data.frame(
+    Exam = c(45, 54, 62, 71, 80, 88),
+    Test = c(8, 10, 12, 14, 16, 18),
+    Attend = factor(c("No", "No", "Yes", "Yes", "Yes", "Yes"), levels = c("No", "Yes"))
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = df)
+
+  question = "What mark would you predict I would get if Attend = Yes and Test = 15?"
+  out = computeLmModelQuestionPrediction(model, question)
+
+  testthat::expect_identical(out$predictionIntent, "individual_outcome")
+  testthat::expect_identical(out$predictionAmbiguity, "low")
+  testthat::expect_true(is.list(out$confidenceInterval))
+  testthat::expect_true(is.list(out$predictionInterval))
+})

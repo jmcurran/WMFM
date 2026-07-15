@@ -14,3 +14,6 @@
 ^\.claude$
 ^\.stage.*_changes($|/)
 ^\.github($|/)
+^\.Rhistory.*$
+^STAGES_[0-9._]+_TO_[0-9._]+_CONTEXT\.md$
+^stage[0-9._]+_context\.md$

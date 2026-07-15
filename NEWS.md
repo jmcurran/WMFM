@@ -4,6 +4,24 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.004
+
+- Distinguish mean-response, individual-outcome, and ambiguous personal prediction questions.
+- Report both confidence and prediction intervals for supported personal ordinary-linear-model questions.
+- Prevent repeated explanation assembly from duplicating deterministic follow-up answers that contain both interval types.
+- Preserve a development context for deterministic R code generation and residual-inspection work in Stages 44 and 45.
+- Exclude local R history files and stage context notes from source-package builds.
+- Continue the WMFM 1.1.0 development line using build-attempt version numbers.
+
+## WMFM 1.1.0.003
+
+- Distinguish mean-response, individual-outcome, and ambiguous personal prediction questions.
+- Report both confidence and prediction intervals for supported personal ordinary-linear-model questions.
+- Prevent repeated explanation assembly from duplicating deterministic follow-up answers that contain both interval types.
+- Preserve a development context for deterministic R code generation and residual-inspection work in Stages 44 and 45.
+- Exclude local R history files and stage context notes from source-package builds.
+- Continue the WMFM 1.1.0 development line using build-attempt version numbers.
+
 
 
 
