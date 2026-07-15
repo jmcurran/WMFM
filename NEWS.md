@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.010
+
+- Preserve the Stage 43.8 natural expected-value, factor-level, transformed-predictor, and plain-language prediction improvements.
+- Replace example-specific binary-factor wording with predictor-driven matching so prediction helpers remain domain agnostic.
+- Correct the threshold-safeguard test to call the existing follow-up prompt-control helper.
+- Re-run the full offline validation workflow for the accumulated Stage 43.8 changes.
+
 ## WMFM 1.1.0.008
 
 - Repair the Stage 43.6 prediction-example validation to use the exported listWMFMExamples() API.

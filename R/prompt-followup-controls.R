@@ -78,14 +78,16 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- Use the WMFM deterministic prediction payload only as context for consistency checks.",
       "- WMFM will append the deterministic numeric follow-up answer after the main explanation.",
       "- Do not write a second, approximate, or contradictory follow-up prediction inside the main explanation.",
-      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM."
+      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM.",
+      "- Do not invent a pass mark, success threshold, affordability threshold, or other definition of whether an outcome is good unless the user supplied it."
     ),
     prediction_interval_request = c(
       "Deterministic follow-up explanation control:",
       "- Use the WMFM deterministic prediction payload only as context for consistency checks.",
       "- WMFM will append the deterministic numeric follow-up answer after the main explanation.",
       "- Do not write a second, approximate, or contradictory follow-up prediction inside the main explanation.",
-      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM."
+      "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM.",
+      "- Do not invent a pass mark, success threshold, affordability threshold, or other definition of whether an outcome is good unless the user supplied it."
     ),
     adjustment_prediction_comparison = c(
       "Deterministic follow-up explanation control:",

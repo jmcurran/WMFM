@@ -96,7 +96,7 @@ buildDeterministicFollowupAnswer = function(model) {
     pieces = c(
       pieces,
       sprintf(
-        "For an individual outcome with these predictor values, the 95%% prediction interval is %s to %s.",
+        "For one individual with these characteristics, a 95%% prediction interval is %s to %s.",
         formatFollowupPredictionNumber(interval$lwr),
         formatFollowupPredictionNumber(interval$upr)
       )
@@ -117,7 +117,7 @@ buildDeterministicFollowupAnswer = function(model) {
     pieces = c(
       pieces,
       sprintf(
-        "For the %s at these predictor values, the 95%% confidence interval is %s to %s.",
+        "For the %s for people or cases with these characteristics, the 95%% confidence interval is %s to %s.",
         intervalSubject,
         formatFollowupPredictionNumber(interval$lwr),
         formatFollowupPredictionNumber(interval$upr)

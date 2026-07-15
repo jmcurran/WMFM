@@ -188,8 +188,10 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
 
   expectedPredictionPattern = paste(
     c(
-      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b.*\\b(expect|expected)\\b",
-      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response)\\b",
+      "\\bwhat\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score|price)\\b.*\\b(expect|expected)\\b",
+      "\\bwhat\\b.*\\b(expect|expected)\\b.*\\b(frequency|count|number|probability|odds|chance|value|response|mark|score|price)\\b",
+      "\\bwhat\\s+is\\s+the\\s+expected\\b",
+      "\\bwhat\\b.*\\bshould\\s+(i|we)\\s+expect\\b",
       "\\bhow many\\b.*\\b(expect|expected)\\b",
       "\\bhow much\\b.*\\b(expect|expected)\\b",
       "\\bwhat happens\\b.*\\b(if|when)\\b",
@@ -199,6 +201,10 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     collapse = "|"
   )
   hasPredictionCondition = grepl(
+    "\\b(if|for|when|with|where|who|weighing|scoring|scored|attending)\\b",
+    normalizedText,
+    perl = TRUE
+  ) || grepl(
     "\\b(for|when|with|where)\\b.*\\b[A-Za-z][A-Za-z0-9_.]*\\s*=",
     originalText,
     perl = TRUE
@@ -379,15 +385,17 @@ extractRequestedUnitChangeValues = function(normalizedText) {
 classifyPredictionQuestionIntent = function(normalizedText) {
   text = as.character(normalizedText %||% "")
   hasPersonal = grepl("\\b(i|me|my|mine)\\b", text, perl = TRUE)
-  hasExplicitPrediction = grepl("\\b(predict|predicted|prediction|prediction interval)\\b", text, perl = TRUE)
-  hasAverage = grepl("\\b(on average|average|mean|expected response|expected mark|students with|people with)\\b", text, perl = TRUE)
+  hasSpecificCase = grepl("\\b(a|an|one|this)\\b.*\\b(student|person|case|observation|diamond|house|patient)\\b", text, perl = TRUE)
+  hasExplicitPrediction = grepl("\\b(predict|predicted|prediction|prediction interval)\\b", text, perl = TRUE) ||
+    grepl("\\bshould\\s+(i|we)\\s+expect\\b", text, perl = TRUE)
+  hasAverage = grepl("\\b(on average|average|mean|expected response|expected mark|expected price|students with|people with|diamonds weighing)\\b", text, perl = TRUE)
   hasAmbiguousOutcome = grepl("\\b(will i|would i|am i likely|do well|perform well|succeed)\\b", text, perl = TRUE)
 
   if (isTRUE(hasAverage) && !isTRUE(hasPersonal)) {
     return(list(target = "mean_response", ambiguity = "low"))
   }
 
-  if (isTRUE(hasPersonal) && isTRUE(hasExplicitPrediction)) {
+  if ((isTRUE(hasPersonal) || isTRUE(hasSpecificCase)) && isTRUE(hasExplicitPrediction)) {
     return(list(target = "individual_outcome", ambiguity = "low"))
   }
 

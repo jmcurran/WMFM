@@ -305,10 +305,16 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
       next
     }
 
-    matchedValue = extractNaturalNumericPredictionValue(
+    matchedValue = extractNaturalTransformedPredictionValue(
       predictor = predictor,
       text = text
     )
+    if (is.null(matchedValue)) {
+      matchedValue = extractNaturalNumericPredictionValue(
+        predictor = predictor,
+        text = text
+      )
+    }
 
     if (!is.null(matchedValue)) {
       parsedPairs[[predictor]] = matchedValue
@@ -350,6 +356,16 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
       explicitMatched = modelLevels[vapply(modelLevels, function(level) {
         identical(normalizePredictionText(level), explicitNorm)
       }, logical(1))]
+    }
+
+    namedMatched = matchNamedFactorLevelCandidate(
+      predictor = predictor,
+      modelLevels = modelLevels,
+      text = text
+    )
+    if (length(namedMatched) == 1L) {
+      parsedPairs[[predictor]] = namedMatched[[1]]
+      next
     }
 
     textMatched = matchFactorLevelCandidates(text = text, modelLevels = modelLevels)
@@ -520,7 +536,7 @@ matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
   predictorNorm = normalizePredictionText(predictor)
   levelNorms = vapply(modelLevels, normalizePredictionText, character(1))
 
-  if (!nzchar(textNorm) || length(modelLevels) != 2) {
+  if (!nzchar(textNorm) || !nzchar(predictorNorm) || length(modelLevels) != 2) {
     return(character(0))
   }
 
@@ -531,7 +547,91 @@ matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
     return(character(0))
   }
 
+  predictorPattern = escapeRegexLiteral(predictorNorm)
+  positivePatterns = c(
+    paste0("\\b", predictorPattern, "\\b.*\\b(yes|true)\\b"),
+    paste0("\\b", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b")
+  )
+  negativePatterns = c(
+    paste0("\\b", predictorPattern, "\\b.*\\b(no|false)\\b"),
+    paste0("\\b(?:do|does|did|would|will)?\\s*not\\s+", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b")
+  )
+
+  hasPositive = any(vapply(positivePatterns, grepl, logical(1), x = textNorm, perl = TRUE))
+  hasNegative = any(vapply(negativePatterns, grepl, logical(1), x = textNorm, perl = TRUE))
+
+  if (isTRUE(hasPositive) && !isTRUE(hasNegative)) {
+    return(modelLevels[[yesIndex]])
+  }
+  if (isTRUE(hasNegative) && !isTRUE(hasPositive)) {
+    return(modelLevels[[noIndex]])
+  }
+
   character(0)
+}
+
+#' @keywords internal
+#' @noRd
+matchNamedFactorLevelCandidate = function(predictor, modelLevels, text) {
+  textNorm = normalizePredictionText(text)
+  predictorNorm = normalizePredictionPredictorName(predictor)
+  predictorAliases = predictorNorm
+  if (identical(predictorNorm, "color")) {
+    predictorAliases = c("color", "colour")
+  } else if (identical(predictorNorm, "colour")) {
+    predictorAliases = c("colour", "color")
+  }
+
+  matched = character(0)
+  for (predictorAlias in predictorAliases) {
+    for (level in modelLevels) {
+      pattern = paste0(
+        "\\b", escapeRegexLiteral(predictorAlias),
+        "\\b\\s*(?:=|is|of|at)?\\s*",
+        "\\b", escapeRegexLiteral(normalizePredictionText(level)), "\\b"
+      )
+      if (grepl(pattern, textNorm, perl = TRUE)) {
+        matched = c(matched, level)
+      }
+    }
+  }
+
+  unique(matched)
+}
+
+#' @keywords internal
+#' @noRd
+extractNaturalTransformedPredictionValue = function(predictor, text) {
+  predictorNorm = normalizePredictionPredictorName(predictor)
+  matched = regmatches(
+    predictorNorm,
+    regexec("^log\\(([^()]+)\\)$", predictorNorm, perl = TRUE)
+  )[[1]]
+  if (length(matched) != 2L) {
+    return(NULL)
+  }
+
+  sourcePredictor = matched[[2]]
+  textNorm = normalizePredictionText(text)
+  sourcePattern = escapeRegexLiteral(sourcePredictor)
+  numberPattern = "(-?\\d+(?:\\.\\d+)?)"
+  patterns = c(
+    paste0(numberPattern, "\\s*", sourcePattern, "\\b"),
+    paste0("\\b", sourcePattern, "\\b\\s*(?:=|is|of|at)?\\s*", numberPattern),
+    paste0("\\bweigh(?:s|ing|ed)?\\s*", numberPattern, "\\s*", sourcePattern, "\\b")
+  )
+
+  for (pattern in patterns) {
+    valueMatch = regmatches(textNorm, regexec(pattern, textNorm, perl = TRUE))[[1]]
+    if (length(valueMatch) >= 2L) {
+      sourceValue = suppressWarnings(as.numeric(valueMatch[[2]]))
+      if (is.finite(sourceValue) && sourceValue > 0) {
+        return(as.character(log(sourceValue)))
+      }
+    }
+  }
+
+  NULL
 }
 
 #' @keywords internal
