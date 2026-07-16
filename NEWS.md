@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.007
+
+- Repaired the Stage 44.3 package installation workflow so the exact built tarball remains available after the build process exits.
+- Build source packages in a stable project-local temporary directory and remove that directory only after installation succeeds.
+- Re-ran the full package validation workflow without changing the Stage 44.3 Quarto rendering behaviour.
+
 ## WMFM 1.1.1.006
 
 - Added deterministic Quarto rendering for package loading, data loading, data preparation, and model fitting.
