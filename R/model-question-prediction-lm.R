@@ -121,23 +121,31 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
     ))
   }
 
-  predFit = predictionValues$fittedPrediction
-  confidenceInterval = predictionValues$confidenceInterval
-  predictionInterval = predictionValues$predictionInterval
+  predictionValues = backTransformLmPredictionValues(
+    model = model,
+    predictionValues = predictionValues
+  )
 
-  formatModelQuestionPredictionPayload(
+  payload = formatModelQuestionPredictionPayload(
     modelType = "lm",
     predictionType = predictionType,
+    responseScale = predictionValues$responseScale,
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
     completedPredictorValues = newDataInfo$completedPredictorValues,
-    fittedPrediction = predFit,
-    confidenceInterval = confidenceInterval,
-    predictionInterval = predictionInterval,
+    fittedPrediction = predictionValues$fittedPrediction,
+    confidenceInterval = predictionValues$confidenceInterval,
+    predictionInterval = predictionValues$predictionInterval,
     predictionIntent = predictionIntent$target,
     predictionAmbiguity = predictionIntent$ambiguity,
     warnings = newDataInfo$warnings
   )
+
+  payload$responseDescription = predictionValues$responseDescription
+  payload$originalResponseVariable = predictionValues$originalResponseVariable
+  payload$responseTransformation = predictionValues$responseTransformation
+  payload$modelScalePrediction = predictionValues$modelScalePrediction
+  payload
 }
 
 #' @keywords internal
@@ -903,6 +911,123 @@ prepareLmModelForPrediction = function(model, newData) {
   environment(termsObject) = predictionEnvironment
   predictionModel$terms = termsObject
   predictionModel
+}
+
+
+#' Back-transform linear-model prediction values to the original response scale
+#'
+#' @param model Fitted ordinary linear model.
+#' @param predictionValues Prediction components returned by
+#'   `safelyComputeLmPredictions()`.
+#'
+#' @return Prediction components with original-scale values when the fitted
+#'   response uses a recognised invertible transformation.
+#' @keywords internal
+#' @noRd
+backTransformLmPredictionValues = function(model, predictionValues) {
+  transformation = getLmPredictionResponseTransformation(model = model)
+
+  predictionValues$responseScale = "response"
+  predictionValues$responseDescription = ""
+  predictionValues$originalResponseVariable = names(stats::model.frame(model))[[1]]
+  predictionValues$responseTransformation = transformation
+  predictionValues$modelScalePrediction = NULL
+
+  if (!isTRUE(transformation$available)) {
+    return(predictionValues)
+  }
+
+  modelScalePrediction = list(
+    responseScale = "transformed_response",
+    responseVariable = transformation$transformedResponse,
+    fittedPrediction = predictionValues$fittedPrediction,
+    confidenceInterval = predictionValues$confidenceInterval,
+    predictionInterval = predictionValues$predictionInterval
+  )
+
+  predictionValues$fittedPrediction = backTransformResponseValues(
+    values = predictionValues$fittedPrediction,
+    inverseType = transformation$inverseType,
+    parameters = transformation$parameters
+  )[[1]]
+  predictionValues$confidenceInterval = backTransformLmPredictionInterval(
+    interval = predictionValues$confidenceInterval,
+    transformation = transformation
+  )
+  predictionValues$predictionInterval = backTransformLmPredictionInterval(
+    interval = predictionValues$predictionInterval,
+    transformation = transformation
+  )
+  predictionValues$responseScale = "original_response"
+  predictionValues$responseDescription = transformation$originalResponse
+  predictionValues$originalResponseVariable = transformation$originalResponse
+  predictionValues$modelScalePrediction = modelScalePrediction
+  predictionValues
+}
+
+#' Describe an invertible transformed response used by a linear model
+#'
+#' @param model Fitted ordinary linear model.
+#'
+#' @return A named transformation description.
+#' @keywords internal
+#' @noRd
+getLmPredictionResponseTransformation = function(model) {
+  responseExpression = stats::formula(model)[[2]]
+  responseText = deparseOneLine(responseExpression)
+  transformationInfo = inferTransformationType(responseExpression)
+  inverseType = transformationInfo$inverseType %||% "unknown"
+  sourceVariables = all.vars(responseExpression)
+
+  if (
+    length(sourceVariables) != 1L ||
+      !isUsableResponseInverseType(inverseType = inverseType)
+  ) {
+    return(list(
+      available = FALSE,
+      transformedResponse = responseText,
+      originalResponse = responseText,
+      transformationType = transformationInfo$transformationType %||% "none",
+      inverseType = inverseType,
+      parameters = transformationInfo$parameters %||% list()
+    ))
+  }
+
+  list(
+    available = TRUE,
+    transformedResponse = responseText,
+    originalResponse = sourceVariables[[1]],
+    transformationType = transformationInfo$transformationType,
+    inverseType = inverseType,
+    parameters = transformationInfo$parameters %||% list()
+  )
+}
+
+#' Back-transform a linear-model prediction interval
+#'
+#' @param interval Prediction or confidence interval list, or `NULL`.
+#' @param transformation Response transformation description.
+#'
+#' @return Back-transformed interval list, or `NULL`.
+#' @keywords internal
+#' @noRd
+backTransformLmPredictionInterval = function(interval, transformation) {
+  if (!is.list(interval)) {
+    return(NULL)
+  }
+
+  values = backTransformResponseValues(
+    values = c(interval$fit, interval$lwr, interval$upr),
+    inverseType = transformation$inverseType,
+    parameters = transformation$parameters
+  )
+
+  list(
+    fit = values[[1]],
+    lwr = values[[2]],
+    upr = values[[3]],
+    level = interval$level
+  )
 }
 
 #' Compute linear-model predictions without allowing an app crash

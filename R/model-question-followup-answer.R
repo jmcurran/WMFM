@@ -56,28 +56,31 @@ buildDeterministicFollowupAnswer = function(model) {
     return(buildDeterministicFollowupFailureAnswer(prediction = prediction))
   }
 
-  responseName = names(stats::model.frame(model))[[1]]
+  modelResponseName = names(stats::model.frame(model))[[1]]
+  responseName = prediction$originalResponseVariable %||%
+    prediction$responseDescription %||%
+    modelResponseName
   settingsText = formatFollowupPredictorSettings(prediction$resolvedPredictorValues)
   fittedText = formatFollowupPredictionNumber(prediction$fittedPrediction)
   predictionSentence = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
     sprintf(
       "For the follow-up question, using %s, WMFM predicts a probability for %s of %s.",
       settingsText,
-      responseName,
+      modelResponseName,
       fittedText
     )
   } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
     sprintf(
       "For the follow-up question, using %s, WMFM predicts an expected count for %s of %s.",
       settingsText,
-      responseName,
+      modelResponseName,
       fittedText
     )
   } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "odds")) {
     sprintf(
       "For the follow-up question, using %s, WMFM predicts odds for %s of %s.",
       settingsText,
-      responseName,
+      modelResponseName,
       fittedText
     )
   } else {

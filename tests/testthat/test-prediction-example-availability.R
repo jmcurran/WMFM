@@ -1,4 +1,4 @@
-testthat::test_that("Stage 43.6 prediction examples are loadable", {
+testthat::test_that("prediction examples are loadable", {
   exampleNames = c(
     "Course Prediction 1",
     "Course Prediction 2",

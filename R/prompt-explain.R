@@ -483,6 +483,13 @@ WMFM deterministic GLM follow-up block:
 GLM family: {predictionResult$glmFamily %||% 'not_available'}
 GLM link: {predictionResult$glmLink %||% 'not_available'}
 Response-scale interpretation: {predictionResult$responseDescription %||% predictionResult$responseScale %||% 'response'}")
+      } else if (identical(predictionResult$responseScale, "original_response")) {
+        glue::glue("
+
+WMFM deterministic transformed-response follow-up block:
+Reported response variable: {predictionResult$originalResponseVariable %||% predictionResult$responseDescription %||% 'response'}
+Prediction values and intervals have already been back-transformed to the original response scale.
+Do not describe them as log-scale, square-root-scale, or otherwise transformed values.")
       } else {
         ""
       }

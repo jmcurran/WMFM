@@ -125,3 +125,78 @@ testthat::test_that("factor comparison weights use source variables for transfor
 
   testthat::expect_equal(unname(weights[["cutIdeal"]]), 1)
 })
+
+testthat::test_that("transformed response predictions are reported on the original scale", {
+  data = expand.grid(
+    carat = c(0.5, 0.8, 1.1, 1.4),
+    cut = c("Good", "Ideal"),
+    color = c("G", "H"),
+    clarity = c("SI1", "VS1"),
+    KEEP.OUT.ATTRS = FALSE,
+    stringsAsFactors = FALSE
+  )
+  data$cut = factor(data$cut)
+  data$color = factor(data$color)
+  data$clarity = factor(data$clarity)
+  data$price = exp(
+    7 +
+      0.9 * log(data$carat) +
+      0.12 * (data$cut == "Ideal") -
+      0.08 * (data$color == "H") +
+      0.15 * (data$clarity == "VS1")
+  )
+  model = stats::lm(
+    log(price) ~ log(carat) + cut + color + clarity,
+    data = data
+  )
+  question = paste(
+    "What price would you predict for a 1.0 carat diamond",
+    "with cut Ideal, color G, and clarity VS1?"
+  )
+
+  out = computeLmModelQuestionPrediction(model, question)
+  modelScaleFit = as.numeric(stats::predict(
+    model,
+    newdata = data.frame(
+      carat = 1,
+      cut = factor("Ideal", levels = levels(data$cut)),
+      color = factor("G", levels = levels(data$color)),
+      clarity = factor("VS1", levels = levels(data$clarity))
+    )
+  ))
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$responseScale, "original_response")
+  testthat::expect_identical(out$originalResponseVariable, "price")
+  testthat::expect_equal(out$fittedPrediction, exp(modelScaleFit))
+  testthat::expect_equal(
+    out$modelScalePrediction$fittedPrediction,
+    modelScaleFit
+  )
+  testthat::expect_equal(
+    out$confidenceInterval$lwr,
+    exp(out$modelScalePrediction$confidenceInterval$lwr)
+  )
+  testthat::expect_equal(
+    out$predictionInterval$upr,
+    exp(out$modelScalePrediction$predictionInterval$upr)
+  )
+})
+
+testthat::test_that("deterministic answers name the original transformed response", {
+  data = data.frame(
+    price = c(1000, 1400, 2000, 2800, 3900, 5400),
+    carat = c(0.4, 0.5, 0.65, 0.8, 1.0, 1.2)
+  )
+  model = stats::lm(log(price) ~ log(carat), data = data)
+  question = "What price would you predict for a 1.0 carat diamond?"
+  payload = classifyModelFollowupQuestion(question)
+  payload = enrichFollowupPayloadWithLmPrediction(model, payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  out = buildDeterministicFollowupAnswer(model)
+
+  testthat::expect_match(out, "expected price", fixed = TRUE)
+  testthat::expect_match(out, "prediction interval for price", fixed = TRUE)
+  testthat::expect_no_match(out, "log(price)", fixed = TRUE)
+})

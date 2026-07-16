@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.20
+
+- Back-transformed linear-model predictions and confidence and prediction intervals when the response uses a recognised invertible transformation.
+- Reported transformed-response predictions using the original response variable and scale while retaining model-scale values as diagnostic metadata.
+- Updated deterministic and language-model follow-up controls so transformed predictions are not described as log-scale or other transformed quantities.
+- Renamed stage-numbered prediction tests to behaviour-based filenames and descriptions.
+- Added offline regression tests for original-scale transformed-response predictions and deterministic answer wording.
 ## WMFM 1.1.0.18
 
 - Reused one source-variable restoration helper for transformed predictors across prediction and factor-comparison confidence interval pathways.

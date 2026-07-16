@@ -1,4 +1,4 @@
-testthat::test_that("Stage 43.10 predicts from natural values for transformed predictors", {
+testthat::test_that("predicts from natural values for transformed predictors", {
   data = data.frame(
     price = c(1200, 1800, 2600, 3500, 4700, 6200, 7900, 9800),
     carat = c(0.4, 0.5, 0.65, 0.8, 1.0, 1.2, 1.4, 1.6),
@@ -25,7 +25,7 @@ testthat::test_that("Stage 43.10 predicts from natural values for transformed pr
   testthat::expect_true(is.finite(out$fittedPrediction))
 })
 
-testthat::test_that("Stage 43.10 newdata uses source variables for simple transformations", {
+testthat::test_that("newdata uses source variables for simple transformations", {
   data = data.frame(
     response = c(2, 3, 5, 8, 13),
     x = c(1, 2, 3, 4, 5)
@@ -43,7 +43,7 @@ testthat::test_that("Stage 43.10 newdata uses source variables for simple transf
   testthat::expect_equal(out$newData$x, 3)
 })
 
-testthat::test_that("Stage 43.10 prediction failures return a payload rather than an error", {
+testthat::test_that("prediction failures return a payload rather than an error", {
   data = data.frame(
     response = c(2, 3, 5, 8, 13),
     x = c(1, 2, 3, 4, 5)
@@ -64,7 +64,7 @@ testthat::test_that("Stage 43.10 prediction failures return a payload rather tha
   )
 })
 
-testthat::test_that("Stage 43.10 deterministic intervals name the response plainly", {
+testthat::test_that("deterministic intervals name the response plainly", {
   data = data.frame(
     Exam = c(45, 54, 62, 71, 80, 88),
     Test = c(8, 10, 12, 14, 16, 18),
