@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.001
+
+- Define the Stage 44 architecture for deterministic generation of reproducible WMFM analysis documents.
+- Establish an output-format-independent AnalysisRecipe captured after model fitting and updated by supported post-fit analyses.
+- Select Quarto as the first renderer, with portable handling of package datasets and uploaded data and a staged implementation plan for the 1.1.1 development line.
+- Record the architecture as a documentation-only decision stage with no package behaviour changes.
+
 ## WMFM 1.1.0.23
 
 - Reserve numerical prediction follow-up answers for WMFM's deterministic renderer so the language model does not duplicate or alter verified results.
