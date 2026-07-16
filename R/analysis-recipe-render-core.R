@@ -33,7 +33,8 @@ renderAnalysisRecipeCoreQuarto = function(recipe) {
     "",
     "# Fit the model",
     "",
-    renderAnalysisRecipeModelChunk(recipe)
+    renderAnalysisRecipeModelChunk(recipe),
+    renderAnalysisRecipeAnalysisQuarto(recipe)
   )
 }
 
@@ -47,9 +48,9 @@ renderAnalysisRecipeCoreQuarto = function(recipe) {
 renderAnalysisRecipePackageChunk = function(recipe) {
   validateAnalysisRecipe(recipe)
 
-  packageNames = character(0)
+  packageNames = "WMFM"
   if (identical(recipe$data$source, "package") && nzchar(recipe$data$packageName %||% "")) {
-    packageNames = recipe$data$packageName
+    packageNames = unique(c(packageNames, recipe$data$packageName))
   }
 
   codeLines = if (length(packageNames) == 0) {

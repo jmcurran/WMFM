@@ -25,7 +25,7 @@ test_that("analysis recipes store deterministic core analysis state", {
   expect_setequal(recipe$model$predictors, c("predictor", "group"))
   expect_identical(recipe$preparation$factorVariables, "group")
   expect_true(recipe$sections$summary$enabled)
-  expect_false(recipe$sections$modelPlot$enabled)
+  expect_true(recipe$sections$modelPlot$enabled)
 })
 
 test_that("analysis recipe model types reflect supported fitted models", {

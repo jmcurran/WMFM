@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.009
+
+- Completed the Stage 44.4 reproducible analysis renderer for model summaries, ANOVA tables, confidence intervals, diagnostic plots, and substantive model plots.
+- Corrected the core analysis-recipe test so its expected model-plot state matches the new enabled-by-default Stage 44.4 behaviour.
+- Retained the exported modelConfidenceIntervals() helper and deterministic report-section settings introduced in Stage 44.4.
+- Validated the repaired expectation with the full WMFM package workflow.
+
 ## WMFM 1.1.1.007
 
 - Repaired the Stage 44.3 package installation workflow so the exact built tarball remains available after the build process exits.
