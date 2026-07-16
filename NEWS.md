@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.18
+
+- Reused one source-variable restoration helper for transformed predictors across prediction and factor-comparison confidence interval pathways.
+- Corrected model-matrix construction for comparisons involving terms such as log(carat).
+- Added behaviour-named regression coverage for transformed predictors in factor-comparison weights.
+- Validated through the standard WMFM full package workflow.
+
 ## WMFM 1.1.0.14
 
 - Repaired deterministic linear-model prediction for transformed predictors fitted through local app formula environments.

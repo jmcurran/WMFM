@@ -1510,6 +1510,46 @@ addLogisticTwoLevelFactorComparisonRow = function(
   invisible(NULL)
 }
 
+#' Restore source-variable columns for simple transformed predictors
+#'
+#' @param newData A data frame that may contain columns named for simple
+#'   transformed predictors such as `log(carat)`.
+#'
+#' @return A data frame in which supported transformed-predictor columns have
+#'   been replaced by their source-variable columns.
+#' @keywords internal
+restoreTransformedPredictorSources = function(newData) {
+
+  transformedPredictors = names(newData)
+
+  for (predictorName in transformedPredictors) {
+    transformedPredictor = parseSimpleTransformedPredictor(predictorName)
+
+    if (is.null(transformedPredictor)) {
+      next
+    }
+
+    sourceValue = invertSimplePredictionTransformation(
+      value = newData[[predictorName]],
+      transformation = transformedPredictor$transformation
+    )
+
+    if (any(!is.finite(sourceValue))) {
+      stop(
+        "WMFM could not recover a valid source value for transformed predictor '",
+        predictorName,
+        "'.",
+        call. = FALSE
+      )
+    }
+
+    newData[[transformedPredictor$source]] = sourceValue
+    newData[[predictorName]] = NULL
+  }
+
+  newData
+}
+
 #' Build coefficient weights for a difference between two new-data rows
 #'
 #' @param model A fitted model object.
@@ -1521,6 +1561,8 @@ addLogisticTwoLevelFactorComparisonRow = function(
 buildNewDataDifferenceWeights = function(model, referenceData, comparisonData) {
 
   tt = stats::delete.response(stats::terms(model))
+  referenceData = restoreTransformedPredictorSources(referenceData)
+  comparisonData = restoreTransformedPredictorSources(comparisonData)
   referenceMatrix = stats::model.matrix(tt, data = referenceData)
   comparisonMatrix = stats::model.matrix(tt, data = comparisonData)
 
@@ -1805,14 +1847,30 @@ buildConfidenceIntervalPrediction = function(
     numericReference = numericReference
   )
 
+  predictionNewData = restoreTransformedPredictorSources(completedNewData)
+
+  predictionModel = model
+  if (inherits(model, "lm") && !inherits(model, "glm")) {
+    predictionModel = prepareLmModelForPrediction(
+      model = model,
+      newData = predictionNewData
+    )
+  }
+
   predType = if (inherits(model, "glm")) "link" else "response"
-  pred = predict(model, newdata = completedNewData, se.fit = TRUE, type = predType)
+  pred = predict(
+    predictionModel,
+    newdata = predictionNewData,
+    se.fit = TRUE,
+    type = predType
+  )
 
   eta = as.numeric(pred$fit)[1]
   seEta = as.numeric(pred$se.fit)[1]
   crit = getConfidenceIntervalCriticalValue(model = model, level = level)
 
-  mm = model.matrix(delete.response(terms(model)), data = completedNewData)
+  modelTerms = delete.response(terms(predictionModel))
+  mm = model.matrix(modelTerms, data = predictionNewData)
   weights = as.numeric(mm[1, ])
   names(weights) = colnames(mm)
   weights = weights[abs(weights) > 1e-12]
