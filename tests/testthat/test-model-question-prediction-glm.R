@@ -271,3 +271,30 @@ testthat::test_that("explicit binomial prediction-interval requests return Berno
   testthat::expect_equal(out$predictionInterval$outcomeProbabilities[["0"]], 1 - out$fittedPrediction)
   testthat::expect_null(out$predictionIntervalUnsupportedReason)
 })
+
+testthat::test_that("blocked extrapolation controls forbid speculative follow-up predictions", {
+  df = data.frame(
+    Freq = c(20, 12, 7, 4, 18, 10, 5, 2),
+    Magnitude = rep(c(5.25, 5.75, 6.25, 6.75), 2),
+    Locn = factor(rep(c("SC", "WA"), each = 4))
+  )
+  model = stats::glm(Freq ~ Magnitude * Locn, data = df, family = stats::poisson())
+  payload = classifyModelFollowupQuestion(
+    "What is the expected earthquake frequency at magnitude 5.0 in Southern California?"
+  )
+  payload = enrichFollowupPayloadWithLmPrediction(model, payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  control = buildFollowupExplanationControlPromptBlock(payload)
+  explanation = paste(
+    "Main explanation.",
+    "For the follow-up question, working backwards suggests an expected count of about 30.",
+    sep = "\n\n"
+  )
+  answer = appendDeterministicFollowupAnswer(explanation, model)
+
+  testthat::expect_identical(payload$predictionResult$status, "extrapolation_blocked")
+  testthat::expect_match(control, "Do not estimate, approximate, work backwards", fixed = TRUE)
+  testthat::expect_no_match(answer, "expected count of about 30", fixed = TRUE)
+  testthat::expect_match(answer, "unsupported extrapolation", fixed = TRUE)
+})

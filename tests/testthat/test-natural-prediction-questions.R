@@ -73,3 +73,35 @@ testthat::test_that("prediction prompt forbids invented outcome thresholds", {
 
   testthat::expect_match(out, "Do not invent a pass mark", fixed = TRUE)
 })
+
+testthat::test_that("geographic factor aliases resolve only to fitted model levels", {
+  georgeRiver = matchSemanticNamedFactorLevel(
+    predictor = "Site",
+    modelLevels = c("GR", "PS1", "PS2"),
+    text = "one new sample at George River"
+  )
+  southernCalifornia = matchSemanticNamedFactorLevel(
+    predictor = "Locn",
+    modelLevels = c("SC", "WA"),
+    text = "at magnitude 5.0 in Southern California"
+  )
+
+  testthat::expect_identical(georgeRiver, "GR")
+  testthat::expect_identical(southernCalifornia, "SC")
+})
+
+testthat::test_that("natural site wording supplies a Poisson prediction factor", {
+  df = data.frame(
+    Oysters = c(30, 33, 32, 90, 94, 98, 91, 95, 99),
+    Site = factor(rep(c("GR", "PS1", "PS2"), each = 3))
+  )
+  model = stats::glm(Oysters ~ Site, data = df, family = stats::poisson())
+
+  out = computeGlmModelQuestionPrediction(
+    model,
+    "What is the expected number of oysters in a sample taken at George River?"
+  )
+
+  testthat::expect_identical(out$status, "ok")
+  testthat::expect_identical(out$resolvedPredictorValues$Site, "GR")
+})

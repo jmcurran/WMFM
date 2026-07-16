@@ -653,8 +653,25 @@ matchSemanticNamedFactorLevel = function(predictor, modelLevels, text) {
   }
 
   matched = character(0)
+
+  geographicAliases = list(
+    gr = "\\bgeorges?\\s+river\\b",
+    `georges river` = "\\bgeorges?\\s+river\\b",
+    ps1 = "\\b(?:port\\s+stephens\\s*(?:1|one)|first\\s+port\\s+stephens)\\b",
+    ps2 = "\\b(?:port\\s+stephens\\s*(?:2|two)|second\\s+port\\s+stephens)\\b",
+    sc = "\\bsouthern\\s+california\\b",
+    `southern california` = "\\bsouthern\\s+california\\b",
+    wa = "\\bwashington\\b",
+    washington = "\\bwashington\\b"
+  )
+
   for (levelIndex in seq_along(levelNorms)) {
     levelNorm = levelNorms[[levelIndex]]
+    aliasPattern = geographicAliases[[levelNorm]]
+    if (!is.null(aliasPattern) && grepl(aliasPattern, textNorm, perl = TRUE)) {
+      matched = c(matched, modelLevels[[levelIndex]])
+    }
+
     if (nzchar(levelNorm) && grepl(paste0("\\b", escapeRegexLiteral(levelNorm), "\\b"), textNorm, perl = TRUE)) {
       matched = c(matched, modelLevels[[levelIndex]])
     }

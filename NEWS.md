@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.21
+
+- Classified conditioned expected-value and qualitative expectation questions as deterministic prediction requests.
+- Resolved conservative geographic factor aliases such as George River to fitted model levels such as GR.
+- Routed expected-value requests through GLM extrapolation checks instead of effect-size or unsupported pathways.
+- Added prompt and post-processing safeguards that prevent speculative predictions after extrapolation is blocked.
+- Added offline regression tests for prediction intent, geographic factor resolution, and blocked-extrapolation explanations.
 ## WMFM 1.1.0.20
 
 - Back-transformed linear-model predictions and confidence and prediction intervals when the response uses a recognised invertible transformation.

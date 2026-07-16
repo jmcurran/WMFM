@@ -98,3 +98,17 @@ testthat::test_that("ambiguous wording near-miss stays deterministic and asks cl
   testthat::expect_identical(out$category, "unsupported_or_out_of_scope")
   testthat::expect_false("reason" %in% names(out))
 })
+
+testthat::test_that("conditioned expected-value wording is classified as prediction_request", {
+  prompts = c(
+    "What is the expected number of oysters in a sample taken at George River?",
+    "What is the expected earthquake frequency at magnitude 5.0 in Southern California?",
+    "At magnitude 5.0 in Southern California, should I expect many earthquakes?"
+  )
+
+  for (prompt in prompts) {
+    out = classifyModelFollowupQuestion(prompt)
+    testthat::expect_identical(out$category, "prediction_request")
+    testthat::expect_true(out$requiresDeterministicComputation)
+  }
+})

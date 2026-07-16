@@ -195,7 +195,7 @@ removeConflictingLlmFollowupPredictionText = function(explanation, model) {
   }
 
   prediction = payload$predictionResult
-  if (!is.list(prediction) || !identical(prediction$status, "ok")) {
+  if (!is.list(prediction)) {
     return(text)
   }
 
@@ -253,7 +253,8 @@ isLlmFollowupPredictionSentence = function(sentence) {
     grepl("\\bexpected\\b", text, perl = TRUE) ||
     grepl("prediction interval", text, fixed = TRUE)
 
-  hasFollowupCue = grepl("for the follow-up question", text, fixed = TRUE) ||
+  hasFollowupCue = grepl("follow-up", text, fixed = TRUE) ||
+    grepl("follow up", text, fixed = TRUE) ||
     grepl("\\bif\\b", text, perl = TRUE) ||
     grepl("\\bwhen\\b", text, perl = TRUE) ||
     grepl("\\bwith\\b", text, perl = TRUE) ||
@@ -314,6 +315,13 @@ buildDeterministicFollowupFailureAnswer = function(prediction) {
   warningText = paste(prediction$warnings %||% character(0), collapse = " ")
   if (!nzchar(trimws(warningText))) {
     warningText = "WMFM could not compute this follow-up prediction from the values supplied."
+  }
+
+  if (identical(status, "extrapolation_blocked")) {
+    return(paste(
+      "For the follow-up question, WMFM did not compute a prediction because the requested predictor value requires unsupported extrapolation.",
+      warningText
+    ))
   }
 
   paste(

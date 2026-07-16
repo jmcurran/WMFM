@@ -104,6 +104,16 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
     return("")
   }
 
+  predictionStatus = as.character(payload$predictionResult$status %||% "")
+  if (identical(predictionStatus, "extrapolation_blocked")) {
+    lines = c(
+      lines,
+      "- The deterministic prediction was blocked because the requested values require unsupported extrapolation.",
+      "- Do not estimate, approximate, work backwards, or speculate about the requested outcome.",
+      "- State only that WMFM does not support a prediction outside the permitted observed range."
+    )
+  }
+
   if (identical(category, "unit_change_request")) {
     lines = c(
       lines,
