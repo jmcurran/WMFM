@@ -261,10 +261,18 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       responseTransformationMode = input$responseTransformationMode %||% "both"
     )
 
+    recipeDataMetadata = resolveAnalysisRecipeDataMetadata(
+      dataSource = input$data_source %||% "unknown",
+      packageName = input$data_package %||% "",
+      datasetName = input$package_dataset %||% "",
+      uploadedFileName = if (!is.null(input$file)) input$file$name %||% "" else "",
+      loadedExample = rv$loadedExample
+    )
+
     # If this data came from a package, attach package metadata to the model.
-    if (identical(input$data_source, "package")) {
-      pkg = input$data_package %||% ""
-      dsName = input$package_dataset
+    if (identical(recipeDataMetadata$source, "package")) {
+      pkg = recipeDataMetadata$packageName
+      dsName = recipeDataMetadata$datasetName
 
       docText = NULL
       if (identical(pkg, "s20x")) {
@@ -293,7 +301,7 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     # -------------------------------------------------------------
     # Attach user-provided dataset context when data are uploaded
     # -------------------------------------------------------------
-    if (identical(input$data_source %||% "", "upload")) {
+    if (identical(recipeDataMetadata$source, "upload")) {
 
       userCtxRaw = rv$userDatasetContext %||% ""
       userCtxRaw = trimws(userCtxRaw)
@@ -385,10 +393,10 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
     rv$analysisRecipe = buildAnalysisRecipeFromFit(
       model = m,
-      dataSource = input$data_source %||% "unknown",
-      packageName = input$data_package %||% "",
-      datasetName = input$package_dataset %||% "",
-      uploadedFileName = if (!is.null(input$file)) input$file$name %||% "" else "",
+      dataSource = recipeDataMetadata$source,
+      packageName = recipeDataMetadata$packageName,
+      datasetName = recipeDataMetadata$datasetName,
+      uploadedFileName = recipeDataMetadata$uploadedFileName,
       variableTransformations = rv$variableTransformations,
       factorVariables = rv$bucketFactors,
       responseTransformationMode = input$responseTransformationMode %||% "both"

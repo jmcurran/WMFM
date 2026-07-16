@@ -118,3 +118,43 @@ test_that("successful fits capture and resets clear the analysis recipe", {
   expect_match(reactiveStateText, "analysisRecipe = NULL", fixed = TRUE)
   expect_match(stateHelperText, "rv$analysisRecipe = NULL", fixed = TRUE)
 })
+
+test_that("package-backed examples retain package data provenance", {
+  exampleInfo = list(
+    spec = list(
+      dataSource = "package",
+      dataPackage = "s20x",
+      dataObject = "course.df"
+    )
+  )
+
+  metadata = resolveAnalysisRecipeDataMetadata(
+    dataSource = "upload",
+    uploadedFileName = "temporary-example.csv",
+    loadedExample = exampleInfo
+  )
+
+  expect_identical(metadata$source, "package")
+  expect_identical(metadata$packageName, "s20x")
+  expect_identical(metadata$datasetName, "course.df")
+  expect_identical(metadata$uploadedFileName, "")
+})
+
+test_that("file-backed examples remain portable bundled-data downloads", {
+  exampleInfo = list(
+    spec = list(
+      dataSource = "file",
+      data = "example-data.csv"
+    )
+  )
+
+  metadata = resolveAnalysisRecipeDataMetadata(
+    dataSource = "upload",
+    loadedExample = exampleInfo
+  )
+
+  expect_identical(metadata$source, "upload")
+  expect_identical(metadata$packageName, "")
+  expect_identical(metadata$datasetName, "")
+  expect_identical(metadata$uploadedFileName, "example-data.csv")
+})

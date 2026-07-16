@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.014
+
+- Corrected reproducible-analysis provenance for package-backed examples loaded through the example interface.
+- Package examples such as Course now generate Quarto code that loads the original dataset from its package rather than bundling it as uploaded data.
+- Preserved portable bundled-data downloads for examples that genuinely originate from files.
+- Added offline tests for package-backed and file-backed example provenance.
+
 ## WMFM 1.1.1.012
 
 - Added a user-facing download for the deterministic reproducible analysis document.

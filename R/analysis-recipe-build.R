@@ -1,3 +1,57 @@
+#' Resolve data provenance for an analysis recipe
+#'
+#' Package-backed WMFM examples retain their package and dataset provenance,
+#' even though the example loader uses the upload-facing controls in the app.
+#' File-backed examples remain portable data downloads.
+#'
+#' @param dataSource Current app data-source value.
+#' @param packageName Current package selection.
+#' @param datasetName Current package dataset selection.
+#' @param uploadedFileName Original uploaded file name, when available.
+#' @param loadedExample Optional loaded-example metadata.
+#'
+#' @return A list containing resolved data-source metadata.
+#'
+#' @keywords internal
+#' @noRd
+resolveAnalysisRecipeDataMetadata = function(
+  dataSource,
+  packageName = "",
+  datasetName = "",
+  uploadedFileName = "",
+  loadedExample = NULL
+) {
+  metadata = list(
+    source = dataSource %||% "unknown",
+    packageName = packageName %||% "",
+    datasetName = datasetName %||% "",
+    uploadedFileName = uploadedFileName %||% ""
+  )
+
+  if (is.null(loadedExample)) {
+    return(metadata)
+  }
+
+  exampleSpec = loadedExample$spec %||% list()
+  exampleSource = exampleSpec$dataSource %||% "file"
+
+  if (identical(exampleSource, "package")) {
+    return(list(
+      source = "package",
+      packageName = exampleSpec$dataPackage %||% "",
+      datasetName = exampleSpec$dataObject %||% "",
+      uploadedFileName = ""
+    ))
+  }
+
+  list(
+    source = "upload",
+    packageName = "",
+    datasetName = "",
+    uploadedFileName = basename(exampleSpec$data %||% uploadedFileName %||% "analysis_data.csv")
+  )
+}
+
 #' Build the core analysis recipe after a successful model fit
 #'
 #' @param model Fitted `lm` or `glm` object.
