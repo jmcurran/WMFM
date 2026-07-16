@@ -2,7 +2,7 @@
 % Please edit documentation in R/analysis-recipe-render-analysis.R
 \name{renderAnalysisRecipeConfidenceIntervalChunk}
 \alias{renderAnalysisRecipeConfidenceIntervalChunk}
-\title{Render confidence-interval code}
+\title{Render explicit coefficient confidence-interval code}
 \usage{
 renderAnalysisRecipeConfidenceIntervalChunk(recipe)
 }
@@ -13,6 +13,6 @@ renderAnalysisRecipeConfidenceIntervalChunk(recipe)
 Character vector containing a Quarto code chunk.
 }
 \description{
-Render confidence-interval code
+Render explicit coefficient confidence-interval code
 }
 \keyword{internal}

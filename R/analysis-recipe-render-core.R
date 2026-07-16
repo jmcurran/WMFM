@@ -49,9 +49,12 @@ renderAnalysisRecipeCoreQuarto = function(recipe) {
 renderAnalysisRecipePackageChunk = function(recipe) {
   validateAnalysisRecipe(recipe)
 
-  packageNames = "WMFM"
+  packageNames = character(0)
   if (identical(recipe$data$source, "package") && nzchar(recipe$data$packageName %||% "")) {
     packageNames = unique(c(packageNames, recipe$data$packageName))
+  }
+  if (isTRUE(recipe$sections$modelPlot$enabled %||% FALSE)) {
+    packageNames = unique(c(packageNames, "ggplot2"))
   }
 
   codeLines = if (length(packageNames) == 0) {

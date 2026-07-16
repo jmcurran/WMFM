@@ -2,7 +2,7 @@
 % Please edit documentation in R/analysis-recipe-render-analysis.R
 \name{renderAnalysisRecipeModelPlotChunk}
 \alias{renderAnalysisRecipeModelPlotChunk}
-\title{Render the substantive model-plot code}
+\title{Render standalone ggplot2 code for the substantive model plot}
 \usage{
 renderAnalysisRecipeModelPlotChunk(recipe)
 }
@@ -13,6 +13,6 @@ renderAnalysisRecipeModelPlotChunk(recipe)
 Character vector containing a Quarto code chunk.
 }
 \description{
-Render the substantive model-plot code
+Render standalone ggplot2 code for the substantive model plot
 }
 \keyword{internal}

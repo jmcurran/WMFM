@@ -4,6 +4,15 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.015
+
+- Made generated reproducible analyses executable without installing or loading WMFM.
+- Added an explicit fitted-equation section constructed from coef(modelFit).
+- Replaced the WMFM confidence-interval helper with visible coef(), vcov(), standard-error, and critical-value calculations.
+- Added odds-ratio and expected-count-multiplier tables for supported generalised linear models.
+- Replaced the WMFM model-plot call with standalone ggplot2 code based on observed, fitted, and residual values.
+- Added offline tests that reject WMFM dependencies in generated core analyses.
+
 ## WMFM 1.1.1.014
 
 - Corrected reproducible-analysis provenance for package-backed examples loaded through the example interface.

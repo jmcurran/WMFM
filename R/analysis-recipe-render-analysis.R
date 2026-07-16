@@ -16,7 +16,11 @@ renderAnalysisRecipeAnalysisQuarto = function(recipe) {
       "",
       "# Model summary",
       "",
-      renderAnalysisRecipeSummaryChunk(recipe)
+      renderAnalysisRecipeSummaryChunk(recipe),
+      "",
+      "# Fitted equation",
+      "",
+      renderAnalysisRecipeEquationChunk(recipe)
     )
   }
 
@@ -75,6 +79,63 @@ renderAnalysisRecipeSummaryChunk = function(recipe) {
   renderAnalysisRecipeCodeChunk("model-summary", "summary(modelFit)")
 }
 
+#' Render explicit fitted-equation code
+#'
+#' @inheritParams renderAnalysisRecipeAnalysisQuarto
+#'
+#' @return Character vector containing a Quarto code chunk.
+#'
+#' @keywords internal
+#' @noRd
+renderAnalysisRecipeEquationChunk = function(recipe) {
+  validateAnalysisRecipe(recipe)
+
+  responseName = recipe$model$response %||% "response"
+  modelType = recipe$model$modelType %||% "lm"
+  equationLeft = if (identical(modelType, "logistic")) {
+    paste0("logit(P(", responseName, " = 1))")
+  } else if (identical(modelType, "poisson")) {
+    paste0("log(E(", responseName, "))")
+  } else {
+    paste0("E(", responseName, ")")
+  }
+
+  renderAnalysisRecipeCodeChunk(
+    "fitted-equation",
+    c(
+      "modelCoefficients = coef(modelFit)",
+      "modelCoefficients",
+      "",
+      "formatEquationTerm = function(termName, estimate, firstTerm = FALSE) {",
+      "  estimateText = format(round(abs(estimate), 4), trim = TRUE)",
+      "  if (firstTerm) {",
+      "    return(format(round(estimate, 4), trim = TRUE))",
+      "  }",
+      "  signText = if (estimate < 0) \" - \" else \" + \"",
+      "  paste0(signText, estimateText, \" * \", termName)",
+      "}",
+      "",
+      "equationTerms = vapply(",
+      "  seq_along(modelCoefficients),",
+      "  function(index) {",
+      "    termName = names(modelCoefficients)[index]",
+      "    if (identical(termName, \"(Intercept)\")) {",
+      "      termName = \"\"",
+      "    }",
+      "    formatEquationTerm(",
+      "      termName = termName,",
+      "      estimate = modelCoefficients[index],",
+      "      firstTerm = index == 1",
+      "    )",
+      "  },",
+      "  character(1)",
+      ")",
+      paste0("equationText = paste0(", encodeAnalysisRecipeString(paste0(equationLeft, " = ")), ", paste(equationTerms, collapse = \"\"))"),
+      "equationText"
+    )
+  )
+}
+
 #' Render analysis-of-variance code
 #'
 #' @inheritParams renderAnalysisRecipeAnalysisQuarto
@@ -95,7 +156,7 @@ renderAnalysisRecipeAnovaChunk = function(recipe) {
   renderAnalysisRecipeCodeChunk("analysis-of-variance", codeLine)
 }
 
-#' Render confidence-interval code
+#' Render explicit coefficient confidence-interval code
 #'
 #' @inheritParams renderAnalysisRecipeAnalysisQuarto
 #'
@@ -106,17 +167,51 @@ renderAnalysisRecipeConfidenceIntervalChunk = function(recipe) {
   validateAnalysisRecipe(recipe)
 
   level = recipe$sections$confidenceIntervals$level %||% 0.95
-  renderAnalysisRecipeCodeChunk(
-    "confidence-intervals",
-    c(
-      paste0("confidenceLevel = ", format(level, scientific = FALSE, trim = TRUE)),
-      "confidenceIntervals = modelConfidenceIntervals(",
-      "  model = modelFit,",
-      "  level = confidenceLevel",
-      ")",
-      "confidenceIntervals"
-    )
+  modelType = recipe$model$modelType %||% "lm"
+  criticalValueLine = if (identical(modelType, "lm")) {
+    "criticalValue = qt(1 - alpha / 2, df = df.residual(modelFit))"
+  } else {
+    "criticalValue = qnorm(1 - alpha / 2)"
+  }
+
+  codeLines = c(
+    paste0("confidenceLevel = ", format(level, scientific = FALSE, trim = TRUE)),
+    "alpha = 1 - confidenceLevel",
+    "coefficientEstimate = coef(modelFit)",
+    "coefficientCovariance = vcov(modelFit)",
+    "coefficientStandardError = sqrt(diag(coefficientCovariance))",
+    criticalValueLine,
+    "",
+    "coefficientIntervals = data.frame(",
+    "  term = names(coefficientEstimate),",
+    "  estimate = unname(coefficientEstimate),",
+    "  standardError = unname(coefficientStandardError),",
+    "  lower = unname(coefficientEstimate - criticalValue * coefficientStandardError),",
+    "  upper = unname(coefficientEstimate + criticalValue * coefficientStandardError),",
+    "  row.names = NULL",
+    ")",
+    "coefficientIntervals"
   )
+
+  if (modelType %in% c("logistic", "poisson")) {
+    effectLabel = if (identical(modelType, "logistic")) "oddsRatio" else "countMultiplier"
+    codeLines = c(
+      codeLines,
+      "",
+      "# Exponentiating converts coefficient effects from the link scale",
+      "# to odds ratios or expected-count multipliers.",
+      "multiplicativeIntervals = data.frame(",
+      "  term = coefficientIntervals$term,",
+      paste0("  ", effectLabel, " = exp(coefficientIntervals$estimate),"),
+      "  lower = exp(coefficientIntervals$lower),",
+      "  upper = exp(coefficientIntervals$upper),",
+      "  row.names = NULL",
+      ")",
+      "multiplicativeIntervals"
+    )
+  }
+
+  renderAnalysisRecipeCodeChunk("confidence-intervals", codeLines)
 }
 
 #' Render diagnostic-plot code
@@ -155,7 +250,7 @@ renderAnalysisRecipeDiagnosticChunk = function(recipe) {
   renderAnalysisRecipeCodeChunk("diagnostic-plots", codeLines)
 }
 
-#' Render the substantive model-plot code
+#' Render standalone ggplot2 code for the substantive model plot
 #'
 #' @inheritParams renderAnalysisRecipeAnalysisQuarto
 #'
@@ -167,16 +262,112 @@ renderAnalysisRecipeModelPlotChunk = function(recipe) {
 
   plotType = recipe$sections$modelPlot$plotType %||% "observedFitted"
   showSmoothTrend = isTRUE(recipe$sections$modelPlot$showSmoothTrend %||% TRUE)
+  modelType = recipe$model$modelType %||% "lm"
+  responseName = recipe$model$response %||% "Observed response"
+
+  if (identical(plotType, "residualFitted")) {
+    codeLines = c(
+      "modelPlotData = data.frame(",
+      "  fitted = fitted(modelFit),",
+      "  residual = residuals(modelFit, type = \"response\")",
+      ")",
+      "",
+      "modelPlot = ggplot(",
+      "  modelPlotData,",
+      "  aes(x = fitted, y = residual)",
+      ") +",
+      "  geom_point(alpha = 0.6) +",
+      "  geom_hline(yintercept = 0, linetype = \"dashed\", colour = \"red\") +",
+      "  labs(",
+      "    title = \"Residuals versus fitted values\",",
+      "    x = \"Fitted values\",",
+      "    y = \"Residuals\"",
+      "  ) +",
+      "  theme_minimal()"
+    )
+    if (showSmoothTrend && identical(modelType, "lm")) {
+      codeLines = c(
+        codeLines,
+        "",
+        "modelPlot = modelPlot + geom_smooth(",
+        "  method = \"loess\",",
+        "  formula = y ~ x,",
+        "  se = FALSE,",
+        "  colour = \"blue\"",
+        ")"
+      )
+    }
+  } else {
+    codeLines = c(
+      "modelPlotData = data.frame(",
+      "  observed = model.response(model.frame(modelFit)),",
+      "  fitted = fitted(modelFit)",
+      ")",
+      ""
+    )
+
+    if (identical(modelType, "logistic")) {
+      codeLines = c(
+        codeLines,
+        "modelPlot = ggplot(",
+        "  modelPlotData,",
+        "  aes(x = fitted, y = observed)",
+        ") +",
+        "  geom_jitter(height = 0.04, width = 0, alpha = 0.6) +",
+        "  geom_smooth(",
+        "    method = \"glm\",",
+        "    method.args = list(family = binomial()),",
+        "    formula = y ~ x,",
+        "    se = FALSE,",
+        "    linetype = \"dashed\",",
+        "    colour = \"red\"",
+        "  ) +",
+        "  scale_y_continuous(breaks = c(0, 1)) +"
+      )
+    } else {
+      codeLines = c(
+        codeLines,
+        "modelPlot = ggplot(",
+        "  modelPlotData,",
+        "  aes(x = fitted, y = observed)",
+        ") +",
+        "  geom_point(alpha = 0.6) +"
+      )
+      if (showSmoothTrend && identical(modelType, "lm")) {
+        codeLines = c(
+          codeLines,
+          "  geom_smooth(",
+          "    method = \"loess\",",
+          "    formula = y ~ x,",
+          "    se = FALSE,",
+          "    colour = \"blue\"",
+          "  ) +"
+        )
+      }
+      codeLines = c(
+        codeLines,
+        "  geom_abline(",
+        "    slope = 1,",
+        "    intercept = 0,",
+        "    linetype = \"dashed\",",
+        "    colour = \"red\"",
+        "  ) +"
+      )
+    }
+
+    codeLines = c(
+      codeLines,
+      "  labs(",
+      "    title = \"Observed versus fitted values\",",
+      "    x = \"Fitted values\",",
+      paste0("    y = ", encodeAnalysisRecipeString(responseName)),
+      "  ) +",
+      "  theme_minimal()"
+    )
+  }
 
   renderAnalysisRecipeCodeChunk(
     "model-plot",
-    c(
-      "modelPlot = plotModelPlot(",
-      "  model = modelFit,",
-      paste0("  plotType = ", encodeAnalysisRecipeString(plotType), ","),
-      paste0("  showSmoothTrend = ", if (showSmoothTrend) "TRUE" else "FALSE"),
-      ")",
-      "modelPlot"
-    )
+    c(codeLines, "", "modelPlot")
   )
 }
