@@ -383,6 +383,17 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       hasSeparateFollowupParagraphInstruction = grepl("separate paragraph after the main research-question answer", promptPreview, fixed = TRUE)
     )
 
+    rv$analysisRecipe = buildAnalysisRecipeFromFit(
+      model = m,
+      dataSource = input$data_source %||% "unknown",
+      packageName = input$data_package %||% "",
+      datasetName = input$package_dataset %||% "",
+      uploadedFileName = if (!is.null(input$file)) input$file$name %||% "" else "",
+      variableTransformations = rv$variableTransformations,
+      factorVariables = rv$bucketFactors,
+      responseTransformationMode = input$responseTransformationMode %||% "both"
+    )
+
     modelFit(m)
 
     outputMessages = buildAppOutputMessages(

@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.010
+
+- Added previously validated analysis-recipe integration files to version control.
+- Added the generated documentation for the Stage 44.4 analysis-section renderers.
+- Made the completed Stage 44 baseline self-contained without changing package behaviour.
+- Validated with the full offline test and package-check workflow.
+
 ## WMFM 1.1.1.009
 
 - Completed the Stage 44.4 reproducible analysis renderer for model summaries, ANOVA tables, confidence intervals, diagnostic plots, and substantive model plots.
