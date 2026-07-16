@@ -1,10 +1,10 @@
-# WMFM 1.1.0 development context: Stages 43 to 45
+# WMFM 1.1.0 development context: Stages 43 to 46
 
 ## Purpose
 
 The released WMFM version is 1.0.4. The next substantial development line is 1.1.0, using four-part development versions of the form `1.1.0.xxx`. Stage 43 begins at `1.1.0.001`. The final three-digit component is incremented for every build attempt, including failed validation attempts.
 
-The 1.1.0 development line contains three connected pieces of work identified after the conference presentation of WMFM.
+The 1.1.0 development line contains four connected pieces of work identified after the conference presentation of WMFM.
 
 ## Stage 43: distinguish average-response inference from individual prediction
 
@@ -74,9 +74,24 @@ Important design issues include:
 
 The initial Stage 45 scope should remain with ordinary linear models and residual-based ranking. Quantile regression should be considered separately only after this simpler pathway is understood and tested.
 
-## Shared architecture across Stages 43 to 45
+## Stage 46: unusual or unsuitable research questions
 
-All three stages should follow the same pattern:
+Some research questions are not suitable requests for fitted-model interpretation. Examples include questions that ask why WMFM is predicting an outcome, ask why the analysis is being performed, provide no meaningful statistical target, or request an individual probability that the fitted model cannot support.
+
+Stage 46 should classify these questions before ordinary model interpretation. When a question is poorly specified, outside the fitted model's scope, or unlikely to benefit from model interpretation, WMFM should provide an informative response rather than forcing an explanation of coefficients or predictions. Where useful, it should explain why the current model cannot answer the question and suggest a more suitable statistical question or model without inventing an analysis.
+
+The initial Stage 46 scope should include:
+
+- deterministic classification of unusual, vague, non-statistical, and unsupported research questions;
+- clear student-facing responses that do not pretend the fitted model answers the question;
+- guidance on reframing the question when an appropriate alternative is available;
+- explicit acknowledgement when a different model or analysis would be required;
+- suppression of unsupported model interpretation or speculative prediction;
+- offline tests covering representative unsuitable and ambiguous questions.
+
+## Shared architecture across Stages 43 to 46
+
+All four stages should follow the same pattern:
 
 1. classify the user's statistical target;
 2. compute a deterministic result object;

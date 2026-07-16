@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.23
+
+- Reserve numerical prediction follow-up answers for WMFM's deterministic renderer so the language model does not duplicate or alter verified results.
+- Strengthen prediction prompts against recomputation, paraphrasing, speculative replacement answers, and uncertainty-type changes.
+- Rename the active development roadmap context for Stages 43 to 46 and record Stage 46 as unusual or unsuitable research-question handling.
+
 ## WMFM 1.1.0.21
 
 - Classified conditioned expected-value and qualitative expectation questions as deterministic prediction requests.

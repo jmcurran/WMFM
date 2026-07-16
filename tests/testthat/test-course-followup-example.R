@@ -43,10 +43,10 @@ testthat::test_that("follow-up prediction request is classified and deterministi
 
   testthat::expect_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
   testthat::expect_match(prompt, followup, fixed = TRUE)
-  testthat::expect_match(prompt, "separate paragraph after the main research-question answer", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not answer, quote, paraphrase, or summarise", fixed = TRUE)
   testthat::expect_match(prompt, "Fitted mean prediction:", fixed = TRUE)
   testthat::expect_match(prompt, "Prediction interval for an individual outcome", fixed = TRUE)
-  testthat::expect_match(prompt, "Put this follow-up answer in a separate paragraph", fixed = TRUE)
+  testthat::expect_match(prompt, "WMFM will render the complete numerical follow-up answer separately", fixed = TRUE)
   testthat::expect_match(prompt, "WMFM will append the deterministic numeric follow-up answer", fixed = TRUE)
 })
 

@@ -499,12 +499,11 @@ Do not describe them as log-scale, square-root-scale, or otherwise transformed v
 
 WMFM deterministic prediction payload:
 - These prediction values were computed deterministically by WMFM.
-- Use these values directly.
-- Do not recompute, round further, or invent intervals.
-- Do not invent prediction intervals.
+- Use them only to keep the main fitted-model explanation consistent with the verified prediction scale and uncertainty type.
+- Do not answer, quote, paraphrase, or summarise the numerical follow-up prediction.
+- WMFM will render the complete numerical follow-up answer separately.
+- Do not recompute, alter, round, extend, or invent prediction quantities or intervals.
 - Do not call a confidence interval for the average/expected response a prediction interval.
-- You must answer this follow-up request using the WMFM deterministic prediction payload.
-- Put this follow-up answer in a separate paragraph after the main research-question answer.
 
 Prediction type: {predictionResult$predictionType}
 Model type: {predictionResult$modelType}

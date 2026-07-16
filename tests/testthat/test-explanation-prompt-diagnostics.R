@@ -9,7 +9,7 @@ testthat::test_that("follow-up control prompt includes deterministic prediction 
   testthat::expect_type(block, "character")
   testthat::expect_length(block, 1)
   testthat::expect_match(block, "WMFM deterministic prediction payload", fixed = TRUE)
-  testthat::expect_match(block, "separate paragraph after the main research-question answer", fixed = TRUE)
+  testthat::expect_match(block, "Leave the complete follow-up prediction answer", fixed = TRUE)
 })
 
 
@@ -38,7 +38,7 @@ testthat::test_that("model explanation prompt carries deterministic follow-up di
   testthat::expect_type(prompt, "character")
   testthat::expect_length(prompt, 1)
   testthat::expect_match(prompt, "WMFM deterministic prediction payload", fixed = TRUE)
-  testthat::expect_match(prompt, "separate paragraph after the main research-question answer", fixed = TRUE)
+  testthat::expect_match(prompt, "WMFM will append the deterministic numeric follow-up answer", fixed = TRUE)
 })
 
 

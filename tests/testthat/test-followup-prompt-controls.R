@@ -42,3 +42,31 @@ testthat::test_that("unsupported follow-up category remains sandboxed", {
   testthat::expect_false(payload$supported)
   testthat::expect_identical(block, "")
 })
+
+testthat::test_that("prediction follow-up guidance reserves the numerical answer for deterministic rendering", {
+  payload = list(
+    supported = TRUE,
+    category = "prediction_request",
+    predictionResult = list(status = "ok")
+  )
+  block = buildFollowupExplanationControlPromptBlock(payload)
+
+  testthat::expect_match(block, "WMFM will append the deterministic numeric follow-up answer", fixed = TRUE)
+  testthat::expect_match(block, "Do not answer, quote, paraphrase, or summarise", fixed = TRUE)
+  testthat::expect_match(block, "Leave the complete follow-up prediction answer", fixed = TRUE)
+  testthat::expect_no_match(block, "If you answer this follow-up", fixed = TRUE)
+})
+
+testthat::test_that("blocked prediction guidance prohibits speculative replacement answers", {
+  payload = list(
+    supported = TRUE,
+    category = "prediction_interval_request",
+    predictionResult = list(status = "extrapolation_blocked")
+  )
+  block = buildFollowupExplanationControlPromptBlock(payload)
+
+  testthat::expect_match(block, "unsupported extrapolation", fixed = TRUE)
+  testthat::expect_match(block, "Do not estimate, approximate, work backwards, or speculate", fixed = TRUE)
+  testthat::expect_match(block, "Leave the complete follow-up prediction answer", fixed = TRUE)
+})
+

@@ -127,8 +127,8 @@ testthat::test_that("prompt payload forbids recomputation or invented intervals"
   attr(model, "wmfm_model_followup_payload") = payload
 
   prompt = lmToExplanationPrompt(model)
-  testthat::expect_match(prompt, "Do not recompute, round further, or invent intervals", fixed = TRUE)
-  testthat::expect_match(prompt, "Do not invent prediction intervals", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not recompute, alter, round, extend, or invent prediction quantities or intervals", fixed = TRUE)
+  testthat::expect_match(prompt, "Do not answer, quote, paraphrase, or summarise the numerical follow-up prediction", fixed = TRUE)
 })
 
 testthat::test_that("no prediction payload is added for empty follow-up text", {

@@ -120,6 +120,13 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- First answer the main research question.",
       "- Weave the requested unit-change interpretation into the main numeric-effect explanation rather than adding a separate follow-up paragraph."
     )
+  } else if (category %in% c("prediction_request", "prediction_interval_request")) {
+    lines = c(
+      lines,
+      "- First answer the main research question.",
+      "- Do not answer, quote, paraphrase, or summarise the numerical follow-up prediction.",
+      "- Leave the complete follow-up prediction answer to WMFM's deterministic renderer."
+    )
   } else {
     lines = c(
       lines,
