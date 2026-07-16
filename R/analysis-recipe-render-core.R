@@ -34,7 +34,8 @@ renderAnalysisRecipeCoreQuarto = function(recipe) {
     "# Fit the model",
     "",
     renderAnalysisRecipeModelChunk(recipe),
-    renderAnalysisRecipeAnalysisQuarto(recipe)
+    renderAnalysisRecipeAnalysisQuarto(recipe),
+    renderAnalysisRecipeDynamicQuarto(recipe)
   )
 }
 

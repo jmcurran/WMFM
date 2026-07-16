@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.011
+
+- Added dynamic reproducible-analysis sections for completed predictions and contrasts.
+- Added deterministic recipe update helpers that preserve existing model and data state while appending post-fit analyses.
+- Rendered linear-model mean and individual predictions with the appropriate confidence or prediction interval and kept GLM predictions on the response scale.
+- Restored Stage 44.2 recipe construction and app-state files to the tracked source tree so completed archives are self-contained.
+
 ## WMFM 1.1.1.010
 
 - Added previously validated analysis-recipe integration files to version control.
