@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.14
+
+- Repaired deterministic linear-model prediction for transformed predictors fitted through local app formula environments.
+- Bound source-variable prediction values into a safe child terms environment before calling predict.lm().
+- Added regression coverage for the Diamonds log-log prediction workflow and source-variable terms resolution.
+- Preserved standard predict.lm() estimates, confidence intervals, and prediction intervals.
+- Validated through the standard WMFM full package workflow.
+
 ## WMFM 1.1.0.013
 
 - Add `listWMFMEvaluationExamples()` for numbered, metadata-backed evaluation example discovery.

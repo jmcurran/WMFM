@@ -868,6 +868,43 @@ invertSimplePredictionTransformation = function(value, transformation) {
   NA_real_
 }
 
+#' Prepare a linear model for deterministic prediction
+#'
+#' Some app-fitted formulas retain a local formula environment after the fit
+#' observer has completed. Transformed terms can then be evaluated against that
+#' stale environment instead of resolving their source variables from
+#' `newdata`. Bind the one-row prediction values into a child terms environment
+#' so standard `predict.lm()` evaluation remains reliable.
+#'
+#' @param model Fitted ordinary linear model.
+#' @param newData One-row prediction data frame.
+#'
+#' @return A prediction-safe copy of `model`.
+#' @keywords internal
+#' @noRd
+prepareLmModelForPrediction = function(model, newData) {
+  predictionModel = model
+  termsObject = stats::terms(predictionModel)
+  originalEnvironment = environment(termsObject)
+
+  if (is.null(originalEnvironment)) {
+    originalEnvironment = baseenv()
+  }
+
+  predictionEnvironment = new.env(parent = originalEnvironment)
+  for (variableName in names(newData)) {
+    assign(
+      variableName,
+      newData[[variableName]],
+      envir = predictionEnvironment
+    )
+  }
+
+  environment(termsObject) = predictionEnvironment
+  predictionModel$terms = termsObject
+  predictionModel
+}
+
 #' Compute linear-model predictions without allowing an app crash
 #'
 #' @param model Fitted ordinary linear model.
@@ -879,14 +916,19 @@ invertSimplePredictionTransformation = function(value, transformation) {
 #' @keywords internal
 #' @noRd
 safelyComputeLmPredictions = function(model, newData, includeIndividual, includeMean) {
+  predictionModel = prepareLmModelForPrediction(
+    model = model,
+    newData = newData
+  )
+
   tryCatch(
     {
-      fittedPrediction = as.numeric(stats::predict(model, newdata = newData))[1]
+      fittedPrediction = as.numeric(stats::predict(predictionModel, newdata = newData))[1]
       predictionInterval = NULL
       confidenceInterval = NULL
 
       if (isTRUE(includeIndividual)) {
-        piMat = stats::predict(model, newdata = newData, interval = "prediction")
+        piMat = stats::predict(predictionModel, newdata = newData, interval = "prediction")
         predictionInterval = list(
           fit = as.numeric(piMat[1, "fit"]),
           lwr = as.numeric(piMat[1, "lwr"]),
@@ -896,7 +938,7 @@ safelyComputeLmPredictions = function(model, newData, includeIndividual, include
       }
 
       if (isTRUE(includeMean)) {
-        ciMat = stats::predict(model, newdata = newData, interval = "confidence")
+        ciMat = stats::predict(predictionModel, newdata = newData, interval = "confidence")
         confidenceInterval = list(
           fit = as.numeric(ciMat[1, "fit"]),
           lwr = as.numeric(ciMat[1, "lwr"]),
