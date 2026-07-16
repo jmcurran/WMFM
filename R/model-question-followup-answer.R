@@ -96,7 +96,8 @@ buildDeterministicFollowupAnswer = function(model) {
     pieces = c(
       pieces,
       sprintf(
-        "For one individual with these characteristics, a 95%% prediction interval is %s to %s.",
+        "For an individual with these characteristics, a 95%% prediction interval for %s is %s to %s.",
+        responseName,
         formatFollowupPredictionNumber(interval$lwr),
         formatFollowupPredictionNumber(interval$upr)
       )
@@ -105,24 +106,33 @@ buildDeterministicFollowupAnswer = function(model) {
 
   if (is.list(prediction$confidenceInterval)) {
     interval = prediction$confidenceInterval
-    intervalSubject = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
-      "predicted probability"
-    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
-      "expected count"
-    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "odds")) {
-      "predicted odds"
-    } else {
-      "average response"
-    }
-    pieces = c(
-      pieces,
+    confidenceSentence = if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
       sprintf(
-        "For the %s for people or cases with these characteristics, the 95%% confidence interval is %s to %s.",
-        intervalSubject,
+        "The 95%% confidence interval for the predicted probability is %s to %s.",
         formatFollowupPredictionNumber(interval$lwr),
         formatFollowupPredictionNumber(interval$upr)
       )
-    )
+    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
+      sprintf(
+        "The 95%% confidence interval for the expected count is %s to %s.",
+        formatFollowupPredictionNumber(interval$lwr),
+        formatFollowupPredictionNumber(interval$upr)
+      )
+    } else if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "odds")) {
+      sprintf(
+        "The 95%% confidence interval for the predicted odds is %s to %s.",
+        formatFollowupPredictionNumber(interval$lwr),
+        formatFollowupPredictionNumber(interval$upr)
+      )
+    } else {
+      sprintf(
+        "The estimated average %s for these characteristics has a 95%% confidence interval from %s to %s.",
+        responseName,
+        formatFollowupPredictionNumber(interval$lwr),
+        formatFollowupPredictionNumber(interval$upr)
+      )
+    }
+    pieces = c(pieces, confidenceSentence)
   }
 
   warningsText = paste(prediction$warnings %||% character(0), collapse = " ")

@@ -102,29 +102,28 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
   includeMean = isTRUE(inputValidation$requestsConfidenceInterval) ||
     predictionIntent$target %in% c("mean_response", "individual_outcome", "ambiguous_personal")
   predictionType = if (isTRUE(includeIndividual)) "individual_prediction_interval" else "mean_response_prediction"
-  predFit = as.numeric(stats::predict(model, newdata = newDataInfo$newData))[1]
-  confidenceInterval = NULL
-  predictionInterval = NULL
-
-  if (isTRUE(includeIndividual)) {
-    piMat = stats::predict(model, newdata = newDataInfo$newData, interval = "prediction")
-    predictionInterval = list(
-      fit = as.numeric(piMat[1, "fit"]),
-      lwr = as.numeric(piMat[1, "lwr"]),
-      upr = as.numeric(piMat[1, "upr"]),
-      level = 0.95
-    )
+  predictionValues = safelyComputeLmPredictions(
+    model = model,
+    newData = newDataInfo$newData,
+    includeIndividual = includeIndividual,
+    includeMean = includeMean
+  )
+  if (!isTRUE(predictionValues$ok)) {
+    return(list(
+      status = "needs_input",
+      reason = "prediction_failed",
+      modelType = "lm",
+      predictionType = predictionType,
+      suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
+      resolvedPredictorValues = newDataInfo$resolvedPredictorValues,
+      completedPredictorValues = newDataInfo$completedPredictorValues,
+      warnings = predictionValues$warning
+    ))
   }
 
-  if (isTRUE(includeMean)) {
-    ciMat = stats::predict(model, newdata = newDataInfo$newData, interval = "confidence")
-    confidenceInterval = list(
-      fit = as.numeric(ciMat[1, "fit"]),
-      lwr = as.numeric(ciMat[1, "lwr"]),
-      upr = as.numeric(ciMat[1, "upr"]),
-      level = 0.95
-    )
-  }
+  predFit = predictionValues$fittedPrediction
+  confidenceInterval = predictionValues$confidenceInterval
+  predictionInterval = predictionValues$predictionInterval
 
   formatModelQuestionPredictionPayload(
     modelType = "lm",
@@ -694,7 +693,7 @@ matchFactorLevelInFollowupText = function(levels, followupText) {
 buildLmPredictionNewData = function(model, suppliedPredictorValues) {
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
-  newData = mf[1, predictorNames, drop = FALSE]
+  newData = data.frame(row.names = 1L)
   resolvedPredictorValues = list()
   completedPredictorValues = list()
   warnings = character(0)
@@ -703,6 +702,7 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
     value = suppliedPredictorValues[[name]]
     column = mf[[name]]
     valueWasSupplied = !is.null(value) && nzchar(trimws(as.character(value)))
+    transformedPredictor = parseSimpleTransformedPredictor(name)
 
     categoricalLevels = character(0)
     if (is.factor(column)) {
@@ -763,9 +763,30 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
           warnings = sprintf("Predictor '%s' requires a numeric value.", name)
         ))
       }
-      newData[[name]] = numericValue
-      resolvedPredictorValues[[name]] = numericValue
-      completedPredictorValues[[name]] = numericValue
+
+      if (is.list(transformedPredictor)) {
+        sourceValue = invertSimplePredictionTransformation(
+          value = numericValue,
+          transformation = transformedPredictor$transformation
+        )
+        if (!is.finite(sourceValue)) {
+          return(list(
+            ok = FALSE,
+            reason = "invalid_transformed_value",
+            newData = newData,
+            suppliedPredictorValues = suppliedPredictorValues,
+            requiredPredictors = predictorNames,
+            warnings = sprintf("WMFM could not recover a valid value for '%s' from predictor '%s'.", transformedPredictor$source, name)
+          ))
+        }
+        newData[[transformedPredictor$source]] = sourceValue
+        resolvedPredictorValues[[transformedPredictor$source]] = sourceValue
+        completedPredictorValues[[transformedPredictor$source]] = sourceValue
+      } else {
+        newData[[name]] = numericValue
+        resolvedPredictorValues[[name]] = numericValue
+        completedPredictorValues[[name]] = numericValue
+      }
     } else {
       return(list(
         ok = FALSE,
@@ -786,6 +807,124 @@ buildLmPredictionNewData = function(model, suppliedPredictorValues) {
     resolvedPredictorValues = resolvedPredictorValues,
     completedPredictorValues = completedPredictorValues,
     warnings = warnings
+  )
+}
+
+#' Parse a simple transformed predictor term
+#'
+#' @param predictor Predictor term name from the fitted model frame.
+#'
+#' @return A list containing the transformation and source variable, or NULL.
+#' @keywords internal
+#' @noRd
+parseSimpleTransformedPredictor = function(predictor) {
+  predictorText = trimws(as.character(predictor %||% ""))
+  patterns = list(
+    log = "^log\\(([^()]+)\\)$",
+    log1p = "^log1p\\(([^()]+)\\)$",
+    sqrt = "^sqrt\\(([^()]+)\\)$"
+  )
+
+  for (transformation in names(patterns)) {
+    matched = regmatches(
+      predictorText,
+      regexec(patterns[[transformation]], predictorText, perl = TRUE)
+    )[[1]]
+    if (length(matched) == 2L) {
+      return(list(
+        transformation = transformation,
+        source = trimws(matched[[2]])
+      ))
+    }
+  }
+
+  NULL
+}
+
+#' Invert a supported predictor transformation
+#'
+#' @param value Numeric value on the transformed scale.
+#' @param transformation Supported transformation name.
+#'
+#' @return Numeric value on the source-variable scale.
+#' @keywords internal
+#' @noRd
+invertSimplePredictionTransformation = function(value, transformation) {
+  value = suppressWarnings(as.numeric(value))
+  if (!is.finite(value)) {
+    return(NA_real_)
+  }
+
+  if (identical(transformation, "log")) {
+    return(exp(value))
+  }
+  if (identical(transformation, "log1p")) {
+    return(expm1(value))
+  }
+  if (identical(transformation, "sqrt")) {
+    return(value^2)
+  }
+
+  NA_real_
+}
+
+#' Compute linear-model predictions without allowing an app crash
+#'
+#' @param model Fitted ordinary linear model.
+#' @param newData One-row prediction data frame.
+#' @param includeIndividual Whether to calculate a prediction interval.
+#' @param includeMean Whether to calculate a confidence interval for the mean.
+#'
+#' @return Prediction components with an ok flag and user-facing warning.
+#' @keywords internal
+#' @noRd
+safelyComputeLmPredictions = function(model, newData, includeIndividual, includeMean) {
+  tryCatch(
+    {
+      fittedPrediction = as.numeric(stats::predict(model, newdata = newData))[1]
+      predictionInterval = NULL
+      confidenceInterval = NULL
+
+      if (isTRUE(includeIndividual)) {
+        piMat = stats::predict(model, newdata = newData, interval = "prediction")
+        predictionInterval = list(
+          fit = as.numeric(piMat[1, "fit"]),
+          lwr = as.numeric(piMat[1, "lwr"]),
+          upr = as.numeric(piMat[1, "upr"]),
+          level = 0.95
+        )
+      }
+
+      if (isTRUE(includeMean)) {
+        ciMat = stats::predict(model, newdata = newData, interval = "confidence")
+        confidenceInterval = list(
+          fit = as.numeric(ciMat[1, "fit"]),
+          lwr = as.numeric(ciMat[1, "lwr"]),
+          upr = as.numeric(ciMat[1, "upr"]),
+          level = 0.95
+        )
+      }
+
+      list(
+        ok = TRUE,
+        fittedPrediction = fittedPrediction,
+        confidenceInterval = confidenceInterval,
+        predictionInterval = predictionInterval,
+        warning = ""
+      )
+    },
+    error = function(errorCondition) {
+      list(
+        ok = FALSE,
+        fittedPrediction = NULL,
+        confidenceInterval = NULL,
+        predictionInterval = NULL,
+        warning = paste0(
+          "WMFM could not calculate this prediction from the supplied values. ",
+          "Please check the predictor values or use explicit name = value wording."
+        )
+      )
+    }
   )
 }
 

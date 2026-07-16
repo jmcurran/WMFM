@@ -60,9 +60,9 @@ testthat::test_that("Stage 43.8 deterministic prediction wording is less technic
 
   out = buildDeterministicFollowupAnswer(model)
 
-  testthat::expect_match(out, "For one individual with these characteristics", fixed = TRUE)
+  testthat::expect_match(out, "For an individual with these characteristics", fixed = TRUE)
   testthat::expect_no_match(out, "individual outcome with these predictor values", fixed = TRUE)
-  testthat::expect_match(out, "people or cases with these characteristics", fixed = TRUE)
+  testthat::expect_match(out, "estimated average Exam for these characteristics", fixed = TRUE)
 })
 
 testthat::test_that("Stage 43.8 prediction prompt forbids invented outcome thresholds", {

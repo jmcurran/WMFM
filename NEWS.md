@@ -4,6 +4,15 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.012
+
+- Build linear-model prediction data from source variables when fitted terms use supported transformations such as log, log1p, or sqrt.
+- Prevent unsupported or malformed transformed predictions from crashing the Shiny app by returning a deterministic needs-input payload.
+- Replace generic people-or-cases interval wording with concise response-specific prediction and confidence-interval sentences.
+- Preserve factor-adjusted Diamonds predictions using the supplied cut, color, and clarity levels.
+- Add focused offline tests for transformed predictors, safe prediction failure, and student-facing interval wording.
+  - Repair the focused wording assertion to expect the improved phrase used by the deterministic answer.
+
 ## WMFM 1.1.0.010
 
 - Preserve the Stage 43.8 natural expected-value, factor-level, transformed-predictor, and plain-language prediction improvements.
