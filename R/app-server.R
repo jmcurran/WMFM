@@ -54,6 +54,11 @@ appServer = function(input, output, session) {
     modelFit = modelFit
   )
 
+  registerAnalysisDownloadObserver(
+    output = output,
+    rv = rv
+  )
+
   contrastPairs = reactiveState$contrastPairs
 
   modelExplanationObservers = registerModelExplanationObservers(

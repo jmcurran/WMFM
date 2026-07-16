@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.012
+
+- Added a user-facing download for the deterministic reproducible analysis document.
+- Package data analyses download as a Quarto source file, while uploaded data analyses download as a ZIP containing the Quarto source and a portable CSV copy of the fitted data.
+- Kept document generation separate from model fitting and avoided exposing temporary upload paths.
+- Added offline tests for Quarto writing, uploaded-data packaging, and app integration.
+
 ## WMFM 1.1.1.011
 
 - Added dynamic reproducible-analysis sections for completed predictions and contrasts.
