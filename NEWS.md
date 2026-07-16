@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.005
+
+- Repaired the Stage 44.2 runner NEWS update after validation by separating two accidentally joined R statements.
+- Retained the package-safe analysis-recipe integration test introduced in the preceding repair.
+- Preserved the Stage 44.2 analysis-recipe implementation without changing package behaviour.
+- Completed the standard full package validation workflow and release steps.
+
 ## WMFM 1.1.1.001
 
 - Define the Stage 44 architecture for deterministic generation of reproducible WMFM analysis documents.
