@@ -11,3 +11,8 @@ adjustmentVariables:
   - cut
   - color
   - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: prediction
+  intendedIntent: ambiguous_personal
+  suite: prediction_core

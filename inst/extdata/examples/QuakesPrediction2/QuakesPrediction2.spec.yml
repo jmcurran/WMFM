@@ -6,3 +6,8 @@ data: ../Quakes/Quakes.df.rda
 context: ../Quakes/Quakes.Rmd
 researchQuestion: How quickly does expected earthquake frequency decrease as magnitude increases in California and Washington, and do those rates of decrease appear to differ between the two locations?
 followupQuestion: At magnitude 5.0 in Southern California, should I expect many earthquakes?
+evaluation:
+  datasetGroup: quakes
+  taskType: prediction
+  intendedIntent: ambiguous_personal
+  suite: prediction_core

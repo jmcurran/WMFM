@@ -10,6 +10,7 @@ runModel(
   modelType = c("lm", "logistic", "poisson"),
   dataContext = NULL,
   researchQuestion = NULL,
+  followupQuestion = NULL,
   variableTransformations = NULL,
   responseTransformationMode = "both",
   ollamaBaseUrl = NULL,
@@ -33,6 +34,9 @@ about the dataset, study, variables, coding, or research aim.}
 
 \item{researchQuestion}{Optional character string giving the research
 question the user wants the fitted model to help answer.}
+
+\item{followupQuestion}{Optional character string giving a bounded follow-up
+question to classify, compute deterministically, and include in the explanation.}
 
 \item{variableTransformations}{Optional named list of derived-variable
 transformation records to preserve when the fitted formula uses derived

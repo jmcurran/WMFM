@@ -11,3 +11,8 @@ adjustmentVariables:
   - cut
   - color
   - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: prediction
+  intendedIntent: mean_response
+  suite: prediction_core

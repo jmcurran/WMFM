@@ -6,3 +6,8 @@ dataPackage: s20x
 dataObject: course.df
 researchQuestion: Do students who attend class regularly and score higher on the mid-term test tend to get better final exam marks?
 followupQuestion: Will I do well on the final exam if I attend class regularly and score 15 out of 20 on the test?
+evaluation:
+  datasetGroup: course
+  taskType: prediction
+  intendedIntent: ambiguous_personal
+  suite: prediction_core

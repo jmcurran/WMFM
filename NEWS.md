@@ -4,6 +4,15 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.0.013
+
+- Add `listWMFMEvaluationExamples()` for numbered, metadata-backed evaluation example discovery.
+- Add `runWMFMEvaluationSuite()` with selection by number, exact name, regular expression, task type, or suite.
+- Save per-example diagnostics JSON together with a run manifest, JSONL collection, and CSV summary.
+- Display progress, elapsed time, and estimated time remaining while continuing safely after individual example failures.
+- Add prediction evaluation metadata to the twelve Course, Oysters, Quakes, and Diamonds examples.
+- Extend `runModel()` with an optional follow-up question for reusable non-Shiny evaluation workflows.
+
 ## WMFM 1.1.0.012
 
 - Build linear-model prediction data from source variables when fitted terms use supported transformations such as log, log1p, or sqrt.

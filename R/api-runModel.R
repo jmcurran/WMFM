@@ -25,6 +25,8 @@
 #'   about the dataset, study, variables, coding, or research aim.
 #' @param researchQuestion Optional character string giving the research
 #'   question the user wants the fitted model to help answer.
+#' @param followupQuestion Optional character string giving a bounded follow-up
+#'   question to classify, compute deterministically, and include in the explanation.
 #' @param variableTransformations Optional named list of derived-variable
 #'   transformation records to preserve when the fitted formula uses derived
 #'   variables.
@@ -52,6 +54,7 @@ runModel = function(
     modelType = c("lm", "logistic", "poisson"),
     dataContext = NULL,
     researchQuestion = NULL,
+    followupQuestion = NULL,
     variableTransformations = NULL,
     responseTransformationMode = "both",
     ollamaBaseUrl = NULL,
@@ -147,6 +150,12 @@ runModel = function(
   if (!is.null(researchQuestion)) {
     if (!is.character(researchQuestion) || length(researchQuestion) != 1 || is.na(researchQuestion)) {
       stop("`researchQuestion` must be NULL or a single non-missing character string.", call. = FALSE)
+    }
+  }
+
+  if (!is.null(followupQuestion)) {
+    if (!is.character(followupQuestion) || length(followupQuestion) != 1 || is.na(followupQuestion)) {
+      stop("`followupQuestion` must be NULL or a single non-missing character string.", call. = FALSE)
     }
   }
 
@@ -309,6 +318,33 @@ runModel = function(
     if (nzchar(researchQuestion)) {
       researchQuestionEscaped = gsub("\"", "\\\"", researchQuestion, fixed = TRUE)
       attr(model, "wmfm_research_question") = researchQuestionEscaped
+    }
+  }
+
+  followupDiagnostics = list()
+  if (!is.null(followupQuestion)) {
+    followupQuestion = trimws(followupQuestion)
+
+    if (nzchar(followupQuestion)) {
+      followupPayload = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
+      followupPayload = enrichFollowupPayloadWithLmPrediction(
+        model = model,
+        followupPayload = followupPayload
+      )
+      followupPayload = enrichFollowupPayloadWithUnitChange(
+        model = model,
+        followupPayload = followupPayload
+      )
+      followupPayload = enrichFollowupPayloadWithAdjustmentComparison(
+        model = model,
+        followupPayload = followupPayload
+      )
+      attr(model, "wmfm_model_followup_question") = followupPayload$originalText
+      attr(model, "wmfm_model_followup_payload") = followupPayload
+      followupDiagnostics = list(
+        followupText = followupPayload$originalText %||% "",
+        followupPayload = followupPayload
+      )
     }
   }
 
@@ -489,7 +525,8 @@ runModel = function(
       equationMethod = equationMethod,
       equationMethodUsed = equationMethodUsed,
       generateExplanation = generateExplanation,
-      responseTransformationMode = getModelResponseTransformationMode(model)
+      responseTransformationMode = getModelResponseTransformationMode(model),
+      followupDiagnostics = followupDiagnostics
     )
   )
 

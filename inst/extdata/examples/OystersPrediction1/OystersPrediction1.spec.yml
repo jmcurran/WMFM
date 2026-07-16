@@ -6,3 +6,8 @@ dataPackage: s20x
 dataObject: oysters.df
 researchQuestion: Does the expected number of oysters appear to differ between the study sites?
 followupQuestion: If I take one new sample at George River, how many oysters would you predict I will count?
+evaluation:
+  datasetGroup: oysters
+  taskType: prediction
+  intendedIntent: individual_outcome
+  suite: prediction_core
