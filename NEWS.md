@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.006
+
+- Added deterministic Quarto rendering for package loading, data loading, data preparation, and model fitting.
+- Generated student-facing code from the validated analysis recipe without using an LLM.
+- Supported package datasets and uploaded CSV files while failing explicitly for upload formats whose portable metadata is not yet retained.
+- Added offline tests for workflow order, data readers, derived variables, factor conversion, and supported model families.
+
 ## WMFM 1.1.1.005
 
 - Repaired the Stage 44.2 runner NEWS update after validation by separating two accidentally joined R statements.
