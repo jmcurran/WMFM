@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.017
+
+- Updated the package-data download test to expect the preserved dataset name and data(mtcars) loading form.
+- Compared treatment-contrast values without requiring unrelated matrix dimnames to match.
+- Left the Stage 44.7.1 implementation unchanged.
+
 ## WMFM 1.1.1.015
 
 - Made generated reproducible analyses executable without installing or loading WMFM.

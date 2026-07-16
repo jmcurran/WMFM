@@ -12,7 +12,7 @@ test_that("package-data recipes download as Quarto documents", {
   expect_true(file.exists(outputPath))
   outputText = paste(readLines(outputPath, warn = FALSE), collapse = "\n")
   expect_match(outputText, "# Load the data", fixed = TRUE)
-  expect_match(outputText, 'data(list = "mtcars", package = "datasets")', fixed = TRUE)
+  expect_match(outputText, "data(mtcars)", fixed = TRUE)
 })
 
 test_that("uploaded-data recipes download with portable CSV data", {
