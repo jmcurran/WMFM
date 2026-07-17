@@ -31,7 +31,7 @@ newAnalysisRecipe = function(
       list(
         summary = list(enabled = TRUE),
         anova = list(enabled = TRUE),
-        confidenceIntervals = list(enabled = TRUE, level = 0.95),
+        confidenceIntervals = list(enabled = FALSE, level = 0.95),
         diagnostics = list(enabled = TRUE),
         modelPlot = list(
           enabled = TRUE,

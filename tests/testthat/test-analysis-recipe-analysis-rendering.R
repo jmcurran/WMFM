@@ -11,9 +11,9 @@ test_that("post-fit Quarto sections follow the agreed analysis order", {
 
   expect_true(match("# Model summary", lines) < match("# Fitted equation", lines))
   expect_true(match("# Fitted equation", lines) < match("# Analysis of variance", lines))
-  expect_true(match("# Analysis of variance", lines) < match("# Confidence intervals", lines))
-  expect_true(match("# Confidence intervals", lines) < match("# Diagnostic plots", lines))
+  expect_true(match("# Analysis of variance", lines) < match("# Diagnostic plots", lines))
   expect_true(match("# Diagnostic plots", lines) < match("# Model plot", lines))
+  expect_false("# Confidence intervals" %in% lines)
 })
 
 test_that("summary and ANOVA rendering use authoritative model methods", {
@@ -56,7 +56,47 @@ test_that("fitted equation rendering uses model coefficients explicitly", {
   expect_match(rendered, 'equationText = paste0("E(outcome) = "', fixed = TRUE)
 })
 
-test_that("confidence interval rendering shows coef and vcov calculations", {
+test_that("factor-only linear models render fitted means with confidence intervals", {
+  modelData = data.frame(
+    outcome = c(2, 4, 5, 8, 6, 9),
+    group = factor(c("A", "A", "B", "B", "C", "C"))
+  )
+  recipe = buildAnalysisRecipeFromFit(
+    lm(outcome ~ group, data = modelData),
+    dataSource = "package",
+    packageName = "examplePackage",
+    datasetName = "modelData"
+  )
+
+  rendered = paste(renderAnalysisRecipeFittedModelSection(recipe), collapse = "\n")
+
+  expect_match(rendered, "# Fitted means", fixed = TRUE)
+  expect_match(rendered, "fittedMeanData = expand.grid(", fixed = TRUE)
+  expect_match(rendered, 'interval = "confidence"', fixed = TRUE)
+  expect_match(rendered, "fittedMeans = cbind(", fixed = TRUE)
+  expect_false(grepl("coefficientIntervals", rendered, fixed = TRUE))
+})
+
+test_that("factor-only GLMs calculate response-scale fitted mean intervals", {
+  modelData = data.frame(
+    outcome = c(0, 1, 0, 1, 1, 1, 0, 0),
+    group = factor(rep(c("A", "B"), each = 4))
+  )
+  recipe = buildAnalysisRecipeFromFit(
+    glm(outcome ~ group, data = modelData, family = binomial()),
+    dataSource = "package",
+    packageName = "examplePackage",
+    datasetName = "modelData"
+  )
+
+  rendered = paste(renderAnalysisRecipeFittedMeansChunk(recipe), collapse = "\n")
+
+  expect_match(rendered, 'type = "link"', fixed = TRUE)
+  expect_match(rendered, "inverseLink = family(modelFit)$linkinv", fixed = TRUE)
+  expect_match(rendered, "fit = inverseLink(linkPredictions$fit)", fixed = TRUE)
+})
+
+test_that("coefficient confidence intervals are disabled in new recipes", {
   modelData = data.frame(outcome = c(2, 4, 5, 8), predictor = 1:4)
   recipe = buildAnalysisRecipeFromFit(
     lm(outcome ~ predictor, data = modelData),
@@ -65,31 +105,7 @@ test_that("confidence interval rendering shows coef and vcov calculations", {
     datasetName = "modelData"
   )
 
-  rendered = paste(renderAnalysisRecipeConfidenceIntervalChunk(recipe), collapse = "\n")
-
-  expect_match(rendered, "coefficientEstimate = coef(modelFit)", fixed = TRUE)
-  expect_match(rendered, "coefficientCovariance = vcov(modelFit)", fixed = TRUE)
-  expect_match(rendered, "sqrt(diag(coefficientCovariance))", fixed = TRUE)
-  expect_match(rendered, "qt(1 - alpha / 2, df = df.residual(modelFit))", fixed = TRUE)
-  expect_false(grepl("modelConfidenceIntervals", rendered, fixed = TRUE))
-})
-
-test_that("GLM interval rendering exposes link and multiplicative scales", {
-  binomialData = data.frame(
-    outcome = c(0, 1, 0, 1, 0, 1, 1, 0),
-    predictor = 1:8
-  )
-  logisticRecipe = buildAnalysisRecipeFromFit(
-    glm(outcome ~ predictor, data = binomialData, family = binomial()),
-    dataSource = "package",
-    packageName = "examplePackage",
-    datasetName = "binomialData"
-  )
-
-  rendered = paste(renderAnalysisRecipeConfidenceIntervalChunk(logisticRecipe), collapse = "\n")
-
-  expect_match(rendered, "criticalValue = qnorm(1 - alpha / 2)", fixed = TRUE)
-  expect_match(rendered, "oddsRatio = exp(coefficientIntervals$estimate)", fixed = TRUE)
+  expect_false(recipe$sections$confidenceIntervals$enabled)
 })
 
 test_that("diagnostic rendering is family aware", {

@@ -18,9 +18,7 @@ renderAnalysisRecipeAnalysisQuarto = function(recipe) {
       "",
       renderAnalysisRecipeSummaryChunk(recipe),
       "",
-      "# Fitted equation",
-      "",
-      renderAnalysisRecipeEquationChunk(recipe)
+      renderAnalysisRecipeFittedModelSection(recipe)
     )
   }
 
@@ -65,6 +63,131 @@ renderAnalysisRecipeAnalysisQuarto = function(recipe) {
   }
 
   sectionLines
+}
+
+#' Render the fitted-model section appropriate to the model structure
+#'
+#' @inheritParams renderAnalysisRecipeAnalysisQuarto
+#'
+#' @return Character vector containing a Quarto heading, explanatory text,
+#'   and code chunk.
+#'
+#' @keywords internal
+#' @noRd
+renderAnalysisRecipeFittedModelSection = function(recipe) {
+  validateAnalysisRecipe(recipe)
+
+  factorLevels = recipe$model$factorLevels %||% list()
+  predictors = recipe$model$predictors %||% character(0)
+  factorOnly = length(predictors) > 0 &&
+    all(predictors %in% names(factorLevels))
+
+  if (!factorOnly) {
+    return(c(
+      "# Fitted equation",
+      "",
+      "The following code constructs the fitted equation directly from the estimated regression coefficients.",
+      "",
+      renderAnalysisRecipeEquationChunk(recipe)
+    ))
+  }
+
+  c(
+    "# Fitted means",
+    "",
+    "The following code calculates the fitted mean for every combination of factor levels. The accompanying confidence intervals describe uncertainty in those fitted means rather than repeating confidence intervals for every regression coefficient.",
+    "",
+    renderAnalysisRecipeFittedMeansChunk(recipe)
+  )
+}
+
+#' Render fitted means and their confidence intervals for factor-only models
+#'
+#' @inheritParams renderAnalysisRecipeAnalysisQuarto
+#'
+#' @return Character vector containing a Quarto code chunk.
+#'
+#' @keywords internal
+#' @noRd
+renderAnalysisRecipeFittedMeansChunk = function(recipe) {
+  validateAnalysisRecipe(recipe)
+
+  factorLevels = recipe$model$factorLevels %||% list()
+  predictors = recipe$model$predictors %||% character(0)
+  factorLevels = factorLevels[predictors]
+  levelLines = vapply(
+    seq_along(factorLevels),
+    function(index) {
+      suffix = if (index < length(factorLevels)) "," else ""
+      values = paste(
+        vapply(factorLevels[[index]], encodeAnalysisRecipeString, character(1)),
+        collapse = ", "
+      )
+      paste0("  ", names(factorLevels)[index], " = c(", values, ")", suffix)
+    },
+    character(1)
+  )
+
+  codeLines = c(
+    "factorLevels = list(",
+    levelLines,
+    ")",
+    "",
+    "fittedMeanData = expand.grid(",
+    "  factorLevels,",
+    "  KEEP.OUT.ATTRS = FALSE,",
+    "  stringsAsFactors = FALSE",
+    ")",
+    "",
+    "for (variable in names(factorLevels)) {",
+    "  fittedMeanData[[variable]] = factor(",
+    "    fittedMeanData[[variable]],",
+    "    levels = factorLevels[[variable]]",
+    "  )",
+    "}",
+    ""
+  )
+
+  modelType = recipe$model$modelType %||% "lm"
+  if (identical(modelType, "lm")) {
+    codeLines = c(
+      codeLines,
+      "fittedMeanIntervals = predict(",
+      "  modelFit,",
+      "  newdata = fittedMeanData,",
+      "  interval = \"confidence\",",
+      "  level = 0.95",
+      ")",
+      "",
+      "fittedMeans = cbind(",
+      "  fittedMeanData,",
+      "  as.data.frame(fittedMeanIntervals)",
+      ")",
+      "fittedMeans"
+    )
+  } else {
+    codeLines = c(
+      codeLines,
+      "linkPredictions = predict(",
+      "  modelFit,",
+      "  newdata = fittedMeanData,",
+      "  type = \"link\",",
+      "  se.fit = TRUE",
+      ")",
+      "criticalValue = qnorm(0.975)",
+      "inverseLink = family(modelFit)$linkinv",
+      "",
+      "fittedMeans = data.frame(",
+      "  fittedMeanData,",
+      "  fit = inverseLink(linkPredictions$fit),",
+      "  lower = inverseLink(linkPredictions$fit - criticalValue * linkPredictions$se.fit),",
+      "  upper = inverseLink(linkPredictions$fit + criticalValue * linkPredictions$se.fit)",
+      ")",
+      "fittedMeans"
+    )
+  }
+
+  renderAnalysisRecipeCodeChunk("fitted-means", codeLines)
 }
 
 #' Render model-summary code

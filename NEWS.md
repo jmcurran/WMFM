@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.020
+
+- Added standalone fitted-mean calculations with confidence intervals for factor-only models.
+- Retained explicit fitted-equation code for models containing continuous predictors.
+- Disabled the separate all-coefficient confidence-interval section for newly created analysis recipes.
+- Kept intervals for user-requested predictions and contrasts so exports reproduce the calculations students chose to perform.
+
 ## WMFM 1.1.1.019
 
 - Replaced repeated ordered-factor conditionals in generated analyses with one named vector and one conversion loop.
