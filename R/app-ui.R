@@ -968,7 +968,20 @@ appUI = function() {
 
       tabPanel(
         "Fitted Model",
-        h4("Model equation"),
+        fluidRow(
+          column(
+            width = 8,
+            h4("Model equation")
+          ),
+          column(
+            width = 4,
+            downloadButton(
+              outputId = "analysisDownload",
+              label = "Download reproducible analysis",
+              class = "pull-right"
+            )
+          )
+        ),
         uiOutput("model_formula"),
 
         hr(),

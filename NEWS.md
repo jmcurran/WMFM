@@ -4,6 +4,104 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.020
+
+- Added standalone fitted-mean calculations with confidence intervals for factor-only models.
+- Retained explicit fitted-equation code for models containing continuous predictors.
+- Disabled the separate all-coefficient confidence-interval section for newly created analysis recipes.
+- Kept intervals for user-requested predictions and contrasts so exports reproduce the calculations students chose to perform.
+
+## WMFM 1.1.1.019
+
+- Replaced repeated ordered-factor conditionals in generated analyses with one named vector and one conversion loop.
+- Added a concise explanation only when selected factor variables were originally ordered.
+- Recorded ordered-factor provenance before WMFM converts selected factors to nominal factors.
+- Limited generated conversion to ordered variables selected in the Factors bucket.
+
+## WMFM 1.1.1.018
+
+- Replaced repeated ordered-factor conditionals in generated analyses with one named vector and one conversion loop.
+- Added a concise explanation only when selected factor variables were originally ordered.
+- Recorded ordered-factor provenance before WMFM converts selected factors to nominal factors.
+- Limited generated conversion to ordered variables selected in the Factors bucket.
+
+## WMFM 1.1.1.017
+
+- Updated the package-data download test to expect the preserved dataset name and data(mtcars) loading form.
+- Compared treatment-contrast values without requiring unrelated matrix dimnames to match.
+- Left the Stage 44.7.1 implementation unchanged.
+
+## WMFM 1.1.1.015
+
+- Made generated reproducible analyses executable without installing or loading WMFM.
+- Added an explicit fitted-equation section constructed from coef(modelFit).
+- Replaced the WMFM confidence-interval helper with visible coef(), vcov(), standard-error, and critical-value calculations.
+- Added odds-ratio and expected-count-multiplier tables for supported generalised linear models.
+- Replaced the WMFM model-plot call with standalone ggplot2 code based on observed, fitted, and residual values.
+- Added offline tests that reject WMFM dependencies in generated core analyses.
+
+## WMFM 1.1.1.014
+
+- Corrected reproducible-analysis provenance for package-backed examples loaded through the example interface.
+- Package examples such as Course now generate Quarto code that loads the original dataset from its package rather than bundling it as uploaded data.
+- Preserved portable bundled-data downloads for examples that genuinely originate from files.
+- Added offline tests for package-backed and file-backed example provenance.
+
+## WMFM 1.1.1.012
+
+- Added a user-facing download for the deterministic reproducible analysis document.
+- Package data analyses download as a Quarto source file, while uploaded data analyses download as a ZIP containing the Quarto source and a portable CSV copy of the fitted data.
+- Kept document generation separate from model fitting and avoided exposing temporary upload paths.
+- Added offline tests for Quarto writing, uploaded-data packaging, and app integration.
+
+## WMFM 1.1.1.011
+
+- Added dynamic reproducible-analysis sections for completed predictions and contrasts.
+- Added deterministic recipe update helpers that preserve existing model and data state while appending post-fit analyses.
+- Rendered linear-model mean and individual predictions with the appropriate confidence or prediction interval and kept GLM predictions on the response scale.
+- Restored Stage 44.2 recipe construction and app-state files to the tracked source tree so completed archives are self-contained.
+
+## WMFM 1.1.1.010
+
+- Added previously validated analysis-recipe integration files to version control.
+- Added the generated documentation for the Stage 44.4 analysis-section renderers.
+- Made the completed Stage 44 baseline self-contained without changing package behaviour.
+- Validated with the full offline test and package-check workflow.
+
+## WMFM 1.1.1.009
+
+- Completed the Stage 44.4 reproducible analysis renderer for model summaries, ANOVA tables, confidence intervals, diagnostic plots, and substantive model plots.
+- Corrected the core analysis-recipe test so its expected model-plot state matches the new enabled-by-default Stage 44.4 behaviour.
+- Retained the exported modelConfidenceIntervals() helper and deterministic report-section settings introduced in Stage 44.4.
+- Validated the repaired expectation with the full WMFM package workflow.
+
+## WMFM 1.1.1.007
+
+- Repaired the Stage 44.3 package installation workflow so the exact built tarball remains available after the build process exits.
+- Build source packages in a stable project-local temporary directory and remove that directory only after installation succeeds.
+- Re-ran the full package validation workflow without changing the Stage 44.3 Quarto rendering behaviour.
+
+## WMFM 1.1.1.006
+
+- Added deterministic Quarto rendering for package loading, data loading, data preparation, and model fitting.
+- Generated student-facing code from the validated analysis recipe without using an LLM.
+- Supported package datasets and uploaded CSV files while failing explicitly for upload formats whose portable metadata is not yet retained.
+- Added offline tests for workflow order, data readers, derived variables, factor conversion, and supported model families.
+
+## WMFM 1.1.1.005
+
+- Repaired the Stage 44.2 runner NEWS update after validation by separating two accidentally joined R statements.
+- Retained the package-safe analysis-recipe integration test introduced in the preceding repair.
+- Preserved the Stage 44.2 analysis-recipe implementation without changing package behaviour.
+- Completed the standard full package validation workflow and release steps.
+
+## WMFM 1.1.1.001
+
+- Define the Stage 44 architecture for deterministic generation of reproducible WMFM analysis documents.
+- Establish an output-format-independent AnalysisRecipe captured after model fitting and updated by supported post-fit analyses.
+- Select Quarto as the first renderer, with portable handling of package datasets and uploaded data and a staged implementation plan for the 1.1.1 development line.
+- Record the architecture as a documentation-only decision stage with no package behaviour changes.
+
 ## WMFM 1.1.0.23
 
 - Reserve numerical prediction follow-up answers for WMFM's deterministic renderer so the language model does not duplicate or alter verified results.

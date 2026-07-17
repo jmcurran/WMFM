@@ -155,10 +155,20 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
     # Anything in the Factors bucket should be treated as a factor
     factorVars = rv$bucketFactors %||% character(0)
+    orderedFactorVars = factorVars[vapply(
+      factorVars,
+      function(variableName) {
+        is.ordered(dfMod[[variableName]])
+      },
+      logical(1)
+    )]
+
     for (v in factorVars) {
-      if (!is.null(dfMod[[v]]) && !is.factor(dfMod[[v]])) {
-        dfMod[[v]] = factor(dfMod[[v]])
+      if (is.null(dfMod[[v]])) {
+        next
       }
+
+      dfMod[[v]] = coerceWmfmFactor(dfMod[[v]])
     }
 
     y = dfMod[[respName]]
@@ -261,10 +271,18 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       responseTransformationMode = input$responseTransformationMode %||% "both"
     )
 
+    recipeDataMetadata = resolveAnalysisRecipeDataMetadata(
+      dataSource = input$data_source %||% "unknown",
+      packageName = input$data_package %||% "",
+      datasetName = input$package_dataset %||% "",
+      uploadedFileName = if (!is.null(input$file)) input$file$name %||% "" else "",
+      loadedExample = rv$loadedExample
+    )
+
     # If this data came from a package, attach package metadata to the model.
-    if (identical(input$data_source, "package")) {
-      pkg = input$data_package %||% ""
-      dsName = input$package_dataset
+    if (identical(recipeDataMetadata$source, "package")) {
+      pkg = recipeDataMetadata$packageName
+      dsName = recipeDataMetadata$datasetName
 
       docText = NULL
       if (identical(pkg, "s20x")) {
@@ -293,7 +311,7 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     # -------------------------------------------------------------
     # Attach user-provided dataset context when data are uploaded
     # -------------------------------------------------------------
-    if (identical(input$data_source %||% "", "upload")) {
+    if (identical(recipeDataMetadata$source, "upload")) {
 
       userCtxRaw = rv$userDatasetContext %||% ""
       userCtxRaw = trimws(userCtxRaw)
@@ -381,6 +399,18 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       hasFollowupInPrompt = grepl("Follow-up model question", promptPreview, fixed = TRUE),
       hasPredictionPayloadInPrompt = grepl("WMFM deterministic prediction payload", promptPreview, fixed = TRUE),
       hasSeparateFollowupParagraphInstruction = grepl("separate paragraph after the main research-question answer", promptPreview, fixed = TRUE)
+    )
+
+    rv$analysisRecipe = buildAnalysisRecipeFromFit(
+      model = m,
+      dataSource = recipeDataMetadata$source,
+      packageName = recipeDataMetadata$packageName,
+      datasetName = recipeDataMetadata$datasetName,
+      uploadedFileName = recipeDataMetadata$uploadedFileName,
+      variableTransformations = rv$variableTransformations,
+      factorVariables = rv$bucketFactors,
+      orderedFactorVariables = orderedFactorVars,
+      responseTransformationMode = input$responseTransformationMode %||% "both"
     )
 
     modelFit(m)

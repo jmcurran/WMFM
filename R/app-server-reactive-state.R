@@ -38,6 +38,7 @@ createAppServerReactiveState = function() {
     researchQuestion = "",
     modelFollowupQuestion = "",
     explanationPromptDiagnostics = NULL,
+    analysisRecipe = NULL,
     loadedExample = NULL,
     providerConfigSaveStatus = NULL
   )
