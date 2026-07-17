@@ -65,6 +65,17 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  conditionalQuantile = classifyConditionalQuantileQuestion(normalizedText)
+  if (isTRUE(conditionalQuantile$matched)) {
+    result$category = "conditional_quantile_request"
+    result$supported = FALSE
+    result$requiresDeterministicComputation = FALSE
+    result$reason = conditionalQuantile$reasonCode
+    result$message = "Conditional-value request requires a conditional distribution rather than residual inspection of an ordinary mean model."
+    result$deterministicResponse = conditionalQuantile$deterministicResponse
+    return(result)
+  }
+
   proportionalChangeValues = extractRequestedProportionalChangeValues(normalizedText)
   if (length(proportionalChangeValues) > 1L) {
     result$category = "unsupported_or_out_of_scope"

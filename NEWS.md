@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.022
+
+- Distinguish conditional-value questions from residual inspection before ordinary prediction handling.
+- Classify specified-case good-deal and percentile questions as requiring a conditional distribution rather than an ordinary conditional-mean residual ranking.
+- Add a deterministic explanation that quantile regression is deferred until the intended percentile is defined.
+- Revise the Stage 45 context and add offline classification and prompt-guardrail tests.
+
 ## WMFM 1.1.1.020
 
 - Added standalone fitted-mean calculations with confidence intervals for factor-only models.
