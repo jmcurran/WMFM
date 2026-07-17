@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.018
+
+- Replaced repeated ordered-factor conditionals in generated analyses with one named vector and one conversion loop.
+- Added a concise explanation only when selected factor variables were originally ordered.
+- Recorded ordered-factor provenance before WMFM converts selected factors to nominal factors.
+- Limited generated conversion to ordered variables selected in the Factors bucket.
+
 ## WMFM 1.1.1.017
 
 - Updated the package-data download test to expect the preserved dataset name and data(mtcars) loading form.

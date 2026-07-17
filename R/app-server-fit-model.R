@@ -155,10 +155,20 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
     # Anything in the Factors bucket should be treated as a factor
     factorVars = rv$bucketFactors %||% character(0)
+    orderedFactorVars = factorVars[vapply(
+      factorVars,
+      function(variableName) {
+        is.ordered(dfMod[[variableName]])
+      },
+      logical(1)
+    )]
+
     for (v in factorVars) {
-      if (!is.null(dfMod[[v]]) && !is.factor(dfMod[[v]])) {
-        dfMod[[v]] = factor(dfMod[[v]])
+      if (is.null(dfMod[[v]])) {
+        next
       }
+
+      dfMod[[v]] = coerceWmfmFactor(dfMod[[v]])
     }
 
     y = dfMod[[respName]]
@@ -399,6 +409,7 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       uploadedFileName = recipeDataMetadata$uploadedFileName,
       variableTransformations = rv$variableTransformations,
       factorVariables = rv$bucketFactors,
+      orderedFactorVariables = orderedFactorVars,
       responseTransformationMode = input$responseTransformationMode %||% "both"
     )
 

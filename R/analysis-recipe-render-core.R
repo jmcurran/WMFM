@@ -29,7 +29,7 @@ renderAnalysisRecipeCoreQuarto = function(recipe) {
     "",
     "# Prepare the data",
     "",
-    renderAnalysisRecipePreparationChunk(recipe),
+    renderAnalysisRecipePreparationSection(recipe),
     "",
     "# Fit the model",
     "",
@@ -66,6 +66,25 @@ renderAnalysisRecipePackageChunk = function(recipe) {
   renderAnalysisRecipeCodeChunk("load-packages", codeLines)
 }
 
+
+#' Resolve the data object name used in generated code
+#'
+#' @param recipe A `wmfmAnalysisRecipe` object.
+#'
+#' @return A character scalar containing a valid R object name.
+#'
+#' @keywords internal
+#' @noRd
+analysisRecipeDataObjectName = function(recipe) {
+  validateAnalysisRecipe(recipe)
+
+  if (identical(recipe$data$source, "package")) {
+    return(recipe$data$datasetName %||% "analysisData")
+  }
+
+  "analysisData"
+}
+
 #' Render the data-loading code chunk
 #'
 #' @param recipe A `wmfmAnalysisRecipe` object.
@@ -86,16 +105,7 @@ renderAnalysisRecipeDataChunk = function(recipe) {
       stop("Package data recipes require both a package and data-set name.", call. = FALSE)
     }
 
-    codeLines = c(
-      paste0(
-        "data(list = ",
-        encodeAnalysisRecipeString(datasetName),
-        ", package = ",
-        encodeAnalysisRecipeString(packageName),
-        ")"
-      ),
-      paste0("analysisData = get(", encodeAnalysisRecipeString(datasetName), ")")
-    )
+    codeLines = paste0("data(", datasetName, ")")
 
     return(renderAnalysisRecipeCodeChunk("load-data", codeLines))
   }
@@ -141,6 +151,41 @@ renderAnalysisRecipeDataChunk = function(recipe) {
   )
 }
 
+#' Render the data-preparation section
+#'
+#' @param recipe A `wmfmAnalysisRecipe` object.
+#'
+#' @return Character vector containing explanatory text and a Quarto code chunk.
+#'
+#' @keywords internal
+renderAnalysisRecipePreparationSection = function(recipe) {
+  validateAnalysisRecipe(recipe)
+
+  orderedFactorVariables = unique(
+    recipe$preparation$orderedFactorVariables %||% character(0)
+  )
+  introduction = character(0)
+
+  if (length(orderedFactorVariables) > 0) {
+    variableText = paste0("`", orderedFactorVariables, "`")
+    variableText = paste(variableText, collapse = ", ")
+    introduction = c(
+      paste0(
+        "The selected factor variables ",
+        variableText,
+        " are stored as ordered factors. Ordered factors use polynomial "
+      ),
+      paste0(
+        "contrasts by default, which can make the fitted coefficients difficult ",
+        "to interpret. We therefore convert them to ordinary factors before analysis."
+      ),
+      ""
+    )
+  }
+
+  c(introduction, renderAnalysisRecipePreparationChunk(recipe))
+}
+
 #' Render the data-preparation code chunk
 #'
 #' @param recipe A `wmfmAnalysisRecipe` object.
@@ -151,10 +196,14 @@ renderAnalysisRecipeDataChunk = function(recipe) {
 renderAnalysisRecipePreparationChunk = function(recipe) {
   validateAnalysisRecipe(recipe)
 
+  dataObjectName = analysisRecipeDataObjectName(recipe)
   transformationRecords = normaliseVariableTransformations(
     recipe$preparation$variableTransformations %||% list()
   )
   factorVariables = unique(recipe$preparation$factorVariables %||% character(0))
+  orderedFactorVariables = unique(
+    recipe$preparation$orderedFactorVariables %||% character(0)
+  )
 
   codeLines = character(0)
   transformedVariables = character(0)
@@ -171,9 +220,12 @@ renderAnalysisRecipePreparationChunk = function(recipe) {
       codeLines = c(
         codeLines,
         paste0(
-          "analysisData$",
+          dataObjectName,
+          "$",
           variableName,
-          " = with(analysisData, ",
+          " = with(",
+          dataObjectName,
+          ", ",
           rhsText,
           ")"
         )
@@ -183,21 +235,54 @@ renderAnalysisRecipePreparationChunk = function(recipe) {
   }
 
   factorVariables = setdiff(factorVariables, transformedVariables)
-  if (length(factorVariables) > 0) {
-    factorLines = vapply(
-      factorVariables,
+  orderedFactorVariables = intersect(
+    orderedFactorVariables,
+    factorVariables
+  )
+  ordinaryFactorVariables = setdiff(
+    factorVariables,
+    orderedFactorVariables
+  )
+
+  if (length(orderedFactorVariables) > 0) {
+    quotedVariables = paste(
+      encodeAnalysisRecipeString(orderedFactorVariables),
+      collapse = ", "
+    )
+    codeLines = c(
+      codeLines,
+      paste0("orderedFactors = c(", quotedVariables, ")"),
+      "",
+      "for (variable in orderedFactors) {",
+      paste0(
+        "  ",
+        dataObjectName,
+        "[[variable]] = factor(as.character(",
+        dataObjectName,
+        "[[variable]]))"
+      ),
+      "}"
+    )
+  }
+
+  if (length(ordinaryFactorVariables) > 0) {
+    ordinaryFactorLines = vapply(
+      ordinaryFactorVariables,
       function(variableName) {
         paste0(
-          "analysisData$",
+          dataObjectName,
+          "$",
           variableName,
-          " = factor(analysisData$",
+          " = factor(",
+          dataObjectName,
+          "$",
           variableName,
           ")"
         )
       },
       character(1)
     )
-    codeLines = c(codeLines, factorLines)
+    codeLines = c(codeLines, ordinaryFactorLines)
   }
 
   if (length(codeLines) == 0) {
@@ -217,6 +302,7 @@ renderAnalysisRecipePreparationChunk = function(recipe) {
 renderAnalysisRecipeModelChunk = function(recipe) {
   validateAnalysisRecipe(recipe)
 
+  dataObjectName = analysisRecipeDataObjectName(recipe)
   formulaText = recipe$model$formula %||% ""
   modelType = recipe$model$modelType %||% ""
 
@@ -228,14 +314,14 @@ renderAnalysisRecipeModelChunk = function(recipe) {
     codeLines = c(
       "modelFit = lm(",
       paste0("  formula = ", formulaText, ","),
-      "  data = analysisData",
+      paste0("  data = ", dataObjectName),
       ")"
     )
   } else if (identical(modelType, "logistic")) {
     codeLines = c(
       "modelFit = glm(",
       paste0("  formula = ", formulaText, ","),
-      "  data = analysisData,",
+      paste0("  data = ", dataObjectName, ","),
       "  family = binomial(link = \"logit\")",
       ")"
     )
@@ -243,7 +329,7 @@ renderAnalysisRecipeModelChunk = function(recipe) {
     codeLines = c(
       "modelFit = glm(",
       paste0("  formula = ", formulaText, ","),
-      "  data = analysisData,",
+      paste0("  data = ", dataObjectName, ","),
       "  family = poisson(link = \"log\")",
       ")"
     )

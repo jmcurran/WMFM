@@ -61,6 +61,7 @@ resolveAnalysisRecipeDataMetadata = function(
 #' @param uploadedFileName Optional original uploaded file name.
 #' @param variableTransformations Recorded WMFM variable transformations.
 #' @param factorVariables Variables explicitly treated as factors by WMFM.
+#' @param orderedFactorVariables Selected factor variables that were originally ordered.
 #' @param responseTransformationMode Current response-transformation display mode.
 #'
 #' @return A `wmfmAnalysisRecipe` object.
@@ -74,6 +75,7 @@ buildAnalysisRecipeFromFit = function(
   uploadedFileName = "",
   variableTransformations = list(),
   factorVariables = character(0),
+  orderedFactorVariables = character(0),
   responseTransformationMode = "both"
 ) {
   if (!inherits(model, c("lm", "glm"))) {
@@ -108,6 +110,7 @@ buildAnalysisRecipeFromFit = function(
   preparationMetadata = list(
     variableTransformations = variableTransformations %||% list(),
     factorVariables = unique(factorVariables %||% character(0)),
+    orderedFactorVariables = unique(orderedFactorVariables %||% character(0)),
     responseTransformationMode = responseTransformationMode %||% "both"
   )
 
@@ -118,7 +121,9 @@ buildAnalysisRecipeFromFit = function(
     link = modelFamily$link,
     response = responseName,
     predictors = predictorNames,
-    termLabels = attr(modelTerms, "term.labels") %||% character(0)
+    termLabels = attr(modelTerms, "term.labels") %||% character(0),
+    coefficientNames = names(stats::coef(model)) %||% character(0),
+    factorLevels = model$xlevels %||% list()
   )
 
   newAnalysisRecipe(

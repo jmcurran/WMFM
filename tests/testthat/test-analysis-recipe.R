@@ -158,3 +158,22 @@ test_that("file-backed examples remain portable bundled-data downloads", {
   expect_identical(metadata$datasetName, "")
   expect_identical(metadata$uploadedFileName, "example-data.csv")
 })
+
+
+test_that("analysis recipes retain originally ordered selected factors", {
+  modelData = data.frame(
+    outcome = 1:4,
+    group = factor(c("A", "A", "B", "B"))
+  )
+
+  recipe = buildAnalysisRecipeFromFit(
+    model = lm(outcome ~ group, data = modelData),
+    dataSource = "package",
+    packageName = "examplePackage",
+    datasetName = "exampleData",
+    factorVariables = "group",
+    orderedFactorVariables = "group"
+  )
+
+  expect_identical(recipe$preparation$orderedFactorVariables, "group")
+})

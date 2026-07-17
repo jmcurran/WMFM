@@ -17,12 +17,8 @@ test_that("core Quarto rendering follows the statistical workflow", {
   expect_true(match("# Load the data", quartoLines) < match("# Prepare the data", quartoLines))
   expect_true(match("# Prepare the data", quartoLines) < match("# Fit the model", quartoLines))
   expect_match(quartoText, "library(examplePackage)", fixed = TRUE)
-  expect_match(
-    quartoText,
-    'data(list = "exampleData", package = "examplePackage")',
-    fixed = TRUE
-  )
-  expect_match(quartoText, 'analysisData = get("exampleData")', fixed = TRUE)
+  expect_match(quartoText, "data(exampleData)", fixed = TRUE)
+  expect_false(grepl("analysisData = get", quartoText, fixed = TRUE))
   expect_match(quartoText, "modelFit = lm(", fixed = TRUE)
   expect_match(quartoText, "formula = outcome ~ predictor", fixed = TRUE)
 })
@@ -65,10 +61,11 @@ test_that("data preparation rendering uses recorded transformations and factors"
     dataSource = "upload",
     uploadedFileName = "analysis.csv",
     variableTransformations = list(logPredictor = transformation),
-    factorVariables = "group"
+    factorVariables = "group",
+    orderedFactorVariables = "group"
   )
 
-  renderedText = paste(renderAnalysisRecipePreparationChunk(recipe), collapse = "\n")
+  renderedText = paste(renderAnalysisRecipePreparationSection(recipe), collapse = "\n")
 
   expect_match(
     renderedText,
@@ -77,7 +74,79 @@ test_that("data preparation rendering uses recorded transformations and factors"
   )
   expect_match(
     renderedText,
-    "analysisData$group = factor(analysisData$group)",
+    "The selected factor variables `group` are stored as ordered factors.",
+    fixed = TRUE
+  )
+  expect_match(
+    renderedText,
+    'orderedFactors = c("group")',
+    fixed = TRUE
+  )
+  expect_match(
+    renderedText,
+    "for (variable in orderedFactors) {",
+    fixed = TRUE
+  )
+  expect_match(
+    renderedText,
+    "analysisData[[variable]] = factor(as.character(analysisData[[variable]]))",
+    fixed = TRUE
+  )
+  expect_false(grepl("is.ordered", renderedText, fixed = TRUE))
+})
+
+test_that("ordered-factor preparation is compact for several selected variables", {
+  modelData = data.frame(
+    outcome = 1:4,
+    first = ordered(c("low", "low", "high", "high")),
+    second = ordered(c("A", "B", "A", "B"))
+  )
+  modelData$first = factor(as.character(modelData$first))
+  modelData$second = factor(as.character(modelData$second))
+
+  recipe = buildAnalysisRecipeFromFit(
+    model = lm(outcome ~ first + second, data = modelData),
+    dataSource = "package",
+    packageName = "examplePackage",
+    datasetName = "exampleData",
+    factorVariables = c("first", "second"),
+    orderedFactorVariables = c("first", "second")
+  )
+
+  renderedText = paste(renderAnalysisRecipePreparationSection(recipe), collapse = "\n")
+
+  expect_match(
+    renderedText,
+    'orderedFactors = c("first", "second")',
+    fixed = TRUE
+  )
+  expect_equal(
+    lengths(regmatches(renderedText, gregexpr("for (variable in orderedFactors)", renderedText, fixed = TRUE))),
+    1L
+  )
+  expect_false(grepl("exampleData$first", renderedText, fixed = TRUE))
+  expect_false(grepl("exampleData$second", renderedText, fixed = TRUE))
+})
+
+test_that("ordinary selected factors do not receive ordered-factor commentary", {
+  modelData = data.frame(
+    outcome = 1:4,
+    group = factor(c("A", "A", "B", "B"))
+  )
+  recipe = buildAnalysisRecipeFromFit(
+    model = lm(outcome ~ group, data = modelData),
+    dataSource = "package",
+    packageName = "examplePackage",
+    datasetName = "exampleData",
+    factorVariables = "group"
+  )
+
+  renderedText = paste(renderAnalysisRecipePreparationSection(recipe), collapse = "\n")
+
+  expect_false(grepl("ordered factors", renderedText, fixed = TRUE))
+  expect_match(
+    renderedText,
+    "exampleData$group = factor(exampleData$group)",
     fixed = TRUE
   )
 })
@@ -138,4 +207,23 @@ test_that("unsupported upload formats fail rather than inventing loading code", 
     renderAnalysisRecipeDataChunk(recipe),
     "currently supports package data and CSV uploads"
   )
+})
+
+
+test_that("package data keep their original object name throughout", {
+  courseData = data.frame(Exam = 1:4, Attend = c("No", "Yes", "No", "Yes"), Test = 2:5)
+  recipe = buildAnalysisRecipeFromFit(
+    lm(Exam ~ factor(Attend) + Test, data = courseData),
+    dataSource = "package",
+    packageName = "s20x",
+    datasetName = "course.df",
+    factorVariables = "Attend"
+  )
+
+  renderedText = paste(renderAnalysisRecipeCoreQuarto(recipe), collapse = "\n")
+
+  expect_match(renderedText, "data(course.df)", fixed = TRUE)
+  expect_match(renderedText, "course.df$Attend", fixed = TRUE)
+  expect_match(renderedText, "data = course.df", fixed = TRUE)
+  expect_false(grepl("analysisData", renderedText, fixed = TRUE))
 })
