@@ -76,6 +76,16 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  comparableObservation = classifyComparableObservationQuestion(normalizedText)
+  if (isTRUE(comparableObservation$matched)) {
+    result$category = "comparable_observation_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$reason = comparableObservation$reasonCode
+    result$message = "Comparable-observation request captured for deterministic nearest-neighbour handling."
+    return(result)
+  }
+
   conditionalQuantile = classifyConditionalQuantileQuestion(normalizedText)
   if (isTRUE(conditionalQuantile$matched)) {
     result$category = "conditional_quantile_request"

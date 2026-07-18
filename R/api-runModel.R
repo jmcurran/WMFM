@@ -335,6 +335,10 @@ runModel = function(
         model = model,
         followupPayload = followupPayload
       )
+      followupPayload = enrichFollowupPayloadWithComparableObservations(
+        model = model,
+        followupPayload = followupPayload
+      )
       followupPayload = enrichFollowupPayloadWithUnitChange(
         model = model,
         followupPayload = followupPayload
