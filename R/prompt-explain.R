@@ -333,6 +333,52 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
     "Follow-up model question from the student"
   }
 
+  observationResidualResult = payload$observationResidualResult
+  if (identical(payload$category, "observation_residual_request") && is.list(observationResidualResult)) {
+    if (identical(observationResidualResult$status, "ok")) {
+      rankedRows = formatObservationResidualRows(observationResidualResult$observations)
+      limitations = paste(
+        paste0("- ", observationResidualResult$limitations %||% character(0)),
+        collapse = "\n"
+      )
+
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic existing-observation residual payload:
+- Use only the ranked observations and quantities supplied below.
+- Describe residuals as observed minus fitted on the fitted model response scale.
+- Say lower than fitted, higher than fitted, or furthest from fitted as appropriate.
+- Do not call an observation a bargain, anomaly, outlier, data error, overperformer, underperformer, or causal effect.
+- Do not generalise this ranking to new observations or to a conditional percentile.
+- Answer this follow-up in a separate paragraph after the main research-question answer.
+
+Model type: {observationResidualResult$modelType}
+Response: {observationResidualResult$responseName}
+Response scale: {observationResidualResult$responseScale}
+Ranking metric: {observationResidualResult$rankingMetric}
+Requested direction: {observationResidualResult$direction}
+Interpretation: {observationResidualResult$interpretation}
+Ranked observations: {observationResidualResult$observationCount} of {observationResidualResult$totalFittedObservations}
+
+{rankedRows}
+
+Limitations:
+{limitations}"))
+    }
+
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the requested existing-observation residual ranking.
+Status: {observationResidualResult$status %||% 'unsupported'}
+Reason: {observationResidualResult$reason %||% 'not_available'}
+Guidance: {paste(observationResidualResult$warnings %||% character(0), collapse = ' ')}
+Do not invent or estimate ranked observations."))
+  }
+
   unitChangeResult = payload$unitChangeResult
   if (payload$category %in% c("unit_change_request", "proportional_change_request") && is.list(unitChangeResult)) {
     if (identical(unitChangeResult$status, "ok")) {

@@ -331,6 +331,10 @@ runModel = function(
         model = model,
         followupPayload = followupPayload
       )
+      followupPayload = enrichFollowupPayloadWithObservationResiduals(
+        model = model,
+        followupPayload = followupPayload
+      )
       followupPayload = enrichFollowupPayloadWithUnitChange(
         model = model,
         followupPayload = followupPayload

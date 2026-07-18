@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.026
+
+- Preserve observation names at the final residual-result boundary.
+- Repair the repeated Stage 45.2 test failure by constructing the returned data frame without stripping residual names.
+- Keep residual calculations, ranking order, row mapping, prompt behaviour, and statistical scope unchanged.
+
 ## WMFM 1.1.1.022
 
 - Distinguish conditional-value questions from residual inspection before ordinary prediction handling.

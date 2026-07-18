@@ -65,6 +65,17 @@ classifyModelFollowupQuestion = function(followupQuestion = NULL) {
     return(result)
   }
 
+  observationResidual = classifyObservationResidualQuestion(normalizedText)
+  if (isTRUE(observationResidual$matched)) {
+    result$category = "observation_residual_request"
+    result$supported = TRUE
+    result$requiresDeterministicComputation = TRUE
+    result$reason = observationResidual$reasonCode
+    result$observationDirection = observationResidual$direction
+    result$message = "Existing-observation residual-ranking request captured for deterministic handling."
+    return(result)
+  }
+
   conditionalQuantile = classifyConditionalQuantileQuestion(normalizedText)
   if (isTRUE(conditionalQuantile$matched)) {
     result$category = "conditional_quantile_request"
