@@ -42,7 +42,7 @@ testthat::test_that("conditional-value and broad coefficient questions remain se
     character(1)
   )
 
-  testthat::expect_identical(categories[[1]], "conditional_quantile_request")
+  testthat::expect_identical(categories[[1]], "comparable_observation_request")
   testthat::expect_false(any(categories == "observation_residual_request"))
 })
 

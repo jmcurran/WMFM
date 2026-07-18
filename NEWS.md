@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.32
+
+- Update the remaining observation-residual test expectation to reflect comparable-case routing for good-deal questions.
+- Preserve separation between comparable-observation and residual-ranking questions.
+- Preserve unsupported handling for explicit percentile and conditional-quantile requests.
+
 ## WMFM 1.1.1.029
 
 - Add a dedicated deterministic table for existing-observation residual rankings on the Model Explanation tab.
