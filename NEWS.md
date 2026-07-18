@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.33
+
+- Added deterministic student-visible answers for comparable-observation requests.
+- Summarised the selected neighbours using their observed response range and median and listed verified nearest cases.
+- Prevented the language model from inventing competing comparable cases, bargain thresholds, percentiles, predictions or residual rankings.
+- Preserved the boundary that predictor similarity alone does not establish a bargain, unusual value or causal difference.
+- Added deterministic prompt, answer, failure and append-once tests.
+
 ## WMFM 1.1.1.32
 
 - Update the remaining observation-residual test expectation to reflect comparable-case routing for good-deal questions.

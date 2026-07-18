@@ -185,3 +185,31 @@ computeComparableObservationResult = function(model, followupQuestion, neighbour
     )
   )
 }
+
+
+#' Format comparable-observation rows for deterministic prompt context
+#'
+#' @param observations Comparable-observation data frame.
+#'
+#' @return Character scalar containing one line per observation.
+#' @keywords internal
+#' @noRd
+formatComparableObservationRows = function(observations) {
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return("No comparable observations supplied.")
+  }
+
+  rows = vapply(seq_len(nrow(observations)), function(index) {
+    row = observations[index, , drop = FALSE]
+    sprintf(
+      "Rank %s: %s; source row %s; distance %s; observed response %s",
+      row$rank[[1]],
+      row$observation[[1]],
+      row$row[[1]],
+      signif(as.numeric(row$distance[[1]]), 6),
+      signif(as.numeric(row$response[[1]]), 6)
+    )
+  }, character(1))
+
+  paste(rows, collapse = "\n")
+}

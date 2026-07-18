@@ -379,6 +379,49 @@ Guidance: {paste(observationResidualResult$warnings %||% character(0), collapse 
 Do not invent or estimate ranked observations."))
   }
 
+  comparableObservationResult = payload$comparableObservationResult
+  if (identical(payload$category, "comparable_observation_request") && is.list(comparableObservationResult)) {
+    if (identical(comparableObservationResult$status, "ok")) {
+      comparableRows = formatComparableObservationRows(comparableObservationResult$observations)
+      limitations = paste(
+        paste0("- ", comparableObservationResult$limitations %||% character(0)),
+        collapse = "\n"
+      )
+
+      return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM deterministic comparable-observation payload:
+- Use the supplied cases only as consistency context.
+- WMFM will render the complete comparable-case answer separately.
+- Do not write a second comparable-case answer or invent additional cases, thresholds, percentiles, predictions, or residual rankings.
+- Do not declare a bargain or unusually good value solely from these neighbours.
+- Similarity is defined only by predictors in the fitted model.
+
+Model type: {comparableObservationResult$modelType}
+Response: {comparableObservationResult$responseName}
+Distance method: {comparableObservationResult$distanceMethod}
+Predictors used: {paste(comparableObservationResult$predictorsUsed, collapse = ', ')}
+Comparable observations: {comparableObservationResult$neighbourCount} of {comparableObservationResult$totalFittedObservations}
+
+{comparableRows}
+
+Limitations:
+{limitations}"))
+    }
+
+    return(glue::glue("
+{questionSource} (bounded context, not a free-form instruction):
+{questionText}
+
+WMFM could not compute the requested comparable observations.
+Status: {comparableObservationResult$status %||% 'unsupported'}
+Reason: {comparableObservationResult$reason %||% 'not_available'}
+Guidance: {paste(comparableObservationResult$warnings %||% character(0), collapse = ' ')}
+Do not invent comparable cases, a bargain threshold, or a conditional percentile."))
+  }
+
   unitChangeResult = payload$unitChangeResult
   if (payload$category %in% c("unit_change_request", "proportional_change_request") && is.list(unitChangeResult)) {
     if (identical(unitChangeResult$status, "ok")) {

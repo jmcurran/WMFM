@@ -51,6 +51,10 @@ buildDeterministicFollowupAnswer = function(model) {
     return(buildDeterministicObservationResidualAnswer(payload = payload))
   }
 
+  if (identical(payload$category, "comparable_observation_request")) {
+    return(buildDeterministicComparableObservationAnswer(payload = payload))
+  }
+
   if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
     return("")
   }
@@ -250,6 +254,109 @@ formatDeterministicObservationResidualRows = function(observations) {
       formatFollowupPredictionNumber(row$observed[[1]]),
       formatFollowupPredictionNumber(row$fitted[[1]]),
       differenceText
+    )
+  }, character(1))
+}
+
+
+#' Build deterministic comparable-observation follow-up answer text
+#'
+#' @param payload Follow-up payload carrying a comparable-observation result.
+#'
+#' @return Character scalar answer text, or an empty string when unavailable.
+#' @keywords internal
+#' @noRd
+buildDeterministicComparableObservationAnswer = function(payload) {
+  result = payload$comparableObservationResult
+  if (!is.list(result)) {
+    return("")
+  }
+
+  if (!identical(result$status, "ok")) {
+    guidance = trimws(paste(result$warnings %||% character(0), collapse = " "))
+    if (!nzchar(guidance)) {
+      guidance = "WMFM could not identify comparable fitted observations from the supplied predictor values."
+    }
+
+    return(paste(
+      "For the follow-up question, WMFM could not compute comparable observations.",
+      guidance,
+      "WMFM has not invented comparable cases or a bargain threshold."
+    ))
+  }
+
+  observations = result$observations
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return("")
+  }
+
+  settingsText = formatFollowupPredictorSettings(result$resolvedPredictorValues)
+  responseValues = as.numeric(observations$response)
+  summarySentence = sprintf(
+    paste(
+      "Across these %s nearest fitted observations, the observed %s values ranged from %s to %s,",
+      "with a median of %s."
+    ),
+    nrow(observations),
+    result$responseName,
+    formatFollowupPredictionNumber(min(responseValues, na.rm = TRUE)),
+    formatFollowupPredictionNumber(max(responseValues, na.rm = TRUE)),
+    formatFollowupPredictionNumber(stats::median(responseValues, na.rm = TRUE))
+  )
+
+  displayCount = min(5L, nrow(observations))
+  displayed = observations[seq_len(displayCount), , drop = FALSE]
+  answerLines = c(
+    sprintf(
+      "For the follow-up question, using %s, WMFM found the %s nearest observations among the %s observations used to fit this model.",
+      settingsText,
+      result$neighbourCount,
+      result$totalFittedObservations
+    ),
+    summarySentence,
+    formatDeterministicComparableObservationRows(displayed)
+  )
+
+  if (nrow(observations) > displayCount) {
+    answerLines = c(
+      answerLines,
+      sprintf(
+        "Only the first %s comparable observations are listed here; the summary uses all %s selected observations.",
+        displayCount,
+        nrow(observations)
+      )
+    )
+  }
+
+  caution = paste(
+    "Similarity is based only on predictors in the fitted model.",
+    "These comparisons do not by themselves establish that a case is a bargain, unusually good value, or causally different."
+  )
+
+  paste(c(answerLines, caution), collapse = "\n")
+}
+
+#' Format deterministic comparable-observation answer rows
+#'
+#' @param observations Comparable-observation data frame.
+#'
+#' @return Character vector with one sentence for each comparable observation.
+#' @keywords internal
+#' @noRd
+formatDeterministicComparableObservationRows = function(observations) {
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return(character(0))
+  }
+
+  vapply(seq_len(nrow(observations)), function(index) {
+    row = observations[index, , drop = FALSE]
+    sprintf(
+      "%s. %s (source row %s) had an observed response of %s and a similarity distance of %s.",
+      row$rank[[1]],
+      row$observation[[1]],
+      row$row[[1]],
+      formatFollowupPredictionNumber(row$response[[1]]),
+      formatFollowupPredictionNumber(row$distance[[1]])
     )
   }, character(1))
 }
