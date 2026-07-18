@@ -4,6 +4,20 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.029
+
+- Add a dedicated deterministic table for existing-observation residual rankings on the Model Explanation tab.
+- Display rank, observation label, source row, observed value, fitted value, raw residual, and ranking percentile.
+- Show a clear scope message for unsupported model types without inventing a table.
+- Preserve the ordinary linear-model scope and interpretation guardrails.
+
+## WMFM 1.1.1.028
+
+- Add a dedicated deterministic table for existing-observation residual rankings on the Model Explanation tab.
+- Display rank, observation label, source row, observed value, fitted value, raw residual, and ranking percentile.
+- Show a clear scope message for unsupported model types without inventing a table.
+- Preserve the ordinary linear-model scope and interpretation guardrails.
+
 ## WMFM 1.1.1.027
 
 - Add deterministic student-facing answers for existing-observation residual rankings.
