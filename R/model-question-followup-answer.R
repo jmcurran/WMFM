@@ -47,6 +47,10 @@ buildDeterministicFollowupAnswer = function(model) {
     return(buildDeterministicAdjustmentComparisonAnswer(payload = payload))
   }
 
+  if (identical(payload$category, "observation_residual_request")) {
+    return(buildDeterministicObservationResidualAnswer(payload = payload))
+  }
+
   if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
     return("")
   }
@@ -146,6 +150,109 @@ buildDeterministicFollowupAnswer = function(model) {
   paste(pieces, collapse = " ")
 }
 
+
+#' Build deterministic observation-residual follow-up answer text
+#'
+#' @param payload Follow-up payload carrying an observation-residual result.
+#'
+#' @return Character scalar answer text, or an empty string when unavailable.
+#' @keywords internal
+#' @noRd
+buildDeterministicObservationResidualAnswer = function(payload) {
+  result = payload$observationResidualResult
+  if (!is.list(result)) {
+    return("")
+  }
+
+  if (!identical(result$status, "ok")) {
+    guidance = trimws(paste(result$warnings %||% character(0), collapse = " "))
+    if (!nzchar(guidance)) {
+      guidance = "WMFM could not compute this residual ranking from the fitted model."
+    }
+
+    return(paste(
+      "For the follow-up question, WMFM could not compute an existing-observation residual ranking.",
+      guidance,
+      "WMFM has not invented or estimated any ranked observations."
+    ))
+  }
+
+  observations = result$observations
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return("")
+  }
+
+  directionText = switch(
+    result$direction %||% "absolute",
+    lower = "the most negative raw residuals",
+    higher = "the most positive raw residuals",
+    absolute = "the largest absolute raw residuals",
+    "the requested raw-residual ranking"
+  )
+
+  answerLines = c(
+    sprintf(
+      "For the follow-up question, WMFM ranked the %s observations with %s among the %s observations used to fit this model.",
+      result$observationCount,
+      directionText,
+      result$totalFittedObservations
+    ),
+    formatDeterministicObservationResidualRows(observations)
+  )
+
+  caution = paste(
+    "These are comparisons with fitted values under the current model.",
+    "They do not by themselves show that an observation is a bargain, anomaly, outlier, data error, or causal effect."
+  )
+
+  paste(c(answerLines, caution), collapse = "\n")
+}
+
+#' Format deterministic observation-residual answer rows
+#'
+#' @param observations Ranked observation data frame.
+#'
+#' @return Character vector with one sentence for each ranked observation.
+#' @keywords internal
+#' @noRd
+formatDeterministicObservationResidualRows = function(observations) {
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return(character(0))
+  }
+
+  vapply(seq_len(nrow(observations)), function(index) {
+    row = observations[index, , drop = FALSE]
+    residual = as.numeric(row$residual[[1]])
+    relation = if (residual < 0) {
+      "below"
+    } else if (residual > 0) {
+      "above"
+    } else {
+      "equal to"
+    }
+
+    differenceText = if (identical(relation, "equal to")) {
+      "with a raw residual of 0"
+    } else {
+      sprintf(
+        "%s its fitted value by %s, giving a raw residual of %s",
+        relation,
+        formatFollowupPredictionNumber(abs(residual)),
+        formatFollowupPredictionNumber(residual)
+      )
+    }
+
+    sprintf(
+      "%s. %s (source row %s) had an observed value of %s and a fitted value of %s; it was %s.",
+      row$rank[[1]],
+      row$observation[[1]],
+      row$row[[1]],
+      formatFollowupPredictionNumber(row$observed[[1]]),
+      formatFollowupPredictionNumber(row$fitted[[1]]),
+      differenceText
+    )
+  }, character(1))
+}
 
 #' Build deterministic adjustment-comparison follow-up answer text
 #'

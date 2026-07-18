@@ -103,3 +103,65 @@ testthat::test_that("residual prompt block supplies values and guardrails", {
   testthat::expect_match(block, "Do not call an observation a bargain", fixed = TRUE)
   testthat::expect_false(grepl("conditional percentile", block, fixed = TRUE) && grepl("calculate", block, fixed = TRUE))
 })
+
+testthat::test_that("deterministic residual answers report ranked verified values", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  payload = classifyModelFollowupQuestion(
+    "Which cars have the most negative residuals?"
+  )
+  payload = enrichFollowupPayloadWithObservationResiduals(
+    model,
+    payload,
+    observationCount = 2L
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  answer = buildDeterministicFollowupAnswer(model)
+  observations = payload$observationResidualResult$observations
+
+  testthat::expect_match(answer, "most negative raw residuals", fixed = TRUE)
+  testthat::expect_match(answer, observations$observation[[1]], fixed = TRUE)
+  testthat::expect_match(
+    answer,
+    formatFollowupPredictionNumber(observations$residual[[1]]),
+    fixed = TRUE
+  )
+  testthat::expect_match(answer, "comparisons with fitted values under the current model", fixed = TRUE)
+  testthat::expect_match(answer, "do not by themselves show", fixed = TRUE)
+})
+
+testthat::test_that("deterministic residual answers append once", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  payload = classifyModelFollowupQuestion(
+    "Which cars have the largest absolute residuals?"
+  )
+  payload = enrichFollowupPayloadWithObservationResiduals(
+    model,
+    payload,
+    observationCount = 2L
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  once = appendDeterministicFollowupAnswer("Main explanation.", model)
+  twice = appendDeterministicFollowupAnswer(once, model)
+
+  testthat::expect_identical(twice, once)
+  testthat::expect_match(once, "Main explanation.", fixed = TRUE)
+  testthat::expect_match(once, "largest absolute raw residuals", fixed = TRUE)
+})
+
+testthat::test_that("unsupported residual answers fail without invented rankings", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  payload = classifyModelFollowupQuestion(
+    "Which cars have the highest residuals?"
+  )
+  payload = enrichFollowupPayloadWithObservationResiduals(model, payload)
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  answer = buildDeterministicFollowupAnswer(model)
+
+  testthat::expect_match(answer, "could not compute", fixed = TRUE)
+  testthat::expect_match(answer, "ordinary linear models only", fixed = TRUE)
+  testthat::expect_match(answer, "has not invented", fixed = TRUE)
+  testthat::expect_false(grepl("Rank 1", answer, fixed = TRUE))
+})
