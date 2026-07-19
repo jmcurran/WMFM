@@ -122,3 +122,49 @@ testthat::test_that("unsupported comparable answers fail without invented cases"
   testthat::expect_match(answer, "has not invented", fixed = TRUE)
   testthat::expect_false(grepl("nearest observations among", answer, fixed = TRUE))
 })
+
+
+testthat::test_that("comparable observations are reported on the original response scale", {
+  data = data.frame(
+    price = c(100, 121, 144, 169),
+    carat = c(0.8, 0.9, 1.0, 1.1)
+  )
+  model = stats::lm(log(price) ~ carat, data = data)
+  payload = classifyModelFollowupQuestion(
+    "What is a good deal for carat = 1?"
+  )
+  payload = enrichFollowupPayloadWithComparableObservations(
+    model,
+    payload,
+    neighbourCount = 3L
+  )
+  result = payload$comparableObservationResult
+  attr(model, "wmfm_model_followup_payload") = payload
+  answer = buildDeterministicFollowupAnswer(model)
+
+  testthat::expect_identical(result$responseName, "price")
+  testthat::expect_identical(result$responseScale, "original_response")
+  testthat::expect_equal(
+    sort(result$observations$response),
+    sort(data$price[c(2, 3, 4)])
+  )
+  testthat::expect_match(answer, "observed price values", fixed = TRUE)
+  testthat::expect_match(answer, "asking price", fixed = TRUE)
+  testthat::expect_false(grepl("observed log(price) values", answer, fixed = TRUE))
+})
+
+testthat::test_that("comparable-answer list continuation starts with a capital letter", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  payload = classifyModelFollowupQuestion(
+    "What is a good deal for wt = 3?"
+  )
+  payload = enrichFollowupPayloadWithComparableObservations(
+    model,
+    payload,
+    neighbourCount = 10L
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+  answer = buildDeterministicFollowupAnswer(model)
+
+  testthat::expect_match(answer, "; The summary uses all", fixed = TRUE)
+})

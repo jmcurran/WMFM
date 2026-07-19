@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.41
+
+- Remove duplicated language-model residual rankings before deterministic observation answers are appended.
+- Report comparable observations on the original response scale when a recognised inverse transformation is available.
+- Add asking-price guidance, improve deterministic wording, and remove internal stage labels from user-facing limitations.
+- Record observation follow-up categories in evaluation summaries and migrate fully to the roxygen2 8 version field.
+- Add offline regression tests for observation-answer cleanup, transformed responses, wording, and detected intent.
+
 ## WMFM 1.1.1.40
 
 - Added explicit evaluation metadata to the six developer observation-question examples.

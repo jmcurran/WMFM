@@ -62,3 +62,24 @@ testthat::test_that("evaluation catalogue metadata does not require loading exam
     )
   )
 })
+
+
+testthat::test_that("evaluation summaries use follow-up categories as detected intent", {
+  observationResult = list(
+    diagnostics = list(followupCategory = "observation_residual_request")
+  )
+  predictionResult = list(
+    diagnostics = list(
+      predictionPayload = list(predictionIntent = "individual_outcome")
+    )
+  )
+
+  testthat::expect_identical(
+    getWMFMEvaluationDetectedIntent(observationResult),
+    "observation_residual_request"
+  )
+  testthat::expect_identical(
+    getWMFMEvaluationDetectedIntent(predictionResult),
+    "individual_outcome"
+  )
+})

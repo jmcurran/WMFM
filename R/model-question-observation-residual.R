@@ -145,7 +145,7 @@ computeObservationResidualResult = function(model, direction = "absolute", obser
       status = "unsupported",
       reason = "ordinary_lm_required",
       modelType = class(model)[[1]] %||% "unknown",
-      warnings = "Stage 45.2 residual inspection currently supports ordinary linear models only."
+      warnings = "Existing-observation residual inspection currently supports ordinary linear models only."
     ))
   }
 

@@ -155,12 +155,27 @@ computeComparableObservationResult = function(model, followupQuestion, neighbour
     observationLabels = paste("Row", sourceRows)
   }
 
+  responseTransformation = getLmPredictionResponseTransformation(model = model)
+  responseValues = as.numeric(response[keep])
+  responseName = names(modelFrame)[[1]]
+  responseScale = "fitted_model_response_scale"
+
+  if (isTRUE(responseTransformation$available)) {
+    responseValues = backTransformResponseValues(
+      values = responseValues,
+      inverseType = responseTransformation$inverseType,
+      parameters = responseTransformation$parameters
+    )
+    responseName = responseTransformation$originalResponse
+    responseScale = "original_response"
+  }
+
   comparable = data.frame(
     rank = seq_along(keep),
     observation = observationLabels[keep],
     row = sourceRows[keep],
     distance = as.numeric(distance[keep]),
-    response = as.numeric(response[keep]),
+    response = as.numeric(responseValues),
     stringsAsFactors = FALSE
   )
 
@@ -168,7 +183,9 @@ computeComparableObservationResult = function(model, followupQuestion, neighbour
     status = "ok",
     reason = "ok",
     modelType = "lm",
-    responseName = names(modelFrame)[[1]],
+    responseName = responseName,
+    responseScale = responseScale,
+    responseTransformation = responseTransformation,
     distanceMethod = "mean range-standardised numeric distance plus factor mismatch",
     suppliedPredictorValues = newDataInfo$suppliedPredictorValues,
     resolvedPredictorValues = newDataInfo$resolvedPredictorValues,

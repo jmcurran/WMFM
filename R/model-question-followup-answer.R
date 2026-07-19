@@ -26,6 +26,10 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     explanation = explanation,
     model = model
   )
+  explanation = removeDuplicateLlmObservationFollowupText(
+    explanation = explanation,
+    model = model
+  )
 
   paste(trimws(as.character(explanation %||% "")), answer, sep = "\n\n")
 }
@@ -247,7 +251,7 @@ formatDeterministicObservationResidualRows = function(observations) {
     }
 
     sprintf(
-      "%s. %s (source row %s) had an observed value of %s and a fitted value of %s; it was %s.",
+      "%s. %s (source row %s) had an observed value of %s and a fitted value of %s. It was %s.",
       row$rank[[1]],
       row$observation[[1]],
       row$row[[1]],
@@ -321,7 +325,7 @@ buildDeterministicComparableObservationAnswer = function(payload) {
     answerLines = c(
       answerLines,
       sprintf(
-        "Only the first %s comparable observations are listed here; the summary uses all %s selected observations.",
+        "Only the first %s comparable observations are listed here; The summary uses all %s selected observations.",
         displayCount,
         nrow(observations)
       )
@@ -330,7 +334,8 @@ buildDeterministicComparableObservationAnswer = function(payload) {
 
   caution = paste(
     "Similarity is based only on predictors in the fitted model.",
-    "These comparisons do not by themselves establish that a case is a bargain, unusually good value, or causally different."
+    "These comparisons do not by themselves establish that a case is a bargain, unusually good value, or causally different.",
+    "To assess whether a particular case is good value, compare its asking price with these observed prices."
   )
 
   paste(c(answerLines, caution), collapse = "\n")
@@ -386,6 +391,62 @@ buildDeterministicAdjustmentComparisonAnswer = function(payload) {
   }
 
   paste(conclusion, caution)
+}
+
+
+#' Remove duplicated language-model observation follow-up text
+#'
+#' @param explanation Character scalar returned by the chat provider.
+#' @param model Fitted model object carrying the follow-up payload attribute.
+#'
+#' @return Character scalar with duplicated observation-answer paragraphs removed.
+#' @keywords internal
+#' @noRd
+removeDuplicateLlmObservationFollowupText = function(explanation, model) {
+  text = trimws(as.character(explanation %||% ""))
+  if (!nzchar(text)) {
+    return(text)
+  }
+
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (!is.list(payload) || !identical(payload$category, "observation_residual_request")) {
+    return(text)
+  }
+
+  result = payload$observationResidualResult
+  if (!is.list(result) || !identical(result$status, "ok")) {
+    return(text)
+  }
+
+  paragraphs = strsplit(text, "\\n\\s*\\n", perl = TRUE)[[1]]
+  keep = !vapply(paragraphs, isDuplicateLlmObservationResidualParagraph, logical(1))
+  trimws(paste(trimws(paragraphs[keep]), collapse = "\n\n"))
+}
+
+#' Detect a duplicated language-model residual-ranking paragraph
+#'
+#' @param paragraph Character scalar paragraph candidate.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isDuplicateLlmObservationResidualParagraph = function(paragraph) {
+  text = tolower(trimws(as.character(paragraph %||% "")))
+  if (!nzchar(text)) {
+    return(FALSE)
+  }
+
+  hasRankingCue = grepl("residual", text, fixed = TRUE) ||
+    grepl("fitted value", text, fixed = TRUE) ||
+    grepl("expected to score", text, fixed = TRUE) ||
+    grepl("performed better than expected", text, fixed = TRUE) ||
+    grepl("performed worse than expected", text, fixed = TRUE)
+  hasObservationCue = grepl("\\brow [0-9]+", text, perl = TRUE) ||
+    grepl("\\bstudent [0-9]+", text, perl = TRUE) ||
+    grepl("observed", text, fixed = TRUE)
+  hasMultipleValues = length(regmatches(text, gregexpr("[0-9]+(?:\\.[0-9]+)?", text, perl = TRUE))[[1]]) >= 3L
+
+  isTRUE(hasRankingCue && hasObservationCue && hasMultipleValues)
 }
 
 #' Remove conflicting language-model follow-up prediction text

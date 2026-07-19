@@ -129,6 +129,23 @@ readWMFMEvaluationMetadata = function(exampleRecord, package = "WMFM") {
 }
 
 
+
+#' Extract the detected intent from an evaluation result
+#'
+#' @param result One evaluation result record.
+#'
+#' @return Character scalar detected follow-up intent.
+#' @keywords internal
+#' @noRd
+getWMFMEvaluationDetectedIntent = function(result) {
+  diagnostics = result$diagnostics %||% list()
+  as.character(
+    diagnostics$followupCategory %||%
+      diagnostics$predictionPayload$predictionIntent %||%
+      ""
+  )
+}
+
 #' Run a WMFM example evaluation suite
 #'
 #' @param numbers Optional integer positions from `listWMFMEvaluationExamples()`.
@@ -314,7 +331,7 @@ runWMFMEvaluationSuite = function(
     taskType = vapply(results, function(x) as.character(x$taskType), character(1)),
     intendedIntent = vapply(results, function(x) as.character(x$intendedIntent), character(1)),
     status = vapply(results, function(x) as.character(x$status), character(1)),
-    detectedIntent = vapply(results, function(x) as.character(x$diagnostics$predictionPayload$predictionIntent %||% ""), character(1)),
+    detectedIntent = vapply(results, getWMFMEvaluationDetectedIntent, character(1)),
     elapsedSeconds = vapply(results, function(x) as.numeric(x$elapsedSeconds), numeric(1)),
     errorMessage = vapply(results, function(x) as.character(x$errorMessage %||% ""), character(1)),
     stringsAsFactors = FALSE

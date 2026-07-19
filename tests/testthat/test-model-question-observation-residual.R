@@ -165,3 +165,44 @@ testthat::test_that("unsupported residual answers fail without invented rankings
   testthat::expect_match(answer, "has not invented", fixed = TRUE)
   testthat::expect_false(grepl("Rank 1", answer, fixed = TRUE))
 })
+
+
+testthat::test_that("duplicated LLM residual rankings are removed before deterministic output", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  payload = classifyModelFollowupQuestion(
+    "Which cars have the most negative residuals?"
+  )
+  payload = enrichFollowupPayloadWithObservationResiduals(
+    model,
+    payload,
+    observationCount = 2L
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  explanation = paste(
+    "The main model explanation remains.",
+    paste(
+      "Regarding the residual ranking, row 17 had an observed value of 14.7",
+      "and a fitted value of 21.8, giving a residual of -7.1."
+    ),
+    sep = "\n\n"
+  )
+  answer = appendDeterministicFollowupAnswer(explanation, model)
+
+  testthat::expect_match(answer, "The main model explanation remains.", fixed = TRUE)
+  testthat::expect_false(grepl("Regarding the residual ranking", answer, fixed = TRUE))
+  testthat::expect_match(answer, "most negative raw residuals", fixed = TRUE)
+  testthat::expect_match(answer, ". It was below", fixed = TRUE)
+})
+
+testthat::test_that("unsupported residual wording does not expose stage numbers", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  result = computeObservationResidualResult(model, direction = "higher")
+
+  testthat::expect_match(
+    result$warnings,
+    "Existing-observation residual inspection currently supports ordinary linear models only.",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl("Stage", result$warnings, fixed = TRUE))
+})
