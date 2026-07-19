@@ -21,4 +21,3 @@ Imports: bslib, ellmer, ggplot2, ggrepel, glue, grDevices, htmltools,
 Suggests: clipr, devtools, rstudioapi, testthat (>= 3.0.0), withr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.3
