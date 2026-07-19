@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.34
+
+- Added a dedicated comparable-observation panel to the Model Explanation tab.
+- Showed resolved predictor settings, the observed-response summary, source rows, and similarity distances for verified nearest neighbours.
+- Limited the responsive table to five rows while retaining the full selected-neighbour summary.
+- Preserved the existing matching computation and deterministic answer, with explicit warnings for unsupported requests and bargain interpretations.
+- Added offline tests for table values, display limits, scope warnings, and category isolation.
+
 ## WMFM 1.1.1.33
 
 - Added deterministic student-visible answers for comparable-observation requests.

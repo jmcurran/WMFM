@@ -177,8 +177,12 @@ registerModelExplanationObservers = function(
     observationResidualUi = buildObservationResidualResultUi(
       followupPayload = followupPayload
     )
+    comparableObservationUi = buildComparableObservationResultUi(
+      followupPayload = followupPayload
+    )
 
     tagList(
+      comparableObservationUi,
       observationResidualUi,
       if (!is.null(displayExplanation)) {
         tagList(
