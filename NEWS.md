@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.38
+
+- Replaced stage-numbered observation-question example directories, specification files, display names and metadata keys with descriptive permanent names.
+- Renamed the associated testthat file and test descriptions to follow the same permanent-name policy.
+- Preserved classification, deterministic computation and classroom visibility behaviour unchanged.
+- Validated the renamed fixtures through the standard offline test and package-check workflow.
+
 ## WMFM 1.1.1.34
 
 - Added a dedicated comparable-observation panel to the Model Explanation tab.

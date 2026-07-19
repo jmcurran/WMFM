@@ -214,3 +214,39 @@ examples:
     exampleFamily: lm
     exampleDifficulty: developer
     developerPurpose: Course follow-up prediction fixture
+  resid-low:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Observation-level residual inspection
+    developerPurpose: Lower-tail residual-ranking fixture
+  resid-high:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Observation-level residual inspection
+    developerPurpose: Upper-tail residual-ranking fixture
+  resid-unusual:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Observation-level residual inspection
+    developerPurpose: Two-sided residual-ranking fixture
+  diamond-neighbours:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Comparable-observation matching
+    developerPurpose: Comparable-diamond fixture
+  diamond-percentile:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Conditional-distribution boundary
+    developerPurpose: Conditional-percentile deferral fixture
+  poisson-residual:
+    exampleAudience: developer
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    teachingTopic: Unsupported observation-level request
+    developerPurpose: Non-linear-model rejection fixture
