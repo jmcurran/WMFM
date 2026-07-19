@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.40
+
+- Added explicit evaluation metadata to the six developer observation-question examples.
+- Included developer examples with evaluation metadata in the public evaluation catalogue while keeping them hidden from classroom example listings.
+- Preserved the original numbering of the existing classroom evaluation examples and appended the new observation suite.
+- Read evaluation metadata directly from YAML specifications so catalogue construction does not load example datasets.
+- Added offline tests for observation-suite discovery and numbering stability.
+
 ## WMFM 1.1.1.38
 
 - Replaced stage-numbered observation-question example directories, specification files, display names and metadata keys with descriptive permanent names.

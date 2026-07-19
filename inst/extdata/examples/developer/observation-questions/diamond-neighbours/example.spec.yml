@@ -10,3 +10,8 @@ adjustmentVariables:
   - cut
   - color
   - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: observation
+  intendedIntent: comparable_observation
+  suite: observation_questions

@@ -10,3 +10,8 @@ adjustmentVariables:
   - cut
   - color
   - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: observation
+  intendedIntent: conditional_quantile
+  suite: observation_questions

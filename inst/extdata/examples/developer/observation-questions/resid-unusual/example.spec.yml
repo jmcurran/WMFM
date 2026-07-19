@@ -6,3 +6,8 @@ dataPackage: s20x
 dataObject: course.df
 researchQuestion: Do attendance and mid-term test score help explain final exam marks?
 followupQuestion: Which students are most unusual relative to the model?
+evaluation:
+  datasetGroup: course
+  taskType: observation
+  intendedIntent: residual_absolute
+  suite: observation_questions

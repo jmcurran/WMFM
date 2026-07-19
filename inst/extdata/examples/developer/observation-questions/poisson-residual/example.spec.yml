@@ -6,3 +6,8 @@ dataPackage: s20x
 dataObject: oysters.df
 researchQuestion: Does the expected number of oysters differ between study sites?
 followupQuestion: Which observations are lower than the model predicts?
+evaluation:
+  datasetGroup: oysters
+  taskType: observation
+  intendedIntent: unsupported_residual
+  suite: observation_questions
