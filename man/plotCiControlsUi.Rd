@@ -6,6 +6,7 @@
 \usage{
 plotCiControlsUi(
   mode = c("factorOnly", "continuous"),
+  factorPlotTypeInputId = "factorPlotType",
   showCiInputId = "plotShowCi",
   ciLevelInputId = "plotCiLevel",
   ciTypeInputId = "plotCiType",
@@ -14,6 +15,8 @@ plotCiControlsUi(
 }
 \arguments{
 \item{mode}{Either \code{"factorOnly"} or \code{"continuous"}.}
+
+\item{factorPlotTypeInputId}{Input id for the factor-only plot-style selector.}
 
 \item{showCiInputId}{Input id for the "show confidence intervals" checkbox.}
 
@@ -29,7 +32,8 @@ A Shiny tag list.
 \description{
 UI controls for confidence intervals. The UI adapts to the plot type:
 \itemize{
-\item \code{"factorOnly"}: show CI type (standard vs robust) and HC choice.
+\item \code{"factorOnly"}: show the observed-data plot style, CI type,
+and HC choice.
 \item \code{"continuous"}: show an optional "Show confidence intervals"
 checkbox; when enabled, show level, CI type, and HC choice.
 }

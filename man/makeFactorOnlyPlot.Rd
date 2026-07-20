@@ -7,6 +7,7 @@
 makeFactorOnlyPlot(
   model,
   data,
+  plotType = c("boxplot", "beeswarm"),
   ciType = c("standard", "sandwich"),
   hcType = c("HC0", "HC3")
 )
@@ -15,6 +16,9 @@ makeFactorOnlyPlot(
 \item{model}{A fitted model object (e.g. \code{lm}, \code{glm}).}
 
 \item{data}{A data frame containing the variables used to fit the model.}
+
+\item{plotType}{Observed-data display. One of \code{"boxplot"} or
+\code{"beeswarm"}.}
 
 \item{ciType}{Confidence-interval type. One of \code{"standard"} (model-based)
 or \code{"sandwich"} (robust).}
@@ -30,9 +34,9 @@ Produces a grouped plot for models with only factor predictors.
 }
 \details{
 \itemize{
-\item Uses boxplots when all groups have at least 10 observations
-\item Uses jittered point plots when any group has fewer than 10 observations
-\item Adds fitted means and 95\% confidence intervals alongside each group
+\item Supports boxplots or beeswarm plots for the observed responses
+\item Uses jittered point plots for small groups when the boxplot style is selected
+\item Adds fitted means and 95\% confidence intervals to each group
 \item Supports standard (model-based) and robust (sandwich) confidence intervals
 \item Applies a log(1 + y) scale when the model is Poisson
 }

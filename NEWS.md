@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.2.003
+
+- Added a Boxplot/Beeswarm selector for factor-only fitted-model plots.
+- Centred fitted means and confidence intervals within each beeswarm while preserving the existing side placement for boxplots.
+- Corrected the beeswarm regression test to identify the PositionBeeswarm positioning layer used by geom_beeswarm().
+- Kept boxplots as the default display and retained focused UI and plotting tests.
+- Validated through the standard WMFM document, test, check, build, and install workflow.
+
 ## WMFM 1.1.1.43
 
 - Reserve supported residual-ranking answers for WMFM deterministic output rather than asking the language model to reproduce ranked observations.

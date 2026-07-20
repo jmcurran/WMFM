@@ -91,9 +91,9 @@ orderWmfmLegendValues = function(values,
 #'
 #' Produces a grouped plot for models with only factor predictors.
 #'
-#' * Uses boxplots when all groups have at least 10 observations
-#' * Uses jittered point plots when any group has fewer than 10 observations
-#' * Adds fitted means and 95% confidence intervals alongside each group
+#' * Supports boxplots or beeswarm plots for the observed responses
+#' * Uses jittered point plots for small groups when the boxplot style is selected
+#' * Adds fitted means and 95% confidence intervals to each group
 #' * Supports standard (model-based) and robust (sandwich) confidence intervals
 #' * Applies a log(1 + y) scale when the model is Poisson
 #'
@@ -106,6 +106,8 @@ orderWmfmLegendValues = function(values,
 #'
 #' @param model A fitted model object (e.g. \code{lm}, \code{glm}).
 #' @param data A data frame containing the variables used to fit the model.
+#' @param plotType Observed-data display. One of \code{"boxplot"} or
+#'   \code{"beeswarm"}.
 #' @param ciType Confidence-interval type. One of \code{"standard"} (model-based)
 #'   or \code{"sandwich"} (robust).
 #' @param hcType Heteroskedasticity-consistent estimator type for robust CIs.
@@ -117,6 +119,7 @@ orderWmfmLegendValues = function(values,
 #' @importFrom ggplot2 ggplot aes labs theme_minimal theme element_text
 #' @importFrom ggplot2 geom_boxplot stat_boxplot geom_point geom_errorbar
 #' @importFrom ggplot2 position_jitter position_nudge
+#' @importFrom ggbeeswarm geom_beeswarm
 #' @importFrom ggplot2 scale_y_continuous scale_x_discrete expansion
 #' @importFrom rlang .data
 #'
@@ -124,9 +127,11 @@ orderWmfmLegendValues = function(values,
 makeFactorOnlyPlot = function(
     model,
     data,
+    plotType = c("boxplot", "beeswarm"),
     ciType = c("standard", "sandwich"),
     hcType = c("HC0", "HC3")
 ) {
+  plotType = match.arg(plotType)
   ciType = match.arg(ciType)
   hcType = match.arg(hcType)
 
@@ -224,12 +229,22 @@ makeFactorOnlyPlot = function(
     labs(x = xLabel, y = responseVar) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
-    scale_x_discrete(expand = expansion(mult = c(0.04, 0.30)))
+    scale_x_discrete(
+      expand = expansion(
+        mult = if (identical(plotType, "beeswarm")) c(0.08, 0.08) else c(0.04, 0.30)
+      )
+    )
 
   boxWidth = 0.45
   whiskerCapWidth = 0.22
 
-  if (minGroupSize < 10) {
+  if (identical(plotType, "beeswarm")) {
+    p = p + geom_beeswarm(
+      orientation = "x",
+      priority = "density",
+      alpha = 0.7
+    )
+  } else if (minGroupSize < 10) {
     p = p + geom_point(
       position = position_jitter(width = 0.15, height = 0),
       alpha = 0.7
@@ -250,7 +265,11 @@ makeFactorOnlyPlot = function(
       )
   }
 
-  nudge = position_nudge(x = 0.38)
+  nudge = if (identical(plotType, "beeswarm")) {
+    position_nudge(x = 0)
+  } else {
+    position_nudge(x = 0.38)
+  }
 
   p = p +
     geom_errorbar(

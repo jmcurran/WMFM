@@ -6,6 +6,7 @@
 \usage{
 drawModelPlot(
   model,
+  factorPlotType = "boxplot",
   ciType = "standard",
   hcType = "HC0",
   showCi = FALSE,
@@ -14,6 +15,9 @@ drawModelPlot(
 }
 \arguments{
 \item{model}{A fitted \code{lm} or \code{glm} object.}
+
+\item{factorPlotType}{Observed-data display for factor-only models. One of
+\code{"boxplot"} or \code{"beeswarm"}.}
 
 \item{ciType}{Confidence interval type. Typically \code{"standard"} or
 \code{"sandwich"}. For factor-only models, this is passed through to

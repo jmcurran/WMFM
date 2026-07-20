@@ -18,6 +18,8 @@
 #' errors or sandwich/robust standard errors.
 #'
 #' @param model A fitted \code{lm} or \code{glm} object.
+#' @param factorPlotType Observed-data display for factor-only models. One of
+#'   \code{"boxplot"} or \code{"beeswarm"}.
 #' @param ciType Confidence interval type. Typically \code{"standard"} or
 #'   \code{"sandwich"}. For factor-only models, this is passed through to
 #'   \code{makeFactorOnlyPlot()}.
@@ -39,7 +41,14 @@
 #' @importFrom rlang .data
 #'
 #' @keywords internal
-drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FALSE, level = 0.95) {
+drawModelPlot = function(
+    model,
+    factorPlotType = "boxplot",
+    ciType = "standard",
+    hcType = "HC0",
+    showCi = FALSE,
+    level = 0.95
+) {
 
   stopifnot(!is.null(model))
 
@@ -57,6 +66,7 @@ drawModelPlot = function(model, ciType = "standard", hcType = "HC0", showCi = FA
       return(makeFactorOnlyPlot(
         model = m,
         data = modelFrame,
+        plotType = factorPlotType,
         ciType = ciType,
         hcType = hcType
       ))

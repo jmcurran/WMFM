@@ -1,6 +1,6 @@
 Package: WMFM
 Title: Explore Fitted Linear and Generalised Linear Models with 'shiny'
-Version: 1.1.1.43
+Version: 1.1.2.003
 Authors@R: person( given = "James", family = "Curran", email =
         "j.curran@auckland.ac.nz", role = c("aut", "cre") )
 Description: Provides a 'shiny' application that helps learners connect
@@ -15,7 +15,7 @@ Roxygen: list(markdown = TRUE)
 URL: https://github.com/jmcurran/WMFM
 BugReports: https://github.com/jmcurran/WMFM/issues
 Depends: R (>= 4.1.0)
-Imports: bslib, ellmer, ggplot2, ggrepel, glue, grDevices, htmltools,
+Imports: bslib, ellmer, ggbeeswarm, ggplot2, ggrepel, glue, grDevices, htmltools,
         jsonlite, patchwork, rlang, s20x, sandwich, scales, shiny,
         sodium, sortable, tibble, utils, yaml
 Suggests: clipr, devtools, rstudioapi, testthat (>= 3.0.0), withr

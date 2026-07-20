@@ -42,6 +42,7 @@ registerModelPlotObservers = function(input, output, modelFit) {
 
     res = drawModelPlot(
       model = m,
+      factorPlotType = input$factorPlotType %||% "boxplot",
       ciType = input$plotCiType %||% "standard",
       hcType = input$plotHcType %||% "HC0",
       showCi = isTRUE(input$plotShowCi %||% FALSE),
