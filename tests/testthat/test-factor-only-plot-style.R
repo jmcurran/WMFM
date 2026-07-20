@@ -17,9 +17,12 @@ test_that("factor-only beeswarm plots centre fitted means and intervals", {
   )
 
   expect_s3_class(plot, "ggplot")
-  expect_true(any(vapply(plot$layers, function(layer) {
-    inherits(layer$position, "PositionBeeswarm")
-  }, logical(1))))
+  beeswarmLayer = plot$layers[[1]]
+  intervalLayer = plot$layers[[2]]
+
+  expect_s3_class(beeswarmLayer$position, "PositionBeeswarm")
+  expect_equal(beeswarmLayer$position$cex, 1.5)
+  expect_equal(intervalLayer$geom_params$width, 0.07)
 
   built = ggplot2::ggplot_build(plot)
   fitPoint = built$data[[3]]

@@ -4,6 +4,15 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.2.004
+
+- Added a Boxplot/Beeswarm selector for factor-only fitted-model plots.
+- Halved the confidence-interval cap width for factor-only beeswarm plots so the fitted summaries obscure fewer observations.
+- Increased beeswarm horizontal separation using cex = 1.5 while retaining centred fitted means and intervals.
+- Added focused regression checks for the beeswarm spacing and interval-cap settings.
+- Kept boxplots as the default display and retained focused UI and plotting tests.
+- Validated through the standard WMFM document, test, check, build, and install workflow.
+
 ## WMFM 1.1.2.003
 
 - Added a Boxplot/Beeswarm selector for factor-only fitted-model plots.

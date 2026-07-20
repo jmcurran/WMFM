@@ -242,6 +242,7 @@ makeFactorOnlyPlot = function(
     p = p + geom_beeswarm(
       orientation = "x",
       priority = "density",
+      cex = 1.5,
       alpha = 0.7
     )
   } else if (minGroupSize < 10) {
@@ -277,7 +278,7 @@ makeFactorOnlyPlot = function(
       mapping = aes(x = group, ymin = lower, ymax = upper),
       inherit.aes = FALSE,
       position = nudge,
-      width = 0.14,
+      width = if (identical(plotType, "beeswarm")) 0.07 else 0.14,
       linewidth = 0.9,
       colour = "firebrick"
     ) +
