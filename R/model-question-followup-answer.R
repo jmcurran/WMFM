@@ -440,13 +440,20 @@ isDuplicateLlmObservationResidualParagraph = function(paragraph) {
     grepl("fitted value", text, fixed = TRUE) ||
     grepl("expected to score", text, fixed = TRUE) ||
     grepl("performed better than expected", text, fixed = TRUE) ||
-    grepl("performed worse than expected", text, fixed = TRUE)
-  hasObservationCue = grepl("\\brow [0-9]+", text, perl = TRUE) ||
-    grepl("\\bstudent [0-9]+", text, perl = TRUE) ||
+    grepl("performed worse than expected", text, fixed = TRUE) ||
+    grepl("most unusual", text, fixed = TRUE) ||
+    grepl("furthest from", text, fixed = TRUE)
+  observationMentions = regmatches(
+    text,
+    gregexpr("\\b(?:row|student) [0-9]+", text, perl = TRUE)
+  )[[1]]
+  hasObservationCue = length(observationMentions) >= 1L ||
     grepl("observed", text, fixed = TRUE)
+  hasRankedListCue = length(observationMentions) >= 2L ||
+    grepl("\\b(?:five|5|three|3|two|2) (?:rows|students|observations)", text, perl = TRUE)
   hasMultipleValues = length(regmatches(text, gregexpr("[0-9]+(?:\\.[0-9]+)?", text, perl = TRUE))[[1]]) >= 3L
 
-  isTRUE(hasRankingCue && hasObservationCue && hasMultipleValues)
+  isTRUE(hasRankingCue && hasObservationCue && (hasRankedListCue || hasMultipleValues))
 }
 
 #' Remove conflicting language-model follow-up prediction text

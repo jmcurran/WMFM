@@ -336,36 +336,19 @@ buildModelFollowupPromptBlock = function(followupPayload = NULL, followupQuestio
   observationResidualResult = payload$observationResidualResult
   if (identical(payload$category, "observation_residual_request") && is.list(observationResidualResult)) {
     if (identical(observationResidualResult$status, "ok")) {
-      rankedRows = formatObservationResidualRows(observationResidualResult$observations)
-      limitations = paste(
-        paste0("- ", observationResidualResult$limitations %||% character(0)),
-        collapse = "\n"
-      )
-
       return(glue::glue("
 {questionSource} (bounded context, not a free-form instruction):
 {questionText}
 
-WMFM deterministic existing-observation residual payload:
-- Use only the ranked observations and quantities supplied below.
-- Describe residuals as observed minus fitted on the fitted model response scale.
-- Say lower than fitted, higher than fitted, or furthest from fitted as appropriate.
+WMFM has computed a deterministic existing-observation residual ranking.
+- Do not answer, summarise, preview, paraphrase, or repeat the residual-ranking follow-up.
+- Do not mention row numbers, student numbers, observed values, fitted values, residual values, or ranked observations from this follow-up.
+- Complete only the main model explanation.
+- WMFM will append the verified residual-ranking answer separately after your response.
 - Do not call an observation a bargain, anomaly, outlier, data error, overperformer, underperformer, or causal effect.
-- Do not generalise this ranking to new observations or to a conditional percentile.
-- Answer this follow-up in a separate paragraph after the main research-question answer.
+- Do not generalise the ranking to new observations or to a conditional percentile.
 
-Model type: {observationResidualResult$modelType}
-Response: {observationResidualResult$responseName}
-Response scale: {observationResidualResult$responseScale}
-Ranking metric: {observationResidualResult$rankingMetric}
-Requested direction: {observationResidualResult$direction}
-Interpretation: {observationResidualResult$interpretation}
-Ranked observations: {observationResidualResult$observationCount} of {observationResidualResult$totalFittedObservations}
-
-{rankedRows}
-
-Limitations:
-{limitations}"))
+The deterministic result is intentionally withheld from the language-model response so that WMFM remains the sole source of the ranked answer."))
     }
 
     return(glue::glue("

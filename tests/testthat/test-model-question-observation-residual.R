@@ -89,7 +89,7 @@ testthat::test_that("GLM residual inspection reports the current scope boundary"
   testthat::expect_identical(result$reason, "ordinary_lm_required")
 })
 
-testthat::test_that("residual prompt block supplies values and guardrails", {
+testthat::test_that("residual prompt block reserves the ranked answer for WMFM", {
   model = stats::lm(mpg ~ wt, data = mtcars)
   payload = classifyModelFollowupQuestion(
     "Which cars have the largest absolute residuals?"
@@ -97,11 +97,12 @@ testthat::test_that("residual prompt block supplies values and guardrails", {
   payload = enrichFollowupPayloadWithObservationResiduals(model, payload, observationCount = 2L)
   block = buildModelFollowupPromptBlock(followupPayload = payload)
 
-  testthat::expect_match(block, "WMFM deterministic existing-observation residual payload", fixed = TRUE)
-  testthat::expect_match(block, "observed minus fitted", fixed = TRUE)
-  testthat::expect_match(block, "Rank 1", fixed = TRUE)
+  testthat::expect_match(block, "WMFM has computed a deterministic existing-observation residual ranking", fixed = TRUE)
+  testthat::expect_match(block, "Do not answer, summarise, preview, paraphrase, or repeat", fixed = TRUE)
+  testthat::expect_match(block, "WMFM will append the verified residual-ranking answer separately", fixed = TRUE)
   testthat::expect_match(block, "Do not call an observation a bargain", fixed = TRUE)
-  testthat::expect_false(grepl("conditional percentile", block, fixed = TRUE) && grepl("calculate", block, fixed = TRUE))
+  testthat::expect_false(grepl("Rank 1", block, fixed = TRUE))
+  testthat::expect_false(grepl("Observed=", block, fixed = TRUE))
 })
 
 testthat::test_that("deterministic residual answers report ranked verified values", {
@@ -193,6 +194,34 @@ testthat::test_that("duplicated LLM residual rankings are removed before determi
   testthat::expect_false(grepl("Regarding the residual ranking", answer, fixed = TRUE))
   testthat::expect_match(answer, "most negative raw residuals", fixed = TRUE)
   testthat::expect_match(answer, ". It was below", fixed = TRUE)
+})
+
+
+testthat::test_that("most-unusual LLM ranking prose is removed before deterministic output", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  payload = classifyModelFollowupQuestion(
+    "Which cars are most unusual relative to the model?"
+  )
+  payload = enrichFollowupPayloadWithObservationResiduals(
+    model,
+    payload,
+    observationCount = 5L
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  explanation = paste(
+    "The main model explanation remains.",
+    paste(
+      "The five students most unusual relative to the model are student 27,",
+      "student 106, student 51, student 62, and student 101."
+    ),
+    sep = "\n\n"
+  )
+  answer = appendDeterministicFollowupAnswer(explanation, model)
+
+  testthat::expect_match(answer, "The main model explanation remains.", fixed = TRUE)
+  testthat::expect_false(grepl("five students most unusual", answer, fixed = TRUE))
+  testthat::expect_match(answer, "largest absolute raw residuals", fixed = TRUE)
 })
 
 testthat::test_that("unsupported residual wording does not expose stage numbers", {

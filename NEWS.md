@@ -4,6 +4,12 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.43
+
+- Reserve supported residual-ranking answers for WMFM deterministic output rather than asking the language model to reproduce ranked observations.
+- Withhold ranked residual values from the language-model prompt and add a broader safety filter for most-unusual ranking prose.
+- Add offline regression tests covering deterministic-only prompts and duplicate absolute-residual ranking removal.
+
 ## WMFM 1.1.1.41
 
 - Remove duplicated language-model residual rankings before deterministic observation answers are appended.
