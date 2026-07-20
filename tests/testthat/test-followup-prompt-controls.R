@@ -70,3 +70,18 @@ testthat::test_that("blocked prediction guidance prohibits speculative replaceme
   testthat::expect_match(block, "Leave the complete follow-up prediction answer", fixed = TRUE)
 })
 
+
+
+testthat::test_that("comparable-case guidance reserves the answer for deterministic rendering", {
+  payload = list(
+    supported = TRUE,
+    category = "comparable_observation_request",
+    comparableObservationResult = list(status = "ok")
+  )
+  block = buildFollowupExplanationControlPromptBlock(payload)
+
+  testthat::expect_match(block, "complete deterministic comparable-case answer", fixed = TRUE)
+  testthat::expect_match(block, "Do not answer, quote, paraphrase, or summarise the comparable-case follow-up", fixed = TRUE)
+  testthat::expect_match(block, "Leave the complete comparable-case answer", fixed = TRUE)
+  testthat::expect_no_match(block, "If you answer this follow-up", fixed = TRUE)
+})

@@ -4,6 +4,91 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.1.43
+
+- Reserve supported residual-ranking answers for WMFM deterministic output rather than asking the language model to reproduce ranked observations.
+- Withhold ranked residual values from the language-model prompt and add a broader safety filter for most-unusual ranking prose.
+- Add offline regression tests covering deterministic-only prompts and duplicate absolute-residual ranking removal.
+
+## WMFM 1.1.1.41
+
+- Remove duplicated language-model residual rankings before deterministic observation answers are appended.
+- Report comparable observations on the original response scale when a recognised inverse transformation is available.
+- Add asking-price guidance, improve deterministic wording, and remove internal stage labels from user-facing limitations.
+- Record observation follow-up categories in evaluation summaries and migrate fully to the roxygen2 8 version field.
+- Add offline regression tests for observation-answer cleanup, transformed responses, wording, and detected intent.
+
+## WMFM 1.1.1.40
+
+- Added explicit evaluation metadata to the six developer observation-question examples.
+- Included developer examples with evaluation metadata in the public evaluation catalogue while keeping them hidden from classroom example listings.
+- Preserved the original numbering of the existing classroom evaluation examples and appended the new observation suite.
+- Read evaluation metadata directly from YAML specifications so catalogue construction does not load example datasets.
+- Added offline tests for observation-suite discovery and numbering stability.
+
+## WMFM 1.1.1.38
+
+- Replaced stage-numbered observation-question example directories, specification files, display names and metadata keys with descriptive permanent names.
+- Renamed the associated testthat file and test descriptions to follow the same permanent-name policy.
+- Preserved classification, deterministic computation and classroom visibility behaviour unchanged.
+- Validated the renamed fixtures through the standard offline test and package-check workflow.
+
+## WMFM 1.1.1.34
+
+- Added a dedicated comparable-observation panel to the Model Explanation tab.
+- Showed resolved predictor settings, the observed-response summary, source rows, and similarity distances for verified nearest neighbours.
+- Limited the responsive table to five rows while retaining the full selected-neighbour summary.
+- Preserved the existing matching computation and deterministic answer, with explicit warnings for unsupported requests and bargain interpretations.
+- Added offline tests for table values, display limits, scope warnings, and category isolation.
+
+## WMFM 1.1.1.33
+
+- Added deterministic student-visible answers for comparable-observation requests.
+- Summarised the selected neighbours using their observed response range and median and listed verified nearest cases.
+- Prevented the language model from inventing competing comparable cases, bargain thresholds, percentiles, predictions or residual rankings.
+- Preserved the boundary that predictor similarity alone does not establish a bargain, unusual value or causal difference.
+- Added deterministic prompt, answer, failure and append-once tests.
+
+## WMFM 1.1.1.32
+
+- Update the remaining observation-residual test expectation to reflect comparable-case routing for good-deal questions.
+- Preserve separation between comparable-observation and residual-ranking questions.
+- Preserve unsupported handling for explicit percentile and conditional-quantile requests.
+
+## WMFM 1.1.1.029
+
+- Add a dedicated deterministic table for existing-observation residual rankings on the Model Explanation tab.
+- Display rank, observation label, source row, observed value, fitted value, raw residual, and ranking percentile.
+- Show a clear scope message for unsupported model types without inventing a table.
+- Preserve the ordinary linear-model scope and interpretation guardrails.
+
+## WMFM 1.1.1.028
+
+- Add a dedicated deterministic table for existing-observation residual rankings on the Model Explanation tab.
+- Display rank, observation label, source row, observed value, fitted value, raw residual, and ranking percentile.
+- Show a clear scope message for unsupported model types without inventing a table.
+- Preserve the ordinary linear-model scope and interpretation guardrails.
+
+## WMFM 1.1.1.027
+
+- Add deterministic student-facing answers for existing-observation residual rankings.
+- Report ranked observation labels, source rows, observed values, fitted values, and raw residuals from WMFM-computed results.
+- Add calibrated failure wording for unsupported residual requests without inventing ranked observations.
+- Preserve the ordinary linear-model scope and conditional-quantile boundary.
+
+## WMFM 1.1.1.026
+
+- Preserve observation names at the final residual-result boundary.
+- Repair the repeated Stage 45.2 test failure by constructing the returned data frame without stripping residual names.
+- Keep residual calculations, ranking order, row mapping, prompt behaviour, and statistical scope unchanged.
+
+## WMFM 1.1.1.022
+
+- Distinguish conditional-value questions from residual inspection before ordinary prediction handling.
+- Classify specified-case good-deal and percentile questions as requiring a conditional distribution rather than an ordinary conditional-mean residual ranking.
+- Add a deterministic explanation that quantile regression is deferred until the intended percentile is defined.
+- Revise the Stage 45 context and add offline classification and prompt-guardrail tests.
+
 ## WMFM 1.1.1.020
 
 - Added standalone fitted-mean calculations with confidence intervals for factor-only models.

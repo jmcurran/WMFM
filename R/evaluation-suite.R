@@ -6,14 +6,61 @@
 #' @return A data frame containing stable example numbers, names, and evaluation metadata.
 #' @export
 listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FALSE) {
-  details = listWMFMExampleDetails(
+  publicDetails = listWMFMExampleDetails(
     package = package,
-    includeTestExamples = includeTestExamples
+    includeTestExamples = FALSE
   )
 
+  details = publicDetails
+
+  if (isTRUE(includeTestExamples)) {
+    details = listWMFMExampleDetails(
+      package = package,
+      includeTestExamples = TRUE
+    )
+  } else {
+    allDetails = listWMFMExampleDetails(
+      package = package,
+      includeTestExamples = TRUE
+    )
+    additionalDetails = allDetails[
+      !allDetails$examplePath %in% publicDetails$examplePath,
+      ,
+      drop = FALSE
+    ]
+
+    if (nrow(additionalDetails) > 0) {
+      hasEvaluationMetadata = vapply(
+        seq_len(nrow(additionalDetails)),
+        function(i) {
+          evaluation = readWMFMEvaluationMetadata(
+            exampleRecord = additionalDetails[i, , drop = FALSE],
+            package = package
+          )
+          evaluationFields = c(
+            evaluation$datasetGroup %||% "",
+            evaluation$taskType %||% "",
+            evaluation$intendedIntent %||% "",
+            evaluation$suite %||% ""
+          )
+          any(nzchar(trimws(as.character(evaluationFields))))
+        },
+        logical(1)
+      )
+      additionalDetails = additionalDetails[
+        hasEvaluationMetadata,
+        ,
+        drop = FALSE
+      ]
+      details = rbind(publicDetails, additionalDetails)
+    }
+  }
+
   records = lapply(seq_len(nrow(details)), function(i) {
-    info = loadExampleSpec(details$exampleName[[i]], package = package)
-    evaluation = info$spec$evaluation %||% list()
+    evaluation = readWMFMEvaluationMetadata(
+      exampleRecord = details[i, , drop = FALSE],
+      package = package
+    )
     data.frame(
       number = i,
       name = details$exampleName[[i]],
@@ -38,6 +85,65 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
   }
 
   do.call(rbind, records)
+}
+
+#' Read evaluation metadata without loading example data
+#'
+#' @param exampleRecord One row from `listWMFMExampleDetails()`.
+#' @param package Character. Package containing the examples.
+#'
+#' @return The specification's evaluation metadata, or an empty list.
+#'
+#' @keywords internal
+#' @noRd
+readWMFMEvaluationMetadata = function(exampleRecord, package = "WMFM") {
+  examplesPath = system.file("extdata", "examples", package = package)
+
+  if (examplesPath == "" || !dir.exists(examplesPath)) {
+    return(list())
+  }
+
+  specFile = as.character(exampleRecord$specFile[[1]])
+  specPath = file.path(examplesPath, specFile)
+
+  if (!file.exists(specPath)) {
+    return(list())
+  }
+
+  spec = tryCatch(
+    read_yaml(specPath),
+    error = function(e) NULL
+  )
+
+  if (!is.list(spec)) {
+    return(list())
+  }
+
+  evaluation = spec$evaluation %||% list()
+
+  if (!is.list(evaluation)) {
+    return(list())
+  }
+
+  evaluation
+}
+
+
+
+#' Extract the detected intent from an evaluation result
+#'
+#' @param result One evaluation result record.
+#'
+#' @return Character scalar detected follow-up intent.
+#' @keywords internal
+#' @noRd
+getWMFMEvaluationDetectedIntent = function(result) {
+  diagnostics = result$diagnostics %||% list()
+  as.character(
+    diagnostics$followupCategory %||%
+      diagnostics$predictionPayload$predictionIntent %||%
+      ""
+  )
 }
 
 #' Run a WMFM example evaluation suite
@@ -225,7 +331,7 @@ runWMFMEvaluationSuite = function(
     taskType = vapply(results, function(x) as.character(x$taskType), character(1)),
     intendedIntent = vapply(results, function(x) as.character(x$intendedIntent), character(1)),
     status = vapply(results, function(x) as.character(x$status), character(1)),
-    detectedIntent = vapply(results, function(x) as.character(x$diagnostics$predictionPayload$predictionIntent %||% ""), character(1)),
+    detectedIntent = vapply(results, getWMFMEvaluationDetectedIntent, character(1)),
     elapsedSeconds = vapply(results, function(x) as.numeric(x$elapsedSeconds), numeric(1)),
     errorMessage = vapply(results, function(x) as.character(x$errorMessage %||% ""), character(1)),
     stringsAsFactors = FALSE

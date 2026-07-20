@@ -173,8 +173,17 @@ registerModelExplanationObservers = function(
     } else {
       NULL
     }
+    followupPayload = attr(m, "wmfm_model_followup_payload", exact = TRUE) %||% list()
+    observationResidualUi = buildObservationResidualResultUi(
+      followupPayload = followupPayload
+    )
+    comparableObservationUi = buildComparableObservationResultUi(
+      followupPayload = followupPayload
+    )
 
     tagList(
+      comparableObservationUi,
+      observationResidualUi,
       if (!is.null(displayExplanation)) {
         tagList(
           if (!is.null(interpretationModeLabel)) {

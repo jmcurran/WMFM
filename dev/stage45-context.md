@@ -16,14 +16,21 @@ Create a fresh Stage 45 feature branch from the updated `master`. Confirm the br
 
 Stage 45 introduces a bounded pathway for questions about individual observations relative to an ordinary linear model.
 
-Representative questions include:
+Representative residual-inspection questions include:
 
-- "What is a good deal on a diamond?"
 - "Which observations are unusually cheap relative to the fitted model?"
 - "Which students performed better than expected?"
 - "Which observations have outcomes substantially above or below their fitted values?"
 
 These are not ordinary coefficient-interpretation questions. They require observation-level calculations based on the fitted model.
+
+A separate class of question must not be answered by residual inspection. Questions such as:
+
+- "What is a good deal for a one-carat diamond?"
+- "What would count as a relatively low price for a diamond with these characteristics?"
+- "What mark would count as unusually high for a student with specified predictor values?"
+
+ask about a lower or upper part of a conditional outcome distribution for a specified case. An ordinary linear model estimates a conditional mean and does not directly estimate these conditional thresholds. Stage 45 must classify these questions separately and explain that a conditional-quantile method, such as quantile regression, is needed after the intended percentile has been defined. They must not be converted into residual-ranking questions.
 
 The first implementation should remain deliberately narrow:
 
@@ -32,7 +39,7 @@ The first implementation should remain deliberately narrow:
 - deterministic calculations outside the language model;
 - cautious language that does not treat a residual as proof of a bargain, anomaly, causal effect, or data error.
 
-Do not introduce quantile regression in the initial Stage 45 implementation.
+Do not introduce quantile regression in the initial Stage 45 implementation. Record conditional-quantile questions as a distinct, deliberately deferred pathway rather than treating quantile regression as merely an optional residual refinement.
 
 ## First task: architecture and behaviour audit
 
@@ -113,11 +120,12 @@ The classifier should distinguish at least:
 - unusually high relative to the fitted model;
 - unusually far from the fitted model in either direction;
 - unsupported observation-level requests; and
+- conditional-value or threshold questions requiring a conditional distribution;
 - questions requiring more information.
 
 The classification result should retain the evidence or reason code used to select the pathway.
 
-Avoid broad lexical rules that capture ordinary coefficient questions merely because they contain words such as "high", "low", "best", or "expected".
+Avoid broad lexical rules that capture ordinary coefficient questions merely because they contain words such as "high", "low", "best", or "expected". Likewise, do not infer that words such as "cheap", "good deal", or "bargain" request residual inspection when the question asks for a value for a specified case.
 
 ## Observation identifiers
 
@@ -225,7 +233,7 @@ Record, but do not implement unless the audit proves it unavoidable:
 - proportional or ratio-based ranking;
 - specialised handling of log-response models;
 - influence diagnostics;
-- quantile regression;
+- conditional-quantile estimation and quantile regression;
 - automated anomaly or data-error claims;
 - editable observation identifiers; and
 - integration of observation-level results into the paused Stage 44 export design.
@@ -234,6 +242,8 @@ Record, but do not implement unless the audit proves it unavoidable:
 
 Stage 45 is complete when:
 
+- residual-inspection questions and conditional-quantile questions are distinguished before ordinary interpretation;
+- conditional-value questions receive an informative deterministic deferral rather than residual ranking;
 - observation-level questions are identified before ordinary interpretation;
 - supported ordinary linear models produce a deterministic ranked result;
 - tables clearly show observed, fitted, and residual quantities;

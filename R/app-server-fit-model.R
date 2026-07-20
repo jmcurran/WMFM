@@ -381,6 +381,14 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       model = m,
       followupPayload = followupClassification
     )
+    followupClassification = enrichFollowupPayloadWithObservationResiduals(
+      model = m,
+      followupPayload = followupClassification
+    )
+    followupClassification = enrichFollowupPayloadWithComparableObservations(
+      model = m,
+      followupPayload = followupClassification
+    )
     followupClassification = enrichFollowupPayloadWithUnitChange(
       model = m,
       followupPayload = followupClassification

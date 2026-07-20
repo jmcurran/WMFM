@@ -89,6 +89,14 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- Do not recompute, alter, or extend prediction quantities beyond the deterministic payload supplied by WMFM.",
       "- Do not invent a pass mark, success threshold, affordability threshold, or other definition of whether an outcome is good unless the user supplied it."
     ),
+    comparable_observation_request = c(
+      "Deterministic follow-up explanation control:",
+      "- Use the WMFM comparable-observation payload only as context for consistency checks.",
+      "- WMFM will append the complete deterministic comparable-case answer after the main explanation.",
+      "- Do not write a second, approximate, or contradictory comparable-case answer inside the main explanation.",
+      "- Do not invent additional neighbours, bargain thresholds, conditional percentiles, predictions, or residual rankings.",
+      "- Do not claim that a case is a bargain or unusually good value solely because it is close to selected fitted observations."
+    ),
     adjustment_prediction_comparison = c(
       "Deterministic follow-up explanation control:",
       "- Treat the request as a bounded comparison between the adjusted model and a simpler weight-only log-log model.",
@@ -120,12 +128,20 @@ buildFollowupExplanationControlPromptBlock = function(followupPayload = NULL) {
       "- First answer the main research question.",
       "- Weave the requested unit-change interpretation into the main numeric-effect explanation rather than adding a separate follow-up paragraph."
     )
-  } else if (category %in% c("prediction_request", "prediction_interval_request")) {
+  } else if (category %in% c("prediction_request", "prediction_interval_request", "comparable_observation_request")) {
     lines = c(
       lines,
       "- First answer the main research question.",
-      "- Do not answer, quote, paraphrase, or summarise the numerical follow-up prediction.",
-      "- Leave the complete follow-up prediction answer to WMFM's deterministic renderer."
+      if (identical(category, "comparable_observation_request")) {
+        "- Do not answer, quote, paraphrase, or summarise the comparable-case follow-up."
+      } else {
+        "- Do not answer, quote, paraphrase, or summarise the numerical follow-up prediction."
+      },
+      if (identical(category, "comparable_observation_request")) {
+        "- Leave the complete comparable-case answer to WMFM's deterministic renderer."
+      } else {
+        "- Leave the complete follow-up prediction answer to WMFM's deterministic renderer."
+      }
     )
   } else {
     lines = c(

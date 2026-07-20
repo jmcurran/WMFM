@@ -1,0 +1,17 @@
+displayName: Conditional Diamond Price Percentile
+modelType: lm
+formula: log(price) ~ log(carat) + cut + color + clarity
+dataSource: package
+dataPackage: ggplot2
+dataObject: diamonds
+researchQuestion: Can diamond price be explained by weight and quality characteristics?
+followupQuestion: What price is at the 25th percentile for a 1.0 carat diamond with cut Ideal, color G, and clarity VS1?
+adjustmentVariables:
+  - cut
+  - color
+  - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: observation
+  intendedIntent: conditional_quantile
+  suite: observation_questions

@@ -1,0 +1,13 @@
+displayName: Residual Observations Above Expected
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Do attendance and mid-term test score help explain final exam marks?
+followupQuestion: Which students performed better than expected?
+evaluation:
+  datasetGroup: course
+  taskType: observation
+  intendedIntent: residual_higher
+  suite: observation_questions

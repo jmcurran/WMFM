@@ -26,6 +26,10 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     explanation = explanation,
     model = model
   )
+  explanation = removeDuplicateLlmObservationFollowupText(
+    explanation = explanation,
+    model = model
+  )
 
   paste(trimws(as.character(explanation %||% "")), answer, sep = "\n\n")
 }
@@ -45,6 +49,14 @@ buildDeterministicFollowupAnswer = function(model) {
 
   if (identical(payload$category, "adjustment_prediction_comparison")) {
     return(buildDeterministicAdjustmentComparisonAnswer(payload = payload))
+  }
+
+  if (identical(payload$category, "observation_residual_request")) {
+    return(buildDeterministicObservationResidualAnswer(payload = payload))
+  }
+
+  if (identical(payload$category, "comparable_observation_request")) {
+    return(buildDeterministicComparableObservationAnswer(payload = payload))
   }
 
   if (!(identical(payload$category, "prediction_request") || identical(payload$category, "prediction_interval_request"))) {
@@ -147,6 +159,213 @@ buildDeterministicFollowupAnswer = function(model) {
 }
 
 
+#' Build deterministic observation-residual follow-up answer text
+#'
+#' @param payload Follow-up payload carrying an observation-residual result.
+#'
+#' @return Character scalar answer text, or an empty string when unavailable.
+#' @keywords internal
+#' @noRd
+buildDeterministicObservationResidualAnswer = function(payload) {
+  result = payload$observationResidualResult
+  if (!is.list(result)) {
+    return("")
+  }
+
+  if (!identical(result$status, "ok")) {
+    guidance = trimws(paste(result$warnings %||% character(0), collapse = " "))
+    if (!nzchar(guidance)) {
+      guidance = "WMFM could not compute this residual ranking from the fitted model."
+    }
+
+    return(paste(
+      "For the follow-up question, WMFM could not compute an existing-observation residual ranking.",
+      guidance,
+      "WMFM has not invented or estimated any ranked observations."
+    ))
+  }
+
+  observations = result$observations
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return("")
+  }
+
+  directionText = switch(
+    result$direction %||% "absolute",
+    lower = "the most negative raw residuals",
+    higher = "the most positive raw residuals",
+    absolute = "the largest absolute raw residuals",
+    "the requested raw-residual ranking"
+  )
+
+  answerLines = c(
+    sprintf(
+      "For the follow-up question, WMFM ranked the %s observations with %s among the %s observations used to fit this model.",
+      result$observationCount,
+      directionText,
+      result$totalFittedObservations
+    ),
+    formatDeterministicObservationResidualRows(observations)
+  )
+
+  caution = paste(
+    "These are comparisons with fitted values under the current model.",
+    "They do not by themselves show that an observation is a bargain, anomaly, outlier, data error, or causal effect."
+  )
+
+  paste(c(answerLines, caution), collapse = "\n")
+}
+
+#' Format deterministic observation-residual answer rows
+#'
+#' @param observations Ranked observation data frame.
+#'
+#' @return Character vector with one sentence for each ranked observation.
+#' @keywords internal
+#' @noRd
+formatDeterministicObservationResidualRows = function(observations) {
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return(character(0))
+  }
+
+  vapply(seq_len(nrow(observations)), function(index) {
+    row = observations[index, , drop = FALSE]
+    residual = as.numeric(row$residual[[1]])
+    relation = if (residual < 0) {
+      "below"
+    } else if (residual > 0) {
+      "above"
+    } else {
+      "equal to"
+    }
+
+    differenceText = if (identical(relation, "equal to")) {
+      "with a raw residual of 0"
+    } else {
+      sprintf(
+        "%s its fitted value by %s, giving a raw residual of %s",
+        relation,
+        formatFollowupPredictionNumber(abs(residual)),
+        formatFollowupPredictionNumber(residual)
+      )
+    }
+
+    sprintf(
+      "%s. %s (source row %s) had an observed value of %s and a fitted value of %s. It was %s.",
+      row$rank[[1]],
+      row$observation[[1]],
+      row$row[[1]],
+      formatFollowupPredictionNumber(row$observed[[1]]),
+      formatFollowupPredictionNumber(row$fitted[[1]]),
+      differenceText
+    )
+  }, character(1))
+}
+
+
+#' Build deterministic comparable-observation follow-up answer text
+#'
+#' @param payload Follow-up payload carrying a comparable-observation result.
+#'
+#' @return Character scalar answer text, or an empty string when unavailable.
+#' @keywords internal
+#' @noRd
+buildDeterministicComparableObservationAnswer = function(payload) {
+  result = payload$comparableObservationResult
+  if (!is.list(result)) {
+    return("")
+  }
+
+  if (!identical(result$status, "ok")) {
+    guidance = trimws(paste(result$warnings %||% character(0), collapse = " "))
+    if (!nzchar(guidance)) {
+      guidance = "WMFM could not identify comparable fitted observations from the supplied predictor values."
+    }
+
+    return(paste(
+      "For the follow-up question, WMFM could not compute comparable observations.",
+      guidance,
+      "WMFM has not invented comparable cases or a bargain threshold."
+    ))
+  }
+
+  observations = result$observations
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return("")
+  }
+
+  settingsText = formatFollowupPredictorSettings(result$resolvedPredictorValues)
+  responseValues = as.numeric(observations$response)
+  summarySentence = sprintf(
+    paste(
+      "Across these %s nearest fitted observations, the observed %s values ranged from %s to %s,",
+      "with a median of %s."
+    ),
+    nrow(observations),
+    result$responseName,
+    formatFollowupPredictionNumber(min(responseValues, na.rm = TRUE)),
+    formatFollowupPredictionNumber(max(responseValues, na.rm = TRUE)),
+    formatFollowupPredictionNumber(stats::median(responseValues, na.rm = TRUE))
+  )
+
+  displayCount = min(5L, nrow(observations))
+  displayed = observations[seq_len(displayCount), , drop = FALSE]
+  answerLines = c(
+    sprintf(
+      "For the follow-up question, using %s, WMFM found the %s nearest observations among the %s observations used to fit this model.",
+      settingsText,
+      result$neighbourCount,
+      result$totalFittedObservations
+    ),
+    summarySentence,
+    formatDeterministicComparableObservationRows(displayed)
+  )
+
+  if (nrow(observations) > displayCount) {
+    answerLines = c(
+      answerLines,
+      sprintf(
+        "Only the first %s comparable observations are listed here; The summary uses all %s selected observations.",
+        displayCount,
+        nrow(observations)
+      )
+    )
+  }
+
+  caution = paste(
+    "Similarity is based only on predictors in the fitted model.",
+    "These comparisons do not by themselves establish that a case is a bargain, unusually good value, or causally different.",
+    "To assess whether a particular case is good value, compare its asking price with these observed prices."
+  )
+
+  paste(c(answerLines, caution), collapse = "\n")
+}
+
+#' Format deterministic comparable-observation answer rows
+#'
+#' @param observations Comparable-observation data frame.
+#'
+#' @return Character vector with one sentence for each comparable observation.
+#' @keywords internal
+#' @noRd
+formatDeterministicComparableObservationRows = function(observations) {
+  if (!is.data.frame(observations) || !nrow(observations)) {
+    return(character(0))
+  }
+
+  vapply(seq_len(nrow(observations)), function(index) {
+    row = observations[index, , drop = FALSE]
+    sprintf(
+      "%s. %s (source row %s) had an observed response of %s and a similarity distance of %s.",
+      row$rank[[1]],
+      row$observation[[1]],
+      row$row[[1]],
+      formatFollowupPredictionNumber(row$response[[1]]),
+      formatFollowupPredictionNumber(row$distance[[1]])
+    )
+  }, character(1))
+}
+
 #' Build deterministic adjustment-comparison follow-up answer text
 #'
 #' @param payload Follow-up payload carrying an adjustment-comparison result.
@@ -172,6 +391,69 @@ buildDeterministicAdjustmentComparisonAnswer = function(payload) {
   }
 
   paste(conclusion, caution)
+}
+
+
+#' Remove duplicated language-model observation follow-up text
+#'
+#' @param explanation Character scalar returned by the chat provider.
+#' @param model Fitted model object carrying the follow-up payload attribute.
+#'
+#' @return Character scalar with duplicated observation-answer paragraphs removed.
+#' @keywords internal
+#' @noRd
+removeDuplicateLlmObservationFollowupText = function(explanation, model) {
+  text = trimws(as.character(explanation %||% ""))
+  if (!nzchar(text)) {
+    return(text)
+  }
+
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (!is.list(payload) || !identical(payload$category, "observation_residual_request")) {
+    return(text)
+  }
+
+  result = payload$observationResidualResult
+  if (!is.list(result) || !identical(result$status, "ok")) {
+    return(text)
+  }
+
+  paragraphs = strsplit(text, "\\n\\s*\\n", perl = TRUE)[[1]]
+  keep = !vapply(paragraphs, isDuplicateLlmObservationResidualParagraph, logical(1))
+  trimws(paste(trimws(paragraphs[keep]), collapse = "\n\n"))
+}
+
+#' Detect a duplicated language-model residual-ranking paragraph
+#'
+#' @param paragraph Character scalar paragraph candidate.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isDuplicateLlmObservationResidualParagraph = function(paragraph) {
+  text = tolower(trimws(as.character(paragraph %||% "")))
+  if (!nzchar(text)) {
+    return(FALSE)
+  }
+
+  hasRankingCue = grepl("residual", text, fixed = TRUE) ||
+    grepl("fitted value", text, fixed = TRUE) ||
+    grepl("expected to score", text, fixed = TRUE) ||
+    grepl("performed better than expected", text, fixed = TRUE) ||
+    grepl("performed worse than expected", text, fixed = TRUE) ||
+    grepl("most unusual", text, fixed = TRUE) ||
+    grepl("furthest from", text, fixed = TRUE)
+  observationMentions = regmatches(
+    text,
+    gregexpr("\\b(?:row|student) [0-9]+", text, perl = TRUE)
+  )[[1]]
+  hasObservationCue = length(observationMentions) >= 1L ||
+    grepl("observed", text, fixed = TRUE)
+  hasRankedListCue = length(observationMentions) >= 2L ||
+    grepl("\\b(?:five|5|three|3|two|2) (?:rows|students|observations)", text, perl = TRUE)
+  hasMultipleValues = length(regmatches(text, gregexpr("[0-9]+(?:\\.[0-9]+)?", text, perl = TRUE))[[1]]) >= 3L
+
+  isTRUE(hasRankingCue && hasObservationCue && (hasRankedListCue || hasMultipleValues))
 }
 
 #' Remove conflicting language-model follow-up prediction text
