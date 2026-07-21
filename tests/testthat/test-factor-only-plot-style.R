@@ -8,6 +8,18 @@ test_that("factor-only plot controls offer boxplot and beeswarm styles", {
 })
 
 test_that("factor-only beeswarm plots centre fitted means and intervals", {
+  plotDeviceFile = tempfile(fileext = ".pdf")
+  defaultPlotFile = file.path(getwd(), "Rplots.pdf")
+  grDevices::pdf(plotDeviceFile)
+  plotDevice = grDevices::dev.cur()
+
+  on.exit({
+    if (plotDevice %in% grDevices::dev.list()) {
+      grDevices::dev.off(plotDevice)
+    }
+    unlink(c(plotDeviceFile, defaultPlotFile))
+  }, add = TRUE)
+
   model = lm(Sepal.Length ~ Species, data = iris)
 
   plot = makeFactorOnlyPlot(

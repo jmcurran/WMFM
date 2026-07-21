@@ -4,6 +4,13 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+## WMFM 1.1.2.005
+
+- Prevented the factor-only beeswarm regression test from leaving Rplots.pdf in tests/testthat.
+- Ran the graphics-dependent test with an explicit temporary PDF device and guaranteed device and file cleanup.
+- Added runner cleanup before and after strict tests as a secondary safeguard for stale graphics artefacts.
+- Left plotting behaviour unchanged and validated through the standard WMFM workflow.
+
 ## WMFM 1.1.2.004
 
 - Added a Boxplot/Beeswarm selector for factor-only fitted-model plots.
