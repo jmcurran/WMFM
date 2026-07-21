@@ -4,6 +4,14 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+
+## WMFM 1.1.3.001
+
+- Audited the existing research-question and bounded follow-up pathways for intelligent handling of unusual, unclear, educational, and unsupported questions.
+- Designed a shared question-routing contract that preserves the established deterministic prediction, residual, comparable-observation, unit-change, and safety machinery.
+- Defined a staged implementation roadmap covering clarification, educational responses, missing information, alternative-analysis guidance, and model-specific capability suggestions.
+- This audit-and-design stage does not change package behaviour.
+
 ## WMFM 1.1.2.005
 
 - Prevented the factor-only beeswarm regression test from leaving Rplots.pdf in tests/testthat.
