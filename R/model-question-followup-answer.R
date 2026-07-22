@@ -47,6 +47,13 @@ buildDeterministicFollowupAnswer = function(model) {
     return("")
   }
 
+  questionRoute = payload$questionRoute %||% NULL
+  if (inherits(questionRoute, "wmfmQuestionRoute") &&
+      identical(questionRoute$route, "needs_input") &&
+      nzchar(trimws(as.character(questionRoute$deterministicResponse %||% "")))) {
+    return(trimws(as.character(questionRoute$deterministicResponse)))
+  }
+
   if (identical(payload$category, "question_route_response")) {
     return(trimws(as.character(payload$deterministicResponse %||% "")))
   }

@@ -355,6 +355,10 @@ runModel = function(
         model = model,
         followupPayload = followupPayload
       )
+      followupPayload = attachQuestionRouteToModelFollowupPayload(
+        followupQuestion = followupQuestion,
+        followupPayload = followupPayload
+      )
       attr(model, "wmfm_model_followup_question") = followupPayload$originalText
       attr(model, "wmfm_model_followup_payload") = followupPayload
       followupDiagnostics = list(

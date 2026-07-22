@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.3.012
+
+- Separated explicitly supplied predictor values from permissive predictor completion.
+- Prevented a labelled value from being reused for a different omitted predictor.
+- Asked specifically for omitted fitted-model predictors before presenting a prediction.
+- Preserved established prediction payload metadata and isolated post-commit package building.
+
 ## WMFM 1.1.3.005
 
 - Added deterministic routing for unclear, purpose-oriented, and introductory regression questions.

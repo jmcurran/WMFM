@@ -193,6 +193,37 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
     ))
   }
 
+  thresholdQuestionPattern = paste(
+    c(
+      "\\b(will|would|did|do|does|can)\\s+(i|we|they|the student|this student)\\s+(pass|fail|succeed)\\b",
+      "\\b(chance|probability|odds)\\b.*\\b(pass|fail|success|succeed)\\b",
+      "\\b(pass|fail|success)\\b.*\\b(chance|probability|odds)\\b"
+    ),
+    collapse = "|"
+  )
+  numericThresholdPattern = "\\b(?:at least|at most|above|below|over|under|greater than|less than)?\\s*[0-9]+(?:\\.[0-9]+)?\\s*%?\\b"
+  if (grepl(thresholdQuestionPattern, punctuationFree, perl = TRUE) &&
+      !grepl(numericThresholdPattern, punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_input",
+      status = "needs_input",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "missing_outcome_threshold",
+      missingInformation = "outcome_threshold",
+      recommendedCapability = "define_outcome_threshold",
+      deterministicResponse = paste(
+        "WMFM needs the outcome threshold before it can interpret pass, fail, or success.",
+        "State the rule explicitly, for example: pass means an exam mark of at least 50.",
+        "WMFM will then determine whether the current fitted model can answer the resulting question without inventing a cutoff."
+      )
+    ))
+  }
+
   if (grepl("^what should i ask", punctuationFree, perl = TRUE)) {
     return(newWmfmQuestionRoute(
       originalText = originalText,
@@ -455,6 +486,50 @@ routeModelQuestion = function(
   )
 }
 
+#' Build a precise missing-predictor clarification
+#'
+#' @param missingPredictors Character vector of fitted-model predictors without
+#'   supplied values.
+#'
+#' @return Character scalar clarification request.
+#' @keywords internal
+#' @noRd
+buildMissingPredictorClarification = function(missingPredictors) {
+  missingPredictors = unique(as.character(missingPredictors %||% character(0)))
+  missingPredictors = missingPredictors[nzchar(missingPredictors)]
+
+  if (length(missingPredictors) == 0) {
+    return(paste(
+      "WMFM needs values for every predictor used by the fitted model before it can calculate this prediction.",
+      "Provide the values in name = value form."
+    ))
+  }
+
+  predictorText = if (length(missingPredictors) == 1) {
+    missingPredictors
+  } else {
+    paste0(
+      paste(missingPredictors[-length(missingPredictors)], collapse = ", "),
+      " and ",
+      missingPredictors[[length(missingPredictors)]]
+    )
+  }
+
+  exampleText = paste(
+    paste0(missingPredictors, " = ..."),
+    collapse = ", "
+  )
+
+  paste0(
+    "WMFM cannot calculate this prediction until you supply ",
+    if (length(missingPredictors) == 1) "a value for " else "values for ",
+    predictorText,
+    ". Provide only fitted-model predictors in name = value form, for example: ",
+    exampleText,
+    "."
+  )
+}
+
 #' Wrap an existing classifier payload in the shared routing contract
 #'
 #' @param existingPayload Existing follow-up or research-prediction payload.
@@ -514,20 +589,37 @@ routeExistingModelQuestionPayload = function(existingPayload, source) {
   }
 
   predictionResult = existingPayload$predictionResult %||% NULL
-  if (!is.null(predictionResult) && identical(predictionResult$status, "needs_input")) {
+  requiredPredictors = predictionResult$requiredPredictors %||% character(0)
+  suppliedPredictors = names(
+    predictionResult$suppliedPredictorValues %||% list()
+  )
+  omittedPredictors = setdiff(requiredPredictors, suppliedPredictors)
+  predictionNeedsInput = !is.null(predictionResult) &&
+    identical(predictionResult$status, "needs_input")
+  predictionUsedCompletion = !is.null(predictionResult) &&
+    identical(predictionResult$status, "ok") &&
+    length(omittedPredictors) > 0
+
+  if (isTRUE(predictionNeedsInput) || isTRUE(predictionUsedCompletion)) {
     route = "needs_input"
     status = "needs_input"
     supported = FALSE
-    reason = predictionResult$reason %||% "missing_predictor_values"
+    reason = if (isTRUE(predictionUsedCompletion)) {
+      "missing_predictor_values"
+    } else {
+      predictionResult$reason %||% "missing_predictor_values"
+    }
 
     missingInformation = predictionResult$missingPredictors %||% character(0)
     if (length(missingInformation) == 0 &&
         identical(reason, "missing_predictor_values")) {
-      requiredPredictors = predictionResult$requiredPredictors %||% character(0)
-      suppliedPredictors = names(
-        predictionResult$suppliedPredictorValues %||% list()
+      missingInformation = omittedPredictors
+    }
+
+    if (identical(reason, "missing_predictor_values")) {
+      deterministicResponse = buildMissingPredictorClarification(
+        missingPredictors = missingInformation
       )
-      missingInformation = setdiff(requiredPredictors, suppliedPredictors)
     }
   }
 

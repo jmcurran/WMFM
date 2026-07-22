@@ -211,7 +211,7 @@ testthat::test_that("unusual-question corpus records current and proposed routin
       "statistical_education",
       "statistical_education",
       "needs_input",
-      "alternative_analysis_needed",
+      "needs_input",
       "alternative_analysis_needed",
       "needs_clarification",
       "alternative_analysis_needed",
@@ -223,8 +223,8 @@ testthat::test_that("unusual-question corpus records current and proposed routin
       "not_a_question",
       "definition_regression",
       "definition_logistic_regression",
-      "missing_predictor_values",
-      "requires_binary_response_model",
+      "missing_outcome_threshold",
+      "missing_outcome_threshold",
       "requires_diagnostic_assessment",
       "unclear_question",
       "causal_claim_not_supported",
@@ -258,14 +258,15 @@ testthat::test_that("unusual-question corpus records current and proposed routin
   testthat::expect_true(all(nzchar(corpus$question)))
   testthat::expect_true(all(corpus$source %in% c("research_question", "followup_question")))
 
-  stage47Point3Reasons = c(
+  implementedStage47Reasons = c(
     "prediction_purpose",
     "analysis_purpose",
     "not_a_question",
     "definition_regression",
     "definition_logistic_regression",
     "unclear_question",
-    "capability_guidance_requested"
+    "capability_guidance_requested",
+    "missing_outcome_threshold"
   )
 
   for (caseIndex in seq_len(nrow(corpus))) {
@@ -274,7 +275,7 @@ testthat::test_that("unusual-question corpus records current and proposed routin
       source = corpus$source[[caseIndex]]
     )
 
-    if (corpus$proposedReason[[caseIndex]] %in% stage47Point3Reasons) {
+    if (corpus$proposedReason[[caseIndex]] %in% implementedStage47Reasons) {
       testthat::expect_identical(
         route$route,
         corpus$proposedRoute[[caseIndex]],
@@ -422,4 +423,119 @@ testthat::test_that("Stage 47.3 leaves mature statistical follow-ups unchanged",
   testthat::expect_true(payload$supported)
   testthat::expect_s3_class(payload$questionRoute, "wmfmQuestionRoute")
   testthat::expect_identical(payload$questionRoute$route, "model_answer")
+})
+
+testthat::test_that("Stage 47.4 asks for exact missing fitted-model predictors", {
+  data = data.frame(
+    exam = c(55, 68, 74, 82, 91),
+    attend = c(50, 60, 70, 80, 90),
+    test = c(45, 58, 67, 76, 88)
+  )
+  model = stats::lm(exam ~ attend + test, data = data)
+
+  payload = classifyModelFollowupQuestion(
+    "What exam mark is predicted when attend = 80?"
+  )
+  payload = attachQuestionRouteToModelFollowupPayload(
+    followupQuestion = "What exam mark is predicted when attend = 80?",
+    followupPayload = payload
+  )
+  payload = enrichFollowupPayloadWithLmPrediction(
+    model = model,
+    followupPayload = payload
+  )
+
+  testthat::expect_identical(payload$questionRoute$route, "needs_input")
+  testthat::expect_identical(payload$questionRoute$missingInformation, "test")
+
+  payload = attachQuestionRouteToModelFollowupPayload(
+    followupQuestion = "What exam mark is predicted when attend = 80?",
+    followupPayload = payload
+  )
+
+  testthat::expect_identical(payload$questionRoute$route, "needs_input")
+  testthat::expect_identical(
+    payload$questionRoute$reason,
+    "missing_predictor_values"
+  )
+  testthat::expect_identical(payload$questionRoute$missingInformation, "test")
+  testthat::expect_match(
+    payload$questionRoute$deterministicResponse,
+    "value for test",
+    fixed = TRUE
+  )
+  testthat::expect_false(grepl("attend = ...", payload$questionRoute$deterministicResponse, fixed = TRUE))
+  testthat::expect_true(length(payload$predictionResult$completedPredictorValues) > 0)
+  testthat::expect_identical(
+    names(payload$predictionResult$explicitlySuppliedPredictorValues),
+    "attend"
+  )
+})
+
+testthat::test_that("Stage 47.4 requests an undefined outcome threshold", {
+  questions = c(
+    "Will I pass the course?",
+    "What is the chance I will pass?",
+    "Would this student fail?"
+  )
+
+  for (question in questions) {
+    route = routeModelQuestion(
+      question = question,
+      source = "followup_question"
+    )
+
+    testthat::expect_identical(route$route, "needs_input", info = question)
+    testthat::expect_identical(route$status, "needs_input", info = question)
+    testthat::expect_identical(
+      route$reason,
+      "missing_outcome_threshold",
+      info = question
+    )
+    testthat::expect_identical(
+      route$missingInformation,
+      "outcome_threshold",
+      info = question
+    )
+    testthat::expect_match(
+      route$deterministicResponse,
+      "at least 50",
+      fixed = TRUE,
+      info = question
+    )
+  }
+})
+
+testthat::test_that("Stage 47.4 does not treat an explicit threshold as missing", {
+  route = routeModelQuestion(
+    question = "What is the chance I will pass if pass means at least 50?",
+    source = "followup_question"
+  )
+
+  testthat::expect_false(identical(route$reason, "missing_outcome_threshold"))
+})
+
+testthat::test_that("deterministic follow-up answer uses the needs-input route", {
+  data = data.frame(
+    exam = c(55, 68, 74, 82, 91),
+    attend = c(50, 60, 70, 80, 90),
+    test = c(45, 58, 67, 76, 88)
+  )
+  model = stats::lm(exam ~ attend + test, data = data)
+  question = "What exam mark is predicted when attend = 80?"
+
+  payload = classifyModelFollowupQuestion(question)
+  payload = enrichFollowupPayloadWithLmPrediction(
+    model = model,
+    followupPayload = payload
+  )
+  payload = attachQuestionRouteToModelFollowupPayload(
+    followupQuestion = question,
+    followupPayload = payload
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+
+  answer = buildDeterministicFollowupAnswer(model)
+  testthat::expect_match(answer, "value for test", fixed = TRUE)
+  testthat::expect_false(grepl("could not compute a deterministic prediction", answer, fixed = TRUE))
 })

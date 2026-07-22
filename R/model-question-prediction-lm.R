@@ -24,11 +24,43 @@ enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
     return(payload)
   }
 
+  followupQuestion = payload$originalText %||% ""
   payload$predictionResult = computeModelQuestionPrediction(
     model = model,
-    followupQuestion = payload$originalText %||% ""
+    followupQuestion = followupQuestion,
+    allowMissingPredictorCompletion = TRUE
   )
-  payload
+
+  predictorNames = names(stats::model.frame(model))[-1]
+  explicitlySuppliedPredictorValues = extractPredictionValuesForModel(
+    model = model,
+    followupQuestion = followupQuestion,
+    allowSingleUnlabelledValue = FALSE
+  )
+  explicitlySuppliedPredictorValues[[".wmfm_unresolved_factor_predictors"]] = NULL
+  missingPredictors = setdiff(
+    predictorNames,
+    names(explicitlySuppliedPredictorValues)
+  )
+
+  if (length(missingPredictors) > 0) {
+    payload$predictionResult$status = "needs_input"
+    payload$predictionResult$reason = "missing_predictor_values"
+    payload$predictionResult$requiredPredictors = predictorNames
+    payload$predictionResult$missingPredictors = missingPredictors
+    payload$predictionResult$explicitlySuppliedPredictorValues =
+      explicitlySuppliedPredictorValues
+    payload$predictionResult$warnings = paste0(
+      "Missing fitted-model predictor values: ",
+      paste(missingPredictors, collapse = ", "),
+      "."
+    )
+  }
+
+  attachQuestionRouteToModelFollowupPayload(
+    followupQuestion = followupQuestion,
+    followupPayload = payload
+  )
 }
 
 #' @keywords internal
@@ -155,7 +187,8 @@ validateLmPredictionInputs = function(model, followupQuestion, allowMissingPredi
   predictorNames = names(mf)[-1]
   parsedPairs = extractPredictionValuesForModel(
     model = model,
-    followupQuestion = followupQuestion
+    followupQuestion = followupQuestion,
+    allowSingleUnlabelledValue = allowMissingPredictorCompletion
   )
   unresolvedFactors = parsedPairs[[".wmfm_unresolved_factor_predictors"]] %||% character(0)
   parsedPairs[[".wmfm_unresolved_factor_predictors"]] = NULL
@@ -274,7 +307,7 @@ stripTrailingAssignmentPunctuation = function(valueText) {
 
 #' @keywords internal
 #' @noRd
-extractPredictionValuesForModel = function(model, followupQuestion) {
+extractPredictionValuesForModel = function(model, followupQuestion, allowSingleUnlabelledValue = TRUE) {
   parsedPairs = extractPredictionAssignmentPairs(followupQuestion = followupQuestion)
   text = normalizePredictionText(followupQuestion)
   mf = stats::model.frame(model)
@@ -332,7 +365,8 @@ extractPredictionValuesForModel = function(model, followupQuestion) {
     is.numeric(mf[[predictor]])
   }, logical(1))]
   missingNumericPredictors = setdiff(numericPredictors, names(parsedPairs))
-  if (length(missingNumericPredictors) == 1L) {
+  if (isTRUE(allowSingleUnlabelledValue) &&
+      length(missingNumericPredictors) == 1L) {
     matchedValue = extractSingleNaturalPredictionNumber(text = text)
     if (!is.null(matchedValue)) {
       parsedPairs[[missingNumericPredictors[[1]]]] = matchedValue
