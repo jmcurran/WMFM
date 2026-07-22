@@ -675,3 +675,102 @@ testthat::test_that("Stage 47.5.1 preserves mature follow-up classifications", {
     "alternative_analysis_needed"
   )
 })
+
+
+testthat::test_that("Stage 47.6 builds model-specific answerable examples", {
+  courseData = data.frame(
+    exam = c(58, 64, 72, 81, 88),
+    attend = c(45, 55, 65, 75, 85),
+    test = c(50, 60, 70, 80, 90)
+  )
+  model = stats::lm(exam ~ attend + test, data = courseData)
+
+  examples = buildModelSpecificQuestionExamples(model = model)
+
+  testthat::expect_gte(length(examples), 3)
+  testthat::expect_lte(length(examples), 4)
+  testthat::expect_true(any(grepl("attend", examples, fixed = TRUE)))
+  testthat::expect_true(any(grepl("exam", examples, fixed = TRUE)))
+  predictionExample = examples[grepl("What does the model predict", examples, fixed = TRUE)]
+  testthat::expect_length(predictionExample, 1)
+  testthat::expect_match(predictionExample, "attend = 65", fixed = TRUE)
+  testthat::expect_match(predictionExample, "test = 70", fixed = TRUE)
+})
+
+testthat::test_that("Stage 47.6 answers capability requests from the fitted model", {
+  courseData = data.frame(
+    exam = c(58, 64, 72, 81, 88),
+    attend = c(45, 55, 65, 75, 85),
+    test = c(50, 60, 70, 80, 90)
+  )
+  model = stats::lm(exam ~ attend + test, data = courseData)
+
+  route = routeModelQuestion(
+    question = "What should I ask?",
+    source = "research_question",
+    model = model
+  )
+
+  testthat::expect_identical(route$route, "needs_clarification")
+  testthat::expect_identical(
+    route$recommendedCapability,
+    "model_specific_question_examples"
+  )
+  testthat::expect_match(
+    route$deterministicResponse,
+    "For this fitted model",
+    fixed = TRUE
+  )
+  testthat::expect_match(route$deterministicResponse, "attend", fixed = TRUE)
+  testthat::expect_match(route$deterministicResponse, "exam", fixed = TRUE)
+})
+
+testthat::test_that("Stage 47.6 adds guidance to unclear follow-up payloads", {
+  courseData = data.frame(
+    exam = c(58, 64, 72, 81, 88),
+    attend = c(45, 55, 65, 75, 85),
+    test = c(50, 60, 70, 80, 90)
+  )
+  model = stats::lm(exam ~ attend + test, data = courseData)
+
+  payload = classifyAndRouteModelFollowupQuestion(
+    followupQuestion = "Tell me something interesting.",
+    model = model
+  )
+
+  testthat::expect_identical(payload$category, "question_route_response")
+  testthat::expect_match(
+    payload$deterministicResponse,
+    "For this fitted model",
+    fixed = TRUE
+  )
+  attr(model, "wmfm_model_followup_payload") = payload
+  answer = buildDeterministicFollowupAnswer(model = model)
+  testthat::expect_match(answer, "attend", fixed = TRUE)
+})
+
+testthat::test_that("Stage 47.6 guides unsupported fitted-model questions", {
+  courseData = data.frame(
+    exam = c(58, 64, 72, 81, 88),
+    attend = c(45, 55, 65, 75, 85),
+    test = c(50, 60, 70, 80, 90)
+  )
+  model = stats::lm(exam ~ attend + test, data = courseData)
+
+  route = routeModelQuestion(
+    question = "Which restaurant should I visit?",
+    source = "followup_question",
+    model = model
+  )
+
+  testthat::expect_identical(route$route, "out_of_scope")
+  testthat::expect_identical(
+    route$recommendedCapability,
+    "model_specific_question_examples"
+  )
+  testthat::expect_match(
+    route$deterministicResponse,
+    "What does the model predict for exam",
+    fixed = TRUE
+  )
+})

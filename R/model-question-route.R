@@ -427,18 +427,21 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
 #' Classify a follow-up question and attach its shared route
 #'
 #' @param followupQuestion Optional follow-up question text.
+#' @param model Optional fitted model used to generate model-specific capability
+#'   guidance.
 #'
 #' @return Existing follow-up payload with a `questionRoute` field, or a
 #'   deterministic Stage 47 response payload for a newly recognised route.
 #' @keywords internal
 #' @noRd
-classifyAndRouteModelFollowupQuestion = function(followupQuestion = NULL) {
+classifyAndRouteModelFollowupQuestion = function(followupQuestion = NULL, model = NULL) {
   existingPayload = classifyModelFollowupQuestion(
     followupQuestion = followupQuestion
   )
   attachQuestionRouteToModelFollowupPayload(
     followupQuestion = followupQuestion,
-    followupPayload = existingPayload
+    followupPayload = existingPayload,
+    model = model
   )
 }
 
@@ -447,6 +450,8 @@ classifyAndRouteModelFollowupQuestion = function(followupQuestion = NULL) {
 #' @param followupQuestion Optional follow-up question text.
 #' @param followupPayload Existing payload returned by
 #'   \code{classifyModelFollowupQuestion()}.
+#' @param model Optional fitted model used to generate model-specific capability
+#'   guidance.
 #'
 #' @return Existing follow-up payload with a `questionRoute` field, or a
 #'   deterministic Stage 47 response payload for a newly recognised route.
@@ -454,7 +459,8 @@ classifyAndRouteModelFollowupQuestion = function(followupQuestion = NULL) {
 #' @noRd
 attachQuestionRouteToModelFollowupPayload = function(
   followupQuestion = NULL,
-  followupPayload
+  followupPayload,
+  model = NULL
 ) {
   originalText = as.character(followupQuestion %||% "")
   originalText = ifelse(length(originalText) >= 1, originalText[[1]], "")
@@ -486,6 +492,11 @@ attachQuestionRouteToModelFollowupPayload = function(
       )
     }
   }
+
+  questionRoute = addModelSpecificCapabilityGuidance(
+    questionRoute = questionRoute,
+    model = model
+  )
 
   if (is.list(questionRoute$existingPayload)) {
     payload = questionRoute$existingPayload
@@ -582,11 +593,20 @@ routeModelQuestion = function(
     source = source
   )
   if (inherits(stage47Route, "wmfmQuestionRoute")) {
-    return(stage47Route)
+    return(addModelSpecificCapabilityGuidance(
+      questionRoute = stage47Route,
+      model = model
+    ))
   }
 
   if (identical(source, "followup_question")) {
-    return(routeExistingModelQuestionPayload(existingPayload, source = source))
+    return(addModelSpecificCapabilityGuidance(
+      questionRoute = routeExistingModelQuestionPayload(
+        existingPayload,
+        source = source
+      ),
+      model = model
+    ))
   }
 
   if (!is.null(model) && isTRUE(isPredictionShapedResearchQuestion(originalText))) {
@@ -610,6 +630,131 @@ routeModelQuestion = function(
     reason = "ordinary_research_question",
     existingPayload = list(researchQuestion = researchQuestion %||% originalText)
   )
+}
+
+#' Build model-specific example questions
+#'
+#' Generates a deliberately small set of questions that the current fitted
+#' model and established WMFM pathways can answer. The examples use fitted-model
+#' variable names and representative predictor values rather than generic
+#' placeholders.
+#'
+#' @param model Optional fitted model.
+#'
+#' @return Character vector of example questions.
+#' @keywords internal
+#' @noRd
+buildModelSpecificQuestionExamples = function(model) {
+  if (is.null(model)) {
+    return(character(0))
+  }
+
+  modelFrame = tryCatch(stats::model.frame(model), error = function(error) NULL)
+  if (!is.data.frame(modelFrame) || ncol(modelFrame) < 2) {
+    return(character(0))
+  }
+
+  responseName = names(modelFrame)[[1]]
+  predictorNames = names(modelFrame)[-1]
+  firstPredictor = predictorNames[[1]]
+  examples = c(
+    paste0("How is ", firstPredictor, " associated with ", responseName, "?"),
+    paste0("How uncertain is the estimated relationship between ", firstPredictor, " and ", responseName, "?")
+  )
+
+  factorPredictors = predictorNames[vapply(
+    modelFrame[predictorNames],
+    function(value) is.factor(value) || is.character(value),
+    logical(1)
+  )]
+  if (length(factorPredictors) > 0) {
+    factorPredictor = factorPredictors[[1]]
+    examples = c(
+      examples,
+      paste0("How does ", responseName, " differ between levels of ", factorPredictor, "?")
+    )
+  }
+
+  predictorSettings = vapply(
+    predictorNames,
+    function(predictorName) {
+      value = modelFrame[[predictorName]]
+      if (is.numeric(value)) {
+        representativeValue = stats::median(value, na.rm = TRUE)
+        representativeText = format(
+          representativeValue,
+          trim = TRUE,
+          scientific = FALSE,
+          digits = 6
+        )
+      } else {
+        value = as.character(value)
+        value = value[!is.na(value) & nzchar(value)]
+        if (length(value) == 0) {
+          return(NA_character_)
+        }
+        valueTable = sort(table(value), decreasing = TRUE)
+        representativeText = names(valueTable)[[1]]
+      }
+      paste0(predictorName, " = ", representativeText)
+    },
+    character(1)
+  )
+  predictorSettings = predictorSettings[!is.na(predictorSettings)]
+  if (length(predictorSettings) == length(predictorNames)) {
+    examples = c(
+      examples,
+      paste0(
+        "What does the model predict for ",
+        responseName,
+        " when ",
+        paste(predictorSettings, collapse = ", "),
+        "?"
+      )
+    )
+  }
+
+  unique(examples)[seq_len(min(length(unique(examples)), 4))]
+}
+
+#' Add model-specific capability guidance to an unclear or unsupported route
+#'
+#' @param questionRoute Existing shared question route.
+#' @param model Optional fitted model.
+#'
+#' @return Updated `wmfmQuestionRoute` object.
+#' @keywords internal
+#' @noRd
+addModelSpecificCapabilityGuidance = function(questionRoute, model = NULL) {
+  validateWmfmQuestionRoute(questionRoute)
+
+  guidanceReasons = c(
+    "not_a_question",
+    "unclear_question",
+    "capability_guidance_requested",
+    "unsupported_or_out_of_scope"
+  )
+  if (!questionRoute$reason %in% guidanceReasons) {
+    return(questionRoute)
+  }
+
+  examples = buildModelSpecificQuestionExamples(model = model)
+  if (length(examples) == 0) {
+    return(questionRoute)
+  }
+
+  numberedExamples = paste0(seq_along(examples), ". ", examples)
+  baseResponse = trimws(as.character(questionRoute$deterministicResponse %||% ""))
+  guidanceText = paste(
+    "For this fitted model, WMFM can answer questions such as:",
+    paste(numberedExamples, collapse = " ")
+  )
+  questionRoute$deterministicResponse = paste(
+    c(baseResponse, guidanceText)[nzchar(c(baseResponse, guidanceText))],
+    collapse = " "
+  )
+  questionRoute$recommendedCapability = "model_specific_question_examples"
+  validateWmfmQuestionRoute(questionRoute)
 }
 
 #' Build a precise missing-predictor clarification

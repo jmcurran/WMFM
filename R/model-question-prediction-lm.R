@@ -59,7 +59,8 @@ enrichFollowupPayloadWithLmPrediction = function(model, followupPayload) {
 
   attachQuestionRouteToModelFollowupPayload(
     followupQuestion = followupQuestion,
-    followupPayload = payload
+    followupPayload = payload,
+    model = model
   )
 }
 

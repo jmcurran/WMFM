@@ -383,7 +383,8 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     followupClassification = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
     followupClassification = attachQuestionRouteToModelFollowupPayload(
       followupQuestion = followupQuestion,
-      followupPayload = followupClassification
+      followupPayload = followupClassification,
+      model = m
     )
     followupClassification = enrichFollowupPayloadWithLmPrediction(
       model = m,
@@ -407,7 +408,8 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     )
     followupClassification = attachQuestionRouteToModelFollowupPayload(
       followupQuestion = followupQuestion,
-      followupPayload = followupClassification
+      followupPayload = followupClassification,
+      model = m
     )
     attr(m, "wmfm_model_followup_question") = followupClassification$originalText
     attr(m, "wmfm_model_followup_payload") = followupClassification

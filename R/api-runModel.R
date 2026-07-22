@@ -333,7 +333,8 @@ runModel = function(
       followupPayload = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
       followupPayload = attachQuestionRouteToModelFollowupPayload(
         followupQuestion = followupQuestion,
-        followupPayload = followupPayload
+        followupPayload = followupPayload,
+        model = model
       )
       followupPayload = enrichFollowupPayloadWithLmPrediction(
         model = model,
@@ -357,7 +358,8 @@ runModel = function(
       )
       followupPayload = attachQuestionRouteToModelFollowupPayload(
         followupQuestion = followupQuestion,
-        followupPayload = followupPayload
+        followupPayload = followupPayload,
+        model = model
       )
       attr(model, "wmfm_model_followup_question") = followupPayload$originalText
       attr(model, "wmfm_model_followup_payload") = followupPayload
@@ -513,8 +515,7 @@ runModel = function(
       buildExplanationClaimEvidenceMap(
         explanationText = explanation,
         audit = explanationAudit,
-        teachingSummary = explanationTeachingSummary,
-        model = model
+        teachingSummary = explanationTeachingSummary
       ),
       error = function(e) {
         NULL

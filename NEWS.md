@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.3.016
+
+- Added fitted-model-specific example questions for unclear, unsupported, and capability-guidance requests.
+- Grounded suggestions in the fitted response, predictors, representative numeric values, and observed factor levels.
+- Passed the fitted model through research, Shiny follow-up, runModel, and prediction-enrichment routing without changing established route precedence.
+- Added offline regression tests for generated examples and deterministic guidance responses.
+
 ## WMFM 1.1.3.014
 
 - Preserved the mature comparable-observation and conditional-quantile classifier payloads before applying new Stage 47.5 text routing.
