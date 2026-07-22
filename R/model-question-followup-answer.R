@@ -47,6 +47,10 @@ buildDeterministicFollowupAnswer = function(model) {
     return("")
   }
 
+  if (identical(payload$category, "question_route_response")) {
+    return(trimws(as.character(payload$deterministicResponse %||% "")))
+  }
+
   if (identical(payload$category, "adjustment_prediction_comparison")) {
     return(buildDeterministicAdjustmentComparisonAnswer(payload = payload))
   }

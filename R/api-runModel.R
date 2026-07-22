@@ -318,6 +318,10 @@ runModel = function(
     if (nzchar(researchQuestion)) {
       researchQuestionEscaped = gsub("\"", "\\\"", researchQuestion, fixed = TRUE)
       attr(model, "wmfm_research_question") = researchQuestionEscaped
+      attr(model, "wmfm_research_question_route") = buildResearchQuestionRoute(
+        model = model,
+        researchQuestion = researchQuestion
+      )
     }
   }
 
@@ -327,6 +331,10 @@ runModel = function(
 
     if (nzchar(followupQuestion)) {
       followupPayload = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
+      followupPayload = attachQuestionRouteToModelFollowupPayload(
+        followupQuestion = followupQuestion,
+        followupPayload = followupPayload
+      )
       followupPayload = enrichFollowupPayloadWithLmPrediction(
         model = model,
         followupPayload = followupPayload

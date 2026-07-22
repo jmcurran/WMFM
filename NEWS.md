@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.3.005
+
+- Added deterministic routing for unclear, purpose-oriented, and introductory regression questions.
+- Prevented routed research questions from receiving a conventional fitted-model explanation or unnecessary language-model call.
+- Preserved existing deterministic statistical follow-up categories and added offline route and compatibility tests.
+- Repaired follow-up routing so the established classifier remains explicit before the shared route is attached.
+
 ## WMFM 1.1.3.003
 
 - Added a shared internal question-routing contract for research and follow-up questions while preserving the established bounded follow-up classifier.

@@ -131,6 +131,251 @@ validateWmfmQuestionRoute = function(questionRoute) {
   invisible(questionRoute)
 }
 
+
+#' Detect Stage 47.3 non-model question routes
+#'
+#' Recognises a deliberately small set of unclear, purpose, and educational
+#' questions before the mature statistical follow-up classifier is consulted.
+#'
+#' @param originalText Character scalar containing the supplied question.
+#' @param normalizedText Normalised lower-case question text.
+#' @param source Question source.
+#'
+#' @return A `wmfmQuestionRoute` object when matched, otherwise `NULL`.
+#' @keywords internal
+#' @noRd
+classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
+  trimmedText = trimws(normalizedText)
+  punctuationFree = gsub("[[:punct:]]+$", "", trimmedText, perl = TRUE)
+
+  nonQuestionPatterns = c(
+    "i don't know",
+    "i do not know",
+    "idk",
+    "not sure",
+    "i'm not sure",
+    "i am not sure",
+    "no idea"
+  )
+  if (punctuationFree %in% nonQuestionPatterns) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = "not_a_question",
+      deterministicResponse = paste(
+        "That does not yet give WMFM a research question to answer.",
+        "Try stating the response you want to understand and the predictor or comparison you want to investigate."
+      )
+    ))
+  }
+
+  if (grepl("^tell me something interesting", punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "unclear_question",
+      deterministicResponse = paste(
+        "That request is too broad for WMFM to answer safely from the fitted model.",
+        "Ask about a particular predictor, comparison, prediction, or aspect of uncertainty."
+      )
+    ))
+  }
+
+  if (grepl("^what should i ask", punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "capability_guidance_requested",
+      deterministicResponse = paste(
+        "Ask a specific question about the fitted relationship, such as whether a predictor is associated with the response,",
+        "how large an estimated change is, what uncertainty remains, or what the model predicts for stated predictor values."
+      )
+    ))
+  }
+
+  if (grepl("^why (are you|is wmfm) predicting", punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "analysis_purpose",
+      status = "answerable",
+      supported = TRUE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = "prediction_purpose",
+      deterministicResponse = paste(
+        "WMFM predicts an outcome only when the question asks what the fitted model expects for specified predictor values.",
+        "A prediction summarises what the fitted model implies; it is not a judgement about the person and it does not guarantee the observed outcome."
+      )
+    ))
+  }
+
+  if (grepl("^why (are we|am i|is this|do we) (doing|fitting|using)", punctuationFree, perl = TRUE) ||
+      identical(punctuationFree, "why are we doing this")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "analysis_purpose",
+      status = "answerable",
+      supported = TRUE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = "analysis_purpose",
+      deterministicResponse = paste(
+        "The fitted model is being used to describe how the response is associated with the selected predictors and to quantify uncertainty in that relationship.",
+        "Whether that is useful depends on the scientific or practical question you intended to investigate."
+      )
+    ))
+  }
+
+  concept = NULL
+  if (grepl("^what is logistic regression", punctuationFree, perl = TRUE)) {
+    concept = "logistic"
+  } else if (grepl("^what is poisson regression", punctuationFree, perl = TRUE)) {
+    concept = "poisson"
+  } else if (grepl("^what is (linear )?regression", punctuationFree, perl = TRUE)) {
+    concept = "linear"
+  }
+
+  if (!is.null(concept)) {
+    response = switch(
+      concept,
+      logistic = paste(
+        "Logistic regression models a binary response by relating predictors to the log-odds of one outcome.",
+        "Its fitted values are usually presented as probabilities between zero and one."
+      ),
+      poisson = paste(
+        "Poisson regression models a non-negative count by relating predictors to the logarithm of the expected count.",
+        "Exponentiated coefficients are commonly interpreted as multiplicative changes in the expected count."
+      ),
+      paste(
+        "Linear regression models how the mean of a continuous response changes with one or more predictors.",
+        "Its coefficients describe estimated changes in that mean, together with uncertainty from the fitted data."
+      )
+    )
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "statistical_education",
+      status = "answerable",
+      supported = TRUE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = paste0("definition_", if (identical(concept, "linear")) "regression" else paste0(concept, "_regression")),
+      deterministicResponse = response
+    ))
+  }
+
+  NULL
+}
+
+#' Classify a follow-up question and attach its shared route
+#'
+#' @param followupQuestion Optional follow-up question text.
+#'
+#' @return Existing follow-up payload with a `questionRoute` field, or a
+#'   deterministic Stage 47 response payload for a newly recognised route.
+#' @keywords internal
+#' @noRd
+classifyAndRouteModelFollowupQuestion = function(followupQuestion = NULL) {
+  existingPayload = classifyModelFollowupQuestion(
+    followupQuestion = followupQuestion
+  )
+  attachQuestionRouteToModelFollowupPayload(
+    followupQuestion = followupQuestion,
+    followupPayload = existingPayload
+  )
+}
+
+#' Attach the shared route to an existing follow-up classification
+#'
+#' @param followupQuestion Optional follow-up question text.
+#' @param followupPayload Existing payload returned by
+#'   \code{classifyModelFollowupQuestion()}.
+#'
+#' @return Existing follow-up payload with a `questionRoute` field, or a
+#'   deterministic Stage 47 response payload for a newly recognised route.
+#' @keywords internal
+#' @noRd
+attachQuestionRouteToModelFollowupPayload = function(
+  followupQuestion = NULL,
+  followupPayload
+) {
+  originalText = as.character(followupQuestion %||% "")
+  originalText = ifelse(length(originalText) >= 1, originalText[[1]], "")
+  originalText = trimws(originalText)
+  normalizedText = tolower(originalText)
+  normalizedText = gsub("\\s+", " ", normalizedText, perl = TRUE)
+
+  questionRoute = classifyStage47QuestionRoute(
+    originalText = originalText,
+    normalizedText = normalizedText,
+    source = "followup_question"
+  )
+
+  if (!inherits(questionRoute, "wmfmQuestionRoute")) {
+    questionRoute = routeExistingModelQuestionPayload(
+      existingPayload = followupPayload,
+      source = "followup_question"
+    )
+  }
+
+  if (is.list(questionRoute$existingPayload)) {
+    payload = questionRoute$existingPayload
+  } else {
+    payload = list(
+      originalText = questionRoute$originalText,
+      normalizedText = questionRoute$normalizedText,
+      category = "question_route_response",
+      supported = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = questionRoute$reason,
+      message = "Question handled by the shared Stage 47 route.",
+      deterministicResponse = questionRoute$deterministicResponse
+    )
+  }
+  payload$questionRoute = questionRoute
+  payload
+}
+
+#' Build the route for a stored research question
+#'
+#' @param model Fitted model.
+#' @param researchQuestion Research question text.
+#'
+#' @return A `wmfmQuestionRoute` object.
+#' @keywords internal
+#' @noRd
+buildResearchQuestionRoute = function(model, researchQuestion) {
+  routeModelQuestion(
+    question = researchQuestion,
+    source = "research_question",
+    model = model,
+    researchQuestion = researchQuestion
+  )
+}
+
 #' Route a question through the shared Stage 47 contract
 #'
 #' Delegates mature follow-up requests to the existing bounded classifier and
@@ -159,11 +404,6 @@ routeModelQuestion = function(
   normalizedText = tolower(originalText)
   normalizedText = gsub("\\s+", " ", normalizedText, perl = TRUE)
 
-  if (identical(source, "followup_question")) {
-    existingPayload = classifyModelFollowupQuestion(originalText)
-    return(routeExistingModelQuestionPayload(existingPayload, source = source))
-  }
-
   if (!nzchar(normalizedText)) {
     return(newWmfmQuestionRoute(
       originalText = originalText,
@@ -176,6 +416,20 @@ routeModelQuestion = function(
       requiresDeterministicComputation = FALSE,
       reason = "empty_research_question"
     ))
+  }
+
+  stage47Route = classifyStage47QuestionRoute(
+    originalText = originalText,
+    normalizedText = normalizedText,
+    source = source
+  )
+  if (inherits(stage47Route, "wmfmQuestionRoute")) {
+    return(stage47Route)
+  }
+
+  if (identical(source, "followup_question")) {
+    existingPayload = classifyModelFollowupQuestion(originalText)
+    return(routeExistingModelQuestionPayload(existingPayload, source = source))
   }
 
   if (!is.null(model) && isTRUE(isPredictionShapedResearchQuestion(originalText))) {
