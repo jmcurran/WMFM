@@ -5,6 +5,15 @@
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
 
+
+## WMFM 1.1.3.003
+
+- Added a shared internal question-routing contract for research and follow-up questions while preserving the established bounded follow-up classifier.
+- Wrapped existing prediction, residual, comparable-observation, unit-change, adjustment-comparison, conditional-quantile, and explanation-preference categories in stable high-level routes.
+- Routed prediction-shaped research questions through the shared contract without removing established payload fields or deterministic results.
+- Added offline table-driven characterisation tests for unusual questions and route-contract validation.
+- Preserved existing classifier semantics in the route tests and derived missing-predictor guidance when legacy prediction payloads omit an explicit missing-predictor field.
+
 ## WMFM 1.1.3.001
 
 - Audited the existing research-question and bounded follow-up pathways for intelligent handling of unusual, unclear, educational, and unsupported questions.
