@@ -266,7 +266,11 @@ testthat::test_that("unusual-question corpus records current and proposed routin
     "definition_logistic_regression",
     "unclear_question",
     "capability_guidance_requested",
-    "missing_outcome_threshold"
+    "missing_outcome_threshold",
+    "requires_diagnostic_assessment",
+    "causal_claim_not_supported",
+    "conditional_distribution_required",
+    "response_question_mismatch"
   )
 
   for (caseIndex in seq_len(nrow(corpus))) {
@@ -538,4 +542,136 @@ testthat::test_that("deterministic follow-up answer uses the needs-input route",
   answer = buildDeterministicFollowupAnswer(model)
   testthat::expect_match(answer, "value for test", fixed = TRUE)
   testthat::expect_false(grepl("could not compute a deterministic prediction", answer, fixed = TRUE))
+})
+
+testthat::test_that("Stage 47.5 routes threshold probabilities to alternative analysis", {
+  questions = c(
+    "What is the chance I will pass if pass means at least 50?",
+    "What is the probability that the exam mark is above 50?"
+  )
+
+  for (question in questions) {
+    route = routeModelQuestion(
+      question = question,
+      source = "followup_question"
+    )
+
+    testthat::expect_identical(
+      route$route,
+      "alternative_analysis_needed",
+      info = question
+    )
+    testthat::expect_identical(
+      route$reason,
+      "response_question_mismatch",
+      info = question
+    )
+    testthat::expect_match(
+      route$deterministicResponse,
+      "binary response model",
+      fixed = TRUE,
+      info = question
+    )
+  }
+})
+
+testthat::test_that("Stage 47.5 routes causal questions without causal claims", {
+  sources = c("research_question", "followup_question")
+
+  for (source in sources) {
+    route = routeModelQuestion(
+      question = "Does attendance cause better exam results?",
+      source = source
+    )
+
+    testthat::expect_identical(route$route, "alternative_analysis_needed")
+    testthat::expect_identical(route$reason, "causal_claim_not_supported")
+    testthat::expect_match(
+      route$deterministicResponse,
+      "adjusted association",
+      fixed = TRUE
+    )
+    testthat::expect_match(
+      route$deterministicResponse,
+      "causal analysis",
+      fixed = TRUE
+    )
+  }
+})
+
+testthat::test_that("Stage 47.5 routes model-adequacy questions to diagnostics", {
+  route = routeModelQuestion(
+    question = "Is this a good model?",
+    source = "followup_question"
+  )
+
+  testthat::expect_identical(route$route, "alternative_analysis_needed")
+  testthat::expect_identical(route$reason, "requires_diagnostic_assessment")
+  testthat::expect_identical(route$recommendedCapability, "model_diagnostics")
+  testthat::expect_match(
+    route$deterministicResponse,
+    "residual patterns",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("Stage 47.5 applies conditional-distribution guidance to research questions", {
+  route = routeModelQuestion(
+    question = "What is a good price for a one carat diamond?",
+    source = "research_question"
+  )
+
+  testthat::expect_identical(route$route, "alternative_analysis_needed")
+  testthat::expect_identical(route$reason, "conditional_distribution_required")
+  testthat::expect_identical(
+    route$recommendedCapability,
+    "conditional_quantile_model"
+  )
+  testthat::expect_match(
+    route$deterministicResponse,
+    "quantile regression",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("Stage 47.5 follow-up payloads expose deterministic guidance", {
+  payload = classifyAndRouteModelFollowupQuestion(
+    "Does attendance cause better exam results?"
+  )
+
+  testthat::expect_identical(payload$category, "question_route_response")
+  testthat::expect_identical(
+    payload$questionRoute$route,
+    "alternative_analysis_needed"
+  )
+  testthat::expect_match(
+    payload$deterministicResponse,
+    "causal analysis",
+    fixed = TRUE
+  )
+})
+
+testthat::test_that("Stage 47.5.1 preserves mature follow-up classifications", {
+  comparableRoute = routeModelQuestion(
+    question = "What is a good deal for a one carat diamond?",
+    source = "followup_question"
+  )
+  testthat::expect_identical(
+    comparableRoute$existingPayload$category,
+    "comparable_observation_request"
+  )
+  testthat::expect_identical(comparableRoute$route, "model_answer")
+
+  quantileRoute = routeModelQuestion(
+    question = "What is the 90th percentile price for a one-carat diamond?",
+    source = "followup_question"
+  )
+  testthat::expect_identical(
+    quantileRoute$existingPayload$category,
+    "conditional_quantile_request"
+  )
+  testthat::expect_identical(
+    quantileRoute$route,
+    "alternative_analysis_needed"
+  )
 })

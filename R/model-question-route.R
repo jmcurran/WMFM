@@ -224,6 +224,109 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
     ))
   }
 
+  explicitThresholdProbabilityPattern = paste(
+    c(
+      "\\b(chance|probability|odds)\\b.*\\b(pass|fail|success|succeed)\\b.*\\b(at least|at most|above|below|over|under|greater than|less than)\\b.*[0-9]",
+      "\\b(pass|fail|success)\\b.*\\bmeans?\\b.*[0-9].*\\b(chance|probability|odds)\\b",
+      "\\b(chance|probability|odds)\\b.*\\b(response|result|score|mark|outcome)\\b.*\\b(above|below|over|under|at least|at most)\\b.*[0-9]"
+    ),
+    collapse = "|"
+  )
+  if (grepl(explicitThresholdProbabilityPattern, punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "alternative_analysis_needed",
+      status = "unsupported",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "response_question_mismatch",
+      recommendedCapability = "binary_outcome_or_distribution_model",
+      deterministicResponse = paste(
+        "This asks for the probability of crossing a defined outcome threshold, not the mean outcome estimated by an ordinary continuous-response model.",
+        "A direct answer requires either a binary response model for the threshold event, such as pass versus fail, or a justified model for the full outcome distribution.",
+        "WMFM will not convert the current mean model into that probability automatically."
+      )
+    ))
+  }
+
+  conditionalQuantile = classifyConditionalQuantileQuestion(punctuationFree)
+  if (isTRUE(conditionalQuantile$matched)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "alternative_analysis_needed",
+      status = "unsupported",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = conditionalQuantile$reasonCode,
+      recommendedCapability = "conditional_quantile_model",
+      deterministicResponse = conditionalQuantile$deterministicResponse
+    ))
+  }
+
+  causalPattern = paste(
+    c(
+      "\\bcaus(?:e|es|ed|al|ality)\\b",
+      "\\bmake(?:s)?\\b.+\\b(better|worse|higher|lower|increase|decrease)\\b",
+      "\\bif (?:i|we|they|a student|the student) (?:increase|decrease|change)\\b.+\\bwill\\b"
+    ),
+    collapse = "|"
+  )
+  if (grepl(causalPattern, punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "alternative_analysis_needed",
+      status = "unsupported",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "causal_claim_not_supported",
+      recommendedCapability = "causal_design_or_analysis",
+      deterministicResponse = paste(
+        "The fitted model can describe an adjusted association, but it does not by itself show that changing the predictor causes the response to change.",
+        "A causal answer requires an appropriate study design and assumptions, followed by a causal analysis that addresses confounding and the direction of intervention.",
+        "WMFM will not turn an observational association into a causal conclusion."
+      )
+    ))
+  }
+
+  diagnosticPattern = paste(
+    c(
+      "^is this (?:a )?good model$",
+      "^is the model (?:any )?good$",
+      "\\b(model|fit)\\b.*\\b(adequate|appropriate|valid|reliable|good)\\b",
+      "\\b(check|test|assess|diagnose)\\b.*\\b(assumptions?|residuals?|model fit|adequacy)\\b",
+      "\\bdo the residuals look (?:okay|ok|good)\\b"
+    ),
+    collapse = "|"
+  )
+  if (grepl(diagnosticPattern, punctuationFree, perl = TRUE)) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "alternative_analysis_needed",
+      status = "unsupported",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "requires_diagnostic_assessment",
+      recommendedCapability = "model_diagnostics",
+      deterministicResponse = paste(
+        "A coefficient table or fitted-model explanation is not enough to decide whether the model is adequate.",
+        "That judgement requires model-specific diagnostics, including residual patterns, unusual or influential observations, and checks of the assumptions relevant to the response model.",
+        "WMFM has not performed that diagnostic assessment for this question, so it will not label the model good or bad from the fitted coefficients alone."
+      )
+    ))
+  }
+
   if (grepl("^what should i ask", punctuationFree, perl = TRUE)) {
     return(newWmfmQuestionRoute(
       originalText = originalText,
@@ -359,17 +462,29 @@ attachQuestionRouteToModelFollowupPayload = function(
   normalizedText = tolower(originalText)
   normalizedText = gsub("\\s+", " ", normalizedText, perl = TRUE)
 
-  questionRoute = classifyStage47QuestionRoute(
-    originalText = originalText,
-    normalizedText = normalizedText,
-    source = "followup_question"
+  establishedPriorityCategories = c(
+    "comparable_observation_request",
+    "conditional_quantile_request"
   )
 
-  if (!inherits(questionRoute, "wmfmQuestionRoute")) {
+  if (followupPayload$category %in% establishedPriorityCategories) {
     questionRoute = routeExistingModelQuestionPayload(
       existingPayload = followupPayload,
       source = "followup_question"
     )
+  } else {
+    questionRoute = classifyStage47QuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = "followup_question"
+    )
+
+    if (!inherits(questionRoute, "wmfmQuestionRoute")) {
+      questionRoute = routeExistingModelQuestionPayload(
+        existingPayload = followupPayload,
+        source = "followup_question"
+      )
+    }
   }
 
   if (is.list(questionRoute$existingPayload)) {
@@ -449,6 +564,18 @@ routeModelQuestion = function(
     ))
   }
 
+  if (identical(source, "followup_question")) {
+    existingPayload = classifyModelFollowupQuestion(originalText)
+    establishedPriorityCategories = c(
+      "comparable_observation_request",
+      "conditional_quantile_request"
+    )
+
+    if (existingPayload$category %in% establishedPriorityCategories) {
+      return(routeExistingModelQuestionPayload(existingPayload, source = source))
+    }
+  }
+
   stage47Route = classifyStage47QuestionRoute(
     originalText = originalText,
     normalizedText = normalizedText,
@@ -459,7 +586,6 @@ routeModelQuestion = function(
   }
 
   if (identical(source, "followup_question")) {
-    existingPayload = classifyModelFollowupQuestion(originalText)
     return(routeExistingModelQuestionPayload(existingPayload, source = source))
   }
 

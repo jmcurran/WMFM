@@ -6,6 +6,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.3.014
+
+- Preserved the mature comparable-observation and conditional-quantile classifier payloads before applying new Stage 47.5 text routing.
+- Kept value-for-money questions on the existing model-answer pathway while retaining alternative-analysis guidance for conditional quantiles.
+- Added focused offline regression tests for established follow-up precedence.
+
 ## WMFM 1.1.3.012
 
 - Separated explicitly supplied predictor values from permissive predictor completion.
