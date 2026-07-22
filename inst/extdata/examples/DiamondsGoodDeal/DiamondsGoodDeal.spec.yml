@@ -1,0 +1,17 @@
+displayName: Diamonds Good Deal
+modelType: lm
+formula: log(price) ~ log(carat) + cut + color + clarity
+dataSource: package
+dataPackage: ggplot2
+dataObject: diamonds
+researchQuestion: Can diamond price be predicted from carat and quality characteristics?
+followupQuestion: What is a good deal for a one carat diamond?
+adjustmentVariables:
+  - cut
+  - color
+  - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: intelligent_question_handling
+  intendedIntent: comparable_observation_request
+  suite: intelligent_question_handling_llm_examples

@@ -1,0 +1,17 @@
+displayName: Diamonds Missing Predictors
+modelType: lm
+formula: log(price) ~ log(carat) + cut + color + clarity
+dataSource: package
+dataPackage: ggplot2
+dataObject: diamonds
+researchQuestion: Can diamond price be predicted from carat and quality characteristics?
+followupQuestion: What price is predicted when carat = 1?
+adjustmentVariables:
+  - cut
+  - color
+  - clarity
+evaluation:
+  datasetGroup: diamonds
+  taskType: intelligent_question_handling
+  intendedIntent: missing_predictor_values
+  suite: intelligent_question_handling_llm_examples

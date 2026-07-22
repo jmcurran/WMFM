@@ -1,0 +1,13 @@
+displayName: Quakes Exceedance Probability
+name: earthquake
+modelType: poisson
+formula: Freq ~ Magnitude * Locn
+data: ../Quakes/Quakes.df.rda
+context: ../Quakes/Quakes.Rmd
+researchQuestion: How does expected earthquake frequency vary with magnitude and location?
+followupQuestion: What is the probability that there will be more than eight earthquakes?
+evaluation:
+  datasetGroup: quakes
+  taskType: intelligent_question_handling
+  intendedIntent: response_question_mismatch
+  suite: intelligent_question_handling_llm_examples

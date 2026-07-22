@@ -6,6 +6,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.3.021
+
+- Added twelve developer-only packaged examples for qualitative LLM review of intelligent question handling.
+- Covered unclear purpose, capability guidance, missing inputs, causal and diagnostic boundaries, comparable observations, conditional percentiles, and response-question mismatches.
+- Used existing package data and removed the mistaken assertion-based developer routing suite.
+- Removed stage identifiers from example names and used portable descriptive paths.
 ## WMFM 1.1.3.016
 
 - Added fitted-model-specific example questions for unclear, unsupported, and capability-guidance requests.
