@@ -318,6 +318,10 @@ runModel = function(
     if (nzchar(researchQuestion)) {
       researchQuestionEscaped = gsub("\"", "\\\"", researchQuestion, fixed = TRUE)
       attr(model, "wmfm_research_question") = researchQuestionEscaped
+      attr(model, "wmfm_research_question_route") = buildResearchQuestionRoute(
+        model = model,
+        researchQuestion = researchQuestion
+      )
     }
   }
 
@@ -327,6 +331,11 @@ runModel = function(
 
     if (nzchar(followupQuestion)) {
       followupPayload = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
+      followupPayload = attachQuestionRouteToModelFollowupPayload(
+        followupQuestion = followupQuestion,
+        followupPayload = followupPayload,
+        model = model
+      )
       followupPayload = enrichFollowupPayloadWithLmPrediction(
         model = model,
         followupPayload = followupPayload
@@ -346,6 +355,11 @@ runModel = function(
       followupPayload = enrichFollowupPayloadWithAdjustmentComparison(
         model = model,
         followupPayload = followupPayload
+      )
+      followupPayload = attachQuestionRouteToModelFollowupPayload(
+        followupQuestion = followupQuestion,
+        followupPayload = followupPayload,
+        model = model
       )
       attr(model, "wmfm_model_followup_question") = followupPayload$originalText
       attr(model, "wmfm_model_followup_payload") = followupPayload
@@ -481,10 +495,17 @@ runModel = function(
 
   if (!is.null(explanation)) {
     explanation = postProcessExplanationText(explanation)
-    explanation = ensureAnchoredFactorComparisonText(
-      text = explanation,
-      model = model
-    )
+
+    followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+    isSpecialisedQuestionResponse = is.list(followupPayload) &&
+      identical(followupPayload$category, "question_route_response")
+
+    if (!isSpecialisedQuestionResponse) {
+      explanation = ensureAnchoredFactorComparisonText(
+        text = explanation,
+        model = model
+      )
+    }
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(
@@ -501,8 +522,7 @@ runModel = function(
       buildExplanationClaimEvidenceMap(
         explanationText = explanation,
         audit = explanationAudit,
-        teachingSummary = explanationTeachingSummary,
-        model = model
+        teachingSummary = explanationTeachingSummary
       ),
       error = function(e) {
         NULL

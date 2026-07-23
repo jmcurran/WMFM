@@ -250,3 +250,75 @@ examples:
     exampleDifficulty: developer
     teachingTopic: Unsupported observation-level request
     developerPurpose: Non-linear-model rejection fixture
+  CoursePurpose:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Intelligent handling of unclear-purpose questions
+    developerPurpose: LLM review example for purpose clarification
+  CourseCapability:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Model-specific question guidance
+    developerPurpose: LLM review example for capability guidance
+  CourseMissingPredictor:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Missing prediction inputs
+    developerPurpose: LLM review example for missing predictor guidance
+  CoursePassProbability:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Response-question mismatch
+    developerPurpose: LLM review example for threshold-probability guidance
+  CourseCausal:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Causal interpretation boundary
+    developerPurpose: LLM review example for causal guidance
+  CourseDiagnostics:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Model-adequacy boundary
+    developerPurpose: LLM review example for diagnostic guidance
+  DiamondsGoodDeal:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Comparable-observation request
+    developerPurpose: LLM review example for a good-deal question
+  DiamondsPercentile:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Conditional-distribution boundary
+    developerPurpose: LLM review example for a percentile question
+  DiamondsMissingPredictors:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Missing factor prediction inputs
+    developerPurpose: LLM review example for incomplete diamond prediction
+  DiamondsCausal:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Causal interpretation boundary
+    developerPurpose: LLM review example for causal price wording
+  QuakesMissingPredictor:
+    exampleAudience: developer
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    teachingTopic: Missing factor prediction inputs
+    developerPurpose: LLM review example for incomplete Poisson prediction
+  QuakesExceedance:
+    exampleAudience: developer
+    exampleFamily: poisson
+    exampleDifficulty: developer
+    teachingTopic: Distributional probability boundary
+    developerPurpose: LLM review example for an exceedance-probability question

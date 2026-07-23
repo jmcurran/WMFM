@@ -4,6 +4,80 @@
 
 This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
 
+
+
+
+
+
+
+
+## WMFM 1.1.3.026
+
+- Repaired the Stage 47.9.2 end-to-end test to use the complete packaged Course fixture containing `Attend`.
+- Repaired successful-run cleanup so the consumed change-set archive is removed when `runStage` installs it before invoking the runner.
+## WMFM 1.1.3.024
+
+- Repaired focused intelligent-question handling so specialised route responses replace, rather than precede, the ordinary fitted-model explanation.
+- Added replacement-behaviour coverage for all twelve focused intelligent-question examples while preserving append behaviour for prediction and observation answers.
+- Corrected grammatical wording in prediction-purpose and model-adequacy guidance.
+## WMFM 1.1.3.023
+
+- Added targeted handling for focused questions about model capability, analysis usefulness, unclear questions, unspecified results, alternative models, and causal proof claims.
+- Made specialised intelligent-question responses replace the ordinary coefficient-by-coefficient explanation for non-model-answer follow-up routes.
+- Strengthened causal safeguards for questions that ask whether a fitted association proves an improvement or other causal effect.
+## WMFM 1.1.3.022
+
+- Replaced the mixed intelligent-question evaluation examples with twelve focused questions about purpose, uncertainty, capability, interpretation, causality, diagnostics, and alternative models.
+- Standardised the evaluation suite label as `intelligent_question_handling`.
+- Removed the Stage 47.7 examples that duplicated earlier prediction, percentile, residual, and comparable-observation work.
+## WMFM 1.1.3.021
+
+- Added twelve developer-only packaged examples for qualitative LLM review of intelligent question handling.
+- Covered unclear purpose, capability guidance, missing inputs, causal and diagnostic boundaries, comparable observations, conditional percentiles, and response-question mismatches.
+- Used existing package data and removed the mistaken assertion-based developer routing suite.
+- Removed stage identifiers from example names and used portable descriptive paths.
+## WMFM 1.1.3.016
+
+- Added fitted-model-specific example questions for unclear, unsupported, and capability-guidance requests.
+- Grounded suggestions in the fitted response, predictors, representative numeric values, and observed factor levels.
+- Passed the fitted model through research, Shiny follow-up, runModel, and prediction-enrichment routing without changing established route precedence.
+- Added offline regression tests for generated examples and deterministic guidance responses.
+
+## WMFM 1.1.3.014
+
+- Preserved the mature comparable-observation and conditional-quantile classifier payloads before applying new Stage 47.5 text routing.
+- Kept value-for-money questions on the existing model-answer pathway while retaining alternative-analysis guidance for conditional quantiles.
+- Added focused offline regression tests for established follow-up precedence.
+
+## WMFM 1.1.3.012
+
+- Separated explicitly supplied predictor values from permissive predictor completion.
+- Prevented a labelled value from being reused for a different omitted predictor.
+- Asked specifically for omitted fitted-model predictors before presenting a prediction.
+- Preserved established prediction payload metadata and isolated post-commit package building.
+
+## WMFM 1.1.3.005
+
+- Added deterministic routing for unclear, purpose-oriented, and introductory regression questions.
+- Prevented routed research questions from receiving a conventional fitted-model explanation or unnecessary language-model call.
+- Preserved existing deterministic statistical follow-up categories and added offline route and compatibility tests.
+- Repaired follow-up routing so the established classifier remains explicit before the shared route is attached.
+
+## WMFM 1.1.3.003
+
+- Added a shared internal question-routing contract for research and follow-up questions while preserving the established bounded follow-up classifier.
+- Wrapped existing prediction, residual, comparable-observation, unit-change, adjustment-comparison, conditional-quantile, and explanation-preference categories in stable high-level routes.
+- Routed prediction-shaped research questions through the shared contract without removing established payload fields or deterministic results.
+- Added offline table-driven characterisation tests for unusual questions and route-contract validation.
+- Preserved existing classifier semantics in the route tests and derived missing-predictor guidance when legacy prediction payloads omit an explicit missing-predictor field.
+
+## WMFM 1.1.3.001
+
+- Audited the existing research-question and bounded follow-up pathways for intelligent handling of unusual, unclear, educational, and unsupported questions.
+- Designed a shared question-routing contract that preserves the established deterministic prediction, residual, comparable-observation, unit-change, and safety machinery.
+- Defined a staged implementation roadmap covering clarification, educational responses, missing information, alternative-analysis guidance, and model-specific capability suggestions.
+- This audit-and-design stage does not change package behaviour.
+
 ## WMFM 1.1.2.005
 
 - Prevented the factor-only beeswarm regression test from leaving Rplots.pdf in tests/testthat.

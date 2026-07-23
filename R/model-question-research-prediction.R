@@ -3,11 +3,14 @@
 #' @param model Fitted model object.
 #' @param researchQuestion Character scalar research question.
 #'
+#' @param includeQuestionRoute Logical scalar indicating whether the shared Stage
+#'   47 route contract should be attached.
+#'
 #' @return List payload with prediction metadata and deterministic prediction
 #'   result when supported.
 #' @keywords internal
 #' @noRd
-buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
+buildResearchQuestionPredictionPayload = function(model, researchQuestion, includeQuestionRoute = TRUE) {
   question = trimws(as.character(researchQuestion %||% ""))
   if (!nzchar(question)) {
     return(NULL)
@@ -65,18 +68,29 @@ buildResearchQuestionPredictionPayload = function(model, researchQuestion) {
     )
   }
 
-  list(
+  payload = list(
     category = if (isTRUE(predictionResult$predictionType == "individual_prediction_interval")) {
       "prediction_interval_request"
     } else {
       "prediction_request"
     },
     supported = TRUE,
+    requiresDeterministicComputation = TRUE,
     message = "Prediction-shaped research question detected for deterministic prediction pathway.",
     originalText = question,
+    normalizedText = tolower(question),
     source = "research_question",
     predictionResult = predictionResult
   )
+
+  if (isTRUE(includeQuestionRoute)) {
+    payload$questionRoute = routeExistingModelQuestionPayload(
+      existingPayload = payload,
+      source = "research_question"
+    )
+  }
+
+  payload
 }
 
 #' @keywords internal

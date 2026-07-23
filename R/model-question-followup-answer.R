@@ -18,6 +18,11 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     return(explanation)
   }
 
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (is.list(payload) && identical(payload$category, "question_route_response")) {
+    return(answer)
+  }
+
   if (grepl(answer, explanation, fixed = TRUE)) {
     return(explanation)
   }
@@ -45,6 +50,17 @@ buildDeterministicFollowupAnswer = function(model) {
   payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
   if (!is.list(payload)) {
     return("")
+  }
+
+  questionRoute = payload$questionRoute %||% NULL
+  if (inherits(questionRoute, "wmfmQuestionRoute") &&
+      identical(questionRoute$route, "needs_input") &&
+      nzchar(trimws(as.character(questionRoute$deterministicResponse %||% "")))) {
+    return(trimws(as.character(questionRoute$deterministicResponse)))
+  }
+
+  if (identical(payload$category, "question_route_response")) {
+    return(trimws(as.character(payload$deterministicResponse %||% "")))
   }
 
   if (identical(payload$category, "adjustment_prediction_comparison")) {

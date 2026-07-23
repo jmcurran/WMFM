@@ -375,8 +375,17 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
     researchQuestion = gsub("\"", "\\\"", researchQuestionRaw, fixed = TRUE)
     attr(m, "wmfm_research_question") = researchQuestion
+    attr(m, "wmfm_research_question_route") = buildResearchQuestionRoute(
+      model = m,
+      researchQuestion = researchQuestionRaw
+    )
     followupQuestion = trimws(input$modelFollowupQuestion %||% rv$modelFollowupQuestion %||% "")
     followupClassification = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
+    followupClassification = attachQuestionRouteToModelFollowupPayload(
+      followupQuestion = followupQuestion,
+      followupPayload = followupClassification,
+      model = m
+    )
     followupClassification = enrichFollowupPayloadWithLmPrediction(
       model = m,
       followupPayload = followupClassification
@@ -396,6 +405,11 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     followupClassification = enrichFollowupPayloadWithAdjustmentComparison(
       model = m,
       followupPayload = followupClassification
+    )
+    followupClassification = attachQuestionRouteToModelFollowupPayload(
+      followupQuestion = followupQuestion,
+      followupPayload = followupClassification,
+      model = m
     )
     attr(m, "wmfm_model_followup_question") = followupClassification$originalText
     attr(m, "wmfm_model_followup_payload") = followupClassification

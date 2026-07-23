@@ -25,6 +25,25 @@ lmExplanation = function(model, chat, useCache = TRUE) {
     stop("`useCache` must be TRUE or FALSE.", call. = FALSE)
   }
 
+  followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  followupRoute = if (is.list(followupPayload)) {
+    followupPayload$questionRoute %||% NULL
+  } else {
+    NULL
+  }
+  if (inherits(followupRoute, "wmfmQuestionRoute") &&
+      !followupRoute$route %in% c("model_answer", "explanation_preference") &&
+      nzchar(trimws(as.character(followupRoute$deterministicResponse %||% "")))) {
+    return(trimws(as.character(followupRoute$deterministicResponse)))
+  }
+
+  researchRoute = attr(model, "wmfm_research_question_route", exact = TRUE)
+  if (inherits(researchRoute, "wmfmQuestionRoute") &&
+      !researchRoute$route %in% c("model_answer", "explanation_preference")) {
+    output = trimws(as.character(researchRoute$deterministicResponse %||% ""))
+    return(appendDeterministicFollowupAnswer(explanation = output, model = model))
+  }
+
   formulaStr = paste(deparse(formula(model)), collapse = " ")
   coefStr = paste(coef(model), collapse = ";")
   mf = stats::model.frame(model)
