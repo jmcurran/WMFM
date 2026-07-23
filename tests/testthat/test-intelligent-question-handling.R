@@ -140,3 +140,35 @@ testthat::test_that("focused route response wording is grammatically clean", {
   )
   testthat::expect_false(grepl("A estimated", modelQuality$deterministicResponse, fixed = TRUE))
 })
+
+testthat::test_that("runModel does not append an anchored model summary to specialised guidance", {
+  data = loadStats20xFixture()[, c("Exam", "Attend", "Test")]
+
+  testthat::local_mocked_bindings(
+    getModelEquations = function(model, method = "deterministic", chat = NULL) {
+      "Exam = a + b1 * Attend + b2 * Test"
+    },
+    getChatProvider = function(...) {
+      list(
+        chat = function(prompt) {
+          stop("The chat provider should not be called for specialised guidance.")
+        }
+      )
+    },
+    .package = "WMFM"
+  )
+
+  result = runModel(
+    data = data,
+    formula = Exam ~ Attend + Test,
+    modelType = "lm",
+    researchQuestion = "How are attendance and test results associated with exam marks?",
+    followupQuestion = "Is this analysis useful?",
+    printOutput = FALSE,
+    useExplanationCache = FALSE
+  )
+
+  testthat::expect_match(result$explanation, "useful only if", fixed = TRUE)
+  testthat::expect_false(grepl("At Test =", result$explanation, fixed = TRUE))
+  testthat::expect_false(grepl("expected Exam is about", result$explanation, fixed = TRUE))
+})

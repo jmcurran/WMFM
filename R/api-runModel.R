@@ -495,10 +495,17 @@ runModel = function(
 
   if (!is.null(explanation)) {
     explanation = postProcessExplanationText(explanation)
-    explanation = ensureAnchoredFactorComparisonText(
-      text = explanation,
-      model = model
-    )
+
+    followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+    isSpecialisedQuestionResponse = is.list(followupPayload) &&
+      identical(followupPayload$category, "question_route_response")
+
+    if (!isSpecialisedQuestionResponse) {
+      explanation = ensureAnchoredFactorComparisonText(
+        text = explanation,
+        model = model
+      )
+    }
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(

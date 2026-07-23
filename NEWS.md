@@ -10,6 +10,11 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.3.026
+
+- Repaired the Stage 47.9.2 end-to-end test to use the complete packaged Course fixture containing `Attend`.
+- Repaired successful-run cleanup so the consumed change-set archive is removed when `runStage` installs it before invoking the runner.
 ## WMFM 1.1.3.024
 
 - Repaired focused intelligent-question handling so specialised route responses replace, rather than precede, the ordinary fitted-model explanation.
