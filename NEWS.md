@@ -9,6 +9,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.3.024
+
+- Repaired focused intelligent-question handling so specialised route responses replace, rather than precede, the ordinary fitted-model explanation.
+- Added replacement-behaviour coverage for all twelve focused intelligent-question examples while preserving append behaviour for prediction and observation answers.
+- Corrected grammatical wording in prediction-purpose and model-adequacy guidance.
 ## WMFM 1.1.3.023
 
 - Added targeted handling for focused questions about model capability, analysis usefulness, unclear questions, unspecified results, alternative models, and causal proof claims.

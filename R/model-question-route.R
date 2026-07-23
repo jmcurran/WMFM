@@ -417,7 +417,7 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
       reason = "requires_diagnostic_assessment",
       recommendedCapability = "model_diagnostics",
       deterministicResponse = paste(
-        "A coefficient table or fitted-model explanation is not enough to decide whether the model is adequate.",
+        "An explanation of the fitted changes is not enough to decide whether the model is adequate.",
         "That judgement requires model-specific diagnostics, including residual patterns, unusual or influential observations, and checks of the assumptions relevant to the response model.",
         "WMFM has not performed that diagnostic assessment for this question, so it will not label the model good or bad from the fitted coefficients alone."
       )
@@ -455,7 +455,7 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
       reason = "prediction_purpose",
       deterministicResponse = paste(
         "WMFM predicts an outcome only when the question asks what the fitted model expects for specified predictor values.",
-        "A prediction summarises what the fitted model implies; it is not a judgement about the person and it does not guarantee the observed outcome."
+        "A prediction summarises what the fitted model implies. It is not a judgement about the person and it does not guarantee the observed outcome."
       )
     ))
   }

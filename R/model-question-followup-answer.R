@@ -18,6 +18,11 @@ appendDeterministicFollowupAnswer = function(explanation, model) {
     return(explanation)
   }
 
+  payload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
+  if (is.list(payload) && identical(payload$category, "question_route_response")) {
+    return(answer)
+  }
+
   if (grepl(answer, explanation, fixed = TRUE)) {
     return(explanation)
   }
