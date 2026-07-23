@@ -8,6 +8,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.3.023
+
+- Added targeted handling for focused questions about model capability, analysis usefulness, unclear questions, unspecified results, alternative models, and causal proof claims.
+- Made specialised intelligent-question responses replace the ordinary coefficient-by-coefficient explanation for non-model-answer follow-up routes.
+- Strengthened causal safeguards for questions that ask whether a fitted association proves an improvement or other causal effect.
 ## WMFM 1.1.3.022
 
 - Replaced the mixed intelligent-question evaluation examples with twelve focused questions about purpose, uncertainty, capability, interpretation, causality, diagnostics, and alternative models.

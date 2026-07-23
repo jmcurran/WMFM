@@ -252,6 +252,102 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
     ))
   }
 
+  if (identical(punctuationFree, "can this model answer my question")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "question_not_specified",
+      recommendedCapability = "model_specific_question_examples",
+      deterministicResponse = paste(
+        "That depends on the question you want the model to answer.",
+        "This fitted model can describe how the mean response is associated with its predictors and can make model-based predictions when all required predictor values are supplied.",
+        "State the particular question, and WMFM can say whether the current model is suitable or whether a different analysis is needed."
+      )
+    ))
+  }
+
+  if (identical(punctuationFree, "is this analysis useful")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "analysis_purpose",
+      status = "answerable",
+      supported = TRUE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = "analysis_usefulness",
+      deterministicResponse = paste(
+        "The analysis is useful only if the fitted relationship addresses the scientific or practical question you care about.",
+        "It can summarise associations and uncertainty in these data, but usefulness also depends on the study design, the variables measured, and the decision the result is meant to inform."
+      )
+    ))
+  }
+
+  if (identical(punctuationFree, "i don't understand the question") ||
+      identical(punctuationFree, "i do not understand the question")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = FALSE,
+      requiresDeterministicComputation = FALSE,
+      reason = "question_not_understood",
+      deterministicResponse = paste(
+        "That is a reasonable reason to pause before interpreting the model.",
+        "Try rewriting the question by naming the response you want to understand and the predictor, group comparison, or prediction you want to investigate.",
+        "WMFM should not interpret the model as an answer until the question itself is clear."
+      )
+    ))
+  }
+
+  if (identical(punctuationFree, "what does this result mean")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "result_not_specified",
+      deterministicResponse = paste(
+        "It is not clear which result you mean.",
+        "Identify the coefficient, confidence interval, fitted value, comparison, or overall conclusion you want explained, and WMFM can interpret that specific result without guessing."
+      )
+    ))
+  }
+
+  if (identical(punctuationFree, "should i use a different model")) {
+    return(newWmfmQuestionRoute(
+      originalText = originalText,
+      normalizedText = normalizedText,
+      source = source,
+      route = "needs_clarification",
+      status = "needs_clarification",
+      supported = FALSE,
+      requiresModel = TRUE,
+      requiresDeterministicComputation = FALSE,
+      reason = "alternative_model_requires_question_and_diagnostics",
+      recommendedCapability = "model_selection_guidance",
+      deterministicResponse = paste(
+        "A different model may be needed, but that cannot be decided from the coefficient table alone.",
+        "The choice depends on the response type, the question being asked, the study design, and model diagnostics.",
+        "State what you want to learn and inspect the relevant diagnostics before replacing the current model."
+      )
+    ))
+  }
+
   conditionalQuantile = classifyConditionalQuantileQuestion(punctuationFree)
   if (isTRUE(conditionalQuantile$matched)) {
     return(newWmfmQuestionRoute(
@@ -272,6 +368,7 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
   causalPattern = paste(
     c(
       "\\bcaus(?:e|es|ed|al|ality)\\b",
+      "\\bprov(?:e|es|ed|ing)\\b.+\\b(improve|improves|improved|increase|increases|increased|decrease|decreases|decreased|better|worse|higher|lower)\\b",
       "\\bmake(?:s)?\\b.+\\b(better|worse|higher|lower|increase|decrease)\\b",
       "\\bif (?:i|we|they|a student|the student) (?:increase|decrease|change)\\b.+\\bwill\\b"
     ),
