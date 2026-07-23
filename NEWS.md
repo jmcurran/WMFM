@@ -7,6 +7,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.3.022
+
+- Replaced the mixed intelligent-question evaluation examples with twelve focused questions about purpose, uncertainty, capability, interpretation, causality, diagnostics, and alternative models.
+- Standardised the evaluation suite label as `intelligent_question_handling`.
+- Removed the Stage 47.7 examples that duplicated earlier prediction, percentile, residual, and comparable-observation work.
 ## WMFM 1.1.3.021
 
 - Added twelve developer-only packaged examples for qualitative LLM review of intelligent question handling.
