@@ -62,7 +62,7 @@ testthat::test_that("appUI includes explanation and onboarding controls", {
 
   testthat::expect_match(html, "Model Explanation", fixed = TRUE)
   testthat::expect_match(html, "model_explanation", fixed = TRUE)
-  testthat::expect_match(html, "Start with the main explanation", fixed = TRUE)
+  testthat::expect_match(html, "WMFM generates an explanation only when you explicitly ask for one.", fixed = TRUE)
   testthat::expect_match(html, "Optional follow-up question", fixed = TRUE)
   testthat::expect_match(html, "modelFollowupQuestion", fixed = TRUE)
   testthat::expect_match(html, "Load a built-in example", fixed = TRUE)
@@ -257,7 +257,11 @@ testthat::test_that("app UI avoids duplicated explanation and output labels", {
   testthat::expect_no_match(html, "<h4>Model explanation</h4>", fixed = TRUE)
   testthat::expect_no_match(html, "Summary table", fixed = TRUE)
   testthat::expect_no_match(html, ">Model outputs</button>.*<h4>Model outputs</h4>", perl = TRUE)
-  testthat::expect_match(html, "sentence support, reading guidance", fixed = TRUE)
+  testthat::expect_match(
+    html,
+    "WMFM generates an explanation only when you explicitly ask for one.",
+    fixed = TRUE
+  )
 })
 
 testthat::test_that("research question input uses one visible label", {
@@ -332,4 +336,40 @@ testthat::test_that("renderExplanationTeachingSummaryUi includes derived-variabl
   testthat::expect_match(html, "Derived-variable transformations", fixed = TRUE)
   testthat::expect_match(html, "`logPrice`", fixed = TRUE)
   testthat::expect_match(html, "does not yet automatically back-transform", fixed = TRUE)
+})
+
+testthat::test_that("empty model explanation UI offers explicit generation", {
+  unavailableUi = buildModelExplanationRequestUi(modelAvailable = FALSE)
+  unavailableHtml = as.character(unavailableUi)
+  testthat::expect_match(
+    unavailableHtml,
+    "Fit a model before requesting an explanation.",
+    fixed = TRUE
+  )
+
+  availableUi = buildModelExplanationRequestUi(modelAvailable = TRUE)
+  availableHtml = as.character(availableUi)
+  testthat::expect_match(
+    availableHtml,
+    "No explanation has been generated for this model.",
+    fixed = TRUE
+  )
+  testthat::expect_match(availableHtml, "generateModelExplanationBtn", fixed = TRUE)
+  testthat::expect_match(availableHtml, "Explain this model", fixed = TRUE)
+  testthat::expect_match(availableHtml, "Try writing your own explanation first", fixed = TRUE)
+})
+
+testthat::test_that("model explanation is generated only by the explicit button", {
+  fitText = readPackageText("R", "app-server-fit-model.R")
+  explanationText = readPackageText("R", "app-server-explanation.R")
+
+  testthat::expect_no_match(fitText, "getChatProvider(", fixed = TRUE)
+  testthat::expect_no_match(fitText, "buildAppExplanation(", fixed = TRUE)
+  testthat::expect_match(
+    explanationText,
+    "observeEvent(input$generateModelExplanationBtn",
+    fixed = TRUE
+  )
+  testthat::expect_match(explanationText, "getChatProvider(", fixed = TRUE)
+  testthat::expect_match(explanationText, "buildAppExplanation(", fixed = TRUE)
 })

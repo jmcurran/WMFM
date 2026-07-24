@@ -66,3 +66,15 @@ test_that("fit model observers are registered from app server", {
   expect_true(grepl("output$formula_status", fitModelObserverText, fixed = TRUE))
   expect_true(grepl("observeEvent(input$reset_btn", fitModelObserverText, fixed = TRUE))
 })
+
+test_that("fitting a model does not request an LLM explanation", {
+  skipIfFitModelObserverSourceFilesUnavailable()
+
+  fitModelObserverText = readFitModelObserverSourceText("app-server-fit-model.R")
+
+  expect_false(grepl("getChatProvider(", fitModelObserverText, fixed = TRUE))
+  expect_false(grepl("buildAppExplanation(", fitModelObserverText, fixed = TRUE))
+  expect_true(grepl("chatProvider = NULL", fitModelObserverText, fixed = TRUE))
+  expect_true(grepl("rv$modelExplanation = NULL", fitModelObserverText, fixed = TRUE))
+  expect_true(grepl("buildAppExplanationAudit(model = m)", fitModelObserverText, fixed = TRUE))
+})

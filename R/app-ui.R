@@ -1047,7 +1047,7 @@ appUI = function() {
       tabPanel(
         "Model Explanation",
         helpText(
-          "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
+          "WMFM generates an explanation only when you explicitly ask for one."
         ),
         selectInput(
           inputId = "modelExplanationZoom",

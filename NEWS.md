@@ -11,6 +11,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.002
+
+- Separated deterministic model fitting from optional LLM explanation generation.
+- Left the Model Explanation tab unpopulated until the student explicitly selects Explain this model.
+- Cleared prior explanation text and provenance whenever a model is refitted or reset.
+- Added focused tests for the no-automatic-LLM fit path and the explicit explanation request UI.
+- Repaired a stale UI expectation so the test suite checks the new deliberate-request guidance.
+
 ## WMFM 1.1.3.026
 
 - Repaired the Stage 47.9.2 end-to-end test to use the complete packaged Course fixture containing `Attend`.

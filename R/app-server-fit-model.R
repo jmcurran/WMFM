@@ -77,51 +77,18 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
   })
 
   # -------------------------------------------------------------------
-  # Fit model when button clicked (lazy LLM connection)
+  # Fit model when button clicked (no automatic LLM request)
   # -------------------------------------------------------------------
   observeEvent(input$fit_btn, {
 
-    # Try to obtain a chat provider *now*, instead of at app startup
-    chatProvider = tryCatch(
-      getChatProvider(
-        backend = rv$activeChatBackend %||% "ollama",
-        model = rv$activeOllamaModel %||% "gpt-oss",
-        ollamaThinkLow = rv$activeOllamaThinkLow %||% FALSE
-      ),
-      error = function(e) {
-        showNotification(
-          buildChatProviderConnectionFailedMessage(conditionMessage(e)),
-          type     = "error",
-          duration = 10
-        )
-        NULL
-      }
-    )
-
+    # Model fitting is deterministic. An LLM explanation is generated only
+    # when the student explicitly requests one from the fitted-model page.
+    chatProvider = NULL
+    rv$chatProvider = NULL
+    rv$modelExplanation = NULL
+    rv$modelExplanationProvenance = NULL
+    rv$modelExplanationTutor = NULL
     rv$modelExplanationMessage = NULL
-
-    if (is.null(chatProvider)) {
-      rv$modelExplanationMessage = buildNoLanguageModelAvailableMessage()
-      showNotification(
-        rv$modelExplanationMessage,
-        type     = "message",
-        duration = 10
-      )
-    } else if (isWmfmDummyChatProvider(chatProvider)) {
-      rv$modelExplanationMessage = getWmfmDummyChatProviderMessage(chatProvider)
-      showNotification(
-        rv$modelExplanationMessage,
-        type     = "error",
-        duration = 12
-      )
-    } else {
-      rv$chatProvider = chatProvider
-
-      # optional: clear cache on refit so interpretations match the new model
-      if (is.environment(rv$contrastLlmCache)) {
-        rm(list = ls(envir = rv$contrastLlmCache), envir = rv$contrastLlmCache)
-      }
-    }
 
     res = checkFormula()
     if (!res$ok) {
@@ -486,54 +453,23 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
 
       incProgress(0.25, detail = outputMessages$equationCompleteDetail)
 
-      explanationMessages = buildAppOutputMessages(
-        equationMethod = equationResults$equationMethodUsed %||% "deterministic",
-        explanationAvailable = FALSE,
-        explanationRequested = !is.null(chatProvider)
-      )
-
-      incProgress(0.10, detail = explanationMessages$explanationDetail)
-
-      explanation = buildAppExplanation(
-        model = m,
-        chatProvider = chatProvider
-      )
-      explanation = postProcessExplanationText(explanation)
-      if (is.list(rv$explanationPromptDiagnostics)) {
-        rv$explanationPromptDiagnostics$generatedExplanation = explanation %||% ""
-      }
       explanationAudit = buildAppExplanationAudit(model = m)
 
-      incProgress(0.35, detail = outputMessages$updateDetail)
+      incProgress(0.45, detail = outputMessages$updateDetail)
 
       rv$modelEquations = equationResults$equations
-      rv$modelExplanation = explanation
-      rv$modelExplanationProvenance = if (!is.null(explanation)) {
-        list(
-          providerLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama",
-          modelName = if (identical(rv$activeChatBackend, "ollama")) rv$activeOllamaModel else NULL,
-          generatedAt = Sys.time()
-        )
-      } else {
-        NULL
-      }
       rv$modelExplanationAudit = explanationAudit
-      rv$modelExplanationTutor = NULL
-
-      if (!is.null(explanation)) {
-        rv$modelExplanationMessage = NULL
-      }
 
       finishMessages = buildAppOutputMessages(
         equationMethod = equationResults$equationMethodUsed %||% "deterministic",
-        explanationAvailable = !is.null(explanation),
-        explanationRequested = !is.null(chatProvider)
+        explanationAvailable = FALSE,
+        explanationRequested = FALSE
       )
 
       incProgress(0.10, detail = finishMessages$finishDetail)
       incProgress(0.10, detail = finishMessages$doneDetail)
     })
-    # After fitting and LLM completion, return to the fitted model tab
+    # After fitting, return to the fitted model tab without calling the LLM
     updateTabsetPanel(session, "main_tabs", selected = "Fitted Model")
   })
 

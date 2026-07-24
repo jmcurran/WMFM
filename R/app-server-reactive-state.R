@@ -15,6 +15,7 @@ createAppServerReactiveState = function() {
     autoFormula = "",
     modelEquations = NULL,
     modelExplanation = NULL,
+    modelExplanationProvenance = NULL,
     modelExplanationAudit = NULL,
     modelExplanationTutor = NULL,
     modelExplanationMessage = NULL,

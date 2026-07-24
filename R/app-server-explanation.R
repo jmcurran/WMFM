@@ -32,6 +32,37 @@ buildModelExplanationSupportAccordion = function(panels, developerMode = FALSE, 
   )
 }
 
+
+#' Build the empty model-explanation prompt
+#'
+#' @param modelAvailable Logical indicating whether a fitted model is available.
+#'
+#' @return A Shiny tag object.
+#' @keywords internal
+#' @noRd
+buildModelExplanationRequestUi = function(modelAvailable = FALSE) {
+  if (!isTRUE(modelAvailable)) {
+    return(helpText("Fit a model before requesting an explanation."))
+  }
+
+  tags$div(
+    class = "wmfm-explanation-request",
+    tags$p(
+      "No explanation has been generated for this model."
+    ),
+    tags$p(
+      class = "wmfm-explanation-helper-note",
+      "Try writing your own explanation first, or ask WMFM to explain the fitted model."
+    ),
+    actionButton(
+      inputId = "generateModelExplanationBtn",
+      label = "Explain this model",
+      icon = icon("wand-magic-sparkles"),
+      class = "btn-primary"
+    )
+  )
+}
+
 #' Register model explanation observers for the app server
 #'
 #' @param input Shiny input object.
@@ -159,12 +190,17 @@ registerModelExplanationObservers = function(
     explanationMessage = rv$modelExplanationMessage
     provenance = rv$modelExplanationProvenance
 
-    if (is.null(expl) && is.null(audit)) {
-      return(helpText("Fit a model to see a textual explanation."))
+    m = modelFit()
+
+    if (is.null(m)) {
+      return(buildModelExplanationRequestUi(modelAvailable = FALSE))
+    }
+
+    if (is.null(expl)) {
+      return(buildModelExplanationRequestUi(modelAvailable = TRUE))
     }
 
     teachingSummary = modelExplanationTeachingSummary()
-    m = modelFit()
     adjustmentVariables = getModelAdjustmentVariables(m)
     interpretationModeLabel = buildInterpretationModeLabel(adjustmentVariables = adjustmentVariables)
     researchQuestionText = trimws(as.character(rv$researchQuestion %||% attr(m, "wmfm_research_question", exact = TRUE) %||% ""))
@@ -371,6 +407,99 @@ registerModelExplanationObservers = function(
         )
       }
     )
+  })
+
+  observeEvent(input$generateModelExplanationBtn, {
+    m = modelFit()
+
+    if (is.null(m)) {
+      showNotification(
+        "Fit a model before requesting an explanation.",
+        type = "warning",
+        duration = 6
+      )
+      return(NULL)
+    }
+
+    chatProvider = tryCatch(
+      getChatProvider(
+        backend = rv$activeChatBackend %||% "ollama",
+        model = rv$activeOllamaModel %||% "gpt-oss",
+        ollamaThinkLow = rv$activeOllamaThinkLow %||% FALSE
+      ),
+      error = function(e) {
+        rv$modelExplanationMessage = buildChatProviderConnectionFailedMessage(
+          conditionMessage(e)
+        )
+        showNotification(
+          rv$modelExplanationMessage,
+          type = "error",
+          duration = 10
+        )
+        NULL
+      }
+    )
+
+    if (is.null(chatProvider)) {
+      return(NULL)
+    }
+
+    if (isWmfmDummyChatProvider(chatProvider)) {
+      rv$modelExplanationMessage = getWmfmDummyChatProviderMessage(chatProvider)
+      showNotification(
+        rv$modelExplanationMessage,
+        type = "error",
+        duration = 12
+      )
+      return(NULL)
+    }
+
+    rv$chatProvider = chatProvider
+
+    if (is.environment(rv$contrastLlmCache)) {
+      rm(list = ls(envir = rv$contrastLlmCache), envir = rv$contrastLlmCache)
+    }
+
+    withProgress(message = "Generating the model explanation", value = 0, {
+      incProgress(0.2, detail = "Preparing the fitted-model information")
+
+      explanation = tryCatch(
+        buildAppExplanation(
+          model = m,
+          chatProvider = chatProvider
+        ),
+        error = function(e) {
+          showNotification(
+            paste("The explanation could not be generated.", conditionMessage(e)),
+            type = "error",
+            duration = 10
+          )
+          NULL
+        }
+      )
+
+      if (is.null(explanation)) {
+        return(NULL)
+      }
+
+      incProgress(0.6, detail = "Preparing the explanation for display")
+
+      explanation = postProcessExplanationText(explanation)
+      rv$modelExplanation = explanation
+      rv$modelExplanationMessage = NULL
+      rv$modelExplanationTutor = NULL
+      rv$modelExplanationProvenance = list(
+        providerLabel = if (identical(rv$activeChatBackend, "claude")) "Claude" else "Ollama",
+        modelName = if (identical(rv$activeChatBackend, "ollama")) rv$activeOllamaModel else NULL,
+        generatedAt = Sys.time()
+      )
+
+      if (is.list(rv$explanationPromptDiagnostics)) {
+        rv$explanationPromptDiagnostics$generatedExplanation = explanation
+      }
+
+      incProgress(0.2, detail = "Explanation ready")
+    })
   })
 
   observeEvent(input$modelExplanationTutorBtn, {
