@@ -30,3 +30,34 @@ test_that("student explanation UI includes the editor and toolbar", {
   expect_match(html, "studentExplanationToolbarUi", fixed = TRUE)
   expect_match(html, "wmfmInsertStudentExplanation", fixed = TRUE)
 })
+
+test_that("student explanation feedback exposes strengths and revision priorities", {
+  model = makeOfflineWmfmModel()
+  gradeObj = grade(
+    model,
+    explanation = "Higher x is associated with higher y.",
+    method = "deterministic",
+    autoScore = TRUE
+  )
+
+  feedback = buildStudentExplanationFeedback(gradeObj)
+
+  expect_type(feedback, "list")
+  expect_true(is.finite(feedback$overallScore))
+  expect_type(feedback$strengths, "character")
+  expect_type(feedback$priorities, "character")
+
+  html = as.character(renderStudentExplanationFeedbackUi(feedback))
+  expect_match(html, "Feedback on your explanation", fixed = TRUE)
+  expect_match(html, "What is working well", fixed = TRUE)
+  expect_match(html, "What to revise next", fixed = TRUE)
+})
+
+test_that("student explanation UI includes formative checking controls", {
+  html = as.character(appUI())
+
+  expect_match(html, "checkStudentExplanation", fixed = TRUE)
+  expect_match(html, "Check my explanation", fixed = TRUE)
+  expect_match(html, "studentExplanationFeedbackStatus", fixed = TRUE)
+  expect_match(html, "studentExplanationFeedbackUi", fixed = TRUE)
+})

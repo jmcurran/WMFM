@@ -11,6 +11,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.004
+
+- Added an explicit Check my explanation action to the student writing workspace.
+- Reused the deterministic WMFM grading path to provide a compact rubric score, strengths, and priorities for revision.
+- Kept the formative feedback separate from the optional generated model explanation so checking an answer does not reveal the answer.
+- Cleared stale feedback when the student edits the explanation or fits a different model.
+- Added deterministic offline tests for feedback extraction, rendering, and UI integration.
+
 ## WMFM 1.1.5.003
 
 - Added a student-authored explanation workspace before the optional generated explanation.

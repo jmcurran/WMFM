@@ -151,11 +151,125 @@ buildStudentExplanationToolbarUi = function(model) {
   )
 }
 
+#' Build formative feedback for a student explanation
+#'
+#' Converts a scored `wmfmGrade` object into a compact feedback structure for
+#' the student workspace. The result focuses on strengths and revision
+#' priorities rather than exposing the full developer scoring record.
+#'
+#' @param gradeObj A scored `wmfmGrade` object.
+#' @param method Character scalar naming the scoring method.
+#'
+#' @return A named list containing the score, strengths, and revision priorities.
+#'
+#' @keywords internal
+buildStudentExplanationFeedback = function(
+    gradeObj,
+    method = "deterministic"
+) {
+  if (!inherits(gradeObj, "wmfmGrade")) {
+    return(NULL)
+  }
+
+  methodScore = gradeObj$scores$byMethod[[method]]
+  methodFeedback = gradeObj$feedback$byMethod[[method]]
+
+  if (is.null(methodScore) || is.null(methodFeedback)) {
+    return(NULL)
+  }
+
+  extractFeedbackText = function(x) {
+    if (!is.data.frame(x) || nrow(x) == 0) {
+      return(character(0))
+    }
+
+    preferredColumns = c("reason", "message", "feedback", "label")
+    textColumn = preferredColumns[preferredColumns %in% names(x)][1]
+
+    if (is.na(textColumn) || length(textColumn) == 0) {
+      return(character(0))
+    }
+
+    values = trimws(as.character(x[[textColumn]]))
+    unique(values[!is.na(values) & nzchar(values)])
+  }
+
+  strengths = extractFeedbackText(methodFeedback$strengths)
+  priorities = extractFeedbackText(methodFeedback$whereMarksLost)
+
+  if (length(priorities) == 0) {
+    priorities = extractFeedbackText(methodFeedback$missingElements)
+  }
+
+  list(
+    overallScore = suppressWarnings(as.numeric(methodScore$overallScore)[1]),
+    mark = suppressWarnings(as.numeric(methodScore$mark)[1]),
+    scoreScale = suppressWarnings(as.numeric(gradeObj$scoreScale)[1]),
+    strengths = strengths,
+    priorities = priorities
+  )
+}
+
+#' Render formative student explanation feedback
+#'
+#' @param feedback A feedback structure returned by
+#'   `buildStudentExplanationFeedback()`.
+#'
+#' @return A Shiny tag list, or `NULL` when no feedback is available.
+#'
+#' @keywords internal
+renderStudentExplanationFeedbackUi = function(feedback) {
+  if (is.null(feedback)) {
+    return(NULL)
+  }
+
+  renderItems = function(items, emptyText) {
+    if (length(items) == 0) {
+      return(shiny::tags$p(emptyText))
+    }
+
+    shiny::tags$ul(
+      lapply(items, shiny::tags$li)
+    )
+  }
+
+  scoreText = ""
+  if (is.finite(feedback$overallScore)) {
+    scoreText = paste0(round(feedback$overallScore), "%")
+  }
+
+  shiny::tags$div(
+    class = "wmfm-student-explanation-feedback",
+    shiny::tags$h4("Feedback on your explanation"),
+    if (nzchar(scoreText)) {
+      shiny::tags$p(
+        class = "wmfm-student-explanation-score",
+        paste("Current rubric score:", scoreText)
+      )
+    },
+    shiny::tags$h5("What is working well"),
+    renderItems(
+      feedback$strengths,
+      "No clear strengths were identified yet. Add a precise statement about what the fitted model shows."
+    ),
+    shiny::tags$h5("What to revise next"),
+    renderItems(
+      feedback$priorities,
+      "No major revision priorities were identified by the current rubric."
+    ),
+    shiny::tags$p(
+      class = "wmfm-student-explanation-feedback-note",
+      "Revise your explanation and check it again. This feedback does not reveal WMFM's model explanation."
+    )
+  )
+}
+
 #' Register student explanation workspace observers
 #'
 #' @param input Shiny input object.
 #' @param output Shiny output object.
 #' @param session Shiny session object.
+#' @param rv App reactive values object.
 #' @param modelFit Reactive fitted model holder.
 #'
 #' @return Invisible `NULL`.
@@ -165,10 +279,23 @@ registerStudentExplanationObservers = function(
     input,
     output,
     session,
+    rv,
     modelFit
 ) {
+  studentExplanationGrade = shiny::reactiveVal(NULL)
+  studentExplanationStatus = shiny::reactiveVal("")
+
   output$studentExplanationToolbarUi = shiny::renderUI({
     buildStudentExplanationToolbarUi(modelFit())
+  })
+
+  output$studentExplanationFeedbackStatus = shiny::renderText({
+    studentExplanationStatus()
+  })
+
+  output$studentExplanationFeedbackUi = shiny::renderUI({
+    feedback = buildStudentExplanationFeedback(studentExplanationGrade())
+    renderStudentExplanationFeedbackUi(feedback)
   })
 
   shiny::observeEvent(input$insertStudentExplanationCoefficient, {
@@ -191,12 +318,64 @@ registerStudentExplanationObservers = function(
     }
   })
 
+  shiny::observeEvent(input$checkStudentExplanation, {
+    model = modelFit()
+    explanationText = trimws(as.character(input$studentExplanationText %||% ""))[1]
+
+    if (is.null(model)) {
+      studentExplanationGrade(NULL)
+      studentExplanationStatus("Fit a model before checking your explanation.")
+      return(NULL)
+    }
+
+    if (!nzchar(explanationText)) {
+      studentExplanationGrade(NULL)
+      studentExplanationStatus("Write an explanation before asking WMFM to check it.")
+      return(NULL)
+    }
+
+    studentExplanationStatus("Checking your explanation...")
+
+    scoredGrade = tryCatch(
+      scoreDeveloperExplanation(
+        model = model,
+        rv = rv,
+        input = input,
+        explanationText = explanationText,
+        method = "deterministic"
+      ),
+      error = function(e) {
+        studentExplanationStatus(
+          paste("WMFM could not check the explanation:", conditionMessage(e))
+        )
+        NULL
+      }
+    )
+
+    studentExplanationGrade(scoredGrade)
+
+    if (!is.null(scoredGrade)) {
+      studentExplanationStatus(
+        "Explanation checked. Revise it using the feedback below, then check it again."
+      )
+    }
+  })
+
+  shiny::observeEvent(input$studentExplanationText, {
+    if (!is.null(studentExplanationGrade())) {
+      studentExplanationGrade(NULL)
+      studentExplanationStatus("Your explanation has changed. Check it again for updated feedback.")
+    }
+  }, ignoreInit = TRUE)
+
   shiny::observeEvent(modelFit(), {
     shiny::updateTextAreaInput(
       session = session,
       inputId = "studentExplanationText",
       value = ""
     )
+    studentExplanationGrade(NULL)
+    studentExplanationStatus("")
   }, ignoreInit = TRUE)
 
   invisible(NULL)

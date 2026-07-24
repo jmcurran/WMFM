@@ -157,6 +157,33 @@ appUI = function() {
         margin-bottom: 8px;
       }
 
+      .wmfm-student-explanation-actions {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-student-explanation-feedback {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #f8f9fb;
+        margin-top: 10px;
+        margin-bottom: 12px;
+      }
+
+      .wmfm-student-explanation-feedback h4 {
+        margin-top: 0;
+      }
+
+      .wmfm-student-explanation-score {
+        font-weight: 600;
+      }
+
+      .wmfm-student-explanation-feedback-note {
+        color: #666;
+        margin-bottom: 0;
+      }
+
       @media (max-width: 767px) {
         .wmfm-student-explanation-toolbar {
           grid-template-columns: 1fr;
@@ -1107,7 +1134,17 @@ appUI = function() {
           rows = 12,
           width = "100%",
           placeholder = "Explain what the fitted model says in the context of the research question..."
-        )
+        ),
+        tags$div(
+          class = "wmfm-student-explanation-actions",
+          actionButton(
+            inputId = "checkStudentExplanation",
+            label = "Check my explanation",
+            class = "btn-primary"
+          )
+        ),
+        textOutput("studentExplanationFeedbackStatus"),
+        uiOutput("studentExplanationFeedbackUi")
       ),
 
       tabPanel(

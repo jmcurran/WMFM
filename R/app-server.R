@@ -58,6 +58,7 @@ appServer = function(input, output, session) {
     input = input,
     output = output,
     session = session,
+    rv = rv,
     modelFit = modelFit
   )
 

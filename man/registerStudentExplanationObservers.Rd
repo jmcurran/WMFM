@@ -4,7 +4,7 @@
 \alias{registerStudentExplanationObservers}
 \title{Register student explanation workspace observers}
 \usage{
-registerStudentExplanationObservers(input, output, session, modelFit)
+registerStudentExplanationObservers(input, output, session, rv, modelFit)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -12,6 +12,8 @@ registerStudentExplanationObservers(input, output, session, modelFit)
 \item{output}{Shiny output object.}
 
 \item{session}{Shiny session object.}
+
+\item{rv}{App reactive values object.}
 
 \item{modelFit}{Reactive fitted model holder.}
 }
