@@ -54,6 +54,13 @@ appServer = function(input, output, session) {
     modelFit = modelFit
   )
 
+  registerStudentExplanationObservers(
+    input = input,
+    output = output,
+    session = session,
+    modelFit = modelFit
+  )
+
   registerAnalysisDownloadObserver(
     output = output,
     rv = rv

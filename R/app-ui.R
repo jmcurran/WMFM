@@ -35,6 +35,29 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
+      tags$script(HTML("
+        Shiny.addCustomMessageHandler('wmfmInsertStudentExplanation', function(message) {
+          var editor = document.getElementById('studentExplanationText');
+          if (!editor || !message || !message.text) {
+            return;
+          }
+
+          var start = editor.selectionStart || 0;
+          var end = editor.selectionEnd || 0;
+          var existing = editor.value || '';
+          var prefix = start > 0 && !/\\s$/.test(existing.slice(0, start)) ? ' ' : '';
+          var suffix = end < existing.length && !/^\\s/.test(existing.slice(end)) ? ' ' : '';
+          var inserted = prefix + message.text + suffix;
+
+          editor.value = existing.slice(0, start) + inserted + existing.slice(end);
+          var cursor = start + inserted.length;
+          editor.focus();
+          editor.setSelectionRange(cursor, cursor);
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+          editor.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      ")),
+
     tags$style(HTML("
       .bucket-list .rank-list,
       .bucket-list-container .rank-list,
@@ -112,6 +135,32 @@ appUI = function() {
 
       .wmfm-ci-collapsible-block {
         margin-top: 10px;
+      }
+
+
+      .wmfm-student-explanation-toolbar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+        margin-bottom: 12px;
+      }
+
+      .wmfm-student-explanation-toolbar-group {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 10px;
+        background-color: #fcfcfc;
+      }
+
+      .wmfm-student-explanation-toolbar-group .form-group {
+        margin-bottom: 8px;
+      }
+
+      @media (max-width: 767px) {
+        .wmfm-student-explanation-toolbar {
+          grid-template-columns: 1fr;
+        }
       }
 
       .wmfm-explanation-box {
@@ -1041,6 +1090,23 @@ appUI = function() {
               )
             )
           )
+        )
+      ),
+
+
+      tabPanel(
+        "Write an explanation",
+        helpText(
+          "Write your own explanation of the fitted model. Use the toolbar to insert exact statistical results without asking WMFM to write the interpretation for you."
+        ),
+        uiOutput("studentExplanationToolbarUi"),
+        textAreaInput(
+          inputId = "studentExplanationText",
+          label = "Your explanation",
+          value = "",
+          rows = 12,
+          width = "100%",
+          placeholder = "Explain what the fitted model says in the context of the research question..."
         )
       ),
 

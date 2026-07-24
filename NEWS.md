@@ -11,6 +11,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.003
+
+- Added a student-authored explanation workspace before the optional generated explanation.
+- Added model-aware coefficient and confidence-interval insertion controls that place exact sentence fragments at the editor cursor.
+- Kept interpretation responsibility with the student by inserting results rather than complete explanatory claims.
+- Rebuilt toolbar choices from the current fitted model and cleared student text when a new model is fitted.
+- Added deterministic offline tests for result extraction, term formatting, and the editor UI.
+
 ## WMFM 1.1.5.002
 
 - Separated deterministic model fitting from optional LLM explanation generation.
