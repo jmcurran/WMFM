@@ -1124,7 +1124,7 @@ appUI = function() {
       tabPanel(
         "Write an explanation",
         helpText(
-          "Write your own explanation of the fitted model. Use the toolbar to insert exact statistical results without asking WMFM to write the interpretation for you."
+          "Write your own explanation of the fitted model. The toolbar provides model-appropriate coefficients, effect measures, intervals, and fitted results without writing the interpretation for you."
         ),
         uiOutput("studentExplanationToolbarUi"),
         textAreaInput(

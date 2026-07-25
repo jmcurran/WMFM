@@ -11,6 +11,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.005
+
+- Extended the student explanation toolbar across linear, binomial-logit, and Poisson-log models.
+- Added model-appropriate odds ratios, expected-count ratios, confidence intervals, predicted probabilities, expected counts, and fitted values.
+- Improved labels for common transformed terms and interactions so inserted results are easier for students to interpret.
+- Kept fitted-result insertions deterministic and separate from user-specified follow-up prediction requests.
+- Added offline tests covering model-family scales, transformed and interaction labels, and the expanded toolbar controls.
+
 ## WMFM 1.1.5.004
 
 - Added an explicit Check my explanation action to the student writing workspace.
