@@ -139,22 +139,32 @@ appUI = function() {
 
 
       .wmfm-student-explanation-toolbar {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #bfc5cc;
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+        padding: 5px 7px;
         margin-top: 10px;
-        margin-bottom: 12px;
+        background-color: #f7f8fa;
       }
 
-      .wmfm-student-explanation-toolbar-group {
-        border: 1px solid #d9d9d9;
-        border-radius: 6px;
-        padding: 10px;
-        background-color: #fcfcfc;
+      .wmfm-statistical-insert-button {
+        min-width: 44px;
+        height: 36px;
+        padding: 4px 10px;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 21px;
+        line-height: 1;
       }
 
-      .wmfm-student-explanation-toolbar-group .form-group {
-        margin-bottom: 8px;
+      .wmfm-student-explanation-toolbar + .form-group {
+        margin-top: 0;
+      }
+
+      .wmfm-student-explanation-toolbar + .form-group textarea {
+        border-radius: 0 0 6px 6px;
       }
 
       .wmfm-student-explanation-actions {
@@ -182,12 +192,6 @@ appUI = function() {
       .wmfm-student-explanation-feedback-note {
         color: #666;
         margin-bottom: 0;
-      }
-
-      @media (max-width: 767px) {
-        .wmfm-student-explanation-toolbar {
-          grid-template-columns: 1fr;
-        }
       }
 
       .wmfm-explanation-box {
@@ -1124,7 +1128,7 @@ appUI = function() {
       tabPanel(
         "Write an explanation",
         helpText(
-          "Write your own explanation of the fitted model. The toolbar provides model-appropriate coefficients, effect measures, intervals, and fitted results without writing the interpretation for you."
+          "Write your own explanation of the fitted model. Use the compact toolbar to insert selected statistical quantities at the cursor without generating the interpretation for you."
         ),
         uiOutput("studentExplanationToolbarUi"),
         textAreaInput(

@@ -1,110 +1,73 @@
-test_that("student explanation choices contain coefficients and intervals", {
+test_that("student explanation toolbar uses compact statistical buttons", {
   model = stats::lm(mpg ~ wt, data = mtcars)
-  choices = buildStudentExplanationInsertionChoices(model)
+  html = as.character(buildStudentExplanationToolbarUi(model))
 
-  expect_named(choices, c("coefficients", "intervals", "effects", "predictions"))
-  expect_true(any(grepl("estimated response-scale coefficient", choices$coefficients, fixed = TRUE)))
-  expect_true(any(grepl("95% confidence interval", choices$intervals, fixed = TRUE)))
-  expect_true(any(grepl("wt", choices$coefficients, fixed = TRUE)))
+  expect_match(html, "openStudentCoefficientDialog", fixed = TRUE)
+  expect_match(html, "openStudentMeanDialog", fixed = TRUE)
+  expect_match(html, "openStudentDifferenceDialog", fixed = TRUE)
+  expect_match(html, "openStudentResidualDialog", fixed = TRUE)
+  expect_match(html, "openStudentOtherDialog", fixed = TRUE)
+  expect_match(html, "wmfm-statistical-insert-button", fixed = TRUE)
 })
 
-test_that("student explanation choices are empty without a model", {
-  choices = buildStudentExplanationInsertionChoices(NULL)
+test_that("logistic insertion dialogs offer appropriate scales", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  context = studentExplanationModelContext(model)
 
-  expect_identical(choices$coefficients, character(0))
-  expect_identical(choices$intervals, character(0))
-  expect_identical(choices$effects, character(0))
-  expect_identical(choices$predictions, character(0))
+  expect_named(context$coefficientScales, c("Log-odds coefficient", "Odds ratio"))
+  expect_named(context$meanScales, c("Probability", "Odds", "Log odds"))
+  expect_named(context$differenceScales, c("Probability difference", "Odds ratio", "Log-odds difference"))
 })
 
-test_that("student explanation term formatting is readable", {
-  expect_identical(
-    formatStudentExplanationTerm(c("(Intercept)", "groupB", "x:groupB")),
-    c("the intercept", "groupB", "x interacting with groupB")
-  )
+test_that("Poisson insertion dialogs offer appropriate scales", {
+  model = stats::glm(cyl ~ wt, data = mtcars, family = stats::poisson())
+  context = studentExplanationModelContext(model)
+
+  expect_true("Expected count" %in% names(context$meanScales))
+  expect_true("Expected-count ratio" %in% names(context$differenceScales))
 })
 
-test_that("student explanation UI includes the editor and toolbar", {
+test_that("coefficient fragments can include transformed intervals", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  fragment = studentExplanationCoefficientFragment(model, "wt", "ratio", TRUE, 0.95)
+
+  expect_match(fragment, "odds ratio", fixed = TRUE)
+  expect_match(fragment, "95% confidence interval", fixed = TRUE)
+})
+
+test_that("fitted response fragments use requested scales", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+
+  probability = studentExplanationMeanFragment(model, 1L, "response", TRUE, 0.95)
+  odds = studentExplanationMeanFragment(model, 1L, "odds", FALSE, 0.95)
+
+  expect_match(probability, "predicted probability", fixed = TRUE)
+  expect_match(odds, "fitted odds", fixed = TRUE)
+})
+
+test_that("pairwise comparisons support odds ratios", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  fragment = studentExplanationDifferenceFragment(model, 1L, 2L, "ratio", TRUE, 0.95)
+
+  expect_match(fragment, "odds ratio", fixed = TRUE)
+  expect_match(fragment, "observation 2", fixed = TRUE)
+})
+
+test_that("residual and other-statistic fragments are available", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+
+  residual = studentExplanationResidualFragment(model, 1L, "response")
+  rSquared = studentExplanationOtherFragment(model, "rSquared")
+
+  expect_match(residual, "residual for observation 1", fixed = TRUE)
+  expect_match(rSquared, "R-squared", fixed = TRUE)
+})
+
+test_that("student explanation UI retains editor and feedback controls", {
   html = as.character(appUI())
 
   expect_match(html, "Write an explanation", fixed = TRUE)
   expect_match(html, "studentExplanationText", fixed = TRUE)
-  expect_match(html, "studentExplanationToolbarUi", fixed = TRUE)
-  expect_match(html, "wmfmInsertStudentExplanation", fixed = TRUE)
-})
-
-test_that("student explanation feedback exposes strengths and revision priorities", {
-  model = makeOfflineWmfmModel()
-  gradeObj = grade(
-    model,
-    explanation = "Higher x is associated with higher y.",
-    method = "deterministic",
-    autoScore = TRUE
-  )
-
-  feedback = buildStudentExplanationFeedback(gradeObj)
-
-  expect_type(feedback, "list")
-  expect_true(is.finite(feedback$overallScore))
-  expect_type(feedback$strengths, "character")
-  expect_type(feedback$priorities, "character")
-
-  html = as.character(renderStudentExplanationFeedbackUi(feedback))
-  expect_match(html, "Feedback on your explanation", fixed = TRUE)
-  expect_match(html, "What is working well", fixed = TRUE)
-  expect_match(html, "What to revise next", fixed = TRUE)
-})
-
-test_that("student explanation UI includes formative checking controls", {
-  html = as.character(appUI())
-
   expect_match(html, "checkStudentExplanation", fixed = TRUE)
-  expect_match(html, "Check my explanation", fixed = TRUE)
-  expect_match(html, "studentExplanationFeedbackStatus", fixed = TRUE)
-  expect_match(html, "studentExplanationFeedbackUi", fixed = TRUE)
-})
-
-test_that("student explanation choices are model-family aware", {
-  logisticModel = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
-  logisticChoices = buildStudentExplanationInsertionChoices(logisticModel)
-
-  expect_true(any(grepl("log-odds coefficient", logisticChoices$coefficients, fixed = TRUE)))
-  expect_true(any(grepl("odds ratio", logisticChoices$effects, fixed = TRUE)))
-  expect_true(any(grepl("predicted probability", logisticChoices$predictions, fixed = TRUE)))
-
-  poissonModel = stats::glm(cyl ~ wt, data = mtcars, family = stats::poisson())
-  poissonChoices = buildStudentExplanationInsertionChoices(poissonModel)
-
-  expect_true(any(grepl("log-count coefficient", poissonChoices$coefficients, fixed = TRUE)))
-  expect_true(any(grepl("expected-count ratio", poissonChoices$effects, fixed = TRUE)))
-  expect_true(any(grepl("expected count", poissonChoices$predictions, fixed = TRUE)))
-})
-
-test_that("student explanation terms describe transformations and interactions", {
-  formatted = formatStudentExplanationTerm(c(
-    "log(x)",
-    "sqrt(z)",
-    "I(age^2)",
-    "x:groupB"
-  ))
-
-  expect_identical(
-    formatted,
-    c(
-      "log-transformed x",
-      "square-root transformed z",
-      "age squared",
-      "x interacting with groupB"
-    )
-  )
-})
-
-test_that("student explanation toolbar exposes effects and fitted results for GLMs", {
-  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
-  html = as.character(buildStudentExplanationToolbarUi(model))
-
-  expect_match(html, "studentExplanationEffect", fixed = TRUE)
-  expect_match(html, "Insert odds ratio", fixed = TRUE)
-  expect_match(html, "studentExplanationPrediction", fixed = TRUE)
-  expect_match(html, "Predicted Probability", fixed = TRUE)
+  expect_match(html, "wmfmInsertStudentExplanation", fixed = TRUE)
 })

@@ -2,7 +2,7 @@
 % Please edit documentation in R/app-student-explanation.R
 \name{formatStudentExplanationTerm}
 \alias{formatStudentExplanationTerm}
-\title{Format a model term for the student explanation toolbar}
+\title{Format a model term for student-facing controls}
 \usage{
 formatStudentExplanationTerm(term)
 }
@@ -13,6 +13,6 @@ formatStudentExplanationTerm(term)
 A character vector of readable labels.
 }
 \description{
-Format a model term for the student explanation toolbar
+Format a model term for student-facing controls
 }
 \keyword{internal}

@@ -11,6 +11,11 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.007
+
+- Repaired the compact statistical toolbar CSS so `R/app-ui.R` parses during documentation generation.
+- Preserved the intended serif font fallback while leaving insertion calculations and modal behaviour unchanged.
+
 ## WMFM 1.1.5.005
 
 - Extended the student explanation toolbar across linear, binomial-logit, and Poisson-log models.

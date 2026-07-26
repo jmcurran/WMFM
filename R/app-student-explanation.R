@@ -1,163 +1,16 @@
-#' Build student explanation insertion choices
-#'
-#' Creates model-aware sentence fragments that can be inserted into a student's
-#' explanation without generating interpretive prose for them.
-#'
-#' @param model A fitted model object.
-#' @param confidenceLevel Confidence level used for interval fragments.
-#' @param maxPredictions Maximum number of fitted-value fragments to provide.
-#'
-#' @return A list containing model-aware insertion choices.
-#'
-#' @keywords internal
-buildStudentExplanationInsertionChoices = function(
-    model,
-    confidenceLevel = 0.95,
-    maxPredictions = 12L
-) {
-  emptyChoices = list(
-    coefficients = character(0),
-    intervals = character(0),
-    effects = character(0),
-    predictions = character(0)
-  )
-
-  if (is.null(model)) {
-    return(emptyChoices)
-  }
-
-  modelContext = studentExplanationModelContext(model)
-  coefficientValues = tryCatch(
-    stats::coef(model),
-    error = function(e) numeric(0)
-  )
-
-  coefficientValues = coefficientValues[is.finite(coefficientValues)]
-  coefficientNames = names(coefficientValues)
-
-  if (is.null(coefficientNames)) {
-    coefficientNames = rep("coefficient", length(coefficientValues))
-  }
-
-  coefficientLabels = formatStudentExplanationTerm(coefficientNames)
-  coefficientFragments = vapply(
-    seq_along(coefficientValues),
-    function(index) {
-      paste0(
-        "the estimated ", modelContext$coefficientScale, " coefficient for ",
-        coefficientLabels[[index]],
-        " is ", formatStudentExplanationNumber(coefficientValues[[index]])
-      )
-    },
-    character(1)
-  )
-  names(coefficientFragments) = coefficientLabels
-
-  intervalMatrix = tryCatch(
-    stats::confint.default(model, level = confidenceLevel),
-    error = function(e) NULL
-  )
-
-  intervalFragments = character(0)
-  effectFragments = character(0)
-
-  if (!is.null(intervalMatrix) && is.matrix(intervalMatrix) && ncol(intervalMatrix) >= 2) {
-    intervalNames = rownames(intervalMatrix)
-    if (is.null(intervalNames)) {
-      intervalNames = rep("coefficient", nrow(intervalMatrix))
-    }
-
-    intervalLabels = formatStudentExplanationTerm(intervalNames)
-    confidenceLabel = paste0(round(100 * confidenceLevel), "%")
-    intervalFragments = vapply(
-      seq_len(nrow(intervalMatrix)),
-      function(index) {
-        paste0(
-          "the ", confidenceLabel, " confidence interval for the ",
-          modelContext$coefficientScale, " coefficient for ",
-          intervalLabels[[index]], " is ",
-          formatStudentExplanationNumber(intervalMatrix[index, 1]),
-          " to ", formatStudentExplanationNumber(intervalMatrix[index, 2])
-        )
-      },
-      character(1)
-    )
-    names(intervalFragments) = intervalLabels
-
-    if (isTRUE(modelContext$hasMultiplicativeEffects)) {
-      commonNames = intersect(coefficientNames, rownames(intervalMatrix))
-      effectFragments = vapply(
-        commonNames,
-        function(termName) {
-          estimate = exp(coefficientValues[[termName]])
-          interval = exp(intervalMatrix[termName, 1:2])
-          paste0(
-            "the estimated ", modelContext$effectMeasure, " for ",
-            formatStudentExplanationTerm(termName), " is ",
-            formatStudentExplanationNumber(estimate),
-            ", with a ", confidenceLabel, " confidence interval from ",
-            formatStudentExplanationNumber(interval[[1]]), " to ",
-            formatStudentExplanationNumber(interval[[2]])
-          )
-        },
-        character(1)
-      )
-      names(effectFragments) = formatStudentExplanationTerm(commonNames)
-    }
-  }
-
-  predictionValues = tryCatch(
-    stats::fitted(model),
-    error = function(e) numeric(0)
-  )
-  predictionValues = as.numeric(predictionValues)
-  predictionValues = predictionValues[is.finite(predictionValues)]
-
-  maxPredictions = suppressWarnings(as.integer(maxPredictions)[1])
-  if (is.na(maxPredictions) || maxPredictions < 1L) {
-    maxPredictions = 12L
-  }
-
-  if (length(predictionValues) > maxPredictions) {
-    predictionIndices = unique(round(seq(1, length(predictionValues), length.out = maxPredictions)))
-  } else {
-    predictionIndices = seq_along(predictionValues)
-  }
-
-  predictionFragments = vapply(
-    predictionIndices,
-    function(index) {
-      paste0(
-        "the ", modelContext$predictionLabel, " for analysed observation ",
-        index, " is ", formatStudentExplanationNumber(predictionValues[[index]])
-      )
-    },
-    character(1)
-  )
-  names(predictionFragments) = paste("Observation", predictionIndices)
-
-  list(
-    coefficients = coefficientFragments,
-    intervals = intervalFragments,
-    effects = effectFragments,
-    predictions = predictionFragments
-  )
-}
-
 #' Describe the fitted model for student explanation insertions
 #'
 #' @param model A fitted model object.
 #'
-#' @return A named list describing coefficient, effect, and prediction scales.
+#' @return A named list describing the available scales.
 #'
 #' @keywords internal
 studentExplanationModelContext = function(model) {
   context = list(
     family = "linear",
-    coefficientScale = "response-scale",
-    effectMeasure = "effect",
-    predictionLabel = "fitted value",
-    hasMultiplicativeEffects = FALSE
+    coefficientScales = c("Coefficient" = "coefficient"),
+    meanScales = c("Fitted mean" = "response"),
+    differenceScales = c("Difference in fitted means" = "responseDifference")
   )
 
   if (!inherits(model, "glm")) {
@@ -169,22 +22,41 @@ studentExplanationModelContext = function(model) {
 
   if (identical(familyName, "binomial") && identical(linkName, "logit")) {
     context$family = "binomial"
-    context$coefficientScale = "log-odds"
-    context$effectMeasure = "odds ratio"
-    context$predictionLabel = "predicted probability"
-    context$hasMultiplicativeEffects = TRUE
+    context$coefficientScales = c(
+      "Log-odds coefficient" = "link",
+      "Odds ratio" = "ratio"
+    )
+    context$meanScales = c(
+      "Probability" = "response",
+      "Odds" = "odds",
+      "Log odds" = "link"
+    )
+    context$differenceScales = c(
+      "Probability difference" = "responseDifference",
+      "Odds ratio" = "ratio",
+      "Log-odds difference" = "linkDifference"
+    )
   } else if (identical(familyName, "poisson") && identical(linkName, "log")) {
     context$family = "poisson"
-    context$coefficientScale = "log-count"
-    context$effectMeasure = "expected-count ratio"
-    context$predictionLabel = "expected count"
-    context$hasMultiplicativeEffects = TRUE
+    context$coefficientScales = c(
+      "Log-count coefficient" = "link",
+      "Expected-count ratio" = "ratio"
+    )
+    context$meanScales = c(
+      "Expected count" = "response",
+      "Log expected count" = "link"
+    )
+    context$differenceScales = c(
+      "Expected-count difference" = "responseDifference",
+      "Expected-count ratio" = "ratio",
+      "Log expected-count difference" = "linkDifference"
+    )
   }
 
   context
 }
 
-#' Format a model term for the student explanation toolbar
+#' Format a model term for student-facing controls
 #'
 #' @param term Character vector of model term labels.
 #'
@@ -203,7 +75,7 @@ formatStudentExplanationTerm = function(term) {
   term
 }
 
-#' Format a number for the student explanation toolbar
+#' Format a number for the student explanation editor
 #'
 #' @param value Numeric vector.
 #'
@@ -214,101 +86,268 @@ formatStudentExplanationNumber = function(value) {
   formatC(value, digits = 4, format = "fg", flag = "#")
 }
 
-#' Build the student explanation toolbar
+#' Build labels for analysed observations
 #'
 #' @param model A fitted model object.
+#' @param maxRows Maximum number of rows shown in a selector.
 #'
-#' @return A Shiny tag list.
+#' @return A named integer vector.
 #'
 #' @keywords internal
-buildStudentExplanationToolbarUi = function(model) {
-  if (is.null(model)) {
-    return(shiny::helpText("Fit a model to make statistical results available for insertion."))
+buildStudentExplanationObservationChoices = function(model, maxRows = 100L) {
+  modelData = tryCatch(stats::model.frame(model), error = function(e) NULL)
+  if (is.null(modelData) || nrow(modelData) == 0) {
+    return(integer(0))
   }
 
-  choices = buildStudentExplanationInsertionChoices(model)
-  modelContext = studentExplanationModelContext(model)
+  rowIndices = seq_len(nrow(modelData))
+  if (length(rowIndices) > maxRows) {
+    rowIndices = unique(round(seq(1, length(rowIndices), length.out = maxRows)))
+  }
 
-  toolbarGroups = list(
-    shiny::tags$div(
-      class = "wmfm-student-explanation-toolbar-group",
-      shiny::selectInput(
-        inputId = "studentExplanationCoefficient",
-        label = paste("Coefficient on the", modelContext$coefficientScale, "scale"),
-        choices = choices$coefficients,
-        width = "100%"
-      ),
-      shiny::actionButton(
-        inputId = "insertStudentExplanationCoefficient",
-        label = "Insert coefficient",
-        class = "btn-default btn-sm"
+  predictorNames = names(modelData)[-1]
+  labels = vapply(
+    rowIndices,
+    function(index) {
+      details = vapply(
+        utils::head(predictorNames, 3),
+        function(variableName) {
+          paste0(variableName, " = ", as.character(modelData[[variableName]][[index]]))
+        },
+        character(1)
       )
-    ),
-    shiny::tags$div(
-      class = "wmfm-student-explanation-toolbar-group",
-      shiny::selectInput(
-        inputId = "studentExplanationInterval",
-        label = "Confidence interval",
-        choices = choices$intervals,
-        width = "100%"
-      ),
-      shiny::actionButton(
-        inputId = "insertStudentExplanationInterval",
-        label = "Insert interval",
-        class = "btn-default btn-sm"
-      )
-    )
+      paste0("Observation ", index, if (length(details) > 0) paste0(": ", paste(details, collapse = ", ")) else "")
+    },
+    character(1)
   )
+  stats::setNames(rowIndices, labels)
+}
 
-  if (length(choices$effects) > 0) {
-    toolbarGroups[[length(toolbarGroups) + 1L]] = shiny::tags$div(
-      class = "wmfm-student-explanation-toolbar-group",
-      shiny::selectInput(
-        inputId = "studentExplanationEffect",
-        label = tools::toTitleCase(modelContext$effectMeasure),
-        choices = choices$effects,
-        width = "100%"
-      ),
-      shiny::actionButton(
-        inputId = "insertStudentExplanationEffect",
-        label = paste("Insert", modelContext$effectMeasure),
-        class = "btn-default btn-sm"
-      )
+studentExplanationConfidenceLabel = function(level) {
+  paste0(round(100 * level), "%")
+}
+
+studentExplanationInsert = function(session, text) {
+  if (!is.null(text) && length(text) > 0 && !is.na(text[[1]]) && nzchar(text[[1]])) {
+    session$sendCustomMessage(
+      type = "wmfmInsertStudentExplanation",
+      message = list(text = text[[1]])
     )
   }
+  invisible(NULL)
+}
 
-  if (length(choices$predictions) > 0) {
-    toolbarGroups[[length(toolbarGroups) + 1L]] = shiny::tags$div(
-      class = "wmfm-student-explanation-toolbar-group",
-      shiny::selectInput(
-        inputId = "studentExplanationPrediction",
-        label = tools::toTitleCase(modelContext$predictionLabel),
-        choices = choices$predictions,
-        width = "100%"
-      ),
-      shiny::actionButton(
-        inputId = "insertStudentExplanationPrediction",
-        label = "Insert fitted result",
-        class = "btn-default btn-sm"
-      )
-    )
+studentExplanationCoefficientFragment = function(model, term, scale, includeInterval, level) {
+  estimates = stats::coef(model)
+  if (!(term %in% names(estimates))) {
+    stop("The selected coefficient is no longer available.", call. = FALSE)
   }
 
-  shiny::tagList(
-    shiny::tags$p(
-      class = "wmfm-student-explanation-toolbar-note",
-      paste0(
-        "Results are shown on scales appropriate for the fitted ",
-        modelContext$family, " model. You still need to explain what they mean."
-      )
-    ),
-    shiny::tags$div(
-      class = "wmfm-student-explanation-toolbar",
-      toolbarGroups
+  estimate = estimates[[term]]
+  interval = tryCatch(stats::confint.default(model, level = level)[term, ], error = function(e) NULL)
+  label = formatStudentExplanationTerm(term)
+  context = studentExplanationModelContext(model)
+
+  if (identical(scale, "ratio")) {
+    estimate = exp(estimate)
+    if (!is.null(interval)) {
+      interval = exp(interval)
+    }
+    measure = if (identical(context$family, "binomial")) "odds ratio" else "expected-count ratio"
+  } else {
+    measure = if (identical(context$family, "linear")) "coefficient" else names(context$coefficientScales)[match(scale, context$coefficientScales)]
+    measure = tolower(measure)
+  }
+
+  text = paste0("the estimated ", measure, " for ", label, " is ", formatStudentExplanationNumber(estimate))
+  if (isTRUE(includeInterval) && !is.null(interval)) {
+    text = paste0(
+      text, ", with a ", studentExplanationConfidenceLabel(level),
+      " confidence interval from ", formatStudentExplanationNumber(interval[[1]]),
+      " to ", formatStudentExplanationNumber(interval[[2]])
     )
+  }
+  text
+}
+
+studentExplanationPredictionSummary = function(model, observation, level) {
+  modelData = stats::model.frame(model)
+  newData = modelData[observation, , drop = FALSE]
+  responseName = names(modelData)[1]
+  newData[[responseName]] = NULL
+  prediction = stats::predict(model, newdata = newData, type = "link", se.fit = TRUE)
+  criticalValue = stats::qnorm(1 - (1 - level) / 2)
+  list(
+    link = as.numeric(prediction$fit),
+    linkLower = as.numeric(prediction$fit - criticalValue * prediction$se.fit),
+    linkUpper = as.numeric(prediction$fit + criticalValue * prediction$se.fit)
   )
 }
 
+studentExplanationMeanFragment = function(model, observation, scale, includeInterval, level) {
+  summary = studentExplanationPredictionSummary(model, observation, level)
+  context = studentExplanationModelContext(model)
+  inverseLink = if (inherits(model, "glm")) model$family$linkinv else identity
+
+  if (identical(scale, "response")) {
+    estimate = inverseLink(summary$link)
+    interval = inverseLink(c(summary$linkLower, summary$linkUpper))
+    measure = if (identical(context$family, "binomial")) "predicted probability" else if (identical(context$family, "poisson")) "expected count" else "fitted mean"
+  } else if (identical(scale, "odds")) {
+    estimate = exp(summary$link)
+    interval = exp(c(summary$linkLower, summary$linkUpper))
+    measure = "fitted odds"
+  } else {
+    estimate = summary$link
+    interval = c(summary$linkLower, summary$linkUpper)
+    measure = if (identical(context$family, "binomial")) "fitted log odds" else if (identical(context$family, "poisson")) "fitted log expected count" else "fitted mean"
+  }
+
+  text = paste0("the ", measure, " for observation ", observation, " is ", formatStudentExplanationNumber(estimate))
+  if (isTRUE(includeInterval)) {
+    text = paste0(text, ", with a ", studentExplanationConfidenceLabel(level), " confidence interval from ", formatStudentExplanationNumber(interval[[1]]), " to ", formatStudentExplanationNumber(interval[[2]]))
+  }
+  text
+}
+
+studentExplanationDifferenceFragment = function(model, firstObservation, secondObservation, scale, includeInterval, level) {
+  first = studentExplanationPredictionSummary(model, firstObservation, level)
+  second = studentExplanationPredictionSummary(model, secondObservation, level)
+  modelData = stats::model.frame(model)
+  responseName = names(modelData)[1]
+  newData = modelData[c(firstObservation, secondObservation), , drop = FALSE]
+  newData[[responseName]] = NULL
+  modelMatrix = stats::model.matrix(stats::delete.response(stats::terms(model)), newData)
+  contrast = modelMatrix[2, , drop = TRUE] - modelMatrix[1, , drop = TRUE]
+  linkDifference = sum(contrast * stats::coef(model))
+  standardError = sqrt(drop(t(contrast) %*% stats::vcov(model) %*% contrast))
+  criticalValue = stats::qnorm(1 - (1 - level) / 2)
+  linkInterval = linkDifference + c(-1, 1) * criticalValue * standardError
+  context = studentExplanationModelContext(model)
+
+  if (identical(scale, "ratio")) {
+    estimate = exp(linkDifference)
+    interval = exp(linkInterval)
+    measure = if (identical(context$family, "binomial")) "odds ratio" else "expected-count ratio"
+  } else if (identical(scale, "linkDifference")) {
+    estimate = linkDifference
+    interval = linkInterval
+    measure = if (identical(context$family, "binomial")) "log-odds difference" else "log expected-count difference"
+  } else {
+    inverseLink = if (inherits(model, "glm")) model$family$linkinv else identity
+    estimate = inverseLink(second$link) - inverseLink(first$link)
+    interval = NULL
+    measure = if (identical(context$family, "binomial")) "probability difference" else if (identical(context$family, "poisson")) "expected-count difference" else "difference in fitted means"
+  }
+
+  text = paste0("the estimated ", measure, " comparing observation ", secondObservation, " with observation ", firstObservation, " is ", formatStudentExplanationNumber(estimate))
+  if (isTRUE(includeInterval) && !is.null(interval)) {
+    text = paste0(text, ", with a ", studentExplanationConfidenceLabel(level), " confidence interval from ", formatStudentExplanationNumber(interval[[1]]), " to ", formatStudentExplanationNumber(interval[[2]]))
+  }
+  text
+}
+
+studentExplanationResidualFragment = function(model, observation, residualType) {
+  residualValues = stats::residuals(model, type = residualType)
+  paste0(
+    "the ", residualType, " residual for observation ", observation,
+    " is ", formatStudentExplanationNumber(residualValues[[observation]])
+  )
+}
+
+buildStudentExplanationToolbarUi = function(model) {
+  disabled = is.null(model)
+  buttonClass = "btn-default wmfm-statistical-insert-button"
+  shiny::tags$div(
+    class = "wmfm-student-explanation-toolbar",
+    title = if (disabled) "Fit a model to enable statistical insertion tools." else NULL,
+    shiny::actionButton("openStudentCoefficientDialog", shiny::HTML("&beta;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a coefficient"),
+    shiny::actionButton("openStudentMeanDialog", shiny::HTML("&mu;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a fitted mean or fitted response"),
+    shiny::actionButton("openStudentDifferenceDialog", shiny::HTML("&Delta;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a pairwise difference or ratio"),
+    shiny::actionButton("openStudentResidualDialog", shiny::HTML("&epsilon;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a residual"),
+    shiny::actionButton("openStudentOtherDialog", shiny::HTML("&hellip;"), class = buttonClass, disabled = disabled, title = "Insert another model statistic")
+  )
+}
+
+buildStudentExplanationCoefficientDialog = function(model, confidenceLevel) {
+  context = studentExplanationModelContext(model)
+  shiny::modalDialog(
+    title = "Insert a coefficient",
+    shiny::selectInput("studentCoefficientTerm", "Coefficient", choices = stats::setNames(names(stats::coef(model)), formatStudentExplanationTerm(names(stats::coef(model))))),
+    shiny::selectInput("studentCoefficientScale", "Scale", choices = context$coefficientScales),
+    shiny::checkboxInput("studentCoefficientInterval", paste0("Include a ", studentExplanationConfidenceLabel(confidenceLevel), " confidence interval"), TRUE),
+    footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentCoefficient", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+buildStudentExplanationMeanDialog = function(model, confidenceLevel) {
+  context = studentExplanationModelContext(model)
+  shiny::modalDialog(
+    title = "Insert a fitted mean or fitted response",
+    shiny::selectInput("studentMeanObservation", "Observation", choices = buildStudentExplanationObservationChoices(model)),
+    shiny::selectInput("studentMeanScale", "Scale", choices = context$meanScales),
+    shiny::checkboxInput("studentMeanInterval", paste0("Include a ", studentExplanationConfidenceLabel(confidenceLevel), " confidence interval"), TRUE),
+    footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentMean", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+buildStudentExplanationDifferenceDialog = function(model, confidenceLevel) {
+  context = studentExplanationModelContext(model)
+  choices = buildStudentExplanationObservationChoices(model)
+  shiny::modalDialog(
+    title = "Insert a pairwise comparison",
+    shiny::selectInput("studentDifferenceFirst", "Reference observation", choices = choices),
+    shiny::selectInput("studentDifferenceSecond", "Comparison observation", choices = choices, selected = if (length(choices) > 1) choices[[2]] else choices[[1]]),
+    shiny::selectInput("studentDifferenceScale", "Result scale", choices = context$differenceScales),
+    shiny::checkboxInput("studentDifferenceInterval", paste0("Include a ", studentExplanationConfidenceLabel(confidenceLevel), " confidence interval when available"), TRUE),
+    shiny::helpText("A response-scale difference currently omits an interval when the transformation makes a simple interval misleading."),
+    footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentDifference", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+buildStudentExplanationResidualDialog = function(model) {
+  residualChoices = if (inherits(model, "glm")) c("Deviance residual" = "deviance", "Pearson residual" = "pearson", "Response residual" = "response") else c("Ordinary residual" = "response", "Pearson residual" = "pearson")
+  shiny::modalDialog(
+    title = "Insert a residual",
+    shiny::selectInput("studentResidualObservation", "Observation", choices = buildStudentExplanationObservationChoices(model)),
+    shiny::selectInput("studentResidualType", "Residual type", choices = residualChoices),
+    footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentResidual", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+buildStudentExplanationOtherDialog = function(model, confidenceLevel) {
+  choices = c("Number of analysed observations" = "n")
+  if (inherits(model, "lm") && !inherits(model, "glm")) {
+    choices = c(choices, "R-squared" = "rSquared", "Adjusted R-squared" = "adjustedRSquared", "Residual standard deviation" = "residualSd")
+  } else {
+    choices = c(choices, "AIC" = "aic", "Residual deviance" = "deviance")
+  }
+  shiny::modalDialog(
+    title = "Other model quantities",
+    shiny::selectInput("studentOtherStatistic", "Quantity", choices = choices),
+    shiny::selectInput("studentExplanationConfidenceLevel", "Confidence level used by insertion dialogs", choices = c("90%" = 0.90, "95%" = 0.95, "99%" = 0.99), selected = confidenceLevel),
+    footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentOther", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+studentExplanationOtherFragment = function(model, statistic) {
+  modelSummary = summary(model)
+  switch(
+    statistic,
+    n = paste0("the model was fitted using ", stats::nobs(model), " observations"),
+    rSquared = paste0("the model R-squared is ", formatStudentExplanationNumber(modelSummary$r.squared)),
+    adjustedRSquared = paste0("the adjusted R-squared is ", formatStudentExplanationNumber(modelSummary$adj.r.squared)),
+    residualSd = paste0("the residual standard deviation is ", formatStudentExplanationNumber(modelSummary$sigma)),
+    aic = paste0("the model AIC is ", formatStudentExplanationNumber(stats::AIC(model))),
+    deviance = paste0("the residual deviance is ", formatStudentExplanationNumber(stats::deviance(model))),
+    ""
+  )
+}
 #' Build formative feedback for a student explanation
 #'
 #' Converts a scored `wmfmGrade` object into a compact feedback structure for
@@ -422,6 +461,7 @@ renderStudentExplanationFeedbackUi = function(feedback) {
   )
 }
 
+
 #' Register student explanation workspace observers
 #'
 #' @param input Shiny input object.
@@ -433,109 +473,94 @@ renderStudentExplanationFeedbackUi = function(feedback) {
 #' @return Invisible `NULL`.
 #'
 #' @keywords internal
-registerStudentExplanationObservers = function(
-    input,
-    output,
-    session,
-    rv,
-    modelFit
-) {
+registerStudentExplanationObservers = function(input, output, session, rv, modelFit) {
   studentExplanationGrade = shiny::reactiveVal(NULL)
   studentExplanationStatus = shiny::reactiveVal("")
+  confidenceLevel = shiny::reactiveVal(0.95)
 
   output$studentExplanationToolbarUi = shiny::renderUI({
     buildStudentExplanationToolbarUi(modelFit())
   })
-
-  output$studentExplanationFeedbackStatus = shiny::renderText({
-    studentExplanationStatus()
-  })
-
+  output$studentExplanationFeedbackStatus = shiny::renderText(studentExplanationStatus())
   output$studentExplanationFeedbackUi = shiny::renderUI({
-    feedback = buildStudentExplanationFeedback(studentExplanationGrade())
-    renderStudentExplanationFeedbackUi(feedback)
+    renderStudentExplanationFeedbackUi(buildStudentExplanationFeedback(studentExplanationGrade()))
   })
 
-  shiny::observeEvent(input$insertStudentExplanationCoefficient, {
-    fragment = input$studentExplanationCoefficient
-    if (!is.null(fragment) && nzchar(fragment)) {
-      session$sendCustomMessage(
-        type = "wmfmInsertStudentExplanation",
-        message = list(text = fragment)
-      )
-    }
+  shiny::observeEvent(input$openStudentCoefficientDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationCoefficientDialog(modelFit(), confidenceLevel()))
+  })
+  shiny::observeEvent(input$openStudentMeanDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationMeanDialog(modelFit(), confidenceLevel()))
+  })
+  shiny::observeEvent(input$openStudentDifferenceDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationDifferenceDialog(modelFit(), confidenceLevel()))
+  })
+  shiny::observeEvent(input$openStudentResidualDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationResidualDialog(modelFit()))
+  })
+  shiny::observeEvent(input$openStudentOtherDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationOtherDialog(modelFit(), confidenceLevel()))
   })
 
-  shiny::observeEvent(input$insertStudentExplanationInterval, {
-    fragment = input$studentExplanationInterval
-    if (!is.null(fragment) && nzchar(fragment)) {
-      session$sendCustomMessage(
-        type = "wmfmInsertStudentExplanation",
-        message = list(text = fragment)
-      )
-    }
+  shiny::observeEvent(input$insertStudentCoefficient, {
+    text = studentExplanationCoefficientFragment(modelFit(), input$studentCoefficientTerm, input$studentCoefficientScale, isTRUE(input$studentCoefficientInterval), confidenceLevel())
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
   })
-
-  shiny::observeEvent(input$insertStudentExplanationEffect, {
-    fragment = input$studentExplanationEffect
-    if (!is.null(fragment) && nzchar(fragment)) {
-      session$sendCustomMessage(
-        type = "wmfmInsertStudentExplanation",
-        message = list(text = fragment)
-      )
-    }
+  shiny::observeEvent(input$insertStudentMean, {
+    text = studentExplanationMeanFragment(modelFit(), as.integer(input$studentMeanObservation), input$studentMeanScale, isTRUE(input$studentMeanInterval), confidenceLevel())
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
   })
-
-  shiny::observeEvent(input$insertStudentExplanationPrediction, {
-    fragment = input$studentExplanationPrediction
-    if (!is.null(fragment) && nzchar(fragment)) {
-      session$sendCustomMessage(
-        type = "wmfmInsertStudentExplanation",
-        message = list(text = fragment)
-      )
+  shiny::observeEvent(input$insertStudentDifference, {
+    text = studentExplanationDifferenceFragment(modelFit(), as.integer(input$studentDifferenceFirst), as.integer(input$studentDifferenceSecond), input$studentDifferenceScale, isTRUE(input$studentDifferenceInterval), confidenceLevel())
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
+  })
+  shiny::observeEvent(input$insertStudentResidual, {
+    text = studentExplanationResidualFragment(modelFit(), as.integer(input$studentResidualObservation), input$studentResidualType)
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
+  })
+  shiny::observeEvent(input$insertStudentOther, {
+    selectedLevel = suppressWarnings(as.numeric(input$studentExplanationConfidenceLevel))
+    if (is.finite(selectedLevel)) {
+      confidenceLevel(selectedLevel)
     }
+    text = studentExplanationOtherFragment(modelFit(), input$studentOtherStatistic)
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
   })
 
   shiny::observeEvent(input$checkStudentExplanation, {
     model = modelFit()
     explanationText = trimws(as.character(input$studentExplanationText %||% ""))[1]
-
     if (is.null(model)) {
       studentExplanationGrade(NULL)
       studentExplanationStatus("Fit a model before checking your explanation.")
       return(NULL)
     }
-
     if (!nzchar(explanationText)) {
       studentExplanationGrade(NULL)
       studentExplanationStatus("Write an explanation before asking WMFM to check it.")
       return(NULL)
     }
-
     studentExplanationStatus("Checking your explanation...")
-
     scoredGrade = tryCatch(
-      scoreDeveloperExplanation(
-        model = model,
-        rv = rv,
-        input = input,
-        explanationText = explanationText,
-        method = "deterministic"
-      ),
+      scoreDeveloperExplanation(model = model, rv = rv, input = input, explanationText = explanationText, method = "deterministic"),
       error = function(e) {
-        studentExplanationStatus(
-          paste("WMFM could not check the explanation:", conditionMessage(e))
-        )
+        studentExplanationStatus(paste("WMFM could not check the explanation:", conditionMessage(e)))
         NULL
       }
     )
-
     studentExplanationGrade(scoredGrade)
-
     if (!is.null(scoredGrade)) {
-      studentExplanationStatus(
-        "Explanation checked. Revise it using the feedback below, then check it again."
-      )
+      studentExplanationStatus("Explanation checked. Revise it using the feedback below, then check it again.")
     }
   })
 
@@ -547,11 +572,7 @@ registerStudentExplanationObservers = function(
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(modelFit(), {
-    shiny::updateTextAreaInput(
-      session = session,
-      inputId = "studentExplanationText",
-      value = ""
-    )
+    shiny::updateTextAreaInput(session, "studentExplanationText", value = "")
     studentExplanationGrade(NULL)
     studentExplanationStatus("")
   }, ignoreInit = TRUE)

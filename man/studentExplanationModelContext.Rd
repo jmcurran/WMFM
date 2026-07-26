@@ -10,7 +10,7 @@ studentExplanationModelContext(model)
 \item{model}{A fitted model object.}
 }
 \value{
-A named list describing coefficient, effect, and prediction scales.
+A named list describing the available scales.
 }
 \description{
 Describe the fitted model for student explanation insertions

@@ -2,7 +2,7 @@
 % Please edit documentation in R/app-student-explanation.R
 \name{formatStudentExplanationNumber}
 \alias{formatStudentExplanationNumber}
-\title{Format a number for the student explanation toolbar}
+\title{Format a number for the student explanation editor}
 \usage{
 formatStudentExplanationNumber(value)
 }
@@ -13,6 +13,6 @@ formatStudentExplanationNumber(value)
 A character vector.
 }
 \description{
-Format a number for the student explanation toolbar
+Format a number for the student explanation editor
 }
 \keyword{internal}
