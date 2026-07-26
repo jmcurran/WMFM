@@ -221,18 +221,144 @@ studentExplanationMeanFragment = function(model, observation, scale, includeInte
 }
 
 
+getStudentExplanationPredictionVariables = function(model) {
+  predictorNames = all.vars(stats::delete.response(stats::terms(model)))
+  sourceData = tryCatch(
+    eval(model$call$data, envir = environment(stats::formula(model))),
+    error = function(e) NULL
+  )
+  modelData = tryCatch(stats::model.frame(model), error = function(e) NULL)
+
+  lapply(seq_along(predictorNames), function(index) {
+    variableName = predictorNames[[index]]
+    values = NULL
+    if (is.data.frame(sourceData) && variableName %in% names(sourceData)) {
+      values = sourceData[[variableName]]
+    } else if (is.data.frame(modelData) && variableName %in% names(modelData)) {
+      values = modelData[[variableName]]
+    }
+
+    factorLevels = model$xlevels[[variableName]] %||% character(0)
+    isFactor = length(factorLevels) > 0 || is.factor(values) || is.character(values)
+    if (length(factorLevels) == 0 && isFactor) {
+      factorLevels = unique(as.character(values[!is.na(values)]))
+    }
+
+    defaultValue = if (isFactor) {
+      if (length(factorLevels) == 0) "" else factorLevels[[1]]
+    } else {
+      numericValues = suppressWarnings(as.numeric(values))
+      numericValues = numericValues[is.finite(numericValues)]
+      if (length(numericValues) == 0) "" else formatStudentExplanationNumber(stats::median(numericValues))
+    }
+
+    list(
+      name = variableName,
+      inputId = paste0("studentPredictionValue", index),
+      isFactor = isFactor,
+      levels = factorLevels,
+      default = defaultValue
+    )
+  })
+}
+
+parseStudentExplanationPredictionValues = function(model, inputValues) {
+  specifications = getStudentExplanationPredictionVariables(model)
+  parsedValues = vector("list", length(specifications))
+  names(parsedValues) = vapply(specifications, function(x) x$name, character(1))
+
+  for (index in seq_along(specifications)) {
+    specification = specifications[[index]]
+    rawValue = inputValues[[specification$inputId]] %||% ""
+    if (specification$isFactor) {
+      values = as.character(rawValue)
+      values = trimws(values[nzchar(trimws(values))])
+      invalidValues = setdiff(values, specification$levels)
+      if (length(invalidValues) > 0) {
+        return(list(
+          ok = FALSE,
+          message = paste0(
+            specification$name, " contains an unavailable level: ",
+            paste(invalidValues, collapse = ", "), "."
+          )
+        ))
+      }
+    } else {
+      characterValues = trimws(unlist(strsplit(as.character(rawValue), ",", fixed = TRUE)))
+      characterValues = characterValues[nzchar(characterValues)]
+      values = suppressWarnings(as.numeric(characterValues))
+      if (length(characterValues) == 0 || any(!is.finite(values))) {
+        return(list(
+          ok = FALSE,
+          message = paste0(
+            "Enter one or more numeric values for ", specification$name,
+            ", separated by commas."
+          )
+        ))
+      }
+    }
+
+    if (length(values) == 0) {
+      return(list(ok = FALSE, message = paste0("Supply at least one value for ", specification$name, ".")))
+    }
+    parsedValues[[specification$name]] = values
+  }
+
+  lengths = vapply(parsedValues, length, integer(1))
+  predictionCount = max(lengths)
+  invalidLengths = lengths[lengths != 1L & lengths != predictionCount]
+  if (length(invalidLengths) > 0) {
+    details = paste0(names(lengths), " has ", lengths, ifelse(lengths == 1L, " value", " values"))
+    return(list(
+      ok = FALSE,
+      message = paste0(
+        "Each covariate must contain either one value or ", predictionCount,
+        " values. ", paste(details, collapse = "; "), "."
+      )
+    ))
+  }
+
+  broadcastValues = lapply(parsedValues, function(values) {
+    if (length(values) == 1L) rep(values, predictionCount) else values
+  })
+  newData = as.data.frame(broadcastValues, stringsAsFactors = FALSE, check.names = FALSE)
+
+  for (specification in specifications) {
+    if (specification$isFactor) {
+      newData[[specification$name]] = factor(
+        newData[[specification$name]],
+        levels = specification$levels
+      )
+    }
+  }
+
+  list(
+    ok = TRUE,
+    newData = newData,
+    predictionCount = predictionCount,
+    suppliedValues = parsedValues
+  )
+}
+
+formatStudentExplanationPredictionProfile = function(newData, rowIndex) {
+  details = vapply(
+    names(newData),
+    function(variableName) {
+      paste0(variableName, " = ", as.character(newData[[variableName]][[rowIndex]]))
+    },
+    character(1)
+  )
+  paste(details, collapse = ", ")
+}
+
 studentExplanationPredictionFragment = function(
     model,
-    observation,
+    newData,
     scale,
     includeInterval,
     level,
     wording = "prediction"
 ) {
-  modelData = stats::model.frame(model)
-  newData = modelData[observation, , drop = FALSE]
-  responseName = names(modelData)[1]
-  newData[[responseName]] = NULL
   context = studentExplanationModelContext(model)
 
   if (identical(context$family, "linear")) {
@@ -244,53 +370,51 @@ studentExplanationPredictionFragment = function(
     )
 
     if (isTRUE(includeInterval)) {
-      estimate = as.numeric(prediction[1, "fit"])
-      interval = as.numeric(prediction[1, c("lwr", "upr")])
+      estimates = as.numeric(prediction[, "fit"])
+      lower = as.numeric(prediction[, "lwr"])
+      upper = as.numeric(prediction[, "upr"])
     } else {
-      estimate = as.numeric(prediction[[1]])
-      interval = NULL
+      estimates = as.numeric(prediction)
+      lower = upper = rep(NA_real_, length(estimates))
     }
 
-    measure = if (identical(wording, "typical")) {
-      "typical value"
-    } else {
-      "predicted individual value"
-    }
+    measure = if (identical(wording, "typical")) "typical value" else "predicted individual value"
   } else {
-    summary = studentExplanationPredictionSummary(model, observation, level)
+    linkPredictions = as.numeric(stats::predict(model, newdata = newData, type = "link"))
     if (identical(scale, "response")) {
-      estimate = model$family$linkinv(summary$link)
-      measure = if (identical(context$family, "binomial")) {
-        "predicted probability"
-      } else {
-        "predicted count"
-      }
+      estimates = model$family$linkinv(linkPredictions)
+      measure = if (identical(context$family, "binomial")) "predicted probability" else "predicted count"
     } else if (identical(scale, "odds")) {
-      estimate = exp(summary$link)
+      estimates = exp(linkPredictions)
       measure = "predicted odds"
     } else {
-      estimate = summary$link
-      measure = if (identical(context$family, "binomial")) {
-        "predicted log odds"
-      } else {
-        "predicted log count"
-      }
+      estimates = linkPredictions
+      measure = if (identical(context$family, "binomial")) "predicted log odds" else "predicted log count"
     }
-    interval = NULL
+    lower = upper = rep(NA_real_, length(estimates))
   }
 
-  text = paste0(
-    "the ", measure, " for observation ", observation,
-    " is ", formatStudentExplanationNumber(estimate)
+  fragments = vapply(
+    seq_along(estimates),
+    function(index) {
+      profile = formatStudentExplanationPredictionProfile(newData, index)
+      text = paste0(
+        "for ", profile, ", the ", measure, " is ",
+        formatStudentExplanationNumber(estimates[[index]])
+      )
+      if (isTRUE(includeInterval) && is.finite(lower[[index]]) && is.finite(upper[[index]])) {
+        text = paste0(
+          text, ", with a ", studentExplanationConfidenceLabel(level),
+          " prediction interval from ", formatStudentExplanationNumber(lower[[index]]),
+          " to ", formatStudentExplanationNumber(upper[[index]])
+        )
+      }
+      text
+    },
+    character(1)
   )
-  if (isTRUE(includeInterval) && !is.null(interval)) {
-    text = paste0(
-      text, ", with a ", studentExplanationConfidenceLabel(level),
-      " prediction interval from ", formatStudentExplanationNumber(interval[[1]]),
-      " to ", formatStudentExplanationNumber(interval[[2]])
-    )
-  }
-  text
+
+  paste(fragments, collapse = "; ")
 }
 
 studentExplanationDifferenceFragment = function(model, firstObservation, secondObservation, scale, includeInterval, level) {
@@ -381,17 +505,40 @@ buildStudentExplanationMeanDialog = function(model, confidenceLevel) {
 buildStudentExplanationPredictionDialog = function(model, confidenceLevel) {
   context = studentExplanationModelContext(model)
   isLinear = identical(context$family, "linear")
+  specifications = getStudentExplanationPredictionVariables(model)
 
-  controls = list(
-    shiny::selectInput(
-      "studentPredictionObservation",
-      "Observation",
-      choices = buildStudentExplanationObservationChoices(model)
-    ),
-    shiny::selectInput(
-      "studentPredictionScale",
-      "Prediction scale",
-      choices = context$predictionScales
+  predictorControls = lapply(specifications, function(specification) {
+    if (specification$isFactor) {
+      shiny::selectizeInput(
+        specification$inputId,
+        specification$name,
+        choices = specification$levels,
+        selected = specification$default,
+        multiple = TRUE,
+        options = list(plugins = list("remove_button"))
+      )
+    } else {
+      shiny::textInput(
+        specification$inputId,
+        specification$name,
+        value = specification$default,
+        placeholder = "Enter one or more values separated by commas"
+      )
+    }
+  })
+
+  controls = c(
+    predictorControls,
+    list(
+      shiny::helpText(
+        "Supply one value or a common number of values for each covariate. Single values are repeated across the prediction profiles."
+      ),
+      shiny::uiOutput("studentPredictionPreviewUi"),
+      shiny::selectInput(
+        "studentPredictionScale",
+        "Prediction scale",
+        choices = context$predictionScales
+      )
     )
   )
 
@@ -645,6 +792,32 @@ registerStudentExplanationObservers = function(input, output, session, rv, model
   output$studentExplanationFeedbackUi = shiny::renderUI({
     renderStudentExplanationFeedbackUi(buildStudentExplanationFeedback(studentExplanationGrade()))
   })
+  output$studentPredictionPreviewUi = shiny::renderUI({
+    model = modelFit()
+    if (is.null(model)) {
+      return(NULL)
+    }
+    specifications = getStudentExplanationPredictionVariables(model)
+    inputValues = stats::setNames(
+      lapply(specifications, function(specification) input[[specification$inputId]]),
+      vapply(specifications, function(specification) specification$inputId, character(1))
+    )
+    parsed = parseStudentExplanationPredictionValues(model, inputValues)
+    if (!isTRUE(parsed$ok)) {
+      return(shiny::tags$p(class = "text-danger", parsed$message))
+    }
+    previewRows = lapply(seq_len(min(parsed$predictionCount, 6L)), function(index) {
+      shiny::tags$li(formatStudentExplanationPredictionProfile(parsed$newData, index))
+    })
+    if (parsed$predictionCount > 6L) {
+      previewRows = c(previewRows, list(shiny::tags$li(paste0("... and ", parsed$predictionCount - 6L, " more"))))
+    }
+    shiny::tags$div(
+      class = "wmfm-student-prediction-preview",
+      shiny::tags$strong(paste0(parsed$predictionCount, if (parsed$predictionCount == 1L) " prediction profile" else " prediction profiles")),
+      shiny::tags$ol(previewRows)
+    )
+  })
 
   shiny::observeEvent(input$openStudentCoefficientDialog, {
     shiny::req(modelFit())
@@ -682,14 +855,38 @@ registerStudentExplanationObservers = function(input, output, session, rv, model
     studentExplanationInsert(session, text)
   })
   shiny::observeEvent(input$insertStudentPrediction, {
-    text = studentExplanationPredictionFragment(
-      modelFit(),
-      as.integer(input$studentPredictionObservation),
-      input$studentPredictionScale,
-      isTRUE(input$studentPredictionInterval),
-      confidenceLevel(),
-      input$studentPredictionWording %||% "prediction"
+    model = modelFit()
+    specifications = getStudentExplanationPredictionVariables(model)
+    inputValues = stats::setNames(
+      lapply(specifications, function(specification) input[[specification$inputId]]),
+      vapply(specifications, function(specification) specification$inputId, character(1))
     )
+    parsed = parseStudentExplanationPredictionValues(model, inputValues)
+    if (!isTRUE(parsed$ok)) {
+      shiny::showNotification(parsed$message, type = "error", duration = NULL)
+      return(NULL)
+    }
+    text = tryCatch(
+      studentExplanationPredictionFragment(
+        model,
+        parsed$newData,
+        input$studentPredictionScale,
+        isTRUE(input$studentPredictionInterval),
+        confidenceLevel(),
+        input$studentPredictionWording %||% "prediction"
+      ),
+      error = function(e) {
+        shiny::showNotification(
+          paste("WMFM could not calculate these predictions:", conditionMessage(e)),
+          type = "error",
+          duration = NULL
+        )
+        NULL
+      }
+    )
+    if (is.null(text)) {
+      return(NULL)
+    }
     shiny::removeModal()
     studentExplanationInsert(session, text)
   })

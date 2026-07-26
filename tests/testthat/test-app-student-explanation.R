@@ -84,7 +84,7 @@ test_that("linear predictions can include prediction intervals", {
   model = stats::lm(mpg ~ wt, data = mtcars)
   fragment = studentExplanationPredictionFragment(
     model,
-    1L,
+    mtcars[1, "wt", drop = FALSE],
     "response",
     TRUE,
     0.95
@@ -98,7 +98,7 @@ test_that("linear predictions can use typical-value wording", {
   model = stats::lm(mpg ~ wt, data = mtcars)
   fragment = studentExplanationPredictionFragment(
     model,
-    1L,
+    mtcars[1, "wt", drop = FALSE],
     "response",
     FALSE,
     0.95,
@@ -114,14 +114,14 @@ test_that("logistic predictions offer probability and odds without intervals", {
   context = studentExplanationModelContext(model)
   probability = studentExplanationPredictionFragment(
     model,
-    1L,
+    mtcars[1, "wt", drop = FALSE],
     "response",
     TRUE,
     0.95
   )
   odds = studentExplanationPredictionFragment(
     model,
-    1L,
+    mtcars[1, "wt", drop = FALSE],
     "odds",
     TRUE,
     0.95
@@ -140,7 +140,7 @@ test_that("Poisson predictions are clearly separated from expected means", {
   model = stats::glm(cyl ~ wt, data = mtcars, family = stats::poisson())
   fragment = studentExplanationPredictionFragment(
     model,
-    1L,
+    mtcars[1, "wt", drop = FALSE],
     "response",
     TRUE,
     0.95
@@ -148,4 +148,84 @@ test_that("Poisson predictions are clearly separated from expected means", {
 
   expect_match(fragment, "predicted count", fixed = TRUE)
   expect_false(grepl("prediction interval", fragment, fixed = TRUE))
+})
+
+test_that("prediction inputs support controlled broadcasting", {
+  data = data.frame(
+    outcome = c(10, 12, 16, 18),
+    Attend = factor(c("Yes", "No", "Yes", "No")),
+    Test = c(5, 10, 15, 20)
+  )
+  model = stats::lm(outcome ~ Attend + Test, data = data)
+  parsed = parseStudentExplanationPredictionValues(
+    model,
+    list(
+      studentPredictionValue1 = "Yes",
+      studentPredictionValue2 = "5, 10, 15"
+    )
+  )
+
+  expect_true(parsed$ok)
+  expect_equal(parsed$predictionCount, 3L)
+  expect_equal(as.character(parsed$newData$Attend), rep("Yes", 3))
+  expect_equal(parsed$newData$Test, c(5, 10, 15))
+})
+
+test_that("prediction inputs reject incompatible non-singleton lengths", {
+  data = data.frame(
+    outcome = c(10, 12, 16, 18),
+    Attend = factor(c("Yes", "No", "Yes", "No")),
+    Test = c(5, 10, 15, 20)
+  )
+  model = stats::lm(outcome ~ Attend + Test, data = data)
+  parsed = parseStudentExplanationPredictionValues(
+    model,
+    list(
+      studentPredictionValue1 = c("Yes", "No"),
+      studentPredictionValue2 = "5, 10, 15"
+    )
+  )
+
+  expect_false(parsed$ok)
+  expect_match(parsed$message, "either one value or 3 values", fixed = TRUE)
+})
+
+test_that("prediction fragments describe supplied covariate profiles", {
+  data = data.frame(
+    outcome = c(10, 12, 16, 18),
+    Attend = factor(c("Yes", "No", "Yes", "No")),
+    Test = c(5, 10, 15, 20)
+  )
+  model = stats::lm(outcome ~ Attend + Test, data = data)
+  newData = data.frame(
+    Attend = factor(rep("Yes", 3), levels = levels(data$Attend)),
+    Test = c(5, 10, 15)
+  )
+  fragment = studentExplanationPredictionFragment(
+    model,
+    newData,
+    "response",
+    TRUE,
+    0.95
+  )
+
+  expect_match(fragment, "Attend = Yes, Test = 5", fixed = TRUE)
+  expect_match(fragment, "Attend = Yes, Test = 10", fixed = TRUE)
+  expect_match(fragment, "Attend = Yes, Test = 15", fixed = TRUE)
+  expect_equal(length(strsplit(fragment, "; ", fixed = TRUE)[[1]]), 3L)
+})
+
+test_that("prediction dialog uses covariate controls rather than observations", {
+  data = data.frame(
+    outcome = c(10, 12, 16, 18),
+    Attend = factor(c("Yes", "No", "Yes", "No")),
+    Test = c(5, 10, 15, 20)
+  )
+  model = stats::lm(outcome ~ Attend + Test, data = data)
+  html = as.character(buildStudentExplanationPredictionDialog(model, 0.95))
+
+  expect_match(html, "studentPredictionValue1", fixed = TRUE)
+  expect_match(html, "studentPredictionValue2", fixed = TRUE)
+  expect_match(html, "studentPredictionPreviewUi", fixed = TRUE)
+  expect_false(grepl("studentPredictionObservation", html, fixed = TRUE))
 })

@@ -11,6 +11,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.009
+
+- Replaced observation selection in the individual-prediction dialog with direct covariate entry.
+- Added controlled broadcasting so singleton values are repeated while incompatible non-singleton lengths are rejected.
+- Added a live preview of the prediction profiles and included supplied covariate values in inserted explanations.
+- Added deterministic offline tests for numeric lists, factor values, broadcasting, validation, and dialog integration.
+
 ## WMFM 1.1.5.008
 
 - Added a distinct `y-hat` insertion tool for individual predictions in the student explanation editor.
