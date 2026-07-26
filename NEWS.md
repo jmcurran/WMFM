@@ -11,6 +11,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.008
+
+- Added a distinct `y-hat` insertion tool for individual predictions in the student explanation editor.
+- Added linear-model prediction intervals and optional typical-value wording while keeping fitted-mean confidence intervals separate.
+- Added model-aware logistic probability, odds, and log-odds predictions and Poisson count predictions with explicit interval limitations.
+- Added deterministic offline tests for prediction scales, wording, intervals, and toolbar integration.
+
 ## WMFM 1.1.5.007
 
 - Repaired the compact statistical toolbar CSS so `R/app-ui.R` parses during documentation generation.

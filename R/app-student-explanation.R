@@ -10,6 +10,7 @@ studentExplanationModelContext = function(model) {
     family = "linear",
     coefficientScales = c("Coefficient" = "coefficient"),
     meanScales = c("Fitted mean" = "response"),
+    predictionScales = c("Predicted individual value" = "response"),
     differenceScales = c("Difference in fitted means" = "responseDifference")
   )
 
@@ -31,6 +32,11 @@ studentExplanationModelContext = function(model) {
       "Odds" = "odds",
       "Log odds" = "link"
     )
+    context$predictionScales = c(
+      "Predicted probability" = "response",
+      "Predicted odds" = "odds",
+      "Predicted log odds" = "link"
+    )
     context$differenceScales = c(
       "Probability difference" = "responseDifference",
       "Odds ratio" = "ratio",
@@ -45,6 +51,10 @@ studentExplanationModelContext = function(model) {
     context$meanScales = c(
       "Expected count" = "response",
       "Log expected count" = "link"
+    )
+    context$predictionScales = c(
+      "Predicted count" = "response",
+      "Predicted log count" = "link"
     )
     context$differenceScales = c(
       "Expected-count difference" = "responseDifference",
@@ -210,6 +220,79 @@ studentExplanationMeanFragment = function(model, observation, scale, includeInte
   text
 }
 
+
+studentExplanationPredictionFragment = function(
+    model,
+    observation,
+    scale,
+    includeInterval,
+    level,
+    wording = "prediction"
+) {
+  modelData = stats::model.frame(model)
+  newData = modelData[observation, , drop = FALSE]
+  responseName = names(modelData)[1]
+  newData[[responseName]] = NULL
+  context = studentExplanationModelContext(model)
+
+  if (identical(context$family, "linear")) {
+    prediction = stats::predict(
+      model,
+      newdata = newData,
+      interval = if (isTRUE(includeInterval)) "prediction" else "none",
+      level = level
+    )
+
+    if (isTRUE(includeInterval)) {
+      estimate = as.numeric(prediction[1, "fit"])
+      interval = as.numeric(prediction[1, c("lwr", "upr")])
+    } else {
+      estimate = as.numeric(prediction[[1]])
+      interval = NULL
+    }
+
+    measure = if (identical(wording, "typical")) {
+      "typical value"
+    } else {
+      "predicted individual value"
+    }
+  } else {
+    summary = studentExplanationPredictionSummary(model, observation, level)
+    if (identical(scale, "response")) {
+      estimate = model$family$linkinv(summary$link)
+      measure = if (identical(context$family, "binomial")) {
+        "predicted probability"
+      } else {
+        "predicted count"
+      }
+    } else if (identical(scale, "odds")) {
+      estimate = exp(summary$link)
+      measure = "predicted odds"
+    } else {
+      estimate = summary$link
+      measure = if (identical(context$family, "binomial")) {
+        "predicted log odds"
+      } else {
+        "predicted log count"
+      }
+    }
+    interval = NULL
+  }
+
+  text = paste0(
+    "the ", measure, " for observation ", observation,
+    " is ", formatStudentExplanationNumber(estimate)
+  )
+  if (isTRUE(includeInterval) && !is.null(interval)) {
+    text = paste0(
+      text, ", with a ", studentExplanationConfidenceLabel(level),
+      " prediction interval from ", formatStudentExplanationNumber(interval[[1]]),
+      " to ", formatStudentExplanationNumber(interval[[2]])
+    )
+  }
+  text
+}
+
 studentExplanationDifferenceFragment = function(model, firstObservation, secondObservation, scale, includeInterval, level) {
   first = studentExplanationPredictionSummary(model, firstObservation, level)
   second = studentExplanationPredictionSummary(model, secondObservation, level)
@@ -263,6 +346,7 @@ buildStudentExplanationToolbarUi = function(model) {
     title = if (disabled) "Fit a model to enable statistical insertion tools." else NULL,
     shiny::actionButton("openStudentCoefficientDialog", shiny::HTML("&beta;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a coefficient"),
     shiny::actionButton("openStudentMeanDialog", shiny::HTML("&mu;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a fitted mean or fitted response"),
+    shiny::actionButton("openStudentPredictionDialog", shiny::HTML("y&#770;"), class = buttonClass, disabled = disabled, title = "Insert an individual prediction"),
     shiny::actionButton("openStudentDifferenceDialog", shiny::HTML("&Delta;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a pairwise difference or ratio"),
     shiny::actionButton("openStudentResidualDialog", shiny::HTML("&epsilon;&#770;"), class = buttonClass, disabled = disabled, title = "Insert a residual"),
     shiny::actionButton("openStudentOtherDialog", shiny::HTML("&hellip;"), class = buttonClass, disabled = disabled, title = "Insert another model statistic")
@@ -289,6 +373,82 @@ buildStudentExplanationMeanDialog = function(model, confidenceLevel) {
     shiny::selectInput("studentMeanScale", "Scale", choices = context$meanScales),
     shiny::checkboxInput("studentMeanInterval", paste0("Include a ", studentExplanationConfidenceLabel(confidenceLevel), " confidence interval"), TRUE),
     footer = shiny::tagList(shiny::modalButton("Cancel"), shiny::actionButton("insertStudentMean", "Insert", class = "btn-primary")),
+    easyClose = TRUE
+  )
+}
+
+
+buildStudentExplanationPredictionDialog = function(model, confidenceLevel) {
+  context = studentExplanationModelContext(model)
+  isLinear = identical(context$family, "linear")
+
+  controls = list(
+    shiny::selectInput(
+      "studentPredictionObservation",
+      "Observation",
+      choices = buildStudentExplanationObservationChoices(model)
+    ),
+    shiny::selectInput(
+      "studentPredictionScale",
+      "Prediction scale",
+      choices = context$predictionScales
+    )
+  )
+
+  if (isLinear) {
+    controls = c(
+      controls,
+      list(
+        shiny::selectInput(
+          "studentPredictionWording",
+          "Wording",
+          choices = c(
+            "Predicted individual value" = "prediction",
+            "Typical value" = "typical"
+          )
+        ),
+        shiny::checkboxInput(
+          "studentPredictionInterval",
+          paste0(
+            "Include a ",
+            studentExplanationConfidenceLabel(confidenceLevel),
+            " prediction interval"
+          ),
+          TRUE
+        )
+      )
+    )
+  } else if (identical(context$family, "binomial")) {
+    controls = c(
+      controls,
+      list(
+        shiny::helpText(
+          "A future binary outcome is zero or one, so WMFM inserts its predicted probability or odds rather than a prediction interval."
+        )
+      )
+    )
+  } else {
+    controls = c(
+      controls,
+      list(
+        shiny::helpText(
+          "This stage inserts a predicted count but does not yet calculate a predictive interval for a future Poisson count."
+        )
+      )
+    )
+  }
+
+  shiny::modalDialog(
+    title = "Insert an individual prediction",
+    controls,
+    footer = shiny::tagList(
+      shiny::modalButton("Cancel"),
+      shiny::actionButton(
+        "insertStudentPrediction",
+        "Insert",
+        class = "btn-primary"
+      )
+    ),
     easyClose = TRUE
   )
 }
@@ -494,6 +654,10 @@ registerStudentExplanationObservers = function(input, output, session, rv, model
     shiny::req(modelFit())
     shiny::showModal(buildStudentExplanationMeanDialog(modelFit(), confidenceLevel()))
   })
+  shiny::observeEvent(input$openStudentPredictionDialog, {
+    shiny::req(modelFit())
+    shiny::showModal(buildStudentExplanationPredictionDialog(modelFit(), confidenceLevel()))
+  })
   shiny::observeEvent(input$openStudentDifferenceDialog, {
     shiny::req(modelFit())
     shiny::showModal(buildStudentExplanationDifferenceDialog(modelFit(), confidenceLevel()))
@@ -514,6 +678,18 @@ registerStudentExplanationObservers = function(input, output, session, rv, model
   })
   shiny::observeEvent(input$insertStudentMean, {
     text = studentExplanationMeanFragment(modelFit(), as.integer(input$studentMeanObservation), input$studentMeanScale, isTRUE(input$studentMeanInterval), confidenceLevel())
+    shiny::removeModal()
+    studentExplanationInsert(session, text)
+  })
+  shiny::observeEvent(input$insertStudentPrediction, {
+    text = studentExplanationPredictionFragment(
+      modelFit(),
+      as.integer(input$studentPredictionObservation),
+      input$studentPredictionScale,
+      isTRUE(input$studentPredictionInterval),
+      confidenceLevel(),
+      input$studentPredictionWording %||% "prediction"
+    )
     shiny::removeModal()
     studentExplanationInsert(session, text)
   })

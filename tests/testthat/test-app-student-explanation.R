@@ -71,3 +71,81 @@ test_that("student explanation UI retains editor and feedback controls", {
   expect_match(html, "checkStudentExplanation", fixed = TRUE)
   expect_match(html, "wmfmInsertStudentExplanation", fixed = TRUE)
 })
+
+test_that("prediction toolbar button is available", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  html = as.character(buildStudentExplanationToolbarUi(model))
+
+  expect_match(html, "openStudentPredictionDialog", fixed = TRUE)
+  expect_match(html, "Insert an individual prediction", fixed = TRUE)
+})
+
+test_that("linear predictions can include prediction intervals", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  fragment = studentExplanationPredictionFragment(
+    model,
+    1L,
+    "response",
+    TRUE,
+    0.95
+  )
+
+  expect_match(fragment, "predicted individual value", fixed = TRUE)
+  expect_match(fragment, "95% prediction interval", fixed = TRUE)
+})
+
+test_that("linear predictions can use typical-value wording", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  fragment = studentExplanationPredictionFragment(
+    model,
+    1L,
+    "response",
+    FALSE,
+    0.95,
+    wording = "typical"
+  )
+
+  expect_match(fragment, "typical value", fixed = TRUE)
+  expect_false(grepl("prediction interval", fragment, fixed = TRUE))
+})
+
+test_that("logistic predictions offer probability and odds without intervals", {
+  model = stats::glm(am ~ wt, data = mtcars, family = stats::binomial())
+  context = studentExplanationModelContext(model)
+  probability = studentExplanationPredictionFragment(
+    model,
+    1L,
+    "response",
+    TRUE,
+    0.95
+  )
+  odds = studentExplanationPredictionFragment(
+    model,
+    1L,
+    "odds",
+    TRUE,
+    0.95
+  )
+
+  expect_named(
+    context$predictionScales,
+    c("Predicted probability", "Predicted odds", "Predicted log odds")
+  )
+  expect_match(probability, "predicted probability", fixed = TRUE)
+  expect_match(odds, "predicted odds", fixed = TRUE)
+  expect_false(grepl("prediction interval", probability, fixed = TRUE))
+})
+
+test_that("Poisson predictions are clearly separated from expected means", {
+  model = stats::glm(cyl ~ wt, data = mtcars, family = stats::poisson())
+  fragment = studentExplanationPredictionFragment(
+    model,
+    1L,
+    "response",
+    TRUE,
+    0.95
+  )
+
+  expect_match(fragment, "predicted count", fixed = TRUE)
+  expect_false(grepl("prediction interval", fragment, fixed = TRUE))
+})
