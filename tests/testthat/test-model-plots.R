@@ -303,6 +303,6 @@ testthat::test_that("model plots UI includes a download control without diagnost
   testthat::expect_match(observerText, "downloadHandler", fixed = TRUE)
   testthat::expect_match(observerText, "buildModelPlotDownloadFilename", fixed = TRUE)
   testthat::expect_match(observerText, "ggsave", fixed = TRUE)
-  testthat::expect_no_match(uiText, "Diagnostic", fixed = TRUE)
-  testthat::expect_no_match(uiText, "Assumption", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Diagnostic plot", fixed = TRUE)
+  testthat::expect_no_match(uiText, "Assumption check", fixed = TRUE)
 })

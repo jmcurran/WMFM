@@ -229,3 +229,54 @@ test_that("prediction dialog uses covariate controls rather than observations", 
   expect_match(html, "studentPredictionPreviewUi", fixed = TRUE)
   expect_false(grepl("studentPredictionObservation", html, fixed = TRUE))
 })
+
+test_that("fitted means accept user-defined covariate profiles", {
+  model = stats::lm(mpg ~ am + wt, data = mtcars)
+  parsed = parseStudentExplanationPredictionValues(
+    model,
+    list(
+      studentMeanValue1 = c("0"),
+      studentMeanValue2 = "2.5, 3.0, 3.5"
+    ),
+    inputPrefix = "studentMeanValue"
+  )
+
+  expect_true(parsed$ok)
+  expect_equal(nrow(parsed$newData), 3L)
+  fragment = studentExplanationMeanFragment(model, parsed$newData, "response", TRUE, 0.95)
+  expect_match(fragment, "expected value", fixed = TRUE)
+  expect_match(fragment, "95% confidence interval", fixed = TRUE)
+  expect_match(fragment, "wt = 3.5", fixed = TRUE)
+})
+
+test_that("fitted-mean dialog uses direct covariate entry", {
+  model = stats::lm(mpg ~ am + wt, data = mtcars)
+  html = as.character(buildStudentExplanationMeanDialog(model, 0.95))
+
+  expect_match(html, "studentMeanValue1", fixed = TRUE)
+  expect_match(html, "studentMeanValue2", fixed = TRUE)
+  expect_match(html, "studentMeanPreviewUi", fixed = TRUE)
+  expect_false(grepl("studentMeanObservation", html, fixed = TRUE))
+})
+
+test_that("developer diagnostic report contains grading evidence", {
+  model = stats::lm(mpg ~ wt, data = mtcars)
+  gradeObj = list(scores = list(overallScore = 40), feedback = list(message = "example"))
+  report = buildStudentExplanationDiagnosticReport(
+    model,
+    rv = NULL,
+    input = NULL,
+    explanationText = "The predicted value is 20.",
+    gradeObj = gradeObj
+  )
+
+  expect_match(report, "WMFM student explanation diagnostic report", fixed = TRUE)
+  expect_match(report, "mpg ~ wt", fixed = TRUE)
+  expect_match(report, "The predicted value is 20.", fixed = TRUE)
+  expect_match(report, "overallScore", fixed = TRUE)
+})
+
+test_that("student explanation UI includes developer diagnostic output", {
+  html = as.character(appUI())
+  expect_match(html, "studentExplanationDeveloperDiagnosticsUi", fixed = TRUE)
+})

@@ -59,7 +59,8 @@ appServer = function(input, output, session) {
     output = output,
     session = session,
     rv = rv,
-    modelFit = modelFit
+    modelFit = modelFit,
+    developerModeUnlocked = developerModeUnlocked
   )
 
   registerAnalysisDownloadObserver(

@@ -1148,7 +1148,8 @@ appUI = function() {
           )
         ),
         textOutput("studentExplanationFeedbackStatus"),
-        uiOutput("studentExplanationFeedbackUi")
+        uiOutput("studentExplanationFeedbackUi"),
+        uiOutput("studentExplanationDeveloperDiagnosticsUi")
       ),
 
       tabPanel(

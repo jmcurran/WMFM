@@ -4,7 +4,14 @@
 \alias{registerStudentExplanationObservers}
 \title{Register student explanation workspace observers}
 \usage{
-registerStudentExplanationObservers(input, output, session, rv, modelFit)
+registerStudentExplanationObservers(
+  input,
+  output,
+  session,
+  rv,
+  modelFit,
+  developerModeUnlocked
+)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -16,6 +23,8 @@ registerStudentExplanationObservers(input, output, session, rv, modelFit)
 \item{rv}{App reactive values object.}
 
 \item{modelFit}{Reactive fitted model holder.}
+
+\item{developerModeUnlocked}{Reactive value indicating whether developer mode is unlocked.}
 }
 \value{
 Invisible \code{NULL}.

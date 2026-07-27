@@ -11,6 +11,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.011
+
+- Repaired fitted-mean calculations for both linear and generalised linear models.
+- Preserved compatibility with observation-index calls while retaining user-defined covariate profiles.
+- Narrowed a model-plot wording test so developer diagnostic controls elsewhere in the application do not cause a false failure.
+
 ## WMFM 1.1.5.009
 
 - Replaced observation selection in the individual-prediction dialog with direct covariate entry.
