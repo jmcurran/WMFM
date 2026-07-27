@@ -346,6 +346,11 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
       model = m,
       researchQuestion = researchQuestionRaw
     )
+    researchQuestionObjective = buildResearchQuestionObjective(
+      model = m,
+      researchQuestion = researchQuestionRaw
+    )
+    attr(m, "wmfm_research_question_objective") = researchQuestionObjective
     followupQuestion = trimws(input$modelFollowupQuestion %||% rv$modelFollowupQuestion %||% "")
     followupClassification = classifyModelFollowupQuestion(followupQuestion = followupQuestion)
     followupClassification = attachQuestionRouteToModelFollowupPayload(
@@ -382,6 +387,7 @@ registerFitModelObservers = function(input, output, session, rv, modelFit, reset
     attr(m, "wmfm_model_followup_payload") = followupClassification
     promptPreview = lmToExplanationPrompt(m)
     rv$explanationPromptDiagnostics = list(
+      researchQuestionObjective = researchQuestionObjective,
       followupText = followupClassification$originalText %||% "",
       followupPayload = followupClassification,
       assembledPrompt = promptPreview,

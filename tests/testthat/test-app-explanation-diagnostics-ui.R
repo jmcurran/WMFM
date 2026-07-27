@@ -280,3 +280,37 @@ testthat::test_that("diagnostics JSON exposes GLM extrapolation debug fields", {
   testthat::expect_equal(parsed$extrapolationDiagnostics$requestedValues$X, 6.4)
   testthat::expect_identical(parsed$extrapolationDiagnostics$classifications$X, "extrapolation_warning")
 })
+
+testthat::test_that("Stage 49.2 diagnostics expose the research-question objective", {
+  objective = structure(
+    list(
+      originalText = "What is the expected response for X = 4?",
+      normalizedText = "what is the expected response for x = 4?",
+      archetype = "expected_response",
+      primaryObjective = "Estimate the expected or average response.",
+      profile = list(X = 4),
+      essentialConcepts = c("expected response", "confidence interval"),
+      supportingConcepts = "model fit",
+      unsupportedOrMissing = character(0),
+      status = "answerable",
+      route = "model_answer",
+      reason = "prediction_request",
+      requiresFollowup = FALSE,
+      predictionPayload = NULL
+    ),
+    class = c("wmfmQuestionObjective", "list")
+  )
+  diagnostics = list(
+    researchQuestionObjective = objective,
+    followupPayload = list(category = "no_followup"),
+    assembledPrompt = "Prompt"
+  )
+
+  html = as.character(buildExplanationPromptDiagnosticsUi(diagnostics))
+  json = buildExplanationPromptDiagnosticsJson(diagnostics)
+
+  testthat::expect_match(html, "diag_research_question_objective", fixed = TRUE)
+  testthat::expect_match(html, "expected_response", fixed = TRUE)
+  testthat::expect_match(json, "researchQuestionObjective", fixed = TRUE)
+  testthat::expect_match(json, "expected_response", fixed = TRUE)
+})

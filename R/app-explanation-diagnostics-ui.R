@@ -13,6 +13,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
     ))
   }
 
+  objective = diagnostics$researchQuestionObjective %||% list()
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   unitChange = payload$unitChangeResult %||% list()
@@ -23,6 +24,18 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
   }
   missingOrAmbiguous = deterministic$warnings %||% ""
   diagnosticsBundle = paste(
+    "Research-question archetype:", as.character(objective$archetype %||% ""),
+    "",
+    "Primary objective:", as.character(objective$primaryObjective %||% ""),
+    "",
+    "Required concepts:", paste(objective$essentialConcepts %||% character(0), collapse = ", "),
+    "",
+    "Supporting concepts:", paste(objective$supportingConcepts %||% character(0), collapse = ", "),
+    "",
+    "Resolved profile:", paste(capture.output(str(objective$profile %||% list())), collapse = "\n"),
+    "",
+    "Unsupported or missing:", paste(objective$unsupportedOrMissing %||% character(0), collapse = ", "),
+    "",
     "Raw follow-up question:", payload$originalText %||% diagnostics$followupText %||% "",
     "",
     "Follow-up category:", as.character(payload$category %||% ""),
@@ -94,6 +107,11 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
       rows = 10,
       style = "width: 100%; font-family: monospace; white-space: pre;",
       diagnosticsJson
+    ),
+    tags$strong("Research-question objective"),
+    tags$pre(
+      id = "diag_research_question_objective",
+      paste(capture.output(str(objective)), collapse = "\n")
     ),
     tags$strong("Raw follow-up question text received by server"),
     tags$pre(id = "diag_followup_raw_text", payload$originalText %||% diagnostics$followupText %||% ""),
@@ -248,6 +266,7 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     diagnostics = list()
   }
 
+  objective = diagnostics$researchQuestionObjective %||% list()
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   unitChange = payload$unitChangeResult %||% list()
@@ -257,6 +276,7 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     prediction
   }
   out = list(
+    researchQuestionObjective = objective,
     rawFollowupQuestion = payload$originalText %||% diagnostics$followupText %||% "",
     followupCategory = as.character(payload$category %||% ""),
     deterministicStatus = as.character(deterministic$status %||% "not_applicable"),

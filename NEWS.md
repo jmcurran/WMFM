@@ -11,6 +11,14 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.6.004
+
+- Completed the deterministic research-question objective contract with seven explicit archetypes.
+- Preserved individual-prediction classification when supplied profiles are incomplete while retaining deterministic follow-up requirements.
+- Reused Stage 47 question routes and prediction payloads rather than duplicating specialised handling.
+- Replaced separable logistic characterisation data so strict warning conversion remains stable.
+- Exposed the resolved objective in developer UI and JSON diagnostics and covered linear, logistic, and Poisson models.
+
 ## WMFM 1.1.6.001
 
 - Grouped overlapping comparison and reference-group deductions into one actionable student-facing revision message.
