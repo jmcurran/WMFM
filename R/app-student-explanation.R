@@ -851,38 +851,115 @@ buildStudentExplanationDiagnosticReport = function(model, rv, input, explanation
   variableLines = if (is.data.frame(modelFrame)) {
     vapply(names(modelFrame), function(name) {
       value = modelFrame[[name]]
-      details = if (is.factor(value)) paste0("factor; levels: ", paste(levels(value), collapse = ", ")) else class(value)[[1]]
+      details = if (is.factor(value)) {
+        paste0("factor; levels: ", paste(levels(value), collapse = ", "))
+      } else {
+        class(value)[[1]]
+      }
       paste0("- ", name, ": ", details)
     }, character(1))
   } else {
     "- unavailable"
   }
-  gradeDump = if (is.null(gradeObj)) "No grading result is currently available." else paste(capture.output(dput(gradeObj)), collapse = "\n")
-  summaryDump = paste(capture.output(summary(model)), collapse = "\n")
+
+  markdownTable = function(x) {
+    if (is.null(x) || !is.data.frame(x) || nrow(x) == 0L) {
+      return("_None recorded._")
+    }
+    x = as.data.frame(x, stringsAsFactors = FALSE)
+    x[] = lapply(x, function(value) {
+      value = as.character(value)
+      value[is.na(value)] = ""
+      gsub("|", "\\|", value, fixed = TRUE)
+    })
+    header = paste0("| ", paste(names(x), collapse = " | "), " |")
+    separator = paste0("| ", paste(rep("---", ncol(x)), collapse = " | "), " |")
+    rows = apply(x, 1L, function(row) paste0("| ", paste(row, collapse = " | "), " |"))
+    paste(c(header, separator, rows), collapse = "\n")
+  }
+
+  coefficientTable = tryCatch({
+    matrix = summary(model)$coefficients
+    data.frame(term = rownames(matrix), matrix, row.names = NULL, check.names = FALSE)
+  }, error = function(e) NULL)
+
+  metricTable = NULL
+  lossTable = NULL
+  semanticTable = NULL
+  fatalLines = "- No fatal flaw was recorded."
+  parsedLines = "_No grading result is currently available._"
+
+  if (!is.null(gradeObj) && !inherits(gradeObj, "wmfmGrade")) {
+    parsedLines = paste(capture.output(str(gradeObj, max.level = 3L, give.attr = FALSE)), collapse = "\n")
+  }
+
+  if (inherits(gradeObj, "wmfmGrade")) {
+    metricTable = gradeObj$metricSummary
+    lossTable = gradeObj$feedback$whereMarksLost
+    semanticTable = gradeObj$feedback$semanticEvidence
+    studentScore = gradeObj$student
+    fatal = isTRUE(studentScore$fatalFlawDetected[[1]])
+    overclaim = isTRUE(studentScore$overclaimDetected[[1]])
+    fatalLines = c(
+      paste0("- Fatal flaw detected: ", fatal),
+      paste0("- Overclaim detected: ", overclaim),
+      paste0("- Fatal-flaw cap: ", gradeObj$meta$fatalFlawCap %||% NA),
+      paste0("- Overall score: ", gradeObj$overallScore %||% NA)
+    )
+    parsedFields = c(
+      "overclaimDetected", "inferentialRegister", "uncertaintyTypeClaim",
+      "followupPredictionTypeClaim", "followupIntervalTypeClaim",
+      "comparisonLanguageMention", "referenceGroupMention", "wordCount"
+    )
+    availableFields = intersect(parsedFields, names(studentScore))
+    parsedTable = data.frame(
+      field = availableFields,
+      value = vapply(availableFields, function(field) as.character(studentScore[[field]][[1]]), character(1)),
+      stringsAsFactors = FALSE
+    )
+    parsedLines = markdownTable(parsedTable)
+  }
+
+  researchQuestion = attr(model, "wmfm_research_question", exact = TRUE)
+  if (is.null(researchQuestion) && !is.null(rv)) {
+    researchQuestion = rv$researchQuestion
+  }
+  researchQuestion = researchQuestion %||% "Unavailable"
+
   paste(
     "# WMFM student explanation diagnostic report",
+    "",
+    "This compact developer report omits the underlying data, fitted values, residual vectors, QR decomposition, and complete fitted-model object.",
     "",
     "## Analysis context",
     paste0("- Model class: ", paste(class(model), collapse = ", ")),
     paste0("- Formula: `", paste(deparse(stats::formula(model)), collapse = " "), "`"),
     paste0("- Analysed observations: ", stats::nobs(model)),
+    paste0("- Research question: ", researchQuestion),
     "",
     "### Variables",
     paste(variableLines, collapse = "\n"),
     "",
-    "## Model summary supplied to the grading workflow",
-    "```",
-    summaryDump,
-    "```",
+    "### Coefficients supplied to grading",
+    markdownTable(coefficientTable),
     "",
     "## Student explanation",
     explanationText,
     "",
-    "## Complete deterministic grading object",
-    "The following is an exact R `dput()` representation. It includes all stored scores, feedback tables, missing-element records, and other rule-level evidence retained by the current grader.",
-    "```r",
-    gradeDump,
-    "```",
+    "## Fatal-flaw and cap trace",
+    paste(fatalLines, collapse = "\n"),
+    "",
+    "## Parsed explanation fields",
+    parsedLines,
+    "",
+    "## Metric scores",
+    markdownTable(metricTable),
+    "",
+    "## Where marks were lost",
+    markdownTable(lossTable),
+    "",
+    "## Semantic evidence",
+    markdownTable(semanticTable),
     sep = "\n"
   )
 }
@@ -931,7 +1008,7 @@ registerStudentExplanationObservers = function(input, output, session, rv, model
     }
     shiny::tags$details(
       shiny::tags$summary("Developer explanation diagnostics"),
-      shiny::helpText("Download a Markdown report containing the model context, exact student text, and complete deterministic grading object."),
+      shiny::helpText("Download a compact Markdown report containing the model context, exact student text, parsed evidence, score trace, and fatal-flaw information. The underlying data are omitted."),
       shiny::downloadButton("studentExplanationDiagnosticDownload", "Download diagnostic report")
     )
   })

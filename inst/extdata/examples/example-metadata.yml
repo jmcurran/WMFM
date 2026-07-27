@@ -322,3 +322,10 @@ examples:
     exampleDifficulty: developer
     teachingTopic: Distributional probability boundary
     developerPurpose: LLM review example for an exceedance-probability question
+  test-CourseExplanationGrading:
+    displayName: test-Course Explanation Grading
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Prediction, expected response, and explanation grading
+    developerPurpose: Reproduce the Stage 48.9 course explanation grading diagnostic

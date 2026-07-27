@@ -1,0 +1,13 @@
+displayName: test-Course Explanation Grading
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Will I do well on the final exam if I attend class regularly and get a good mark in the test?
+followupQuestion: ""
+evaluation:
+  datasetGroup: course
+  taskType: student_explanation_grading
+  intendedIntent: individual_prediction_and_mean
+  suite: developer_grading

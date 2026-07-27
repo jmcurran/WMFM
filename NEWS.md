@@ -11,6 +11,12 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.013
+
+- Repaired the Stage 48.9 developer-example test to inspect the formula in the established example specification field.
+- Preserved the developer-only Course explanation-grading example and its existing application behaviour.
+- Added a focused regression note for the return-structure correction.
+
 ## WMFM 1.1.5.011
 
 - Repaired fitted-mean calculations for both linear and generalised linear models.

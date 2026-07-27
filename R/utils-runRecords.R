@@ -595,8 +595,16 @@ buildWmfmRunRecord = function(
     )
   )
 
-  overclaimDetected = detectPatternLocal(
+  overclaimDetectionText = gsub(
+    "\\b(no|not)\\s+guarantee(s|d)?\\b",
+    "",
     explanationText,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+
+  overclaimDetected = detectPatternLocal(
+    overclaimDetectionText,
     paste(
       "\\bprove(s|d)?\\b",
       "\\bdefinitely\\b",
@@ -690,6 +698,7 @@ buildWmfmRunRecord = function(
       "less than",
       "whereas",
       "in contrast",
+      "in comparison",
       sep = "|"
     )
   )

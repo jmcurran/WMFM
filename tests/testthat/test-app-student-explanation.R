@@ -274,6 +274,8 @@ test_that("developer diagnostic report contains grading evidence", {
   expect_match(report, "mpg ~ wt", fixed = TRUE)
   expect_match(report, "The predicted value is 20.", fixed = TRUE)
   expect_match(report, "overallScore", fixed = TRUE)
+  expect_match(report, "omits the underlying data", fixed = TRUE)
+  expect_false(grepl("Complete deterministic grading object", report, fixed = TRUE))
 })
 
 test_that("student explanation UI includes developer diagnostic output", {
