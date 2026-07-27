@@ -736,28 +736,83 @@ buildStudentExplanationFeedback = function(
     return(NULL)
   }
 
-  extractFeedbackText = function(x) {
+  friendlyMessage = function(metric, defaultText, kind = c("strength", "priority")) {
+    kind = match.arg(kind)
+
+    strengthMessages = c(
+      effectDirectionCorrect = "You described the direction of the relationship correctly.",
+      effectScaleAppropriate = "You interpreted the effects on the correct scale.",
+      mainEffectCoverageAdequate = "You explained the main relationships in the model.",
+      numericExpressionAdequate = "You used the numerical results appropriately.",
+      uncertaintyHandlingAppropriate = "You included and interpreted uncertainty appropriately.",
+      referenceGroupHandledCorrectly = "You identified the comparison group clearly.",
+      comparisonStructureClear = "You made the important comparison clear.",
+      clarityAdequate = "Your explanation was clear and easy to follow.",
+      calibrationScore = "Your conclusions were appropriately cautious.",
+      inferentialRegisterAppropriate = "You matched your wording to what the model can support."
+    )
+
+    priorityMessages = c(
+      calibrationScore = "Use cautious association wording and avoid suggesting that the model proves a cause-and-effect relationship.",
+      inferentialRegisterAppropriate = "Replace strong causal claims with wording such as 'is associated with', 'is estimated to', or 'the results suggest'.",
+      clarityAdequate = "Proofread the explanation and simplify any awkward sentences so that each idea is easy to follow.",
+      clarityScore = "A careful proofread would make the explanation smoother and easier to read.",
+      comparisonStructureClear = "State comparisons directly and name both groups or quantities being compared.",
+      referenceGroupHandledCorrectly = "Name the reference group explicitly when describing a difference between groups.",
+      referenceGroupCoverageAdequate = "Explain which group is the reference group so that the attendance comparison is unambiguous.",
+      inferenceScore = "Check that each conclusion is no stronger than the evidence and uncertainty allow.",
+      completenessScore = "Add the missing model result that is most relevant to the research question.",
+      factualScore = "Check the numerical statements and make sure each one describes the correct model quantity."
+    )
+
+    messages = if (identical(kind, "strength")) strengthMessages else priorityMessages
+    if (!is.na(metric) && metric %in% names(messages)) {
+      return(unname(messages[[metric]]))
+    }
+
+    defaultText
+  }
+
+  extractFeedbackItems = function(x, kind = c("strength", "priority")) {
+    kind = match.arg(kind)
     if (!is.data.frame(x) || nrow(x) == 0) {
       return(character(0))
     }
 
-    preferredColumns = c("reason", "message", "feedback", "label")
+    metrics = if ("metric" %in% names(x)) as.character(x$metric) else rep(NA_character_, nrow(x))
+    preferredColumns = c("comment", "reason", "message", "feedback", "detail", "label")
     textColumn = preferredColumns[preferredColumns %in% names(x)][1]
-
-    if (is.na(textColumn) || length(textColumn) == 0) {
-      return(character(0))
+    defaults = if (length(textColumn) == 0 || is.na(textColumn)) {
+      rep("", nrow(x))
+    } else {
+      trimws(as.character(x[[textColumn]]))
     }
 
-    values = trimws(as.character(x[[textColumn]]))
-    unique(values[!is.na(values) & nzchar(values)])
+    keep = !is.na(metrics) & metrics != "overallScore"
+    if (all(is.na(metrics))) {
+      keep = rep(TRUE, nrow(x))
+    }
+
+    items = vapply(
+      which(keep),
+      function(i) friendlyMessage(metrics[[i]], defaults[[i]], kind),
+      character(1)
+    )
+    items = trimws(items)
+    unique(items[nzchar(items)])
   }
 
-  strengths = extractFeedbackText(methodFeedback$strengths)
-  priorities = extractFeedbackText(methodFeedback$whereMarksLost)
+  strengths = extractFeedbackItems(methodFeedback$strengths, "strength")
+  priorities = extractFeedbackItems(methodFeedback$whereMarksLost, "priority")
 
   if (length(priorities) == 0) {
-    priorities = extractFeedbackText(methodFeedback$missingElements)
+    priorities = extractFeedbackItems(methodFeedback$missingElements, "priority")
   }
+
+  # Keep the student panel concise. Developer diagnostics retain the complete
+  # scoring record when more detail is required.
+  strengths = head(strengths, 4L)
+  priorities = head(priorities, 3L)
 
   list(
     overallScore = suppressWarnings(as.numeric(methodScore$overallScore)[1]),
@@ -805,15 +860,15 @@ renderStudentExplanationFeedbackUi = function(feedback) {
         paste("Current rubric score:", scoreText)
       )
     },
-    shiny::tags$h5("What is working well"),
+    shiny::tags$h5("What you did well"),
     renderItems(
       feedback$strengths,
-      "No clear strengths were identified yet. Add a precise statement about what the fitted model shows."
+      "The current rubric has not identified a specific strength yet. Add a clear statement about what the model shows."
     ),
-    shiny::tags$h5("What to revise next"),
+    shiny::tags$h5("What you need to revise/improve"),
     renderItems(
       feedback$priorities,
-      "No major revision priorities were identified by the current rubric."
+      "No important revisions were identified. A final proofread may still improve the writing."
     ),
     shiny::tags$p(
       class = "wmfm-student-explanation-feedback-note",

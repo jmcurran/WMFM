@@ -282,3 +282,108 @@ test_that("student explanation UI includes developer diagnostic output", {
   html = as.character(appUI())
   expect_match(html, "studentExplanationDeveloperDiagnosticsUi", fixed = TRUE)
 })
+
+test_that("student explanation feedback uses friendly headings and messages", {
+  gradeObj = structure(
+    list(
+      scoreScale = 10,
+      scores = list(
+        byMethod = list(
+          deterministic = data.frame(
+            overallScore = 98.1,
+            mark = 9.81,
+            stringsAsFactors = FALSE
+          )
+        )
+      ),
+      feedback = list(
+        byMethod = list(
+          deterministic = list(
+            strengths = data.frame(
+              metric = c("effectDirectionCorrect", "uncertaintyHandlingAppropriate"),
+              reason = c("technical direction text", "technical uncertainty text"),
+              stringsAsFactors = FALSE
+            ),
+            whereMarksLost = data.frame(
+              metric = c("overallScore", "clarityAdequate", "clarityScore"),
+              reason = c("generic overall loss", "technical clarity text", "technical dimension text"),
+              stringsAsFactors = FALSE
+            ),
+            missingElements = data.frame()
+          )
+        )
+      )
+    ),
+    class = c("wmfmGrade", "list")
+  )
+
+  feedback = buildStudentExplanationFeedback(gradeObj)
+  expect_equal(
+    feedback$strengths,
+    c(
+      "You described the direction of the relationship correctly.",
+      "You included and interpreted uncertainty appropriately."
+    )
+  )
+  expect_false(any(grepl("generic overall loss", feedback$priorities, fixed = TRUE)))
+  expect_true(any(grepl("Proofread", feedback$priorities, fixed = TRUE)))
+
+  html = as.character(renderStudentExplanationFeedbackUi(feedback))
+  expect_match(html, "What you did well", fixed = TRUE)
+  expect_match(html, "What you need to revise/improve", fixed = TRUE)
+  expect_false(grepl("What is working well", html, fixed = TRUE))
+  expect_false(grepl("What to revise next", html, fixed = TRUE))
+})
+
+test_that("student explanation feedback is concise and removes overall score loss", {
+  gradeObj = structure(
+    list(
+      scoreScale = 10,
+      scores = list(
+        byMethod = list(
+          deterministic = data.frame(
+            overallScore = 75,
+            mark = 7.5,
+            stringsAsFactors = FALSE
+          )
+        )
+      ),
+      feedback = list(
+        byMethod = list(
+          deterministic = list(
+            strengths = data.frame(
+              metric = c(
+                "effectDirectionCorrect",
+                "effectScaleAppropriate",
+                "mainEffectCoverageAdequate",
+                "numericExpressionAdequate",
+                "uncertaintyHandlingAppropriate"
+              ),
+              comment = rep("technical strength", 5),
+              stringsAsFactors = FALSE
+            ),
+            whereMarksLost = data.frame(
+              metric = c(
+                "overallScore",
+                "calibrationScore",
+                "comparisonStructureClear",
+                "referenceGroupHandledCorrectly",
+                "clarityAdequate"
+              ),
+              reason = rep("technical priority", 5),
+              stringsAsFactors = FALSE
+            ),
+            missingElements = data.frame()
+          )
+        )
+      )
+    ),
+    class = c("wmfmGrade", "list")
+  )
+
+  feedback = buildStudentExplanationFeedback(gradeObj)
+  expect_lte(length(feedback$strengths), 4L)
+  expect_lte(length(feedback$priorities), 3L)
+  expect_false(any(grepl("overall", feedback$priorities, ignore.case = TRUE)))
+  expect_true(any(grepl("cause-and-effect", feedback$priorities, fixed = TRUE)))
+})

@@ -11,6 +11,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.014
+
+- Rewrote student explanation feedback in concise, supportive, and actionable language.
+- Renamed the feedback sections to What you did well and What you need to revise/improve.
+- Removed generic overall-score loss wording and limited the student panel to the most useful strengths and revision priorities.
+- Kept complete rubric evidence available in developer diagnostics and added focused feedback regression tests.
+
 ## WMFM 1.1.5.013
 
 - Repaired the Stage 48.9 developer-example test to inspect the formula in the established example specification field.
