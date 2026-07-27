@@ -683,7 +683,6 @@ scoreWmfmRunRecordsCore = function(
   fatalFlawDetectedComputed = rep(FALSE, nrow(runsDf))
   fatalFlawDetectedComputed[hasError] = TRUE
   fatalFlawDetectedComputed[!explanationPresent] = TRUE
-  fatalFlawDetectedComputed[overclaimDetected] = TRUE
   fatalFlawDetectedComputed[interactionEvidenceAppropriate == "too_strong"] = TRUE
   fatalFlawDetectedComputed[hasInteractionTerms & interactionCoverageAdequate == 0L] = TRUE
   fatalFlawDetectedComputed[mainEffectCoverageAdequate == 0L & !followupBlockedExpected] = TRUE
@@ -732,7 +731,7 @@ scoreWmfmRunRecordsCore = function(
 
   calibrationScore = rep(2, nrow(runsDf))
   calibrationScore[underclaimDetected] = 1
-  calibrationScore[overclaimDetected] = 0
+  calibrationScore[overclaimDetected] = pmin(calibrationScore[overclaimDetected], 1)
 
   totalWeight = factualWeight + inferenceWeight + completenessWeight + clarityWeight + calibrationWeight
 

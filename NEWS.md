@@ -11,6 +11,76 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.5.014
+
+- Rewrote student explanation feedback in concise, supportive, and actionable language.
+- Renamed the feedback sections to What you did well and What you need to revise/improve.
+- Removed generic overall-score loss wording and limited the student panel to the most useful strengths and revision priorities.
+- Kept complete rubric evidence available in developer diagnostics and added focused feedback regression tests.
+
+## WMFM 1.1.5.013
+
+- Repaired the Stage 48.9 developer-example test to inspect the formula in the established example specification field.
+- Preserved the developer-only Course explanation-grading example and its existing application behaviour.
+- Added a focused regression note for the return-structure correction.
+
+## WMFM 1.1.5.011
+
+- Repaired fitted-mean calculations for both linear and generalised linear models.
+- Preserved compatibility with observation-index calls while retaining user-defined covariate profiles.
+- Narrowed a model-plot wording test so developer diagnostic controls elsewhere in the application do not cause a false failure.
+
+## WMFM 1.1.5.009
+
+- Replaced observation selection in the individual-prediction dialog with direct covariate entry.
+- Added controlled broadcasting so singleton values are repeated while incompatible non-singleton lengths are rejected.
+- Added a live preview of the prediction profiles and included supplied covariate values in inserted explanations.
+- Added deterministic offline tests for numeric lists, factor values, broadcasting, validation, and dialog integration.
+
+## WMFM 1.1.5.008
+
+- Added a distinct `y-hat` insertion tool for individual predictions in the student explanation editor.
+- Added linear-model prediction intervals and optional typical-value wording while keeping fitted-mean confidence intervals separate.
+- Added model-aware logistic probability, odds, and log-odds predictions and Poisson count predictions with explicit interval limitations.
+- Added deterministic offline tests for prediction scales, wording, intervals, and toolbar integration.
+
+## WMFM 1.1.5.007
+
+- Repaired the compact statistical toolbar CSS so `R/app-ui.R` parses during documentation generation.
+- Preserved the intended serif font fallback while leaving insertion calculations and modal behaviour unchanged.
+
+## WMFM 1.1.5.005
+
+- Extended the student explanation toolbar across linear, binomial-logit, and Poisson-log models.
+- Added model-appropriate odds ratios, expected-count ratios, confidence intervals, predicted probabilities, expected counts, and fitted values.
+- Improved labels for common transformed terms and interactions so inserted results are easier for students to interpret.
+- Kept fitted-result insertions deterministic and separate from user-specified follow-up prediction requests.
+- Added offline tests covering model-family scales, transformed and interaction labels, and the expanded toolbar controls.
+
+## WMFM 1.1.5.004
+
+- Added an explicit Check my explanation action to the student writing workspace.
+- Reused the deterministic WMFM grading path to provide a compact rubric score, strengths, and priorities for revision.
+- Kept the formative feedback separate from the optional generated model explanation so checking an answer does not reveal the answer.
+- Cleared stale feedback when the student edits the explanation or fits a different model.
+- Added deterministic offline tests for feedback extraction, rendering, and UI integration.
+
+## WMFM 1.1.5.003
+
+- Added a student-authored explanation workspace before the optional generated explanation.
+- Added model-aware coefficient and confidence-interval insertion controls that place exact sentence fragments at the editor cursor.
+- Kept interpretation responsibility with the student by inserting results rather than complete explanatory claims.
+- Rebuilt toolbar choices from the current fitted model and cleared student text when a new model is fitted.
+- Added deterministic offline tests for result extraction, term formatting, and the editor UI.
+
+## WMFM 1.1.5.002
+
+- Separated deterministic model fitting from optional LLM explanation generation.
+- Left the Model Explanation tab unpopulated until the student explicitly selects Explain this model.
+- Cleared prior explanation text and provenance whenever a model is refitted or reset.
+- Added focused tests for the no-automatic-LLM fit path and the explicit explanation request UI.
+- Repaired a stale UI expectation so the test suite checks the new deliberate-request guidance.
+
 ## WMFM 1.1.3.026
 
 - Repaired the Stage 47.9.2 end-to-end test to use the complete packaged Course fixture containing `Attend`.

@@ -35,6 +35,29 @@ appUI = function() {
     withMathJax(),
     titlePanel("What's My Fitted Model?"),
 
+      tags$script(HTML("
+        Shiny.addCustomMessageHandler('wmfmInsertStudentExplanation', function(message) {
+          var editor = document.getElementById('studentExplanationText');
+          if (!editor || !message || !message.text) {
+            return;
+          }
+
+          var start = editor.selectionStart || 0;
+          var end = editor.selectionEnd || 0;
+          var existing = editor.value || '';
+          var prefix = start > 0 && !/\\s$/.test(existing.slice(0, start)) ? ' ' : '';
+          var suffix = end < existing.length && !/^\\s/.test(existing.slice(end)) ? ' ' : '';
+          var inserted = prefix + message.text + suffix;
+
+          editor.value = existing.slice(0, start) + inserted + existing.slice(end);
+          var cursor = start + inserted.length;
+          editor.focus();
+          editor.setSelectionRange(cursor, cursor);
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+          editor.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      ")),
+
     tags$style(HTML("
       .bucket-list .rank-list,
       .bucket-list-container .rank-list,
@@ -112,6 +135,63 @@ appUI = function() {
 
       .wmfm-ci-collapsible-block {
         margin-top: 10px;
+      }
+
+
+      .wmfm-student-explanation-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #bfc5cc;
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+        padding: 5px 7px;
+        margin-top: 10px;
+        background-color: #f7f8fa;
+      }
+
+      .wmfm-statistical-insert-button {
+        min-width: 44px;
+        height: 36px;
+        padding: 4px 10px;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 21px;
+        line-height: 1;
+      }
+
+      .wmfm-student-explanation-toolbar + .form-group {
+        margin-top: 0;
+      }
+
+      .wmfm-student-explanation-toolbar + .form-group textarea {
+        border-radius: 0 0 6px 6px;
+      }
+
+      .wmfm-student-explanation-actions {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      .wmfm-student-explanation-feedback {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #f8f9fb;
+        margin-top: 10px;
+        margin-bottom: 12px;
+      }
+
+      .wmfm-student-explanation-feedback h4 {
+        margin-top: 0;
+      }
+
+      .wmfm-student-explanation-score {
+        font-weight: 600;
+      }
+
+      .wmfm-student-explanation-feedback-note {
+        color: #666;
+        margin-bottom: 0;
       }
 
       .wmfm-explanation-box {
@@ -1044,10 +1124,38 @@ appUI = function() {
         )
       ),
 
+
+      tabPanel(
+        "Write an explanation",
+        helpText(
+          "Write your own explanation of the fitted model. Use the compact toolbar to insert selected statistical quantities at the cursor without generating the interpretation for you."
+        ),
+        uiOutput("studentExplanationToolbarUi"),
+        textAreaInput(
+          inputId = "studentExplanationText",
+          label = "Your explanation",
+          value = "",
+          rows = 12,
+          width = "100%",
+          placeholder = "Explain what the fitted model says in the context of the research question..."
+        ),
+        tags$div(
+          class = "wmfm-student-explanation-actions",
+          actionButton(
+            inputId = "checkStudentExplanation",
+            label = "Check my explanation",
+            class = "btn-primary"
+          )
+        ),
+        textOutput("studentExplanationFeedbackStatus"),
+        uiOutput("studentExplanationFeedbackUi"),
+        uiOutput("studentExplanationDeveloperDiagnosticsUi")
+      ),
+
       tabPanel(
         "Model Explanation",
         helpText(
-          "Start with the main explanation, then use the sections below for sentence support, reading guidance, and optional tutor-style help."
+          "WMFM generates an explanation only when you explicitly ask for one."
         ),
         selectInput(
           inputId = "modelExplanationZoom",
