@@ -773,6 +773,20 @@ buildStudentExplanationFeedback = function(
     defaultText
   }
 
+  feedbackIssueFamily = function(metric) {
+    issueFamilies = c(
+      comparisonStructureClear = "comparison_reference",
+      referenceGroupHandledCorrectly = "comparison_reference",
+      referenceGroupCoverageAdequate = "comparison_reference"
+    )
+
+    if (!is.na(metric) && metric %in% names(issueFamilies)) {
+      return(unname(issueFamilies[[metric]]))
+    }
+
+    metric
+  }
+
   extractFeedbackItems = function(x, kind = c("strength", "priority")) {
     kind = match.arg(kind)
     if (!is.data.frame(x) || nrow(x) == 0) {
@@ -793,12 +807,20 @@ buildStudentExplanationFeedback = function(
       keep = rep(TRUE, nrow(x))
     }
 
+    keptRows = which(keep)
     items = vapply(
-      which(keep),
+      keptRows,
       function(i) friendlyMessage(metrics[[i]], defaults[[i]], kind),
       character(1)
     )
     items = trimws(items)
+
+    if (identical(kind, "priority")) {
+      issueFamilies = vapply(metrics[keptRows], feedbackIssueFamily, character(1))
+      keepFamily = !duplicated(issueFamilies)
+      items = items[keepFamily]
+    }
+
     unique(items[nzchar(items)])
   }
 
@@ -860,15 +882,27 @@ renderStudentExplanationFeedbackUi = function(feedback) {
         paste("Current rubric score:", scoreText)
       )
     },
-    shiny::tags$h5("What you did well"),
-    renderItems(
-      feedback$strengths,
-      "The current rubric has not identified a specific strength yet. Add a clear statement about what the model shows."
+    shiny::tags$section(
+      class = "wmfm-student-feedback-panel wmfm-student-feedback-panel-positive",
+      shiny::tags$h5(
+        shiny::icon("check-circle", `aria-hidden` = "true"),
+        shiny::tags$span("What you did well")
+      ),
+      renderItems(
+        feedback$strengths,
+        "The current rubric has not identified a specific strength yet. Add a clear statement about what the model shows."
+      )
     ),
-    shiny::tags$h5("What you need to revise/improve"),
-    renderItems(
-      feedback$priorities,
-      "No important revisions were identified. A final proofread may still improve the writing."
+    shiny::tags$section(
+      class = "wmfm-student-feedback-panel wmfm-student-feedback-panel-revision",
+      shiny::tags$h5(
+        shiny::icon("exclamation-triangle", `aria-hidden` = "true"),
+        shiny::tags$span("What you need to revise/improve")
+      ),
+      renderItems(
+        feedback$priorities,
+        "No important revisions were identified. A final proofread may still improve the writing."
+      )
     ),
     shiny::tags$p(
       class = "wmfm-student-explanation-feedback-note",

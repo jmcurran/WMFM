@@ -11,6 +11,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.6.001
+
+- Grouped overlapping comparison and reference-group deductions into one actionable student-facing revision message.
+- Retained the complete separate scoring metrics in developer diagnostics.
+- Added accessible positive and revision feedback panels with icons, borders, and text headings.
+- Added focused regression tests for issue-family deduplication and feedback presentation.
+
 ## WMFM 1.1.5.014
 
 - Rewrote student explanation feedback in concise, supportive, and actionable language.
