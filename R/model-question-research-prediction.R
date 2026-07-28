@@ -102,7 +102,16 @@ isPredictionShapedResearchQuestion = function(researchQuestion) {
   }
 
   hasPredictionVerb = grepl(
-    "\\b(predict|predicted|prediction|expect|expects|expected|expected response|expected value|expected count|probability|chance|would .* get|what would .* be)\\b",
+    paste(
+      c(
+        "\\b(predict|predicted|prediction|expect|expects|expected|expected response|expected value|expected count|probability|chance)\\b",
+        "\\b(?:will|would)\\s+(?:i|we|the student|this student|a student|the patient|this patient)\\b",
+        "\\bhow\\s+(?:will|would)\\s+(?:i|we|the student|this student|a student|the patient|this patient)\\b",
+        "\\bwould .* get\\b",
+        "\\bwhat would .* be\\b"
+      ),
+      collapse = "|"
+    ),
     text,
     perl = TRUE
   )

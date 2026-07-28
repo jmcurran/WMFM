@@ -33,10 +33,11 @@ testthat::test_that("Stage 49.3 prepends the deterministic prediction before gen
 
   testthat::expect_match(out, "WMFM predicts", fixed = TRUE)
   testthat::expect_match(out, "95% prediction interval", fixed = TRUE)
-  testthat::expect_lt(
-    regexpr("WMFM predicts", out, fixed = TRUE)[[1]],
-    regexpr("Attendance and test marks", out, fixed = TRUE)[[1]]
-  )
+  testthat::expect_false(grepl(
+    "Attendance and test marks",
+    out,
+    fixed = TRUE
+  ))
 })
 
 testthat::test_that("Stage 49.3 does not turn incomplete profiles into average students", {

@@ -12,4 +12,4 @@ evaluation:
   suite: question_routing
   expectedArchetype: assess_model_capability
   expectedRoute: alternative_analysis_needed
-  expectedFollowup: true
+  expectedFollowup: false

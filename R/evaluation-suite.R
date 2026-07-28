@@ -73,6 +73,10 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
       expectedArchetype = as.character(evaluation$expectedArchetype %||% ""),
       expectedRoute = as.character(evaluation$expectedRoute %||% ""),
       expectedFollowup = isTRUE(evaluation$expectedFollowup),
+      expectedMissing = paste(as.character(evaluation$expectedMissing %||% character(0)), collapse = ","),
+      expectedProfile = jsonlite::toJSON(evaluation$expectedProfile %||% list(), auto_unbox = TRUE, null = "null"),
+      expectedThreshold = suppressWarnings(as.numeric(evaluation$expectedThreshold %||% NA_real_)),
+      expectedPredictionStatus = as.character(evaluation$expectedPredictionStatus %||% ""),
       stringsAsFactors = FALSE
     )
   })
@@ -88,6 +92,10 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
       expectedArchetype = character(0),
       expectedRoute = character(0),
       expectedFollowup = logical(0),
+      expectedMissing = character(0),
+      expectedProfile = character(0),
+      expectedThreshold = numeric(0),
+      expectedPredictionStatus = character(0),
       stringsAsFactors = FALSE
     ))
   }
@@ -180,6 +188,68 @@ getWMFMEvaluationRequiresFollowup = function(result) {
   diagnostics = result$diagnostics %||% list()
   objective = diagnostics$researchQuestionObjective %||% list()
   isTRUE(objective$requiresFollowup)
+}
+
+#' Extract observed prediction details from an evaluation result
+#'
+#' @param result One evaluation result record.
+#'
+#' @return A list of profile, missing information, threshold, and status.
+#' @keywords internal
+#' @noRd
+getWMFMEvaluationPredictionDetails = function(result) {
+  diagnostics = result$diagnostics %||% list()
+  objective = diagnostics$researchQuestionObjective %||% list()
+  prediction = objective$predictionPayload$predictionResult %||% list()
+  profile = prediction$resolvedPredictorValues %||%
+    prediction$suppliedPredictorValues %||%
+    objective$profile %||%
+    list()
+  missing = unique(as.character(
+    prediction$missingPredictors %||%
+      objective$unsupportedOrMissing %||%
+      character(0)
+  ))
+  threshold = objective$outcomeThreshold %||%
+    prediction$outcomeThreshold %||%
+    NA_real_
+
+  list(
+    profile = profile,
+    missing = missing[nzchar(missing)],
+    threshold = suppressWarnings(as.numeric(threshold)[[1]]),
+    status = as.character(prediction$status %||% "")
+  )
+}
+
+#' @keywords internal
+#' @noRd
+wmfmEvaluationProfileMatches = function(result) {
+  expectedText = as.character(result$expectedProfile %||% "{}")
+  expected = tryCatch(jsonlite::fromJSON(expectedText, simplifyVector = FALSE), error = function(e) list())
+  if (!length(expected)) {
+    return(TRUE)
+  }
+  observed = getWMFMEvaluationPredictionDetails(result)$profile
+  all(vapply(names(expected), function(name) {
+    if (is.null(observed[[name]])) {
+      return(FALSE)
+    }
+    identical(tolower(as.character(observed[[name]])), tolower(as.character(expected[[name]]))) ||
+      isTRUE(all.equal(suppressWarnings(as.numeric(observed[[name]])), suppressWarnings(as.numeric(expected[[name]]))))
+  }, logical(1)))
+}
+
+#' @keywords internal
+#' @noRd
+wmfmEvaluationMissingMatches = function(result) {
+  expected = trimws(strsplit(as.character(result$expectedMissing %||% ""), ",", fixed = TRUE)[[1]])
+  expected = expected[nzchar(expected)]
+  if (!length(expected)) {
+    return(TRUE)
+  }
+  observed = getWMFMEvaluationPredictionDetails(result)$missing
+  setequal(expected, observed)
 }
 
 #' Run a WMFM example evaluation suite
@@ -313,6 +383,10 @@ runWMFMEvaluationSuite = function(
         expectedArchetype = selected$expectedArchetype[[i]],
         expectedRoute = selected$expectedRoute[[i]],
         expectedFollowup = selected$expectedFollowup[[i]],
+        expectedMissing = selected$expectedMissing[[i]],
+        expectedProfile = selected$expectedProfile[[i]],
+        expectedThreshold = selected$expectedThreshold[[i]],
+        expectedPredictionStatus = selected$expectedPredictionStatus[[i]],
         packageVersion = as.character(utils::packageVersion(package)),
         diagnostics = payload,
         errorMessage = NULL
@@ -329,6 +403,10 @@ runWMFMEvaluationSuite = function(
         expectedArchetype = selected$expectedArchetype[[i]],
         expectedRoute = selected$expectedRoute[[i]],
         expectedFollowup = selected$expectedFollowup[[i]],
+        expectedMissing = selected$expectedMissing[[i]],
+        expectedProfile = selected$expectedProfile[[i]],
+        expectedThreshold = selected$expectedThreshold[[i]],
+        expectedPredictionStatus = selected$expectedPredictionStatus[[i]],
         packageVersion = tryCatch(as.character(utils::packageVersion(package)), error = function(e2) ""),
         diagnostics = list(),
         errorMessage = conditionMessage(e)
@@ -381,6 +459,14 @@ runWMFMEvaluationSuite = function(
     expectedArchetype = vapply(results, function(x) as.character(x$expectedArchetype %||% ""), character(1)),
     expectedRoute = vapply(results, function(x) as.character(x$expectedRoute %||% ""), character(1)),
     expectedFollowup = vapply(results, function(x) isTRUE(x$expectedFollowup), logical(1)),
+    observedProfile = vapply(results, function(x) jsonlite::toJSON(getWMFMEvaluationPredictionDetails(x)$profile, auto_unbox = TRUE, null = "null"), character(1)),
+    observedMissing = vapply(results, function(x) paste(getWMFMEvaluationPredictionDetails(x)$missing, collapse = ","), character(1)),
+    observedThreshold = vapply(results, function(x) getWMFMEvaluationPredictionDetails(x)$threshold, numeric(1)),
+    observedPredictionStatus = vapply(results, function(x) getWMFMEvaluationPredictionDetails(x)$status, character(1)),
+    expectedProfile = vapply(results, function(x) as.character(x$expectedProfile %||% "{}"), character(1)),
+    expectedMissing = vapply(results, function(x) as.character(x$expectedMissing %||% ""), character(1)),
+    expectedThreshold = vapply(results, function(x) suppressWarnings(as.numeric(x$expectedThreshold %||% NA_real_)), numeric(1)),
+    expectedPredictionStatus = vapply(results, function(x) as.character(x$expectedPredictionStatus %||% ""), character(1)),
     archetypeMatch = vapply(results, function(x) {
       expected = as.character(x$expectedArchetype %||% "")
       !nzchar(expected) || identical(getWMFMEvaluationDetectedIntent(x), expected)
@@ -391,6 +477,20 @@ runWMFMEvaluationSuite = function(
     }, logical(1)),
     followupMatch = vapply(results, function(x) {
       identical(getWMFMEvaluationRequiresFollowup(x), isTRUE(x$expectedFollowup))
+    }, logical(1)),
+    profileMatch = vapply(results, wmfmEvaluationProfileMatches, logical(1)),
+    missingMatch = vapply(results, wmfmEvaluationMissingMatches, logical(1)),
+    thresholdMatch = vapply(results, function(x) {
+      expected = suppressWarnings(as.numeric(x$expectedThreshold %||% NA_real_))
+      if (!is.finite(expected)) {
+        return(TRUE)
+      }
+      observed = getWMFMEvaluationPredictionDetails(x)$threshold
+      isTRUE(all.equal(observed, expected))
+    }, logical(1)),
+    predictionStatusMatch = vapply(results, function(x) {
+      expected = as.character(x$expectedPredictionStatus %||% "")
+      !nzchar(expected) || identical(getWMFMEvaluationPredictionDetails(x)$status, expected)
     }, logical(1)),
     elapsedSeconds = vapply(results, function(x) as.numeric(x$elapsedSeconds), numeric(1)),
     errorMessage = vapply(results, function(x) as.character(x$errorMessage %||% ""), character(1)),

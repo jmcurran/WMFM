@@ -39,9 +39,11 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
   )
 
   predictionResult = predictionPayload$predictionResult %||% list()
+  outcomeThreshold = extractResearchQuestionOutcomeThreshold(originalText)
   profile = predictionResult$resolvedPredictorValues %||%
     predictionResult$suppliedPredictorValues %||%
     answerPayload$leftProfile %||% list()
+  profile = coerceResearchQuestionProfileTypes(model, profile)
   missingInformation = unique(c(
     as.character(route$missingInformation %||% character(0)),
     as.character(predictionResult$missingPredictors %||% character(0)),
@@ -52,6 +54,25 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
       !is.list(predictionPayload)) {
     requiredPredictors = names(stats::model.frame(model))[-1]
     missingInformation = unique(c(missingInformation, requiredPredictors))
+  }
+
+  vaguePersonalOutcome = archetype == "individual_prediction" &&
+    grepl("\\b(do well|perform well|succeed)\\b", normalizedText, perl = TRUE) &&
+    !grepl("[0-9]", normalizedText, perl = TRUE) &&
+    !grepl("=", originalText, fixed = TRUE)
+
+  if (isTRUE(vaguePersonalOutcome)) {
+    requiredPredictors = names(stats::model.frame(model))[-1]
+    profile = list()
+    missingInformation = unique(c(missingInformation, requiredPredictors))
+    if (is.list(predictionPayload) && is.list(predictionPayload$predictionResult)) {
+      predictionPayload$predictionResult$status = "needs_input"
+      predictionPayload$predictionResult$reason = "missing_predictor_values"
+      predictionPayload$predictionResult$suppliedPredictorValues = list()
+      predictionPayload$predictionResult$resolvedPredictorValues = NULL
+      predictionPayload$predictionResult$requiredPredictors = requiredPredictors
+      predictionPayload$predictionResult$missingPredictors = requiredPredictors
+    }
   }
 
   concepts = researchQuestionObjectiveConcepts(
@@ -74,6 +95,7 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
     status = route$status %||% "answerable",
     route = route$route %||% "model_answer",
     reason = route$reason %||% "general_model_question",
+    outcomeThreshold = outcomeThreshold,
     requiresFollowup = length(missingInformation) > 0L ||
       (route$status %||% "answerable") %in% c("needs_input", "needs_clarification"),
     predictionPayload = predictionPayload,
@@ -82,6 +104,62 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
 
   class(objective) = c("wmfmQuestionObjective", "list")
   validateWmfmQuestionObjective(objective)
+}
+
+
+#' Coerce objective profile values to the fitted model's predictor types
+#'
+#' Prediction payloads retain the user's supplied text for diagnostics, while
+#' the objective profile uses model-compatible scalar types for routing and
+#' evaluation.
+#'
+#' @param model Fitted model object.
+#' @param profile Named list of predictor values.
+#'
+#' @return Named list with numeric predictors represented numerically.
+#' @keywords internal
+#' @noRd
+coerceResearchQuestionProfileTypes = function(model, profile) {
+  if (!is.list(profile) || !length(profile)) {
+    return(profile)
+  }
+
+  mf = stats::model.frame(model)
+  for (name in intersect(names(profile), names(mf)[-1])) {
+    if (!is.numeric(mf[[name]])) {
+      next
+    }
+    value = suppressWarnings(as.numeric(profile[[name]]))
+    if (length(value) == 1L && is.finite(value)) {
+      profile[[name]] = value
+    }
+  }
+  profile
+}
+
+#' Extract an explicitly stated outcome threshold
+#'
+#' @param researchQuestion Character scalar research question.
+#'
+#' @return Numeric scalar, or `NA_real_` when no threshold is stated.
+#' @keywords internal
+#' @noRd
+extractResearchQuestionOutcomeThreshold = function(researchQuestion) {
+  text = tolower(trimws(as.character(researchQuestion %||% "")))
+  patterns = c(
+    "\\b(?:at least|at most|above|below|over|under|greater than|less than)\\s+(-?\\d+(?:\\.\\d+)?)\\b",
+    "\\b(?:pass|fail|success)\\s+means?\\s+(?:an?\\s+)?(?:exam\\s+)?(?:mark|score)?\\s*(?:of)?\\s*(-?\\d+(?:\\.\\d+)?)\\b"
+  )
+  for (pattern in patterns) {
+    matched = regmatches(text, regexec(pattern, text, perl = TRUE))[[1]]
+    if (length(matched) >= 2L) {
+      value = suppressWarnings(as.numeric(matched[[2]]))
+      if (is.finite(value)) {
+        return(value)
+      }
+    }
+  }
+  NA_real_
 }
 
 #' @keywords internal
@@ -130,7 +208,11 @@ classifyResearchQuestionArchetype = function(normalizedText, route, predictionPa
     return("compare_groups_or_profiles")
   }
 
-  if (grepl("\\b(effect|association|relationship|change in|increase in|decrease in|impact)\\b", normalizedText, perl = TRUE)) {
+  if (grepl(
+      "\\b(effect|association|relationship|change in|increase in|decrease in|impact|matter(?:s|ed)?|after allowing for|adjusted for|controlling for|holding .* constant)\\b",
+      normalizedText,
+      perl = TRUE
+    )) {
     return("estimate_or_interpret_effect")
   }
 
