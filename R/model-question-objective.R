@@ -32,12 +32,20 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
     predictionPayload = predictionPayload
   )
 
+  answerPayload = buildResearchQuestionAnswerPayload(
+    model = model,
+    researchQuestion = originalText,
+    archetype = archetype
+  )
+
   predictionResult = predictionPayload$predictionResult %||% list()
   profile = predictionResult$resolvedPredictorValues %||%
-    predictionResult$suppliedPredictorValues %||% list()
+    predictionResult$suppliedPredictorValues %||%
+    answerPayload$leftProfile %||% list()
   missingInformation = unique(c(
     as.character(route$missingInformation %||% character(0)),
-    as.character(predictionResult$missingPredictors %||% character(0))
+    as.character(predictionResult$missingPredictors %||% character(0)),
+    as.character(answerPayload$missingPredictors %||% character(0))
   ))
 
   if (archetype %in% c("individual_prediction", "expected_response") &&
@@ -74,7 +82,8 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
     reason = route$reason %||% "general_model_question",
     requiresFollowup = length(missingInformation) > 0L ||
       (route$status %||% "answerable") %in% c("needs_input", "needs_clarification"),
-    predictionPayload = predictionPayload
+    predictionPayload = predictionPayload,
+    answerPayload = answerPayload
   )
 
   class(objective) = c("wmfmQuestionObjective", "list")
@@ -84,6 +93,10 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
 #' @keywords internal
 #' @noRd
 classifyResearchQuestionArchetype = function(normalizedText, route, predictionPayload = NULL) {
+  if (grepl("\\b(compare|comparison|difference between|versus|vs\\.?|higher than|lower than)\\b", normalizedText, perl = TRUE)) {
+    return("compare_groups_or_profiles")
+  }
+
   personalOutcomePattern = paste(
     c(
       "\\bwill\\s+(i|we|the student|this student|a student|the patient|this patient)\\b",
@@ -234,7 +247,8 @@ validateWmfmQuestionObjective = function(objective) {
     "route",
     "reason",
     "requiresFollowup",
-    "predictionPayload"
+    "predictionPayload",
+    "answerPayload"
   )
   missingNames = setdiff(requiredNames, names(objective))
   if (length(missingNames)) {

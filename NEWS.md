@@ -12,6 +12,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.6.008
+
+- Added question-aware expected-response answers that lead with the fitted mean and its confidence interval.
+- Added deterministic comparisons between two complete linear-model predictor profiles, including a confidence interval for the expected-response difference.
+- Kept confidence intervals for means and comparisons distinct from individual prediction intervals.
+- Added focused offline tests for expected-response, complete-comparison, and missing-profile behaviour.
+
 ## WMFM 1.1.6.006
 
 - Added a question-aware individual-prediction route that places WMFM's deterministic prediction and prediction interval before general model interpretation.

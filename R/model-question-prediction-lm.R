@@ -108,7 +108,7 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
         modelType = "lm",
         predictionType = "mean_response_prediction"
       ),
-      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "warnings")]
+      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "missingPredictors", "warnings")]
     ))
   }
 
