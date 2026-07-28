@@ -1,3 +1,8 @@
+# WMFM 1.1.6.13
+
+* Added deterministic question-answer alignment diagnostics for research-question archetype, supplied profile, essential-concept coverage, answer placement, contradiction detection, and explanation-mode length suitability.
+* Added focused offline robustness tests for linear, logistic, concise, standard, and detailed question-aware explanations.
+
 # WMFM development news
 
 ## Purpose
