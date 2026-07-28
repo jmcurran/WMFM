@@ -475,7 +475,7 @@ extractNaturalNumericPredictionValue = function(predictor, text) {
   )
   nearbyBeforePattern = paste0(
     numberPattern,
-    "(?:\\s+(?:on|for|in|as|at|out of \\d+))*\\s+",
+    "(?:\\s+(?:on|for|in|as|at|out of \\d+)(?:\\s+the)?)*\\s+",
     predictorPattern
   )
 

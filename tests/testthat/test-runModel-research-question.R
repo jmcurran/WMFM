@@ -25,6 +25,14 @@ testthat::test_that("runModel attaches a research question to the fitted model a
     attr(out$model, "wmfm_research_question", exact = TRUE),
     "Does Test help explain Exam?"
   )
+  testthat::expect_s3_class(
+    attr(out$model, "wmfm_research_question_objective", exact = TRUE),
+    "wmfmQuestionObjective"
+  )
+  testthat::expect_s3_class(
+    out$meta$researchQuestionObjective,
+    "wmfmQuestionObjective"
+  )
 })
 
 testthat::test_that("runModel allows four covariates for adjusted log-log examples", {
@@ -58,4 +66,74 @@ testthat::test_that("runModel allows four covariates for adjusted log-log exampl
   )
 
   testthat::expect_s3_class(out, "wmfmModel")
+})
+
+
+testthat::test_that("runModel exposes deterministic research-question prediction payloads", {
+  df = data.frame(
+    Exam = c(42, 58, 81, 86, 35, 72, 68, 77),
+    Test = c(9, 13, 15, 19, 8, 13, 14, 16),
+    Attend = factor(c("No", "Yes", "Yes", "Yes", "No", "Yes", "No", "Yes"))
+  )
+
+  testthat::local_mocked_bindings(
+    getModelEquations = function(model, method = "deterministic", chat = NULL) {
+      "Exam = a + b1 * Attend + b2 * Test"
+    },
+    .package = "WMFM"
+  )
+
+  out = runModel(
+    data = df,
+    formula = Exam ~ Attend + Test,
+    modelType = "lm",
+    researchQuestion = "What exam mark should I expect if I attended regularly and got 16 in the test?",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  )
+
+  objective = out$meta$researchQuestionObjective
+  testthat::expect_identical(objective$archetype, "individual_prediction")
+  testthat::expect_false(objective$requiresFollowup)
+  testthat::expect_identical(
+    objective$predictionPayload$predictionResult$status,
+    "ok"
+  )
+})
+
+
+testthat::test_that("runModel resolves natural test-mark wording in complete profiles", {
+  df = data.frame(
+    Exam = c(42, 58, 81, 86, 35, 72, 68, 77),
+    Test = c(9, 13, 15, 19, 8, 13, 14, 16),
+    Attend = factor(c("No", "Yes", "Yes", "Yes", "No", "Yes", "No", "Yes"))
+  )
+
+  testthat::local_mocked_bindings(
+    getModelEquations = function(model, method = "deterministic", chat = NULL) {
+      "Exam = a + b1 * Attend + b2 * Test"
+    },
+    .package = "WMFM"
+  )
+
+  out = runModel(
+    data = df,
+    formula = Exam ~ Attend + Test,
+    modelType = "lm",
+    researchQuestion = "What exam mark should I expect if I attended regularly and got 16 in the test?",
+    generateExplanation = FALSE,
+    printOutput = FALSE
+  )
+
+  objective = out$meta$researchQuestionObjective
+  testthat::expect_identical(objective$archetype, "individual_prediction")
+  testthat::expect_false(objective$requiresFollowup)
+  testthat::expect_identical(
+    objective$predictionPayload$predictionResult$status,
+    "ok"
+  )
+  testthat::expect_identical(
+    objective$predictionPayload$predictionResult$suppliedPredictorValues$Test,
+    "16"
+  )
 })

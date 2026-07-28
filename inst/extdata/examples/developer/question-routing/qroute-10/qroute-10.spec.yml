@@ -10,3 +10,6 @@ evaluation:
   taskType: question_routing
   intendedIntent: model_effect
   suite: question_routing
+  expectedArchetype: estimate_or_interpret_effect
+  expectedRoute: model_answer
+  expectedFollowup: false

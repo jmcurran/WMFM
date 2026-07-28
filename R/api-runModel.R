@@ -312,6 +312,8 @@ runModel = function(
     }
   }
 
+  researchQuestionObjective = NULL
+
   if (!is.null(researchQuestion)) {
     researchQuestion = trimws(researchQuestion)
 
@@ -322,6 +324,11 @@ runModel = function(
         model = model,
         researchQuestion = researchQuestion
       )
+      researchQuestionObjective = buildResearchQuestionObjective(
+        model = model,
+        researchQuestion = researchQuestion
+      )
+      attr(model, "wmfm_research_question_objective") = researchQuestionObjective
     }
   }
 
@@ -554,6 +561,8 @@ runModel = function(
       equationMethodUsed = equationMethodUsed,
       generateExplanation = generateExplanation,
       responseTransformationMode = getModelResponseTransformationMode(model),
+      researchQuestionObjective = researchQuestionObjective,
+      researchQuestionRoute = attr(model, "wmfm_research_question_route", exact = TRUE),
       followupDiagnostics = followupDiagnostics
     )
   )

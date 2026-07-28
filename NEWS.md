@@ -1,3 +1,7 @@
+# WMFM 1.1.6.18
+
+* Resolved ordinary natural-language numeric profile wording such as 16 in the test so complete individual prediction questions do not incorrectly request missing input.
+
 # WMFM 1.1.6.14
 
 * Treat vague continuous-outcome wording such as "do well" and "good mark" as an individual-prediction request rather than inventing an outcome threshold.

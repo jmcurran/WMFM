@@ -10,3 +10,6 @@ evaluation:
   taskType: question_routing
   intendedIntent: capability
   suite: question_routing
+  expectedArchetype: assess_model_capability
+  expectedRoute: alternative_analysis_needed
+  expectedFollowup: true

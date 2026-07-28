@@ -73,6 +73,15 @@ testthat::test_that("evaluation summaries use follow-up categories as detected i
       predictionPayload = list(predictionIntent = "individual_outcome")
     )
   )
+  objectiveResult = list(
+    diagnostics = list(
+      researchQuestionObjective = list(
+        archetype = "individual_prediction",
+        route = "model_answer",
+        requiresFollowup = TRUE
+      )
+    )
+  )
 
   testthat::expect_identical(
     getWMFMEvaluationDetectedIntent(observationResult),
@@ -82,4 +91,26 @@ testthat::test_that("evaluation summaries use follow-up categories as detected i
     getWMFMEvaluationDetectedIntent(predictionResult),
     "individual_outcome"
   )
+  testthat::expect_identical(
+    getWMFMEvaluationDetectedIntent(objectiveResult),
+    "individual_prediction"
+  )
+  testthat::expect_identical(
+    getWMFMEvaluationObservedRoute(objectiveResult),
+    "model_answer"
+  )
+  testthat::expect_true(
+    getWMFMEvaluationRequiresFollowup(objectiveResult)
+  )
+})
+
+
+testthat::test_that("question-routing examples expose expected objective metadata", {
+  examples = listWMFMEvaluationExamples(package = "WMFM")
+  selected = examples[examples$suite == "question_routing", , drop = FALSE]
+
+  testthat::expect_equal(nrow(selected), 12L)
+  testthat::expect_true(all(nzchar(selected$expectedArchetype)))
+  testthat::expect_true(all(nzchar(selected$expectedRoute)))
+  testthat::expect_true(is.logical(selected$expectedFollowup))
 })

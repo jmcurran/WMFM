@@ -155,6 +155,55 @@ buildQuestionAwareExplanationPromptBlock = function(model) {
   ""
 }
 
+
+#' Build a deterministic research-question clarification
+#'
+#' @param objective A `wmfmQuestionObjective` object.
+#' @param model Fitted model object.
+#'
+#' @return Character scalar clarification or capability response.
+#' @keywords internal
+#' @noRd
+buildDeterministicResearchQuestionClarification = function(objective, model) {
+  route = attr(model, "wmfm_research_question_route", exact = TRUE)
+  routeResponse = trimws(as.character(route$deterministicResponse %||% ""))
+
+  if (nzchar(routeResponse) &&
+      (objective$route %||% "") %in% c(
+        "needs_input",
+        "needs_clarification",
+        "alternative_analysis_needed",
+        "out_of_scope"
+      )) {
+    return(routeResponse)
+  }
+
+  missing = unique(trimws(as.character(objective$unsupportedOrMissing %||% character(0))))
+  missing = missing[nzchar(missing)]
+
+  if (length(missing) > 0L) {
+    missingText = if (length(missing) == 1L) {
+      missing
+    } else if (length(missing) == 2L) {
+      paste(missing, collapse = " and ")
+    } else {
+      paste0(paste(missing[-length(missing)], collapse = ", "), ", and ", missing[[length(missing)]])
+    }
+
+    return(paste0(
+      "I cannot calculate the requested result yet. Please provide ",
+      missingText,
+      ". WMFM will then use those values rather than silently substituting average or reference values."
+    ))
+  }
+
+  if (nzchar(routeResponse)) {
+    return(routeResponse)
+  }
+
+  "I need a more specific research question before I can determine what the fitted model should answer."
+}
+
 #' Prepend a deterministic research-question answer
 #'
 #' @param explanation Character scalar language-model explanation.
@@ -180,6 +229,16 @@ prependDeterministicResearchQuestionAnswer = function(explanation, model) {
     }
   } else if (identical(objective$archetype, "compare_groups_or_profiles")) {
     answer = buildDeterministicResearchQuestionComparisonAnswer(objective$answerPayload, model)
+  }
+
+  if (!nzchar(answer) && isTRUE(objective$requiresFollowup)) {
+    clarification = buildDeterministicResearchQuestionClarification(
+      objective = objective,
+      model = model
+    )
+    if (nzchar(clarification)) {
+      return(clarification)
+    }
   }
 
   if (!nzchar(answer)) {

@@ -53,7 +53,8 @@ testthat::test_that("Stage 49.3 does not turn incomplete profiles into average s
   out = prependDeterministicResearchQuestionAnswer("General explanation.", model)
 
   testthat::expect_match(block, "Do not silently substitute average", fixed = TRUE)
-  testthat::expect_identical(out, "General explanation.")
+  testthat::expect_match(out, "Please provide Attend", fixed = TRUE)
+  testthat::expect_false(grepl("General explanation", out, fixed = TRUE))
 })
 
 testthat::test_that("Stage 49.3 developer Course example is hidden and prediction-first", {

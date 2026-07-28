@@ -10,3 +10,6 @@ evaluation:
   taskType: question_routing
   intendedIntent: mean_response
   suite: question_routing
+  expectedArchetype: expected_response
+  expectedRoute: model_answer
+  expectedFollowup: false

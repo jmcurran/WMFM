@@ -10,3 +10,6 @@ evaluation:
   taskType: question_routing
   intendedIntent: threshold_outcome
   suite: question_routing
+  expectedArchetype: individual_prediction
+  expectedRoute: needs_input
+  expectedFollowup: true

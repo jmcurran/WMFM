@@ -10,3 +10,6 @@ evaluation:
   taskType: question_routing
   intendedIntent: profile_comparison
   suite: question_routing
+  expectedArchetype: compare_groups_or_profiles
+  expectedRoute: model_answer
+  expectedFollowup: false

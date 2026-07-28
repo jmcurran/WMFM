@@ -41,7 +41,9 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
             evaluation$datasetGroup %||% "",
             evaluation$taskType %||% "",
             evaluation$intendedIntent %||% "",
-            evaluation$suite %||% ""
+            evaluation$suite %||% "",
+            evaluation$expectedArchetype %||% "",
+            evaluation$expectedRoute %||% ""
           )
           any(nzchar(trimws(as.character(evaluationFields))))
         },
@@ -68,6 +70,9 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
       taskType = as.character(evaluation$taskType %||% ""),
       intendedIntent = as.character(evaluation$intendedIntent %||% ""),
       suite = as.character(evaluation$suite %||% ""),
+      expectedArchetype = as.character(evaluation$expectedArchetype %||% ""),
+      expectedRoute = as.character(evaluation$expectedRoute %||% ""),
+      expectedFollowup = isTRUE(evaluation$expectedFollowup),
       stringsAsFactors = FALSE
     )
   })
@@ -80,6 +85,9 @@ listWMFMEvaluationExamples = function(package = "WMFM", includeTestExamples = FA
       taskType = character(0),
       intendedIntent = character(0),
       suite = character(0),
+      expectedArchetype = character(0),
+      expectedRoute = character(0),
+      expectedFollowup = logical(0),
       stringsAsFactors = FALSE
     ))
   }
@@ -139,11 +147,39 @@ readWMFMEvaluationMetadata = function(exampleRecord, package = "WMFM") {
 #' @noRd
 getWMFMEvaluationDetectedIntent = function(result) {
   diagnostics = result$diagnostics %||% list()
+  objective = diagnostics$researchQuestionObjective %||% list()
   as.character(
-    diagnostics$followupCategory %||%
+    objective$archetype %||%
+      diagnostics$followupCategory %||%
       diagnostics$predictionPayload$predictionIntent %||%
       ""
   )
+}
+
+#' Extract the observed research-question route from an evaluation result
+#'
+#' @param result One evaluation result record.
+#'
+#' @return Character scalar route.
+#' @keywords internal
+#' @noRd
+getWMFMEvaluationObservedRoute = function(result) {
+  diagnostics = result$diagnostics %||% list()
+  objective = diagnostics$researchQuestionObjective %||% list()
+  as.character(objective$route %||% "")
+}
+
+#' Extract whether an evaluation result requires follow-up input
+#'
+#' @param result One evaluation result record.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+getWMFMEvaluationRequiresFollowup = function(result) {
+  diagnostics = result$diagnostics %||% list()
+  objective = diagnostics$researchQuestionObjective %||% list()
+  isTRUE(objective$requiresFollowup)
 }
 
 #' Run a WMFM example evaluation suite
@@ -261,6 +297,8 @@ runWMFMEvaluationSuite = function(
         ...
       )
       diagnostics = result$meta$followupDiagnostics %||% list()
+      diagnostics$researchQuestionObjective = result$meta$researchQuestionObjective %||% list()
+      diagnostics$researchQuestionRoute = result$meta$researchQuestionRoute %||% list()
       diagnostics$generatedExplanation = result$explanation %||% ""
       diagnostics$assembledPrompt = tryCatch(lmToExplanationPrompt(result$model), error = function(e) "")
       payload = fromJSON(buildExplanationPromptDiagnosticsJson(diagnostics), simplifyVector = FALSE)
@@ -272,6 +310,9 @@ runWMFMEvaluationSuite = function(
         taskType = selected$taskType[[i]],
         intendedIntent = selected$intendedIntent[[i]],
         suite = selected$suite[[i]],
+        expectedArchetype = selected$expectedArchetype[[i]],
+        expectedRoute = selected$expectedRoute[[i]],
+        expectedFollowup = selected$expectedFollowup[[i]],
         packageVersion = as.character(utils::packageVersion(package)),
         diagnostics = payload,
         errorMessage = NULL
@@ -285,6 +326,9 @@ runWMFMEvaluationSuite = function(
         taskType = selected$taskType[[i]],
         intendedIntent = selected$intendedIntent[[i]],
         suite = selected$suite[[i]],
+        expectedArchetype = selected$expectedArchetype[[i]],
+        expectedRoute = selected$expectedRoute[[i]],
+        expectedFollowup = selected$expectedFollowup[[i]],
         packageVersion = tryCatch(as.character(utils::packageVersion(package)), error = function(e2) ""),
         diagnostics = list(),
         errorMessage = conditionMessage(e)
@@ -332,6 +376,22 @@ runWMFMEvaluationSuite = function(
     intendedIntent = vapply(results, function(x) as.character(x$intendedIntent), character(1)),
     status = vapply(results, function(x) as.character(x$status), character(1)),
     detectedIntent = vapply(results, getWMFMEvaluationDetectedIntent, character(1)),
+    observedRoute = vapply(results, getWMFMEvaluationObservedRoute, character(1)),
+    requiresFollowup = vapply(results, getWMFMEvaluationRequiresFollowup, logical(1)),
+    expectedArchetype = vapply(results, function(x) as.character(x$expectedArchetype %||% ""), character(1)),
+    expectedRoute = vapply(results, function(x) as.character(x$expectedRoute %||% ""), character(1)),
+    expectedFollowup = vapply(results, function(x) isTRUE(x$expectedFollowup), logical(1)),
+    archetypeMatch = vapply(results, function(x) {
+      expected = as.character(x$expectedArchetype %||% "")
+      !nzchar(expected) || identical(getWMFMEvaluationDetectedIntent(x), expected)
+    }, logical(1)),
+    routeMatch = vapply(results, function(x) {
+      expected = as.character(x$expectedRoute %||% "")
+      !nzchar(expected) || identical(getWMFMEvaluationObservedRoute(x), expected)
+    }, logical(1)),
+    followupMatch = vapply(results, function(x) {
+      identical(getWMFMEvaluationRequiresFollowup(x), isTRUE(x$expectedFollowup))
+    }, logical(1)),
     elapsedSeconds = vapply(results, function(x) as.numeric(x$elapsedSeconds), numeric(1)),
     errorMessage = vapply(results, function(x) as.character(x$errorMessage %||% ""), character(1)),
     stringsAsFactors = FALSE
