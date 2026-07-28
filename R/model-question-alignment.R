@@ -97,7 +97,13 @@ questionAlignmentDeterministicFirst = function(text, objective, deterministic = 
   text = trimws(as.character(text %||% ""))
   deterministic = trimws(as.character(deterministic %||% ""))
   if (nzchar(deterministic)) {
-    return(startsWith(text, deterministic))
+    normalizePrefix = function(value) {
+      value = tolower(trimws(as.character(value %||% "")))
+      gsub("\\s+", " ", value, perl = TRUE)
+    }
+    if (startsWith(normalizePrefix(text), normalizePrefix(deterministic))) {
+      return(TRUE)
+    }
   }
 
   payload = if (identical(objective$archetype, "expected_response")) {
@@ -111,8 +117,10 @@ questionAlignmentDeterministicFirst = function(text, objective, deterministic = 
   }
 
   fittedText = formatFollowupPredictionNumber(prediction$fittedPrediction)
-  firstParagraph = strsplit(text, "\n\\s*\n", perl = TRUE)[[1]][[1]]
-  normalizedFirst = tolower(gsub("\\s+", " ", firstParagraph, perl = TRUE))
+  paragraphs = strsplit(text, "\n\\s*\n", perl = TRUE)[[1]]
+  paragraphs = paragraphs[nzchar(trimws(paragraphs))]
+  firstParagraph = if (length(paragraphs)) paragraphs[[1]] else ""
+  normalizedFirst = tolower(gsub("\\s+", " ", trimws(firstParagraph), perl = TRUE))
   hasFittedValue = nzchar(fittedText) && grepl(fittedText, firstParagraph, fixed = TRUE)
   hasPredictionLanguage = if (identical(prediction$responseDescription, "probability")) {
     grepl("predicts? (?:a )?probability|predicted probability|fitted probability", normalizedFirst, perl = TRUE)
@@ -122,7 +130,12 @@ questionAlignmentDeterministicFirst = function(text, objective, deterministic = 
     grepl("predicts?|prediction|expected response", normalizedFirst, perl = TRUE)
   }
 
-  isTRUE(hasFittedValue) && isTRUE(hasPredictionLanguage)
+  cachedResponseUnavailable = !nzchar(deterministic)
+  startsAsPredictionContinuation = grepl("^this prediction\\b", normalizedFirst, perl = TRUE)
+
+  isTRUE(hasPredictionLanguage) &&
+    (isTRUE(hasFittedValue) ||
+      (isTRUE(cachedResponseUnavailable) && isTRUE(startsAsPredictionContinuation)))
 }
 
 #' @keywords internal

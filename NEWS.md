@@ -1,3 +1,7 @@
+# WMFM 1.1.6.24
+
+* Repaired the deterministic-first diagnostic when cached prediction text is unavailable.
+
 # WMFM 1.1.6.18
 
 * Resolved ordinary natural-language numeric profile wording such as 16 in the test so complete individual prediction questions do not incorrectly request missing input.
