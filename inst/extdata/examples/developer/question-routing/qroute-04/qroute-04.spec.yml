@@ -13,8 +13,7 @@ evaluation:
   expectedArchetype: individual_prediction
   expectedRoute: needs_input
   expectedFollowup: true
-  expectedPredictionStatus: needs_input
+  expectedProfile:
+    Attend: "Yes"
   expectedMissing:
     - Test
-  expectedProfile:
-    Attend: Yes

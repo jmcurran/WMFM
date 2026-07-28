@@ -1,3 +1,7 @@
+# WMFM 1.1.6.26
+
+* Repaired the question-routing test fixture and renamed the focused tests to describe behaviour rather than a development stage.
+
 # WMFM 1.1.6.24
 
 * Repaired the deterministic-first diagnostic when cached prediction text is unavailable.

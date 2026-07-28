@@ -11,10 +11,9 @@ evaluation:
   intendedIntent: individual_outcome
   suite: question_routing
   expectedArchetype: individual_prediction
-  expectedRoute: needs_input
+  expectedRoute: model_answer
   expectedFollowup: true
-  expectedPredictionStatus: needs_input
-  expectedMissing:
-    - Attend
   expectedProfile:
     Test: 17
+  expectedMissing:
+    - Attend

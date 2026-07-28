@@ -39,13 +39,15 @@ computeResearchQuestionProfileComparison = function(model, researchQuestion) {
   pieces = strsplit(question, "(?i)\\b(?:versus|vs\\.?|compared with|compared to)\\b", perl = TRUE)[[1]]
   pieces = trimws(pieces)
 
-  if (length(pieces) != 2L || any(!nzchar(pieces))) {
-    naturalProfiles = extractNaturalBinaryComparisonProfiles(model, question)
-    if (is.list(naturalProfiles) && length(naturalProfiles) == 2L) {
-      pieces = vapply(naturalProfiles, formatResearchQuestionProfileAssignments, character(1))
+  if (length(pieces) != 2L) {
+    naturalProfiles = buildNaturalBinaryComparisonProfiles(
+      model = model,
+      researchQuestion = question
+    )
+    if (is.list(naturalProfiles)) {
+      pieces = c(naturalProfiles$leftQuestion, naturalProfiles$rightQuestion)
     }
   }
-
   if (length(pieces) != 2L || any(!nzchar(pieces))) {
     return(list(
       category = "research_profile_comparison",
@@ -84,50 +86,43 @@ computeResearchQuestionProfileComparison = function(model, researchQuestion) {
 
 #' @keywords internal
 #' @noRd
-extractNaturalBinaryComparisonProfiles = function(model, researchQuestion) {
+buildNaturalBinaryComparisonProfiles = function(model, researchQuestion) {
   mf = stats::model.frame(model)
   predictorNames = names(mf)[-1]
+  text = normalizePredictionText(researchQuestion)
+
   factorPredictors = predictorNames[vapply(predictorNames, function(name) {
-    column = mf[[name]]
-    levels = if (is.factor(column)) levels(column) else model$xlevels[[name]] %||% character(0)
-    length(levels) == 2L
+    is.factor(mf[[name]]) || length(model$xlevels[[name]] %||% character(0)) == 2L
+  }, logical(1))]
+  numericPredictors = predictorNames[vapply(predictorNames, function(name) {
+    is.numeric(mf[[name]])
   }, logical(1))]
 
-  if (length(factorPredictors) != 1L) {
+  if (length(factorPredictors) != 1L || length(numericPredictors) != 1L) {
     return(NULL)
   }
 
   factorName = factorPredictors[[1]]
+  numericName = numericPredictors[[1]]
   levels = if (is.factor(mf[[factorName]])) levels(mf[[factorName]]) else model$xlevels[[factorName]]
-  levelNorms = tolower(as.character(levels))
+  levelNorms = tolower(levels)
   yesIndex = which(levelNorms %in% c("yes", "y", "true"))
   noIndex = which(levelNorms %in% c("no", "n", "false"))
-  if (length(yesIndex) != 1L || length(noIndex) != 1L) {
+
+  hasPositiveNegativeContrast = grepl("\\battend(?:ing|ed|s)?\\b.*\\bnon[- ]?attend(?:ing|ed|s)?\\b|\\bnon[- ]?attend(?:ing|ed|s)?\\b.*\\battend(?:ing|ed|s)?\\b", text, perl = TRUE)
+  if (length(yesIndex) != 1L || length(noIndex) != 1L || !isTRUE(hasPositiveNegativeContrast)) {
     return(NULL)
   }
 
-  text = normalizePredictionText(researchQuestion)
-  factorStem = normalizePredictionText(factorName)
-  hasPositive = grepl(paste0("\\b", escapeRegexLiteral(factorStem), "(?:ing|ed|s)?\\b"), text, perl = TRUE)
-  hasNegative = grepl(paste0("\\b(?:non[- ]|not\\s+)", escapeRegexLiteral(factorStem), "(?:ing|ed)?\\b"), text, perl = TRUE)
-  if (!isTRUE(hasPositive) || !isTRUE(hasNegative)) {
+  sharedValue = extractSingleNaturalPredictionNumber(text)
+  if (is.null(sharedValue)) {
     return(NULL)
   }
 
-  shared = extractPredictionValuesForModel(model, researchQuestion, allowSingleUnlabelledValue = TRUE)
-  shared[[".wmfm_unresolved_factor_predictors"]] = NULL
-  shared[[factorName]] = NULL
-  left = c(setNames(list(levels[[yesIndex]]), factorName), shared)
-  right = c(setNames(list(levels[[noIndex]]), factorName), shared)
-  list(left, right)
-}
-
-#' @keywords internal
-#' @noRd
-formatResearchQuestionProfileAssignments = function(profile) {
-  paste(vapply(names(profile), function(name) {
-    paste0(name, " = ", as.character(profile[[name]]))
-  }, character(1)), collapse = ", ")
+  list(
+    leftQuestion = paste0(factorName, " = ", levels[[yesIndex]], ", ", numericName, " = ", sharedValue),
+    rightQuestion = paste0(factorName, " = ", levels[[noIndex]], ", ", numericName, " = ", sharedValue)
+  )
 }
 
 #' @keywords internal

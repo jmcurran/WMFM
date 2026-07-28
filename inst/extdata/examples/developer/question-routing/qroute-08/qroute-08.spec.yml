@@ -13,7 +13,7 @@ evaluation:
   expectedArchetype: expected_response
   expectedRoute: model_answer
   expectedFollowup: false
-  expectedPredictionStatus: ok
   expectedProfile:
-    Attend: Yes
+    Attend: "Yes"
     Test: 15
+  expectedPredictionStatus: ok

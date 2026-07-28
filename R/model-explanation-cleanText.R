@@ -1101,6 +1101,14 @@ postProcessGrammarCleanup = function(text) {
   )
 
   text = gsub(
+    pattern = "\\bFor each an increase of one unit in ([[:alnum:]_.]+)\\b",
+    replacement = "For each one-unit increase in \\1",
+    x = text,
+    perl = TRUE,
+    ignore.case = FALSE
+  )
+
+  text = gsub(
     pattern = "\\bthe odds is multiplied by\\b",
     replacement = "the odds are multiplied by",
     x = text,

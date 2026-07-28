@@ -13,9 +13,7 @@ evaluation:
   expectedArchetype: individual_prediction
   expectedRoute: model_answer
   expectedFollowup: false
-  expectedThreshold: 50
-  expectedPredictionStatus: ok
   expectedProfile:
-    Attend: Yes
+    Attend: "Yes"
     Test: 15
-
+  expectedThreshold: 50

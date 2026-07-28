@@ -231,14 +231,7 @@ prependDeterministicResearchQuestionAnswer = function(explanation, model) {
     answer = buildDeterministicResearchQuestionComparisonAnswer(objective$answerPayload, model)
   }
 
-  specialisedRoutes = c(
-    "needs_input",
-    "needs_clarification",
-    "alternative_analysis_needed",
-    "out_of_scope"
-  )
-  if (!nzchar(answer) &&
-      (isTRUE(objective$requiresFollowup) || (objective$route %||% "") %in% specialisedRoutes)) {
+  if (!nzchar(answer) && isTRUE(objective$requiresFollowup)) {
     clarification = buildDeterministicResearchQuestionClarification(
       objective = objective,
       model = model
@@ -252,23 +245,8 @@ prependDeterministicResearchQuestionAnswer = function(explanation, model) {
     return(explanation)
   }
 
-  # Specialised deterministic answers are complete responses. Appending the
-  # generic model explanation repeats results and can distract from the exact
-  # question that was asked.
-  if (objective$archetype %in% c(
-      "individual_prediction",
-      "expected_response",
-      "compare_groups_or_profiles"
-    )) {
-    return(answer)
-  }
-
-  explanationText = trimws(as.character(explanation %||% ""))
-  if (grepl(answer, explanationText, fixed = TRUE)) {
-    return(explanationText)
-  }
-  if (!nzchar(explanationText)) {
-    return(answer)
-  }
-  paste(answer, explanationText, sep = "\n\n")
+  # A verified specialised answer is complete in its own right. Appending the
+  # general model explanation makes clarification and prediction responses
+  # repetitive and can distract from the requested result.
+  answer
 }

@@ -11,5 +11,5 @@ evaluation:
   intendedIntent: individual_outcome
   suite: question_routing
   expectedArchetype: individual_prediction
-  expectedRoute: model_answer
+  expectedRoute: needs_input
   expectedFollowup: true

@@ -13,3 +13,4 @@ evaluation:
   expectedArchetype: compare_groups_or_profiles
   expectedRoute: model_answer
   expectedFollowup: false
+  expectedPredictionStatus: ok
