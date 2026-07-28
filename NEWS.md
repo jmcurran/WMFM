@@ -11,6 +11,13 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+
+## WMFM 1.1.6.006
+
+- Added a question-aware individual-prediction route that places WMFM's deterministic prediction and prediction interval before general model interpretation.
+- Added an explicit prompt-ordering contract so a coefficient summary alone cannot satisfy an individual-prediction research question.
+- Kept incomplete predictor profiles as follow-up cases rather than silently substituting average or reference values.
+- Added a hidden Course developer example with portable path names and focused offline tests for prediction-first ordering.
 ## WMFM 1.1.6.004
 
 - Completed the deterministic research-question objective contract with seven explicit archetypes.

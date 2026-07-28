@@ -72,6 +72,7 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   prompt = lmToExplanationPrompt(model)
   output = chat$chat(prompt)
   output = normaliseNumericExpressions(output)
+  output = prependDeterministicResearchQuestionAnswer(explanation = output, model = model)
   output = appendDeterministicFollowupAnswer(explanation = output, model = model)
 
   if (isTRUE(useCache)) {
