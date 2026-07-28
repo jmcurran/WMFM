@@ -103,7 +103,7 @@ testthat::test_that("Stage 49.2 objective validation rejects incomplete contract
 })
 
 
-testthat::test_that("Stage 49.2 recognises the Course do-well question as prediction-shaped", {
+testthat::test_that("vague do-well questions request predictors without inventing a threshold", {
   data = data.frame(
     Exam = c(42, 58, 81, 86, 35, 72),
     Test = c(9, 13, 15, 19, 8, 13),
@@ -121,5 +121,6 @@ testthat::test_that("Stage 49.2 recognises the Course do-well question as predic
 
   testthat::expect_identical(objective$archetype, "individual_prediction")
   testthat::expect_true(objective$requiresFollowup)
-  testthat::expect_true(all(c("Attend", "Test", "outcome_threshold") %in% objective$unsupportedOrMissing))
+  testthat::expect_true(all(c("Attend", "Test") %in% objective$unsupportedOrMissing))
+  testthat::expect_false("outcome_threshold" %in% objective$unsupportedOrMissing)
 })

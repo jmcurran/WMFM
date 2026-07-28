@@ -54,12 +54,6 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
     missingInformation = unique(c(missingInformation, requiredPredictors))
   }
 
-  if (identical(archetype, "individual_prediction") &&
-      grepl("\\b(do well|doing well|good result|good mark|succeed|success|pass|fail)\\b", normalizedText, perl = TRUE) &&
-      !grepl("\\b(at least|at most|above|below|over|under|greater than|less than)\\s*[0-9]", normalizedText, perl = TRUE)) {
-    missingInformation = unique(c(missingInformation, "outcome_threshold"))
-  }
-
   concepts = researchQuestionObjectiveConcepts(
     archetype = archetype,
     model = model

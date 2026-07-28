@@ -1,0 +1,12 @@
+displayName: QRoute 02 - vague result
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: How will I do in the final exam?
+evaluation:
+  datasetGroup: course
+  taskType: question_routing
+  intendedIntent: individual_outcome
+  suite: question_routing

@@ -329,3 +329,75 @@ examples:
     exampleDifficulty: developer
     teachingTopic: Prediction, expected response, and explanation grading
     developerPurpose: Reproduce the Stage 48.9 course explanation grading diagnostic
+  qroute-01:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Vague individual prediction; request Attend and Test but no outcome threshold.
+  qroute-02:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Vague individual prediction with both predictors missing.
+  qroute-03:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Complete individual profile; produce prediction and prediction interval.
+  qroute-04:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Partial profile; request Test only.
+  qroute-05:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Partial profile; request Attend only and do not require a threshold.
+  qroute-06:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Pass question with undefined threshold; request outcome threshold.
+  qroute-07:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Numeric threshold supplied; retain threshold-specific routing.
+  qroute-08:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Expected response with confidence interval, not an individual prediction interval.
+  qroute-09:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Compare two complete predictor profiles.
+  qroute-10:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: General model question; do not request an individual profile.
+  qroute-11:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Do not convert association into a causal claim; explain the limitation and threshold issue.
+  qroute-12:
+    exampleAudience: developer
+    exampleFamily: lm
+    exampleDifficulty: developer
+    teachingTopic: Question-aware explanation routing
+    developerPurpose: Provide informative clarification rather than forcing a model interpretation.

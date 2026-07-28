@@ -1,21 +1,13 @@
+# WMFM 1.1.6.14
+
+* Treat vague continuous-outcome wording such as "do well" and "good mark" as an individual-prediction request rather than inventing an outcome threshold.
+* Continue to require explicit thresholds for pass, fail, success, and other genuinely threshold-based requests through the existing question route.
+* Add a developer-only question-routing example suite under `inst/extdata/examples/developer/question-routing`.
+
 # WMFM 1.1.6.13
 
 * Added deterministic question-answer alignment diagnostics for research-question archetype, supplied profile, essential-concept coverage, answer placement, contradiction detection, and explanation-mode length suitability.
 * Added focused offline robustness tests for linear, logistic, concise, standard, and detailed question-aware explanations.
-
-# WMFM development news
-
-## Purpose
-
-This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
-
-
-
-
-
-
-
-
 
 ## WMFM 1.1.6.010
 
