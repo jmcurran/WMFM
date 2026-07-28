@@ -193,6 +193,11 @@ validateLmPredictionInputs = function(model, followupQuestion, allowMissingPredi
   )
   unresolvedFactors = parsedPairs[[".wmfm_unresolved_factor_predictors"]] %||% character(0)
   parsedPairs[[".wmfm_unresolved_factor_predictors"]] = NULL
+
+  responseName = names(mf)[1]
+  if (responseName %in% names(parsedPairs)) {
+    parsedPairs[[responseName]] = NULL
+  }
   suppliedNames = names(parsedPairs)
 
   missingRequired = setdiff(predictorNames, suppliedNames)

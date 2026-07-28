@@ -101,7 +101,11 @@ isPredictionShapedResearchQuestion = function(researchQuestion) {
     return(FALSE)
   }
 
-  hasPredictionVerb = grepl("\\b(predict|predicted|prediction|expected response|expected value|would .* get|what would .* be)\\b", text, perl = TRUE)
+  hasPredictionVerb = grepl(
+    "\\b(predict|predicted|prediction|expected response|expected value|expected count|probability|chance|would .* get|what would .* be)\\b",
+    text,
+    perl = TRUE
+  )
   hasAssociationOnly = grepl("\\b(relationship|relate|associated|association|increase as|decrease as|difference between|evidence of a difference|explain the relationship|how does .* change|as .*\\b(increase|increases|decrease|decreases|change|changes|vary|varies)\\b)\\b", text, perl = TRUE)
 
   hasPredictionVerb && !hasAssociationOnly

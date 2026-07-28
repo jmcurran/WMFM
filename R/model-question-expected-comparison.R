@@ -26,12 +26,12 @@ buildResearchQuestionAnswerPayload = function(model, researchQuestion, archetype
 #' @keywords internal
 #' @noRd
 computeResearchQuestionProfileComparison = function(model, researchQuestion) {
-  if (!inherits(model, "lm") || inherits(model, "glm")) {
+  if (!inherits(model, "lm")) {
     return(list(
       category = "research_profile_comparison",
       status = "unsupported",
-      reason = "ordinary_lm_required",
-      warnings = "Stage 49.4 profile comparisons currently support ordinary linear models."
+      reason = "supported_regression_model_required",
+      warnings = "Stage 49.5 profile comparisons support ordinary linear, logistic, and Poisson regression models."
     ))
   }
 
@@ -66,6 +66,16 @@ computeResearchQuestionProfileComparison = function(model, researchQuestion) {
     ))
   }
 
+  if (inherits(model, "glm")) {
+    return(computeGlmResearchQuestionProfileComparison(model, left, right))
+  }
+
+  computeLmResearchQuestionProfileComparison(model, left, right)
+}
+
+#' @keywords internal
+#' @noRd
+computeLmResearchQuestionProfileComparison = function(model, left, right) {
   leftData = buildLmPredictionNewData(model, left$resolvedPredictorValues)$newData
   rightData = buildLmPredictionNewData(model, right$resolvedPredictorValues)$newData
   termsObject = stats::delete.response(stats::terms(model))
@@ -80,6 +90,8 @@ computeResearchQuestionProfileComparison = function(model, researchQuestion) {
     category = "research_profile_comparison",
     status = "ok",
     reason = "ok",
+    modelFamily = "gaussian",
+    responseDescription = "mean_response",
     leftProfile = left$resolvedPredictorValues,
     rightProfile = right$resolvedPredictorValues,
     leftExpectedResponse = left$fittedPrediction,
@@ -91,7 +103,68 @@ computeResearchQuestionProfileComparison = function(model, researchQuestion) {
       level = 0.95
     ),
     intervalType = "confidence_interval_for_expected_response_difference",
-    comparisonDirection = "right_minus_left"
+    comparisonDirection = "right_minus_left",
+    intervalMethod = "linear_model_contrast"
+  )
+}
+
+#' @keywords internal
+#' @noRd
+computeGlmResearchQuestionProfileComparison = function(model, left, right) {
+  familyName = tolower(model$family$family %||% "")
+  if (!familyName %in% c("binomial", "poisson")) {
+    return(list(
+      category = "research_profile_comparison",
+      status = "unsupported",
+      reason = "unsupported_glm_family",
+      modelFamily = familyName,
+      warnings = "Stage 49.5 GLM profile comparisons support binomial logistic and Poisson models."
+    ))
+  }
+
+  leftData = buildLmPredictionNewData(model, left$resolvedPredictorValues)$newData
+  rightData = buildLmPredictionNewData(model, right$resolvedPredictorValues)$newData
+  termsObject = stats::delete.response(stats::terms(model))
+  leftMatrix = stats::model.matrix(termsObject, leftData, contrasts.arg = model$contrasts, xlev = model$xlevels)
+  rightMatrix = stats::model.matrix(termsObject, rightData, contrasts.arg = model$contrasts, xlev = model$xlevels)
+
+  coefficients = stats::coef(model)
+  leftEta = as.numeric(leftMatrix[1, ] %*% coefficients)
+  rightEta = as.numeric(rightMatrix[1, ] %*% coefficients)
+  leftMean = as.numeric(model$family$linkinv(leftEta))
+  rightMean = as.numeric(model$family$linkinv(rightEta))
+  leftDerivative = as.numeric(model$family$mu.eta(leftEta))
+  rightDerivative = as.numeric(model$family$mu.eta(rightEta))
+  gradient = rightDerivative * as.numeric(rightMatrix[1, ]) - leftDerivative * as.numeric(leftMatrix[1, ])
+  standardError = sqrt(as.numeric(t(gradient) %*% stats::vcov(model) %*% gradient))
+  estimate = rightMean - leftMean
+  criticalValue = stats::qnorm(0.975)
+  lower = estimate - criticalValue * standardError
+  upper = estimate + criticalValue * standardError
+  if (identical(familyName, "binomial")) {
+    lower = max(-1, lower)
+    upper = min(1, upper)
+  }
+
+  list(
+    category = "research_profile_comparison",
+    status = "ok",
+    reason = "ok",
+    modelFamily = familyName,
+    responseDescription = if (identical(familyName, "binomial")) "probability" else "expected_count",
+    leftProfile = left$resolvedPredictorValues,
+    rightProfile = right$resolvedPredictorValues,
+    leftExpectedResponse = leftMean,
+    rightExpectedResponse = rightMean,
+    difference = estimate,
+    confidenceInterval = list(
+      lwr = lower,
+      upr = upper,
+      level = 0.95
+    ),
+    intervalType = "confidence_interval_for_expected_response_difference",
+    comparisonDirection = "right_minus_left",
+    intervalMethod = "response_scale_delta_method"
   )
 }
 
@@ -103,9 +176,22 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
   }
 
   responseName = names(stats::model.frame(model))[[1]]
+  quantityText = switch(
+    payload$responseDescription %||% "mean_response",
+    probability = paste0("predicted probability of ", responseName),
+    expected_count = paste0("expected count for ", responseName),
+    paste0("estimated average ", responseName)
+  )
+  limitationText = switch(
+    payload$responseDescription %||% "mean_response",
+    probability = "These are fitted probabilities, not guaranteed binary outcomes for individuals.",
+    expected_count = "These are expected counts, not exact future counts.",
+    "This interval describes uncertainty in the difference between expected responses; it is not an individual prediction interval."
+  )
+
   paste0(
     "For ", formatFollowupPredictorSettings(payload$leftProfile),
-    ", the estimated average ", responseName, " is ",
+    ", the ", quantityText, " is ",
     formatFollowupPredictionNumber(payload$leftExpectedResponse), ". For ",
     formatFollowupPredictorSettings(payload$rightProfile),
     ", it is ", formatFollowupPredictionNumber(payload$rightExpectedResponse),
@@ -114,6 +200,6 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
     ", with a 95% confidence interval from ",
     formatFollowupPredictionNumber(payload$confidenceInterval$lwr), " to ",
     formatFollowupPredictionNumber(payload$confidenceInterval$upr),
-    ". This interval describes uncertainty in the difference between expected responses; it is not an individual prediction interval."
+    ". ", limitationText
   )
 }

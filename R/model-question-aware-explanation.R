@@ -24,6 +24,48 @@ buildQuestionAwareExplanationPromptBlock = function(model) {
       ))
     }
 
+    if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "probability")) {
+      return(paste(
+        "Question-aware explanation contract:",
+        "Primary task: answer the student's individual-outcome question with the fitted probability.",
+        "WMFM will place its deterministic probability answer before the language-model explanation.",
+        "A general model summary by itself does not answer this individual-outcome question.",
+        paste0("Resolved predictor profile: ", formatFollowupPredictorSettings(prediction$resolvedPredictorValues)),
+        paste0("Deterministic fitted probability: ", formatFollowupPredictionNumber(prediction$fittedPrediction)),
+        "An individual future outcome is binary; do not invent or imply a continuous prediction interval.",
+        "Do not convert the probability into a pass/fail or yes/no classification unless the question supplies an explicit threshold.",
+        "Keep coefficient interpretation concise and secondary.",
+        "Do not recompute, replace, contradict, or relabel the deterministic probability.",
+        sep = "\n"
+      ))
+    }
+
+    if (identical(prediction$modelType, "glm") && identical(prediction$responseDescription, "expected_count")) {
+      futureText = if (is.list(prediction$predictionInterval)) {
+        paste0(
+          "Deterministic conditional 95% future-count interval: ",
+          formatFollowupPredictionNumber(prediction$predictionInterval$lwr), " to ",
+          formatFollowupPredictionNumber(prediction$predictionInterval$upr),
+          ". This interval conditions on the fitted mean and does not include parameter uncertainty."
+        )
+      } else {
+        "No future-count interval has been supplied; do not invent one."
+      }
+      return(paste(
+        "Question-aware explanation contract:",
+        "Primary task: answer the student's future-count question with the fitted expected count.",
+        "WMFM will place its deterministic expected-count answer before the language-model explanation.",
+        "A general model summary by itself does not answer this future-count question.",
+        paste0("Resolved predictor profile: ", formatFollowupPredictorSettings(prediction$resolvedPredictorValues)),
+        paste0("Deterministic expected count: ", formatFollowupPredictionNumber(prediction$fittedPrediction)),
+        futureText,
+        "An expected count is not the exact count that will occur.",
+        "Keep coefficient interpretation concise and secondary.",
+        "Do not recompute, replace, contradict, or relabel the deterministic quantities.",
+        sep = "\n"
+      ))
+    }
+
     intervalText = if (is.list(prediction$predictionInterval)) {
       paste0(formatFollowupPredictionNumber(prediction$predictionInterval$lwr), " to ", formatFollowupPredictionNumber(prediction$predictionInterval$upr))
     } else {
@@ -53,12 +95,27 @@ buildQuestionAwareExplanationPromptBlock = function(model) {
         sep = "\n"
       ))
     }
+    familyInstruction = if (identical(prediction$responseDescription, "probability")) {
+      "Interpret this as a fitted probability. Do not present it as a guaranteed individual outcome or apply a classification threshold unless one is explicitly supplied."
+    } else if (identical(prediction$responseDescription, "expected_count")) {
+      "Interpret this as an expected count. Do not claim that it is the exact future count."
+    } else {
+      "Interpret this as an expected or average response."
+    }
+    quantityLabel = if (identical(prediction$responseDescription, "probability")) {
+      "Deterministic fitted probability: "
+    } else if (identical(prediction$responseDescription, "expected_count")) {
+      "Deterministic expected count: "
+    } else {
+      "Deterministic expected response: "
+    }
     return(paste(
       "Question-aware explanation contract:",
       "Primary task: answer the expected or average response question directly.",
       paste0("Resolved predictor profile: ", formatFollowupPredictorSettings(prediction$resolvedPredictorValues)),
-      paste0("Deterministic expected response: ", formatFollowupPredictionNumber(prediction$fittedPrediction)),
-      "Use the supplied confidence interval for the mean response when available.",
+      paste0(quantityLabel, formatFollowupPredictionNumber(prediction$fittedPrediction)),
+      "Use the supplied confidence interval for the fitted mean, probability, or expected count when available.",
+      familyInstruction,
       "Do not call this an individual prediction and do not describe its confidence interval as a prediction interval.",
       "Keep general coefficient interpretation secondary.",
       sep = "\n"
@@ -75,12 +132,20 @@ buildQuestionAwareExplanationPromptBlock = function(model) {
         sep = "\n"
       ))
     }
+    familyInstruction = if (identical(comparison$responseDescription, "probability")) {
+      "Compare fitted probabilities on the response scale; do not turn them into guaranteed individual outcomes."
+    } else if (identical(comparison$responseDescription, "expected_count")) {
+      "Compare expected counts on the response scale; do not describe either expected count as an exact future count."
+    } else {
+      "Compare fitted mean responses on the response scale."
+    }
     return(paste(
       "Question-aware explanation contract:",
       "Primary task: compare the two expected responses directly.",
       paste0("First profile: ", formatFollowupPredictorSettings(comparison$leftProfile)),
       paste0("Second profile: ", formatFollowupPredictorSettings(comparison$rightProfile)),
       paste0("Deterministic second-minus-first difference: ", formatFollowupPredictionNumber(comparison$difference)),
+      familyInstruction,
       "Interpret the supplied confidence interval as uncertainty in the expected-response difference.",
       "Do not relabel it as an individual prediction interval.",
       sep = "\n"

@@ -12,6 +12,15 @@ This file records user-facing and developer-facing changes in WMFM. It is a rele
 
 
 
+## WMFM 1.1.6.010
+
+- Extended question-aware individual-outcome and expected-response contracts to logistic and Poisson regression.
+- Added deterministic response-scale comparisons for fitted probabilities and expected counts, with delta-method confidence intervals.
+- Added model-family safeguards for binary outcomes, classification thresholds, expected counts, and future-count uncertainty.
+- Expanded prediction-shaped research-question detection for probability, chance, and expected-count wording.
+- Added focused offline tests for logistic and Poisson individual-outcome and profile-comparison routes.
+- Repaired predictor-profile parsing so response-value clauses such as Y = 1 are not mistaken for predictor assignments.
+
 ## WMFM 1.1.6.008
 
 - Added question-aware expected-response answers that lead with the fitted mean and its confidence interval.
