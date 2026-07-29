@@ -1,3 +1,7 @@
+# WMFM 1.1.6.29
+
+* Allowed completed question objectives to override preliminary missing-input routes so specialised comparison answers are selected consistently.
+
 # WMFM 1.1.6.27
 
 * Repaired the cross-platform stage runner version bump while retaining the question-routing fixture and behaviour-based test names.

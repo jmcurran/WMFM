@@ -75,6 +75,18 @@ buildResearchQuestionObjective = function(model, researchQuestion) {
     }
   }
 
+  comparisonAnswerable = identical(archetype, "compare_groups_or_profiles") &&
+    is.list(answerPayload) &&
+    identical(answerPayload$status, "ok")
+
+  if (isTRUE(comparisonAnswerable)) {
+    profile = answerPayload$leftProfile %||% list()
+    missingInformation = character(0)
+    route$status = "answerable"
+    route$route = "model_answer"
+    route$reason = "profile_comparison_answerable"
+  }
+
   concepts = researchQuestionObjectiveConcepts(
     archetype = archetype,
     model = model

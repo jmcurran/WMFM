@@ -38,8 +38,12 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   }
 
   researchRoute = attr(model, "wmfm_research_question_route", exact = TRUE)
+  researchObjective = attr(model, "wmfm_research_question_objective", exact = TRUE)
+  objectiveAllowsModelAnswer = inherits(researchObjective, "wmfmQuestionObjective") &&
+    researchObjective$route %in% c("model_answer", "explanation_preference")
   if (inherits(researchRoute, "wmfmQuestionRoute") &&
-      !researchRoute$route %in% c("model_answer", "explanation_preference")) {
+      !researchRoute$route %in% c("model_answer", "explanation_preference") &&
+      !isTRUE(objectiveAllowsModelAnswer)) {
     output = trimws(as.character(researchRoute$deterministicResponse %||% ""))
     return(appendDeterministicFollowupAnswer(explanation = output, model = model))
   }
@@ -66,7 +70,16 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {
-    return(.env_cache[[key]])
+    output = .env_cache[[key]]
+    output = prependDeterministicResearchQuestionAnswer(
+      explanation = output,
+      model = model
+    )
+    output = appendDeterministicFollowupAnswer(
+      explanation = output,
+      model = model
+    )
+    return(output)
   }
 
   prompt = lmToExplanationPrompt(model)
