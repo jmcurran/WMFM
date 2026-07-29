@@ -1,3 +1,7 @@
+# WMFM 1.1.6.27
+
+* Repaired the cross-platform stage runner version bump while retaining the question-routing fixture and behaviour-based test names.
+
 # WMFM 1.1.6.26
 
 * Repaired the question-routing test fixture and renamed the focused tests to describe behaviour rather than a development stage.
