@@ -220,6 +220,22 @@ computeGlmResearchQuestionProfileComparison = function(model, left, right) {
   )
 }
 
+#' Format deterministic comparison results for presentation
+#'
+#' @param value Numeric scalar.
+#'
+#' @return Character scalar with two decimal places.
+#' @keywords internal
+#' @noRd
+formatResearchQuestionComparisonNumber = function(value) {
+  value = suppressWarnings(as.numeric(value))
+  if (length(value) != 1L || !is.finite(value)) {
+    return(NA_character_)
+  }
+
+  formatC(value, format = "f", digits = 2)
+}
+
 #' @keywords internal
 #' @noRd
 buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
@@ -245,13 +261,13 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
   differenceText = if (is.finite(difference) && difference < 0) {
     paste0(
       "The second profile is estimated to have ", responseName, " ",
-      formatFollowupPredictionNumber(abs(difference)),
+      formatResearchQuestionComparisonNumber(abs(difference)),
       " units lower than the first"
     )
   } else if (is.finite(difference) && difference > 0) {
     paste0(
       "The second profile is estimated to have ", responseName, " ",
-      formatFollowupPredictionNumber(difference),
+      formatResearchQuestionComparisonNumber(difference),
       " units higher than the first"
     )
   } else {
@@ -261,13 +277,13 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
   paste0(
     "For ", formatFollowupPredictorSettings(payload$leftProfile),
     ", the ", quantityText, " is ",
-    formatFollowupPredictionNumber(payload$leftExpectedResponse), ". For ",
+    formatResearchQuestionComparisonNumber(payload$leftExpectedResponse), ". For ",
     formatFollowupPredictorSettings(payload$rightProfile),
-    ", it is ", formatFollowupPredictionNumber(payload$rightExpectedResponse),
+    ", it is ", formatResearchQuestionComparisonNumber(payload$rightExpectedResponse),
     ". ", differenceText,
     ", with a 95% confidence interval for the second-minus-first difference from ",
-    formatFollowupPredictionNumber(payload$confidenceInterval$lwr), " to ",
-    formatFollowupPredictionNumber(payload$confidenceInterval$upr),
+    formatResearchQuestionComparisonNumber(payload$confidenceInterval$lwr), " to ",
+    formatResearchQuestionComparisonNumber(payload$confidenceInterval$upr),
     ". ", limitationText
   )
 }

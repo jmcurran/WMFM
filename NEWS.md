@@ -1,3 +1,7 @@
+# WMFM 1.1.6.31
+
+* Completed the Stage 49.8 question-routing workstream by making missing-predictor clarification order-independent, repairing multiword unit-increase wording, and standardising comparison presentation.
+
 # WMFM 1.1.6.30
 
 * Prevented generic factor-comparison summaries from being appended after specialised research-question answers, improved threshold and comparison wording, and aligned comparison evaluation with the successful answer payload.

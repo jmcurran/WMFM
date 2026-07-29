@@ -203,7 +203,25 @@ buildDeterministicResearchQuestionClarification = function(objective, model) {
   missing = unique(trimws(as.character(objective$unsupportedOrMissing %||% character(0))))
   missing = missing[nzchar(missing)]
   predictorNames = names(stats::model.frame(model))[-1]
-  missingPredictors = intersect(missing, predictorNames)
+
+  profile = objective$profile %||% list()
+  suppliedPredictors = names(profile)
+  if (length(suppliedPredictors) > 0L) {
+    suppliedPredictors = suppliedPredictors[vapply(
+      profile,
+      function(value) {
+        !is.null(value) && length(value) > 0L && !all(is.na(value)) &&
+          any(nzchar(trimws(as.character(value))))
+      },
+      logical(1)
+    )]
+  }
+  missingFromProfile = setdiff(predictorNames, suppliedPredictors)
+  declaredMissingPredictors = intersect(missing, predictorNames)
+  missingPredictors = predictorNames[predictorNames %in% unique(c(
+    declaredMissingPredictors,
+    missingFromProfile
+  ))]
 
   if (length(missingPredictors) > 0L) {
     missing = missingPredictors

@@ -105,3 +105,41 @@ test_that("explicit numeric thresholds are mentioned in deterministic answers", 
   expect_match(answer, "supplied threshold of 50", fixed = TRUE)
   expect_false(grepl("Generic explanation", answer, fixed = TRUE))
 })
+
+test_that("clarification lists every missing predictor regardless of order", {
+  data = data.frame(
+    Exam = c(42, 51, 55, 63, 68, 74, 77, 83),
+    Attend = factor(c("No", "No", "Yes", "Yes", "No", "Yes", "No", "Yes"), levels = c("No", "Yes")),
+    Test = c(8, 10, 9, 11, 14, 15, 17, 18)
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = data)
+  question = "Will I do well on the final exam?"
+  objective = buildResearchQuestionObjective(model, question)
+  objective$unsupportedOrMissing = rev(objective$unsupportedOrMissing)
+  attr(model, "wmfm_research_question_route") = buildResearchQuestionRoute(model, question)
+
+  answer = buildDeterministicResearchQuestionClarification(objective, model)
+
+  expect_match(answer, "Attend and Test", fixed = TRUE)
+})
+
+test_that("comparison answers use consistent two-decimal presentation", {
+  data = data.frame(
+    Exam = c(42, 51, 55, 63, 68, 74, 77, 83, 46, 58, 61, 70),
+    Attend = factor(
+      c("No", "No", "Yes", "Yes", "No", "Yes", "No", "Yes", "No", "Yes", "No", "Yes"),
+      levels = c("No", "Yes")
+    ),
+    Test = c(8, 10, 9, 11, 14, 15, 17, 18, 9, 13, 15, 17)
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = data)
+  payload = computeResearchQuestionProfileComparison(
+    model,
+    "Compare the expected exam marks for attending and non-attending students who both scored 15."
+  )
+
+  answer = buildDeterministicResearchQuestionComparisonAnswer(payload, model)
+
+  expect_match(answer, "[0-9]+\\.[0-9]{2}", perl = TRUE)
+  expect_match(answer, "This interval", fixed = TRUE)
+})
