@@ -201,15 +201,30 @@ getWMFMEvaluationPredictionDetails = function(result) {
   diagnostics = result$diagnostics %||% list()
   objective = diagnostics$researchQuestionObjective %||% list()
   prediction = objective$predictionPayload$predictionResult %||% list()
-  profile = prediction$resolvedPredictorValues %||%
-    prediction$suppliedPredictorValues %||%
-    objective$profile %||%
-    list()
-  missing = unique(as.character(
-    prediction$missingPredictors %||%
-      objective$unsupportedOrMissing %||%
-      character(0)
-  ))
+  answer = objective$answerPayload %||% list()
+  comparisonAnswer = identical(objective$archetype, "compare_groups_or_profiles") &&
+    is.list(answer) && identical(answer$status, "ok")
+
+  if (isTRUE(comparisonAnswer)) {
+    profile = list(
+      leftProfile = answer$leftProfile %||% list(),
+      rightProfile = answer$rightProfile %||% list()
+    )
+    missing = character(0)
+    status = as.character(answer$status %||% "")
+  } else {
+    profile = prediction$resolvedPredictorValues %||%
+      prediction$suppliedPredictorValues %||%
+      objective$profile %||%
+      list()
+    missing = unique(as.character(
+      prediction$missingPredictors %||%
+        objective$unsupportedOrMissing %||%
+        character(0)
+    ))
+    status = as.character(prediction$status %||% "")
+  }
+
   threshold = objective$outcomeThreshold %||%
     prediction$outcomeThreshold %||%
     NA_real_
@@ -218,7 +233,7 @@ getWMFMEvaluationPredictionDetails = function(result) {
     profile = profile,
     missing = missing[nzchar(missing)],
     threshold = suppressWarnings(as.numeric(threshold)[[1]]),
-    status = as.character(prediction$status %||% "")
+    status = status
   )
 }
 

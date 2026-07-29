@@ -114,3 +114,29 @@ testthat::test_that("question-routing examples expose expected objective metadat
   testthat::expect_true(all(nzchar(selected$expectedRoute)))
   testthat::expect_true(is.logical(selected$expectedFollowup))
 })
+
+
+testthat::test_that("comparison evaluation uses the successful comparison payload", {
+  result = list(
+    diagnostics = list(
+      researchQuestionObjective = list(
+        archetype = "compare_groups_or_profiles",
+        predictionPayload = list(
+          predictionResult = list(status = "needs_input", missingPredictors = "Test")
+        ),
+        answerPayload = list(
+          status = "ok",
+          leftProfile = list(Attend = "Yes", Test = 15),
+          rightProfile = list(Attend = "No", Test = 15)
+        )
+      )
+    )
+  )
+
+  details = getWMFMEvaluationPredictionDetails(result)
+
+  testthat::expect_identical(details$status, "ok")
+  testthat::expect_length(details$missing, 0L)
+  testthat::expect_equal(details$profile$leftProfile$Test, 15)
+  testthat::expect_equal(details$profile$rightProfile$Test, 15)
+})

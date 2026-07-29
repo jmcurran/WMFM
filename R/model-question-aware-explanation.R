@@ -1,3 +1,35 @@
+
+#' Determine whether a research question already has a complete specialised response
+#'
+#' @param model Fitted model object.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+isSpecialisedResearchQuestionResponse = function(model) {
+  objective = attr(model, "wmfm_research_question_objective", exact = TRUE)
+  if (!inherits(objective, "wmfmQuestionObjective")) {
+    return(FALSE)
+  }
+
+  if (isTRUE(objective$requiresFollowup) ||
+      objective$route %in% c(
+        "needs_input",
+        "needs_clarification",
+        "alternative_analysis_needed",
+        "out_of_scope"
+      )) {
+    return(TRUE)
+  }
+
+  identical(objective$route, "model_answer") &&
+    objective$archetype %in% c(
+      "individual_prediction",
+      "expected_response",
+      "compare_groups_or_profiles"
+    )
+}
+
 #' Build a question-aware prompt contract
 #'
 #' @param model Fitted model object.
@@ -168,20 +200,13 @@ buildDeterministicResearchQuestionClarification = function(objective, model) {
   route = attr(model, "wmfm_research_question_route", exact = TRUE)
   routeResponse = trimws(as.character(route$deterministicResponse %||% ""))
 
-  if (nzchar(routeResponse) &&
-      (objective$route %||% "") %in% c(
-        "needs_input",
-        "needs_clarification",
-        "alternative_analysis_needed",
-        "out_of_scope"
-      )) {
-    return(routeResponse)
-  }
-
   missing = unique(trimws(as.character(objective$unsupportedOrMissing %||% character(0))))
   missing = missing[nzchar(missing)]
+  predictorNames = names(stats::model.frame(model))[-1]
+  missingPredictors = intersect(missing, predictorNames)
 
-  if (length(missing) > 0L) {
+  if (length(missingPredictors) > 0L) {
+    missing = missingPredictors
     missingText = if (length(missing) == 1L) {
       missing
     } else if (length(missing) == 2L) {
@@ -226,6 +251,17 @@ prependDeterministicResearchQuestionAnswer = function(explanation, model) {
       modelCopy = model
       attr(modelCopy, "wmfm_model_followup_payload") = payload
       answer = buildDeterministicFollowupAnswer(model = modelCopy)
+      threshold = suppressWarnings(as.numeric(objective$outcomeThreshold %||% NA_real_))
+      if (length(threshold) == 1L && is.finite(threshold) &&
+          is.numeric(prediction$fittedPrediction) && length(prediction$fittedPrediction) == 1L) {
+        direction = if (prediction$fittedPrediction >= threshold) "above" else "below"
+        answer = paste0(
+          answer,
+          " The fitted expected value is ", direction,
+          " the supplied threshold of ", formatFollowupPredictionNumber(threshold),
+          ". The individual prediction interval should be used to judge how uncertain an individual outcome remains."
+        )
+      }
     }
   } else if (identical(objective$archetype, "compare_groups_or_profiles")) {
     answer = buildDeterministicResearchQuestionComparisonAnswer(objective$answerPayload, model)

@@ -241,15 +241,31 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
     "This interval describes uncertainty in the difference between expected responses; it is not an individual prediction interval."
   )
 
+  difference = as.numeric(payload$difference)
+  differenceText = if (is.finite(difference) && difference < 0) {
+    paste0(
+      "The second profile is estimated to have ", responseName, " ",
+      formatFollowupPredictionNumber(abs(difference)),
+      " units lower than the first"
+    )
+  } else if (is.finite(difference) && difference > 0) {
+    paste0(
+      "The second profile is estimated to have ", responseName, " ",
+      formatFollowupPredictionNumber(difference),
+      " units higher than the first"
+    )
+  } else {
+    "The two profiles have the same estimated response"
+  }
+
   paste0(
     "For ", formatFollowupPredictorSettings(payload$leftProfile),
     ", the ", quantityText, " is ",
     formatFollowupPredictionNumber(payload$leftExpectedResponse), ". For ",
     formatFollowupPredictorSettings(payload$rightProfile),
     ", it is ", formatFollowupPredictionNumber(payload$rightExpectedResponse),
-    ". The second profile is estimated to differ from the first by ",
-    formatFollowupPredictionNumber(payload$difference),
-    ", with a 95% confidence interval from ",
+    ". ", differenceText,
+    ", with a 95% confidence interval for the second-minus-first difference from ",
     formatFollowupPredictionNumber(payload$confidenceInterval$lwr), " to ",
     formatFollowupPredictionNumber(payload$confidenceInterval$upr),
     ". ", limitationText

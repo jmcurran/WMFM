@@ -27,7 +27,7 @@ testthat::test_that("Stage 49.4 compares two complete predictor profiles", {
   testthat::expect_identical(objective$answerPayload$intervalType, "confidence_interval_for_expected_response_difference")
 
   answer = prependDeterministicResearchQuestionAnswer("Supporting explanation.", model)
-  testthat::expect_match(answer, "second profile is estimated to differ", fixed = TRUE)
+  testthat::expect_match(answer, "second profile is estimated to have", fixed = TRUE)
   testthat::expect_match(answer, "not an individual prediction interval", fixed = TRUE)
 })
 

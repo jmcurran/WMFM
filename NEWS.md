@@ -1,3 +1,7 @@
+# WMFM 1.1.6.30
+
+* Prevented generic factor-comparison summaries from being appended after specialised research-question answers, improved threshold and comparison wording, and aligned comparison evaluation with the successful answer payload.
+
 # WMFM 1.1.6.29
 
 * Allowed completed question objectives to override preliminary missing-input routes so specialised comparison answers are selected consistently.

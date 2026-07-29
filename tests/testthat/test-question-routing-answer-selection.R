@@ -68,6 +68,40 @@ test_that("cached general explanations do not displace specialised research-ques
   chat = list(chat = function(prompt) stop("Chat should not be called for a cache hit."))
   answer = lmExplanation(model = model, chat = chat, useCache = TRUE)
 
-  expect_match(answer, "second profile is estimated to differ", ignore.case = TRUE)
+  expect_match(answer, "second profile is estimated to have", ignore.case = TRUE)
   expect_false(grepl("Generic cached model explanation", answer, fixed = TRUE))
+})
+
+
+test_that("specialised research-question responses suppress generic anchored summaries", {
+  data = data.frame(
+    Exam = c(42, 51, 55, 63, 68, 74),
+    Attend = factor(c("No", "No", "Yes", "Yes", "No", "Yes"), levels = c("No", "Yes")),
+    Test = c(8, 10, 9, 11, 14, 15)
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = data)
+  question = "What exam mark should I expect if I attended regularly and got 15 in the test?"
+  attr(model, "wmfm_research_question_objective") = buildResearchQuestionObjective(model, question)
+
+  expect_true(isSpecialisedResearchQuestionResponse(model))
+
+  attr(model, "wmfm_research_question_objective") = NULL
+  expect_false(isSpecialisedResearchQuestionResponse(model))
+})
+
+test_that("explicit numeric thresholds are mentioned in deterministic answers", {
+  data = data.frame(
+    Exam = c(42, 51, 55, 63, 68, 74, 77, 83),
+    Attend = factor(c("No", "No", "Yes", "Yes", "No", "Yes", "No", "Yes"), levels = c("No", "Yes")),
+    Test = c(8, 10, 9, 11, 14, 15, 17, 18)
+  )
+  model = stats::lm(Exam ~ Attend + Test, data = data)
+  question = "Will I get over 50 in the exam if I attended regularly and got 15 in the test?"
+  attr(model, "wmfm_research_question_route") = buildResearchQuestionRoute(model, question)
+  attr(model, "wmfm_research_question_objective") = buildResearchQuestionObjective(model, question)
+
+  answer = prependDeterministicResearchQuestionAnswer("Generic explanation.", model)
+
+  expect_match(answer, "supplied threshold of 50", fixed = TRUE)
+  expect_false(grepl("Generic explanation", answer, fixed = TRUE))
 })

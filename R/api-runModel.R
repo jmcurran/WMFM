@@ -504,10 +504,11 @@ runModel = function(
     explanation = postProcessExplanationText(explanation)
 
     followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
-    isSpecialisedQuestionResponse = is.list(followupPayload) &&
+    isSpecialisedFollowupResponse = is.list(followupPayload) &&
       identical(followupPayload$category, "question_route_response")
+    isSpecialisedResearchResponse = isSpecialisedResearchQuestionResponse(model)
 
-    if (!isSpecialisedQuestionResponse) {
+    if (!isSpecialisedFollowupResponse && !isSpecialisedResearchResponse) {
       explanation = ensureAnchoredFactorComparisonText(
         text = explanation,
         model = model
