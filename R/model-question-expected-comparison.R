@@ -254,7 +254,7 @@ buildDeterministicResearchQuestionComparisonAnswer = function(payload, model) {
     payload$responseDescription %||% "mean_response",
     probability = "These are fitted probabilities, not guaranteed binary outcomes for individuals.",
     expected_count = "These are expected counts, not exact future counts.",
-    "This interval describes uncertainty in the difference between expected responses; it is not an individual prediction interval."
+    "This interval describes uncertainty in the difference between expected responses. It is not an individual prediction interval."
   )
 
   difference = as.numeric(payload$difference)

@@ -670,3 +670,12 @@ test_that("malformed unit-increase wording is repaired for multiword predictors"
   expect_match(out, "For each one-unit increase in test mark", fixed = TRUE)
   expect_false(grepl("For each an increase", out, fixed = TRUE))
 })
+
+test_that("malformed course unit-increase wording is repaired", {
+  text = "In addition, for each an increase of one unit in mark in the test mark, the final exam mark was about 3.5 marks higher."
+  out = postProcessExplanationText(text)
+
+  expect_match(out, "For each one-point increase in the test mark", fixed = TRUE)
+  expect_false(grepl("for each an increase", out, fixed = TRUE))
+  expect_false(grepl("mark in the test mark", out, fixed = TRUE))
+})

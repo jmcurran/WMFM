@@ -44,7 +44,14 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   if (inherits(researchRoute, "wmfmQuestionRoute") &&
       !researchRoute$route %in% c("model_answer", "explanation_preference") &&
       !isTRUE(objectiveAllowsModelAnswer)) {
-    output = trimws(as.character(researchRoute$deterministicResponse %||% ""))
+    output = if (inherits(researchObjective, "wmfmQuestionObjective")) {
+      buildDeterministicResearchQuestionClarification(
+        objective = researchObjective,
+        model = model
+      )
+    } else {
+      trimws(as.character(researchRoute$deterministicResponse %||% ""))
+    }
     return(appendDeterministicFollowupAnswer(explanation = output, model = model))
   }
 

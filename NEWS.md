@@ -1,3 +1,7 @@
+# WMFM 1.1.6.32
+
+* Closed the Stage 49.8 question-routing workstream by using the validated objective for clarification wording, repairing the rendered course unit-increase phrase, and capitalising comparison limitations.
+
 # WMFM 1.1.6.31
 
 * Completed the Stage 49.8 question-routing workstream by making missing-predictor clarification order-independent, repairing multiword unit-increase wording, and standardising comparison presentation.
