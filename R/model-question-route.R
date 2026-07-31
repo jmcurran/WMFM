@@ -201,9 +201,15 @@ classifyStage47QuestionRoute = function(originalText, normalizedText, source) {
     ),
     collapse = "|"
   )
-  numericThresholdPattern = "\\b(?:at least|at most|above|below|over|under|greater than|less than)?\\s*[0-9]+(?:\\.[0-9]+)?\\s*%?\\b"
+  explicitPassThresholdPattern = paste(
+    c(
+      "\\b(pass|passing|fail|failure|success)\\b\\s*(?:means?|is|=|at)\\s*(?:a\\s+)?(?:mark|score|result|outcome)?\\s*(?:of\\s*)?(?:at least|at most|above|below|over|under|greater than|less than)?\\s*[0-9]+(?:\\.[0-9]+)?\\s*%?\\b",
+      "\\b(?:mark|score|result|outcome)\\s*(?:of\\s*)?(?:at least|at most|above|below|over|under|greater than|less than)\\s*[0-9]+(?:\\.[0-9]+)?\\s*%?\\s*(?:counts as|means?)\\s*(?:a\\s+)?(?:pass|passing|success)\\b"
+    ),
+    collapse = "|"
+  )
   if (grepl(thresholdQuestionPattern, punctuationFree, perl = TRUE) &&
-      !grepl(numericThresholdPattern, punctuationFree, perl = TRUE)) {
+      !grepl(explicitPassThresholdPattern, punctuationFree, perl = TRUE)) {
     return(newWmfmQuestionRoute(
       originalText = originalText,
       normalizedText = normalizedText,

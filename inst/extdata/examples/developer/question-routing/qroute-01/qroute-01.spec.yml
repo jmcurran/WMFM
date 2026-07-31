@@ -1,0 +1,15 @@
+displayName: QRoute 01 - vague prediction
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Will I do well on the final exam if I attend class regularly and get a good mark in the test?
+evaluation:
+  datasetGroup: course
+  taskType: question_routing
+  intendedIntent: individual_outcome
+  suite: question_routing
+  expectedArchetype: individual_prediction
+  expectedRoute: needs_input
+  expectedFollowup: true

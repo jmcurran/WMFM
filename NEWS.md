@@ -1,15 +1,87 @@
-# WMFM development news
+# WMFM 1.1.6.37
 
-## Purpose
+* Added evaluation diagnostics that preserve the exact prompt, raw provider response, numeric-normalised response, deterministic assembly, post-processed text, final explanation, and cache status.
+* Repaired strict-test fixtures for the new optional diagnostics argument and avoided an essentially-perfect-fit warning in diagnostic tests.
 
-This file records user-facing and developer-facing changes in WMFM. It is a release-note summary, not a commit-by-commit history. Entries are ordered newest to oldest and use WMFM version-number headings.
+# WMFM 1.1.6.32
 
+* Closed the Stage 49.8 question-routing workstream by using the validated objective for clarification wording, repairing the rendered course unit-increase phrase, and capitalising comparison limitations.
 
+# WMFM 1.1.6.31
 
+* Completed the Stage 49.8 question-routing workstream by making missing-predictor clarification order-independent, repairing multiword unit-increase wording, and standardising comparison presentation.
 
+# WMFM 1.1.6.30
 
+* Prevented generic factor-comparison summaries from being appended after specialised research-question answers, improved threshold and comparison wording, and aligned comparison evaluation with the successful answer payload.
 
+# WMFM 1.1.6.29
 
+* Allowed completed question objectives to override preliminary missing-input routes so specialised comparison answers are selected consistently.
+
+# WMFM 1.1.6.27
+
+* Repaired the cross-platform stage runner version bump while retaining the question-routing fixture and behaviour-based test names.
+
+# WMFM 1.1.6.26
+
+* Repaired the question-routing test fixture and renamed the focused tests to describe behaviour rather than a development stage.
+
+# WMFM 1.1.6.24
+
+* Repaired the deterministic-first diagnostic when cached prediction text is unavailable.
+
+# WMFM 1.1.6.18
+
+* Resolved ordinary natural-language numeric profile wording such as 16 in the test so complete individual prediction questions do not incorrectly request missing input.
+
+# WMFM 1.1.6.14
+
+* Treat vague continuous-outcome wording such as "do well" and "good mark" as an individual-prediction request rather than inventing an outcome threshold.
+* Continue to require explicit thresholds for pass, fail, success, and other genuinely threshold-based requests through the existing question route.
+* Add a developer-only question-routing example suite under `inst/extdata/examples/developer/question-routing`.
+
+# WMFM 1.1.6.13
+
+* Added deterministic question-answer alignment diagnostics for research-question archetype, supplied profile, essential-concept coverage, answer placement, contradiction detection, and explanation-mode length suitability.
+* Added focused offline robustness tests for linear, logistic, concise, standard, and detailed question-aware explanations.
+
+## WMFM 1.1.6.010
+
+- Extended question-aware individual-outcome and expected-response contracts to logistic and Poisson regression.
+- Added deterministic response-scale comparisons for fitted probabilities and expected counts, with delta-method confidence intervals.
+- Added model-family safeguards for binary outcomes, classification thresholds, expected counts, and future-count uncertainty.
+- Expanded prediction-shaped research-question detection for probability, chance, and expected-count wording.
+- Added focused offline tests for logistic and Poisson individual-outcome and profile-comparison routes.
+- Repaired predictor-profile parsing so response-value clauses such as Y = 1 are not mistaken for predictor assignments.
+
+## WMFM 1.1.6.008
+
+- Added question-aware expected-response answers that lead with the fitted mean and its confidence interval.
+- Added deterministic comparisons between two complete linear-model predictor profiles, including a confidence interval for the expected-response difference.
+- Kept confidence intervals for means and comparisons distinct from individual prediction intervals.
+- Added focused offline tests for expected-response, complete-comparison, and missing-profile behaviour.
+
+## WMFM 1.1.6.006
+
+- Added a question-aware individual-prediction route that places WMFM's deterministic prediction and prediction interval before general model interpretation.
+- Added an explicit prompt-ordering contract so a coefficient summary alone cannot satisfy an individual-prediction research question.
+- Kept incomplete predictor profiles as follow-up cases rather than silently substituting average or reference values.
+- Added a hidden Course developer example with portable path names and focused offline tests for prediction-first ordering.
+## WMFM 1.1.6.004
+
+- Completed the deterministic research-question objective contract with seven explicit archetypes.
+- Preserved individual-prediction classification when supplied profiles are incomplete while retaining deterministic follow-up requirements.
+- Reused Stage 47 question routes and prediction payloads rather than duplicating specialised handling.
+- Replaced separable logistic characterisation data so strict warning conversion remains stable.
+- Exposed the resolved objective in developer UI and JSON diagnostics and covered linear, logistic, and Poisson models.
+
+## WMFM 1.1.6.001
+
+- Grouped overlapping comparison and reference-group deductions into one actionable student-facing revision message.
+- Retained the complete separate scoring metrics in developer diagnostics.
+- Added accessible positive and revision feedback panels with icons, borders, and text headings.
+- Added focused regression tests for issue-family deduplication and feedback presentation.
 
 ## WMFM 1.1.5.014
 

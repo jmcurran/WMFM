@@ -189,6 +189,30 @@ appUI = function() {
         font-weight: 600;
       }
 
+      .wmfm-student-feedback-panel {
+        border: 1px solid;
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-top: 10px;
+      }
+
+      .wmfm-student-feedback-panel h5 {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 0;
+      }
+
+      .wmfm-student-feedback-panel-positive {
+        border-color: #5f9f68;
+        background-color: #eef8ef;
+      }
+
+      .wmfm-student-feedback-panel-revision {
+        border-color: #bd6666;
+        background-color: #fceeee;
+      }
+
       .wmfm-student-explanation-feedback-note {
         color: #666;
         margin-bottom: 0;

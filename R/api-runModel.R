@@ -312,6 +312,8 @@ runModel = function(
     }
   }
 
+  researchQuestionObjective = NULL
+
   if (!is.null(researchQuestion)) {
     researchQuestion = trimws(researchQuestion)
 
@@ -322,6 +324,11 @@ runModel = function(
         model = model,
         researchQuestion = researchQuestion
       )
+      researchQuestionObjective = buildResearchQuestionObjective(
+        model = model,
+        researchQuestion = researchQuestion
+      )
+      attr(model, "wmfm_research_question_objective") = researchQuestionObjective
     }
   }
 
@@ -385,6 +392,7 @@ runModel = function(
     modelType = modelType
   )
   explanationClaimEvidenceMap = NULL
+  explanationGenerationDiagnostics = list()
   equationMethodUsed = equationMethod
 
   if (identical(equationMethod, "deterministic")) {
@@ -480,32 +488,42 @@ runModel = function(
   }
 
   if (isTRUE(generateExplanation) && !is.null(chatProvider)) {
+    explanationDiagnosticsEnvironment = new.env(parent = emptyenv())
     explanation = tryCatch(
       lmExplanation(
         model = model,
         chat = chatProvider,
-        useCache = useExplanationCache
+        useCache = useExplanationCache,
+        diagnostics = explanationDiagnosticsEnvironment
       ),
       error = function(e) {
         warning("Explanation generation failed: ", conditionMessage(e), call. = FALSE)
         NULL
       }
     )
+    explanationGenerationDiagnostics = as.list(
+      explanationDiagnosticsEnvironment,
+      all.names = TRUE
+    )
   }
 
   if (!is.null(explanation)) {
     explanation = postProcessExplanationText(explanation)
+    explanationGenerationDiagnostics$postProcessedExplanationText = explanation
 
     followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
-    isSpecialisedQuestionResponse = is.list(followupPayload) &&
+    isSpecialisedFollowupResponse = is.list(followupPayload) &&
       identical(followupPayload$category, "question_route_response")
+    isSpecialisedResearchResponse = isSpecialisedResearchQuestionResponse(model)
 
-    if (!isSpecialisedQuestionResponse) {
+    if (!isSpecialisedFollowupResponse && !isSpecialisedResearchResponse) {
       explanation = ensureAnchoredFactorComparisonText(
         text = explanation,
         model = model
       )
     }
+
+    explanationGenerationDiagnostics$finalExplanationText = explanation
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(
@@ -554,7 +572,10 @@ runModel = function(
       equationMethodUsed = equationMethodUsed,
       generateExplanation = generateExplanation,
       responseTransformationMode = getModelResponseTransformationMode(model),
-      followupDiagnostics = followupDiagnostics
+      researchQuestionObjective = researchQuestionObjective,
+      researchQuestionRoute = attr(model, "wmfm_research_question_route", exact = TRUE),
+      followupDiagnostics = followupDiagnostics,
+      explanationGenerationDiagnostics = explanationGenerationDiagnostics
     )
   )
 

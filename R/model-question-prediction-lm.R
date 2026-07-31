@@ -108,7 +108,7 @@ computeLmModelQuestionPrediction = function(model, followupQuestion, allowMissin
         modelType = "lm",
         predictionType = "mean_response_prediction"
       ),
-      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "warnings")]
+      inputValidation[c("suppliedPredictorValues", "requiredPredictors", "missingPredictors", "warnings")]
     ))
   }
 
@@ -193,6 +193,11 @@ validateLmPredictionInputs = function(model, followupQuestion, allowMissingPredi
   )
   unresolvedFactors = parsedPairs[[".wmfm_unresolved_factor_predictors"]] %||% character(0)
   parsedPairs[[".wmfm_unresolved_factor_predictors"]] = NULL
+
+  responseName = names(mf)[1]
+  if (responseName %in% names(parsedPairs)) {
+    parsedPairs[[responseName]] = NULL
+  }
   suppliedNames = names(parsedPairs)
 
   missingRequired = setdiff(predictorNames, suppliedNames)
@@ -329,11 +334,22 @@ extractPredictionValuesForModel = function(model, followupQuestion, allowSingleU
     parsedPairs = canonicalized
   }
 
-  if (!("Test" %in% names(parsedPairs)) &&
-      ("Test" %in% predictorNames) &&
-      grepl("\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b", text, perl = TRUE)) {
-    matched = sub(".*\\b(\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*20\\b.*", "\\1", text, perl = TRUE)
-    parsedPairs$Test = matched
+  testPredictor = predictorNames[vapply(predictorNames, function(name) {
+    identical(normalizePredictionText(name), "test")
+  }, logical(1))]
+  if (length(testPredictor) == 1L && !(testPredictor[[1]] %in% names(parsedPairs))) {
+    testPatterns = c(
+      "\\b(?:got|scored|score|with)\\s+(-?\\d+(?:\\.\\d+)?)\\s*out\\s*of\\s*\\d+(?:\\.\\d+)?(?:\\s+(?:in|on|for)\\s+(?:the\\s+)?test)?\\b",
+      "\\b(?:got|scored|score|with)\\s+(-?\\d+(?:\\.\\d+)?)\\s+(?:in|on|for)\\s+(?:the\\s+)?test\\b",
+      "\\b(-?\\d+(?:\\.\\d+)?)\\s+(?:in|on|for)\\s+(?:the\\s+)?test\\b"
+    )
+    for (pattern in testPatterns) {
+      matchedParts = regmatches(text, regexec(pattern, text, perl = TRUE))[[1]]
+      if (length(matchedParts) >= 2L) {
+        parsedPairs[[testPredictor[[1]]]] = matchedParts[[2]]
+        break
+      }
+    }
   }
 
   for (predictor in predictorNames) {
@@ -432,6 +448,7 @@ extractPredictionValuesForModel = function(model, followupQuestion, allowSingleU
     }
   }
 
+
   if (length(unresolvedFactors) > 0) {
     parsedPairs[[".wmfm_unresolved_factor_predictors"]] = unresolvedFactors
   }
@@ -470,7 +487,7 @@ extractNaturalNumericPredictionValue = function(predictor, text) {
   )
   nearbyBeforePattern = paste0(
     numberPattern,
-    "(?:\\s+(?:on|for|in|as|at|out of \\d+))*\\s+",
+    "(?:\\s+(?:on|for|in|as|at|out of \\d+)(?:\\s+the)?)*\\s+",
     predictorPattern
   )
 
@@ -592,11 +609,16 @@ matchSemanticBinaryFactorLevel = function(predictor, modelLevels, text) {
   predictorPattern = escapeRegexLiteral(predictorNorm)
   positivePatterns = c(
     paste0("\\b", predictorPattern, "\\b.*\\b(yes|true)\\b"),
-    paste0("\\b", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b")
+    paste0("\\b", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b"),
+    paste0("\\b(?:who|that)\\s+", predictorPattern, "(?:s|ed|ing)?\\b"),
+    paste0("\\b", predictorPattern, "ing\\b"),
+    paste0("\\b", predictorPattern, "(?:ed)?\\s+class\\b")
   )
   negativePatterns = c(
     paste0("\\b", predictorPattern, "\\b.*\\b(no|false)\\b"),
-    paste0("\\b(?:do|does|did|would|will)?\\s*not\\s+", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b")
+    paste0("\\b(?:do|does|did|would|will)?\\s*not\\s+", predictorPattern, "(?:ed|s|ing)?\\s+(?:[a-z]+\\s+)?regularly\\b"),
+    paste0("\\bnon[- ]", predictorPattern, "ing\\b"),
+    paste0("\\bnot\\s+", predictorPattern, "(?:ing|ed)?\\b")
   )
 
   hasPositive = any(vapply(positivePatterns, grepl, logical(1), x = textNorm, perl = TRUE))

@@ -387,3 +387,63 @@ test_that("student explanation feedback is concise and removes overall score los
   expect_false(any(grepl("overall", feedback$priorities, ignore.case = TRUE)))
   expect_true(any(grepl("cause-and-effect", feedback$priorities, fixed = TRUE)))
 })
+
+test_that("student feedback groups overlapping comparison metrics", {
+  gradeObj = structure(
+    list(
+      scoreScale = 10,
+      scores = list(
+        byMethod = list(
+          deterministic = data.frame(
+            overallScore = 70,
+            mark = 7,
+            stringsAsFactors = FALSE
+          )
+        )
+      ),
+      feedback = list(
+        byMethod = list(
+          deterministic = list(
+            strengths = data.frame(),
+            whereMarksLost = data.frame(
+              metric = c(
+                "comparisonStructureClear",
+                "referenceGroupHandledCorrectly",
+                "referenceGroupCoverageAdequate"
+              ),
+              reason = rep("technical comparison feedback", 3),
+              stringsAsFactors = FALSE
+            ),
+            missingElements = data.frame()
+          )
+        )
+      )
+    ),
+    class = c("wmfmGrade", "list")
+  )
+
+  feedback = buildStudentExplanationFeedback(gradeObj)
+
+  expect_length(feedback$priorities, 1L)
+  expect_equal(
+    feedback$priorities,
+    "State comparisons directly and name both groups or quantities being compared."
+  )
+})
+
+test_that("student feedback panels use accessible classes and icons", {
+  feedback = list(
+    overallScore = 80,
+    strengths = "A strength.",
+    priorities = "A revision."
+  )
+
+  html = as.character(renderStudentExplanationFeedbackUi(feedback))
+
+  expect_match(html, "wmfm-student-feedback-panel-positive", fixed = TRUE)
+  expect_match(html, "wmfm-student-feedback-panel-revision", fixed = TRUE)
+  expect_match(html, "circle-check", fixed = TRUE)
+  expect_match(html, "triangle-exclamation", fixed = TRUE)
+  expect_match(html, "What you did well", fixed = TRUE)
+  expect_match(html, "What you need to revise/improve", fixed = TRUE)
+})

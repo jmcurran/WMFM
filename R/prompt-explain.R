@@ -146,6 +146,9 @@ and connect it to the model results.
   researchQuestionBlock = buildResearchQuestionPromptBlock(
     researchQuestion = researchQuestion
   )
+  questionAwareExplanationBlock = buildQuestionAwareExplanationPromptBlock(
+    model = model
+  )
   followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
   researchPredictionPayload = buildResearchQuestionPredictionPayload(
     model = model,
@@ -208,6 +211,7 @@ in clear, non-technical language.
 {outcomeDesc}
 {datasetBlock}
 {researchQuestionBlock}
+{questionAwareExplanationBlock}
 {followupQuestionBlock}
 {followupControlBlock}
 

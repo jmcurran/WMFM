@@ -1,0 +1,15 @@
+displayName: QRoute 11 - causal wording
+modelType: lm
+formula: Exam ~ Attend + Test
+dataSource: package
+dataPackage: s20x
+dataObject: course.df
+researchQuestion: Will attending class cause me to pass?
+evaluation:
+  datasetGroup: course
+  taskType: question_routing
+  intendedIntent: capability
+  suite: question_routing
+  expectedArchetype: assess_model_capability
+  expectedRoute: alternative_analysis_needed
+  expectedFollowup: false
