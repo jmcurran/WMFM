@@ -392,6 +392,7 @@ runModel = function(
     modelType = modelType
   )
   explanationClaimEvidenceMap = NULL
+  explanationGenerationDiagnostics = list()
   equationMethodUsed = equationMethod
 
   if (identical(equationMethod, "deterministic")) {
@@ -487,21 +488,28 @@ runModel = function(
   }
 
   if (isTRUE(generateExplanation) && !is.null(chatProvider)) {
+    explanationDiagnosticsEnvironment = new.env(parent = emptyenv())
     explanation = tryCatch(
       lmExplanation(
         model = model,
         chat = chatProvider,
-        useCache = useExplanationCache
+        useCache = useExplanationCache,
+        diagnostics = explanationDiagnosticsEnvironment
       ),
       error = function(e) {
         warning("Explanation generation failed: ", conditionMessage(e), call. = FALSE)
         NULL
       }
     )
+    explanationGenerationDiagnostics = as.list(
+      explanationDiagnosticsEnvironment,
+      all.names = TRUE
+    )
   }
 
   if (!is.null(explanation)) {
     explanation = postProcessExplanationText(explanation)
+    explanationGenerationDiagnostics$postProcessedExplanationText = explanation
 
     followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
     isSpecialisedFollowupResponse = is.list(followupPayload) &&
@@ -514,6 +522,8 @@ runModel = function(
         model = model
       )
     }
+
+    explanationGenerationDiagnostics$finalExplanationText = explanation
 
     explanationTeachingSummary = tryCatch(
       buildExplanationTeachingSummary(
@@ -564,7 +574,8 @@ runModel = function(
       responseTransformationMode = getModelResponseTransformationMode(model),
       researchQuestionObjective = researchQuestionObjective,
       researchQuestionRoute = attr(model, "wmfm_research_question_route", exact = TRUE),
-      followupDiagnostics = followupDiagnostics
+      followupDiagnostics = followupDiagnostics,
+      explanationGenerationDiagnostics = explanationGenerationDiagnostics
     )
   )
 

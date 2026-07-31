@@ -14,6 +14,7 @@ buildExplanationPromptDiagnosticsUi = function(diagnostics = NULL) {
   }
 
   objective = diagnostics$researchQuestionObjective %||% list()
+  generation = diagnostics$explanationGenerationDiagnostics %||% list()
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   unitChange = payload$unitChangeResult %||% list()
@@ -267,6 +268,7 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
   }
 
   objective = diagnostics$researchQuestionObjective %||% list()
+  generation = diagnostics$explanationGenerationDiagnostics %||% list()
   payload = diagnostics$followupPayload %||% list()
   prediction = payload$predictionResult %||% list()
   unitChange = payload$unitChangeResult %||% list()
@@ -305,6 +307,16 @@ buildExplanationPromptDiagnosticsJson = function(diagnostics = NULL) {
     unitChangeEffectScale = as.character(unitChange$effectScale %||% ""),
     generatedExplanation = coerceExplanationDiagnosticsText(
       diagnostics$generatedExplanation %||% diagnostics$finalExplanation %||% ""
+    ),
+    explanationGeneration = list(
+      cacheHit = isTRUE(generation$cacheHit),
+      llmCalled = isTRUE(generation$llmCalled),
+      promptText = coerceExplanationDiagnosticsText(generation$promptText %||% ""),
+      rawLlmText = coerceExplanationDiagnosticsText(generation$rawLlmText %||% ""),
+      normalisedLlmText = coerceExplanationDiagnosticsText(generation$normalisedLlmText %||% ""),
+      assembledExplanationText = coerceExplanationDiagnosticsText(generation$assembledExplanationText %||% ""),
+      postProcessedExplanationText = coerceExplanationDiagnosticsText(generation$postProcessedExplanationText %||% ""),
+      finalExplanationText = coerceExplanationDiagnosticsText(generation$finalExplanationText %||% "")
     ),
     promptExcerpt = substr(coerceExplanationDiagnosticsText(diagnostics$assembledPrompt %||% ""), 1, 8000),
     assembledPromptExcerpt = substr(coerceExplanationDiagnosticsText(diagnostics$assembledPrompt %||% ""), 1, 8000)

@@ -1,3 +1,8 @@
+# WMFM 1.1.6.37
+
+* Added evaluation diagnostics that preserve the exact prompt, raw provider response, numeric-normalised response, deterministic assembly, post-processed text, final explanation, and cache status.
+* Repaired strict-test fixtures for the new optional diagnostics argument and avoided an essentially-perfect-fit warning in diagnostic tests.
+
 # WMFM 1.1.6.32
 
 * Closed the Stage 49.8 question-routing workstream by using the validated objective for clarification wording, repairing the rendered course unit-increase phrase, and capitalising comparison limitations.

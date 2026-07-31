@@ -74,7 +74,7 @@ test_that("runModel falls back to deterministic equations when llm equations fai
 
       buildDeterministicEquationTable(model)
     },
-    lmExplanation = function(model, chat, useCache = TRUE) {
+    lmExplanation = function(model, chat, useCache = TRUE, diagnostics = NULL) {
       "explanation text"
     },
     .package = "WMFM"

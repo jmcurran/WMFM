@@ -384,8 +384,11 @@ runWMFMEvaluationSuite = function(
       diagnostics = result$meta$followupDiagnostics %||% list()
       diagnostics$researchQuestionObjective = result$meta$researchQuestionObjective %||% list()
       diagnostics$researchQuestionRoute = result$meta$researchQuestionRoute %||% list()
+      generationDiagnostics = result$meta$explanationGenerationDiagnostics %||% list()
+      diagnostics$explanationGenerationDiagnostics = generationDiagnostics
       diagnostics$generatedExplanation = result$explanation %||% ""
-      diagnostics$assembledPrompt = tryCatch(lmToExplanationPrompt(result$model), error = function(e) "")
+      diagnostics$assembledPrompt = generationDiagnostics$promptText %||%
+        tryCatch(lmToExplanationPrompt(result$model), error = function(e) "")
       payload = fromJSON(buildExplanationPromptDiagnosticsJson(diagnostics), simplifyVector = FALSE)
       list(
         status = "success",

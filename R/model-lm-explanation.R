@@ -14,16 +14,35 @@
 #' @param chat A chat provider object as returned by \code{getChatProvider()}.
 #' @param useCache Logical. Should explanation results be cached and reused for
 #'   identical fitted models? Defaults to `TRUE`.
+#' @param diagnostics Optional environment populated with prompt and explanation
+#'   text at each generation boundary. Intended for evaluation diagnostics.
 #'
 #' @return A character scalar containing the explanation text returned by the
 #'   language model.
 #' @keywords internal
 #' @importFrom stats formula model.frame
-lmExplanation = function(model, chat, useCache = TRUE) {
+lmExplanation = function(model, chat, useCache = TRUE, diagnostics = NULL) {
 
   if (!is.logical(useCache) || length(useCache) != 1 || is.na(useCache)) {
     stop("`useCache` must be TRUE or FALSE.", call. = FALSE)
   }
+
+  if (!is.null(diagnostics) && !is.environment(diagnostics)) {
+    stop("`diagnostics` must be an environment or NULL.", call. = FALSE)
+  }
+
+  recordDiagnostic = function(name, value) {
+    if (!is.null(diagnostics)) {
+      diagnostics[[name]] = value
+    }
+  }
+
+  recordDiagnostic("cacheHit", FALSE)
+  recordDiagnostic("llmCalled", FALSE)
+  recordDiagnostic("promptText", NULL)
+  recordDiagnostic("rawLlmText", NULL)
+  recordDiagnostic("normalisedLlmText", NULL)
+  recordDiagnostic("assembledExplanationText", NULL)
 
   followupPayload = attr(model, "wmfm_model_followup_payload", exact = TRUE)
   followupRoute = if (is.list(followupPayload)) {
@@ -34,7 +53,9 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   if (inherits(followupRoute, "wmfmQuestionRoute") &&
       !followupRoute$route %in% c("model_answer", "explanation_preference") &&
       nzchar(trimws(as.character(followupRoute$deterministicResponse %||% "")))) {
-    return(trimws(as.character(followupRoute$deterministicResponse)))
+    output = trimws(as.character(followupRoute$deterministicResponse))
+    recordDiagnostic("assembledExplanationText", output)
+    return(output)
   }
 
   researchRoute = attr(model, "wmfm_research_question_route", exact = TRUE)
@@ -52,7 +73,9 @@ lmExplanation = function(model, chat, useCache = TRUE) {
     } else {
       trimws(as.character(researchRoute$deterministicResponse %||% ""))
     }
-    return(appendDeterministicFollowupAnswer(explanation = output, model = model))
+    output = appendDeterministicFollowupAnswer(explanation = output, model = model)
+    recordDiagnostic("assembledExplanationText", output)
+    return(output)
   }
 
   formulaStr = paste(deparse(formula(model)), collapse = " ")
@@ -77,6 +100,7 @@ lmExplanation = function(model, chat, useCache = TRUE) {
   )
 
   if (isTRUE(useCache) && !is.null(.env_cache[[key]])) {
+    recordDiagnostic("cacheHit", TRUE)
     output = .env_cache[[key]]
     output = prependDeterministicResearchQuestionAnswer(
       explanation = output,
@@ -86,14 +110,23 @@ lmExplanation = function(model, chat, useCache = TRUE) {
       explanation = output,
       model = model
     )
+    recordDiagnostic("assembledExplanationText", output)
     return(output)
   }
 
   prompt = lmToExplanationPrompt(model)
-  output = chat$chat(prompt)
-  output = normaliseNumericExpressions(output)
+  recordDiagnostic("promptText", prompt)
+  recordDiagnostic("llmCalled", TRUE)
+
+  rawOutput = chat$chat(prompt)
+  recordDiagnostic("rawLlmText", rawOutput)
+
+  output = normaliseNumericExpressions(rawOutput)
+  recordDiagnostic("normalisedLlmText", output)
+
   output = prependDeterministicResearchQuestionAnswer(explanation = output, model = model)
   output = appendDeterministicFollowupAnswer(explanation = output, model = model)
+  recordDiagnostic("assembledExplanationText", output)
 
   if (isTRUE(useCache)) {
     .env_cache[[key]] = output

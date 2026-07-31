@@ -4,7 +4,7 @@
 \alias{lmExplanation}
 \title{Get a plain-language explanation via the language model}
 \usage{
-lmExplanation(model, chat, useCache = TRUE)
+lmExplanation(model, chat, useCache = TRUE, diagnostics = NULL)
 }
 \arguments{
 \item{model}{A fitted model object, typically of class \code{"lm"} or
@@ -14,6 +14,9 @@ lmExplanation(model, chat, useCache = TRUE)
 
 \item{useCache}{Logical. Should explanation results be cached and reused for
 identical fitted models? Defaults to \code{TRUE}.}
+
+\item{diagnostics}{Optional environment populated with prompt and explanation
+text at each generation boundary. Intended for evaluation diagnostics.}
 }
 \value{
 A character scalar containing the explanation text returned by the
