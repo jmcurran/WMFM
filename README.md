@@ -86,3 +86,47 @@ In a deployed app, provider setup is administrator-managed. The installer should
 A deployed WMFM app should not let ordinary users enter API keys, add providers, or change server credentials. The installer may expose a limited list of approved providers or models, and ordinary users may choose only among those approved options.
 
 Use environment variables such as `ANTHROPIC_API_KEY` for hosted providers. Never commit real API keys to package files, examples, tests, README snippets, deployment manifests, or stage artefacts.
+
+## Developer mode
+
+WMFM includes an optional developer mode intended for people testing, diagnosing or improving the app. It exposes additional explanation diagnostics, grading information, evaluation tools and downloadable debugging reports.
+
+Developer mode does not unlock hidden statistical methods or additional features intended for ordinary users. Most users will have no reason to enable it.
+
+### Enabling developer mode
+
+Developer mode has two safeguards:
+
+1. the developer-mode controls must be explicitly exposed; and
+2. the user must enter a locally configured password to unlock them.
+
+First, create a salted hash for the password you want to use:
+
+```r
+wmfm::makeDeveloperModePasswordHash("choose-a-password")
+```
+
+The function returns a character string containing the password hash. Copy that complete string.
+
+Next, open your `~/.Renviron` file:
+
+```r
+usethis::edit_r_environ()
+```
+
+Add the following two lines, replacing the example hash with the value returned by `makeDeveloperModePasswordHash()`:
+
+```text
+WMFM_SHOW_DEVELOPER_MODE=1
+WMFM_DEVELOPER_MODE_PASSWORD_HASH="your-complete-password-hash""
+```
+
+**Note** the quotes may not be necessary, but are advised.
+
+Restart R after saving the file.
+
+The next time WMFM starts, a developer-mode control will be available. When you attempt to enable it, enter the original plain-text password that you supplied to `makeDeveloperModePasswordHash()`.
+
+Only the salted hash is stored in `.Renviron`; the plain-text password is not stored by WMFM. If you forget the password, generate a new hash from a new password and replace the value of `WMFM_DEVELOPER_MODE_PASSWORD_HASH`.
+
+Developer mode applies only to the current WMFM session and must be unlocked again after the app is restarted. Provider settings and credentials are independent of the developer-mode password.
